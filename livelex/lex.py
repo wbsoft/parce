@@ -75,11 +75,12 @@ class Lexer:
     def match(self, pos, text, action, match, state_change):
         """Yield one or more tokens from the match object."""
         if type(action) is lexicon.subgroup_actions:
-            acts = list(enumerate(action, match.lastindex + 1))
+            acts = enumerate(action, match.lastindex + 1)
+            acts = [(i, action) for i, action in acts if action is not None]
             for i, action in acts[:-1]:
-                yield(match.start(i), match.group(i), action, None)
+                yield (match.start(i), match.group(i), action, None)
             for i, action in acts[-1:]:
-                yield(match.start(i), match.group(i), action, state_change)
+                yield (match.start(i), match.group(i), action, state_change)
         else:
             yield (pos, text, action, state_change)
 
