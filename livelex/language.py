@@ -106,3 +106,19 @@ class Language:
 
 class LanguageB(Language):
     pass
+
+
+
+class lexicon:
+    def __init__(self, *args, **kwargs):
+        if kwargs:
+            
+
+
+class Language:
+    
+    @lexicon
+    def root(cls):
+        yield 'music', r'\b[a-g]\b', cls.music
+    
+    

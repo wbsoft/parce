@@ -38,36 +38,30 @@ class Lexer:
         lexicon = self.get_lexicon(state)
         state_change = False
         while True:
-            for match, target in lexicon.parse(text, pos):
-                if lexicon.default_action and match.start() > pos:
-                    yield (pos, lexicon.default_action, text[pos:m.start()], state_change)
-                    state_change = False
-                pos = match.end()
+            for pos, text, match, action, *target in lexicon.parse(text, pos):
                 if target:
-                    lexicon = self.get_lexicon(state, target)
-                    yield from self.match(match, True)
-                    state_change = False
-                    break
-                else:
-                    yield from self.match(match, state_change)
-                    state_change = False
-            else:
-                # run out, has the lexicon a default lexicon target?
-                if lexicon.default_target:
-                    lexicon = self.get_lexicon(state, lexicon.default_target)
                     state_change = True
-                else:
-                    break
-        if lexicon.default_action and pos < len(text):
-            yield (pos, lexicon.default_action, text[pos:], state_change)
+                    lexicon = self.get_lexicon(state, target)
+                if match:
+                    yield from self.match(pos, text, action, match, state_change)
+                    state_change = False
+                elif text:
+                    yield from self.unparsed(pos, text, action, state_change)
+                    state_change = False
+                if target:
+                    break # continue with new lexicon
+            else:
+                break
         
     def get_lexicon(self, state, target):
         """Modify the state according to target and return the topmost lexicon."""
 
-    def match(self, match, state_change=False):
+    def match(self, pos, text, action, match, state_change):
         """Yield one or more tokens from the match object."""
-        pos = match.start()
-        action = match.lastgroup
-        value = match.group()
-        yield (pos, action, value, state_change)
+        yield (pos, text, action, state_change)
+
+    def unparsed(self, pos, text, action, state_change):
+        """Yield unparsed text."""
+        yield (pos, text, action, state_change)
+
 

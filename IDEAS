@@ -143,3 +143,12 @@ class Language:
         ('pattern', action, state),
         
         )
+
+
+---------------12 dec 2019--------------
+
+Lexicon is like what slexer calls a Parser.
+simple objects that live in a class namespace.
+Different types of Lexicon could be devised, regex based or not.
+A Language is a set of lexicons, a Language is class that is not instantiated.
+
