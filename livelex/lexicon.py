@@ -69,6 +69,10 @@ class BoundLexicon:
         """Call the original function, yielding the rules."""
         return self.lexicon.rules_func(self.language)
     
+    def name(self):
+        """Return the 'Language.lexicon' name of this bound lexicon."""
+        return '.'.join((self.language.__name__, self.lexicon.rules_func.__name__))
+
     @property
     def parse(self):
         try:
