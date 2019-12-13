@@ -91,7 +91,7 @@ class BoundLexicon:
                 _default_target = action, *target
             else:
                 patterns.append(pattern)
-                action_targets.append((action, target))
+                action_targets.append((action, *target))
         # compile the regexp for all patterns
         rx = re.compile("|".join("(?P<g_{0}>{1})".format(i, pattern)
             for i, pattern in enumerate(patterns)), self.language.re_flags)
@@ -103,7 +103,7 @@ class BoundLexicon:
         
         if _default_action:
             def parse(text, pos):
-                """Parse text continuously, using a default action for unparsed text."""
+                """Parse text, using a default action for unknown text."""
                 for m in rx.finditer(text, pos):
                     if m.start() > pos:
                         yield pos, text[pos:m.start()], None, _default_action
@@ -113,15 +113,18 @@ class BoundLexicon:
                     yield (pos, text[pos:], None, _default_action)
         elif _default_target:
             def parse(text, pos):
-                """Parse text only once, used if there is a default_target."""
-                m = rx.match(text, pos)
-                if m:
-                    yield (m.start(), m.group(), m, *index[m.lastindex])
-                else:
-                    yield (pos, "", None, None, *_default_target)
+                """Parse text, stopping with the default target at unknown text."""
+                while True:
+                    m = rx.match(text, pos)
+                    if m:
+                        yield (pos, m.group(), m, *index[m.lastindex])
+                        pos = m.end()
+                    else:
+                        yield (pos, "", None, None, *_default_target)
+                        break
         else:
             def parse(text, pos):
-                """Parse text continuously."""
+                """Parse text, skipping unknown text."""
                 for m in rx.finditer(text, pos):
                     yield (m.start(), m.group(), m, *index[m.lastindex])
         return parse
