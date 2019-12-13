@@ -106,6 +106,10 @@ class BoundLexicon:
             index[i] = action_target
         
         if _default_action:
+            if _default_target:
+                raise RuntimeError(
+                    "Lexicon {0}: can't have both default_action and "
+                    "default_target".format(self.name()))
             def parse(text, pos):
                 """Parse text, using a default action for unknown text."""
                 for m in rx.finditer(text, pos):
@@ -132,6 +136,13 @@ class BoundLexicon:
                 for m in rx.finditer(text, pos):
                     yield (m.start(), m.group(), m, *index[m.lastindex])
         return parse
+
+
+class subgroup_actions(tuple):
+    def __new__(cls, *actions):
+        if not actions:
+            raise RuntimeError("actions: at least one action required")
+        return tuple.__new__(cls, actions)
 
 
 

@@ -18,7 +18,7 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 
-import lexicon
+from lexicon import lexicon, default_action, subgroup_actions
 
 
 class Language:
@@ -32,17 +32,18 @@ class Language:
     """
     re_flags = 0
 
-    @lexicon.lexicon
+    @lexicon
     def root(cls):
         yield r'bla', 'bla action'
         yield r'ble', 'ble action'
+        yield r'(bl)(ub)', subgroup_actions('bl act', 'ub act')
         yield r'blo', 'blo action', cls.blo
     
-    @lexicon.lexicon
+    @lexicon
     def blo(cls):
         yield r'1', '1 in blo'
         yield r'4', '4 in blo, end', -1
-
+        yield default_action, "unparsed"
 
 
         

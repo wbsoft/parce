@@ -20,6 +20,8 @@
 
 import itertools
 
+import lexicon
+
 
 class Lexer:
         
@@ -72,7 +74,14 @@ class Lexer:
 
     def match(self, pos, text, action, match, state_change):
         """Yield one or more tokens from the match object."""
-        yield (pos, text, action, state_change)
+        if type(action) is lexicon.subgroup_actions:
+            acts = list(enumerate(action, match.lastindex + 1))
+            for i, action in acts[:-1]:
+                yield(match.start(i), match.group(i), action, None)
+            for i, action in acts[-1:]:
+                yield(match.start(i), match.group(i), action, state_change)
+        else:
+            yield (pos, text, action, state_change)
 
     def unparsed(self, pos, text, action, state_change):
         """Yield unparsed text."""
