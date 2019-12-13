@@ -59,68 +59,30 @@ class BoundLexicon:
     only some Lexicons.
     
     """
-    __slots__ = ('lexicon', 'language', '_compiled_instance', '_parser_func')
+    __slots__ = ('lexicon', 'language', '_parser_func')
     
     def __init__(self, lexicon, language):
         self.lexicon = lexicon
         self.language = language
 
-    @property
-    def default_action(self):
-        return self._compiled.default_action
-
-    @property
-    def default_target(self):
-        return self._compiled.default_target
+    def __call__(self):
+        """Call the original function, yielding the rules."""
+        return self.lexicon.rules_func(self.language)
     
-    @property
-    def _compiled(self):
-        try:
-            c = self._compiled_instance
-        except AttributeError:
-            c = self._compiled_instance = CompiledLexicon(self)
-        return c
-        
     @property
     def parse(self):
         try:
             return self._parser_func
         except AttributeError:
-            if self.default_action:
-                f = self._parse_with_default_action
-            elif self.default_target:
-                f = self._parse_with_default_state
+            c = CompiledLexicon(self)
+            if c.default_action:
+                f = c._parse_with_default_action
+            elif c.default_target:
+                f = c._parse_with_default_state
             else:
-                f = self._parse
+                f = c._parse
             self._parser_func = f
             return f
-
-    def _parse(self, text, pos):
-        """Parse text continuously."""
-        c = self._compiled
-        for m in c.pattern.finditer(text, pos):
-            yield m.start(), m.group(), m, *c.match(m)
-    
-    def _parse_with_default_action(self, text, pos):
-        """Parse text continuously, using a default action for unparsed text."""
-        c = self._compiled
-        for m in c.pattern.finditer(text, pos):
-            if m.start() > pos:
-                yield pos, text[pos:m.start()], None, self.default_action
-            yield m.start(), m.group(), m, *c.match(m)
-            pos = m.end()
-        if pos < len(text):
-            yield pos, text[pos:], None, self.default_action
-
-    def _parse_with_default_state(self, text, pos):
-        """Parse text only once, used if there is a default_target."""
-        c = self._compiled
-        m = c.pattern.match(text, pos)
-        if m:
-            yield m.start(), m.group(), m, *c.match(m)
-        else:
-            yield pos, "", None, *self.default_target
-
 
 
 class CompiledLexicon:
@@ -141,7 +103,7 @@ class CompiledLexicon:
         self.default_action = None
         self.default_target = None
         # make lists of pattern, action and possible targets
-        for pattern, action, *target in lexicon.lexicon.rules_func(lexicon.language):
+        for pattern, action, *target in lexicon():
             if pattern is default_action:
                 self.default_action = action
             elif pattern is default_target:
@@ -158,9 +120,28 @@ class CompiledLexicon:
         for i, action_target in zip(indices, index):
             t[i] = action_target
 
-    def match(self, matchObj):
-        """Return action and targets for the specified matchObject."""
-        return self._index[matchObj.lastindex]
+    def _parse(self, text, pos):
+        """Parse text continuously."""
+        for m in self.pattern.finditer(text, pos):
+            yield m.start(), m.group(), m, *self._index[m.lastindex]
+    
+    def _parse_with_default_action(self, text, pos):
+        """Parse text continuously, using a default action for unparsed text."""
+        for m in self.pattern.finditer(text, pos):
+            if m.start() > pos:
+                yield pos, text[pos:m.start()], None, self.default_action
+            yield m.start(), m.group(), m, *self._index[m.lastindex]
+            pos = m.end()
+        if pos < len(text):
+            yield pos, text[pos:], None, self.default_action
+
+    def _parse_with_default_state(self, text, pos):
+        """Parse text only once, used if there is a default_target."""
+        m = self.pattern.match(text, pos)
+        if m:
+            yield m.start(), m.group(), m, *self._index[m.lastindex]
+        else:
+            yield pos, "", None, None, *self.default_target
 
 
 
