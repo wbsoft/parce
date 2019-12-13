@@ -18,12 +18,13 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 
+import itertools
 
 
 class Lexer:
-    
-    
-    
+        
+    def __init__(self, root_lexicon):
+        self.root_lexicon = root_lexicon
     
     def lex(self, text, state=None, pos=0):
         """Yield tokens for the text.
@@ -38,23 +39,36 @@ class Lexer:
         lexicon = self.get_lexicon(state)
         state_change = False
         while True:
-            for pos, text, match, action, *target in lexicon.parse(text, pos):
+            for pos, txt, match, action, *target in lexicon.parse(text, pos):
                 if target:
                     state_change = True
                     lexicon = self.get_lexicon(state, target)
                 if match:
-                    yield from self.match(pos, text, action, match, state_change)
+                    yield from self.match(pos, txt, action, match, state_change)
                     state_change = False
-                elif text:
-                    yield from self.unparsed(pos, text, action, state_change)
+                    pos = match.end()
+                elif txt:
+                    yield from self.unparsed(pos, txt, action, state_change)
                     state_change = False
+                    pos += len(txt)
                 if target:
                     break # continue with new lexicon
             else:
                 break
         
-    def get_lexicon(self, state, target):
+    def get_lexicon(self, state, target=()):
         """Modify the state according to target and return the topmost lexicon."""
+        for t in target:
+            if type(t) is int:
+                if t < 0:
+                    del state[t:]
+                elif t > 0:
+                    state.extend(itertools.repeat(state[-1], t))
+            else:
+                state.append(t)
+        if not state:
+            state.append(self.root_lexicon)
+        return state[-1]
 
     def match(self, pos, text, action, match, state_change):
         """Yield one or more tokens from the match object."""
