@@ -72,76 +72,59 @@ class BoundLexicon:
     @property
     def parse(self):
         try:
-            return self._parser_func
+            f = self._parser_func
         except AttributeError:
-            c = CompiledLexicon(self)
-            if c.default_action:
-                f = c._parse_with_default_action
-            elif c.default_target:
-                f = c._parse_with_default_state
-            else:
-                f = c._parse
-            self._parser_func = f
-            return f
-
-
-class CompiledLexicon:
-    """Compiles the pattern rules.
+            f = self._parser_func = self._get_parser_func()
+        return f
     
-    Has the following member variables after instantiation:
-    
-    default_action (None), the default action
-    default_target (None), the default target
-    pattern, the compiled regular expression.
-    
-    """
-    __slots__ = ('default_action', 'default_target', 'pattern', '_index')
-    
-    def __init__(self, lexicon):
+    def _get_parser_func(self):
+        """Compile the pattern rules and return a parse(text, pos) func."""
         patterns = []
-        index = []
-        self.default_action = None
-        self.default_target = None
+        action_targets = []
+        _default_action = None
+        _default_target = None
         # make lists of pattern, action and possible targets
-        for pattern, action, *target in lexicon():
+        for pattern, action, *target in self():
             if pattern is default_action:
-                self.default_action = action
+                _default_action = action
             elif pattern is default_target:
-                self.default_target = action, *target
+                _default_target = action, *target
             else:
                 patterns.append(pattern)
-                index.append((action, target))
+                action_targets.append((action, target))
         # compile the regexp for all patterns
-        rx = self.pattern = re.compile("|".join("(?P<g_{0}>{1})".format(i, pattern)
-            for i, pattern in enumerate(patterns)), lexicon.language.re_flags)
+        rx = re.compile("|".join("(?P<g_{0}>{1})".format(i, pattern)
+            for i, pattern in enumerate(patterns)), self.language.re_flags)
         # make a fast mapping list from matchObj.lastindex to the targets
         indices = sorted(v for k, v in rx.groupindex.items() if k.startswith('g_'))
-        t = self._index = [None] * (indices[-1] + 1)
-        for i, action_target in zip(indices, index):
-            t[i] = action_target
-
-    def _parse(self, text, pos):
-        """Parse text continuously."""
-        for m in self.pattern.finditer(text, pos):
-            yield m.start(), m.group(), m, *self._index[m.lastindex]
-    
-    def _parse_with_default_action(self, text, pos):
-        """Parse text continuously, using a default action for unparsed text."""
-        for m in self.pattern.finditer(text, pos):
-            if m.start() > pos:
-                yield pos, text[pos:m.start()], None, self.default_action
-            yield m.start(), m.group(), m, *self._index[m.lastindex]
-            pos = m.end()
-        if pos < len(text):
-            yield pos, text[pos:], None, self.default_action
-
-    def _parse_with_default_state(self, text, pos):
-        """Parse text only once, used if there is a default_target."""
-        m = self.pattern.match(text, pos)
-        if m:
-            yield m.start(), m.group(), m, *self._index[m.lastindex]
+        index = [None] * (indices[-1] + 1)
+        for i, action_target in zip(indices, action_targets):
+            index[i] = action_target
+        
+        if _default_action:
+            def parse(text, pos):
+                """Parse text continuously, using a default action for unparsed text."""
+                for m in rx.finditer(text, pos):
+                    if m.start() > pos:
+                        yield pos, text[pos:m.start()], None, _default_action
+                    yield (m.start(), m.group(), m, *index[m.lastindex])
+                    pos = m.end()
+                if pos < len(text):
+                    yield (pos, text[pos:], None, _default_action)
+        elif _default_target:
+            def parse(text, pos):
+                """Parse text only once, used if there is a default_target."""
+                m = rx.match(text, pos)
+                if m:
+                    yield (m.start(), m.group(), m, *index[m.lastindex])
+                else:
+                    yield (pos, "", None, None, *_default_target)
         else:
-            yield pos, "", None, None, *self.default_target
+            def parse(text, pos):
+                """Parse text continuously."""
+                for m in rx.finditer(text, pos):
+                    yield (m.start(), m.group(), m, *index[m.lastindex])
+        return parse
 
 
 
