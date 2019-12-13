@@ -140,9 +140,11 @@ class BoundLexicon:
 
 class subgroup_actions(tuple):
     def __new__(cls, *actions):
-        if not actions:
-            raise RuntimeError("actions: at least one action required")
-        return tuple.__new__(cls, actions)
+        for a in actions:
+            if a is not None:
+                return tuple.__new__(cls, actions)
+        raise RuntimeError("actions: at least one action required")
+        
 
 
 

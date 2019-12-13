@@ -73,10 +73,17 @@ class Lexer:
         return state[-1]
 
     def match(self, pos, text, action, match, state_change):
-        """Yield one or more tokens from the match object."""
+        """Yield one or more tokens from the match object.
+        
+        When there are multiple tokens yielded from one match object, it is not
+        possible to resume parsing after a token that is not the last one.
+        To signal that, the stage_change field is set to None for all except
+        the last token.
+
+        """
         if type(action) is lexicon.subgroup_actions:
             acts = enumerate(action, match.lastindex + 1)
-            acts = [(i, action) for i, action in acts if action is not None]
+            acts = [item for item in acts if item[1] is not None]
             for i, action in acts[:-1]:
                 yield (match.start(i), match.group(i), action, None)
             for i, action in acts[-1:]:
