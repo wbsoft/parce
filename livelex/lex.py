@@ -47,7 +47,7 @@ class Lexer:
                     state_change = True
                     lexicon = self.get_lexicon(state, target)
                 if txt:
-                    tokens = list(self.filter_actions(pos, action, txt, match))
+                    tokens = list(self.filter_actions(action, pos, txt, match))
                     if tokens:
                         for token in tokens[:-1]:
                             yield (*token, None)
@@ -74,7 +74,7 @@ class Lexer:
             state.append(self.root_lexicon)
         return state[-1]
 
-    def filter_actions(self, pos, action, txt, match):
+    def filter_actions(self, action, pos, txt, match):
         """Handle Action instances and filter skip rules."""
         if isinstance(action, Action):
             yield from action.filter_actions(self, pos, txt, match)

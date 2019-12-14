@@ -52,7 +52,7 @@ class Subgroup(Action):
     """
     def filter_actions(self, lexer, pos, text, match):
         for i, action in enumerate(self.args, match.lastindex + 1):
-            yield from lexer.filter_actions(match.start(i), action, match.group(i), None)
+            yield from lexer.filter_actions(action, match.start(i), match.group(i), None)
         
 
 class Match(Action):
@@ -66,7 +66,7 @@ class Match(Action):
 
     def filter_actions(self, lexer, pos, text, match):
         action = self.func(match)
-        yield from lexer.filter_actions(pos, action, text, match)
+        yield from lexer.filter_actions(action, pos, text, match)
 
 
 class Text(Action):
@@ -80,6 +80,6 @@ class Text(Action):
 
     def filter_actions(self, lexer, pos, text, match):
         action = self.func(text)
-        yield from lexer.filter_actions(pos, action, text, None)
+        yield from lexer.filter_actions(action, pos, text, None)
 
 
