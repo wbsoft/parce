@@ -20,7 +20,8 @@
 
 import itertools
 
-import lexicon
+
+import livelex.action
 
 
 class Lexer:
@@ -50,7 +51,7 @@ class Lexer:
                     state_change = False
                     pos = match.end()
                 elif txt:
-                    yield from self.unparsed(pos, txt, action, state_change)
+                    yield from self.text(pos, txt, action, state_change)
                     state_change = False
                     pos += len(txt)
                 if target:
@@ -73,26 +74,17 @@ class Lexer:
         return state[-1]
 
     def match(self, pos, text, action, match, state_change):
-        """Yield one or more tokens from the match object.
-        
-        When there are multiple tokens yielded from one match object, it is not
-        possible to resume parsing after a token that is not the last one.
-        To signal that, the stage_change field is set to None for all except
-        the last token.
-
-        """
-        if type(action) is lexicon.subgroup_actions:
-            acts = enumerate(action, match.lastindex + 1)
-            acts = [item for item in acts if item[1] is not None]
-            for i, action in acts[:-1]:
-                yield (match.start(i), match.group(i), action, None)
-            for i, action in acts[-1:]:
-                yield (match.start(i), match.group(i), action, state_change)
+        """Yield one or more tokens from the match object."""
+        if isinstance(action, livelex.action.Action):
+            yield from action.match(self, pos, text, match, state_change)
         else:
             yield (pos, text, action, state_change)
 
-    def unparsed(self, pos, text, action, state_change):
+    def text(self, pos, text, action, state_change):
         """Yield unparsed text."""
-        yield (pos, text, action, state_change)
+        if isinstance(action, livelex.action.Action):
+            yield from action.text(self, pos, text, state_change)
+        else:
+            yield (pos, text, action, state_change)
 
 

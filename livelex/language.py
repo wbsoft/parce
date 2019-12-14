@@ -18,7 +18,8 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 
-from lexicon import lexicon, default_action, subgroup_actions
+from livelex.lexicon import lexicon, default_action, default_target
+from livelex.action import Subgroup, Text
 
 
 class Language:
@@ -36,13 +37,14 @@ class Language:
     def root(cls):
         yield r'bla', 'bla action'
         yield r'ble', 'ble action'
-        yield r'(bl)(ub)', subgroup_actions('bl act', 'ub act')
+        yield r'(bl)(ub)', Subgroup('bl act', 'ub act')
         yield r'blo', 'blo action', cls.blo
     
     @lexicon
     def blo(cls):
         yield r'1', '1 in blo'
         yield r'4', '4 in blo, end', -1
+        yield r'[0-9]', Text(lambda t: "has 3" if '3' in t else 'no 3')
         yield default_action, "unparsed"
 
 

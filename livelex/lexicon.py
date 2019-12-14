@@ -138,16 +138,6 @@ class BoundLexicon:
         return parse
 
 
-class subgroup_actions(tuple):
-    def __new__(cls, *actions):
-        for a in actions:
-            if a is not None:
-                return tuple.__new__(cls, actions)
-        raise RuntimeError("actions: at least one action required")
-        
-
-
-
 def lexicon(rules_func):
     """Decorator to make a function in a Language class definition a Lexicon object."""
     return Lexicon(rules_func)
