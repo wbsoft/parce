@@ -21,7 +21,7 @@
 import itertools
 
 
-import livelex.action
+from livelex.action import Action, skip
 
 
 class Lexer:
@@ -46,13 +46,16 @@ class Lexer:
                 if target:
                     state_change = True
                     lexicon = self.get_lexicon(state, target)
-                if match:
-                    yield from self.match(pos, txt, action, match, state_change)
-                    state_change = False
-                    pos = match.end()
-                elif txt:
-                    yield from self.text(pos, txt, action, state_change)
-                    state_change = False
+                if txt:
+                    if match:
+                        tokens = self.match(pos, txt, action, match, state_change)
+                    else:
+                        tokens = self.text(pos, txt, action, state_change)
+                    # only set state_change to False if at least one token was yielded
+                    for token in tokens:
+                        yield token
+                        state_change = False
+                        yield from tokens
                     pos += len(txt)
                 if target:
                     break # continue with new lexicon
@@ -75,16 +78,16 @@ class Lexer:
 
     def match(self, pos, text, action, match, state_change):
         """Yield one or more tokens from the match object."""
-        if isinstance(action, livelex.action.Action):
+        if isinstance(action, Action):
             yield from action.match(self, pos, text, match, state_change)
-        else:
+        elif action is not skip:
             yield (pos, text, action, state_change)
 
     def text(self, pos, text, action, state_change):
         """Yield unparsed text."""
-        if isinstance(action, livelex.action.Action):
+        if isinstance(action, Action):
             yield from action.text(self, pos, text, state_change)
-        else:
+        elif action is not skip:
             yield (pos, text, action, state_change)
 
 

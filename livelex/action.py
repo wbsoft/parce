@@ -29,6 +29,10 @@ action, or inside subgroup_actions.
 """
 
 
+# used to suppress a token
+skip = object()
+
+
 class Action:
     def __init__(self, *args):
         self.args = args
@@ -57,7 +61,7 @@ class Subgroup(MatchAction):
     """
     def match(self, lexer, pos, text, match, state_change):
         acts = enumerate(self.args, match.lastindex + 1)
-        acts = [item for item in acts if item[1] is not None]
+        acts = [item for item in acts if item[1] is not skip]
         for i, action in acts[:-1]:
             yield from lexer.text(match.start(i), match.group(i), action, None)
         for i, action in acts[-1:]:

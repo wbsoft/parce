@@ -19,7 +19,7 @@
 
 
 from livelex.lexicon import lexicon, default_action, default_target
-from livelex.action import Subgroup, Text
+from livelex.action import Subgroup, Text, skip
 from livelex.regex import Words
 
 
@@ -38,11 +38,14 @@ class Language:
     def root(cls):
         yield Words(('bla', 'BLA')), 'bla action'
         yield r'ble', 'ble action'
+        yield r'\s+', skip      # this text is skipped
         yield r'(bl)(ub)', Subgroup('bl act', 'ub act')
         yield r'blo', 'blo action', cls.blo
+        yield default_action, "TEXT"
     
     @lexicon
     def blo(cls):
+        yield r'\s+', skip      # this text is skipped
         yield r'1', '1 in blo'
         yield r'4', '4 in blo, end', -1
         yield r'[0-9]', Text(lambda t: "has 3" if '3' in t else 'no 3')
