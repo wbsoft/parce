@@ -42,14 +42,7 @@ class Action:
 
 
 class Subgroup(Action):
-    """Yield actions from subgroups in a match.
-
-    When there are multiple tokens yielded from one match object, it is not
-    possible to resume parsing after a token that is not the last one.
-    To signal that, the stage_change field is set to None for all except
-    the last token.
-
-    """
+    """Yield actions from subgroups in a match."""
     def filter_actions(self, lexer, pos, text, match):
         for i, action in enumerate(self.args, match.lastindex + 1):
             yield from lexer.filter_actions(action, match.start(i), match.group(i), None)
