@@ -20,6 +20,7 @@
 
 from livelex.lexicon import lexicon, default_action, default_target
 from livelex.action import Subgroup, Text
+from livelex.regex import Words
 
 
 class Language:
@@ -35,7 +36,7 @@ class Language:
 
     @lexicon
     def root(cls):
-        yield r'bla', 'bla action'
+        yield Words(('bla', 'BLA')), 'bla action'
         yield r'ble', 'ble action'
         yield r'(bl)(ub)', Subgroup('bl act', 'ub act')
         yield r'blo', 'blo action', cls.blo

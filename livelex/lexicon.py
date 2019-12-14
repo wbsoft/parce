@@ -20,6 +20,8 @@
 
 import re
 
+import livelex.regex
+
 
 default_action = object()
 default_target = object()
@@ -94,6 +96,8 @@ class BoundLexicon:
             elif pattern is default_target:
                 _default_target = action, *target
             else:
+                if isinstance(pattern, livelex.regex.RegexBuilder):
+                    pattern = pattern.build()
                 patterns.append(pattern)
                 action_targets.append((action, *target))
         # compile the regexp for all patterns

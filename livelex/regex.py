@@ -43,11 +43,11 @@ class Words(RegexBuilder):
     def build(self):
         # longest first, TODO: more optimisation
         words = sorted(self.words, key=len, reverse=True)
-        return ''.join(
+        return ''.join((
             self.prefix,
             '(?:',
             '|'.join(map(re.escape, words)),
             ')',
-            self.suffix)
+            self.suffix))
 
 
