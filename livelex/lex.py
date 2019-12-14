@@ -79,6 +79,6 @@ class Lexer:
         if isinstance(action, Action):
             yield from action.filter_actions(self, pos, txt, match)
         elif action is not skip:
-            yield pos, action, txt
+            yield pos, txt, action
 
 
