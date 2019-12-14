@@ -50,9 +50,9 @@ class Lexer:
                     tokens = list(self.filter_actions(pos, action, txt, match))
                     if tokens:
                         for token in tokens[:-1]:
-                            yield token[:-1] + (None,)
+                            yield (*token, None)
                         for token in tokens[-1:]:
-                            yield token[:-1] + (state_change,)
+                            yield (*token, state_change)
                         state_change = False
                     pos += len(txt)
                 if target:
@@ -79,6 +79,6 @@ class Lexer:
         if isinstance(action, Action):
             yield from action.filter_actions(self, pos, txt, match)
         elif action is not skip:
-            yield (pos, action, txt, match)
+            yield pos, action, txt
 
 
