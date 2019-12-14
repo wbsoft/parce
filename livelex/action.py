@@ -37,20 +37,11 @@ class Action:
     def __init__(self, *args):
         self.args = args
     
-    def match(self, lexer, pos, text, match, state_change):
-        raise NotImplementedError
-
-    def text(self, lexer, pos, text, state_change):
+    def filter_actions(self, lexer, pos, text, match):
         raise NotImplementedError
 
 
-class MatchAction(Action):
-    """An Action that can't be used for text, but requires a match object."""
-    def text(self, lexer, pos, text, state_change):
-        raise RuntimeError("Can't use this action without match object.")
-
-
-class Subgroup(MatchAction):
+class Subgroup(Action):
     """Yield actions from subgroups in a match.
 
     When there are multiple tokens yielded from one match object, it is not
@@ -59,16 +50,12 @@ class Subgroup(MatchAction):
     the last token.
 
     """
-    def match(self, lexer, pos, text, match, state_change):
-        acts = enumerate(self.args, match.lastindex + 1)
-        acts = [item for item in acts if item[1] is not skip]
-        for i, action in acts[:-1]:
-            yield from lexer.text(match.start(i), match.group(i), action, None)
-        for i, action in acts[-1:]:
-            yield from lexer.text(match.start(i), match.group(i), action, state_change)
+    def filter_actions(self, lexer, pos, text, match):
+        for i, action in enumerate(self.args, match.lastindex + 1):
+            yield from lexer.filter_actions(match.start(i), action, match.group(i), None)
         
 
-class Match(MatchAction):
+class Match(Action):
     """Expects a function as argument that is called with the match object.
     
     The function should return the desired action.
@@ -77,9 +64,9 @@ class Match(MatchAction):
     def __init__(self, func):
         self.func = func
 
-    def match(self, lexer, pos, text, match, state_change):
+    def filter_actions(self, lexer, pos, text, match):
         action = self.func(match)
-        yield from lexer.match(pos, text, action, match, state_change)
+        yield from lexer.filter_actions(pos, action, text, match)
 
 
 class Text(Action):
@@ -91,12 +78,8 @@ class Text(Action):
     def __init__(self, func):
         self.func = func
 
-    def match(self, lexer, pos, text, match, state_change):
+    def filter_actions(self, lexer, pos, text, match):
         action = self.func(text)
-        yield from lexer.match(pos, text, action, match, state_change)
-
-    def text(self, lexer, pos, text, state_change):
-        action = self.func(text)
-        yield from lexer.text(pos, text, action, state_change)
+        yield from lexer.filter_actions(pos, action, text, None)
 
 
