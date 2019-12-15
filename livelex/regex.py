@@ -41,14 +41,7 @@ class Words(RegexBuilder):
         self.suffix = suffix
     
     def build(self):
-        # longest first, TODO: more optimisation
-        words = sorted(self.words, key=len, reverse=True)
-        return ''.join((
-            self.prefix,
-            '(?:',
-            '|'.join(map(re.escape, words)),
-            ')',
-            self.suffix))
+        return self.prefix + words2regexp(self.words) + self.suffix
 
 
 def words2regexp(words):
