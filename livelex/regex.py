@@ -54,11 +54,10 @@ def words2regexp(words):
         d[None] = True  # end
 
     def concat(node):
-        new = {}
         for key, node in node.items():
             if key:
                 if len(node) > 1:
-                    node = concat(node)
+                    node = dict(concat(node))
                 else:
                     while len(node) == 1:
                         k, n = next(iter(node.items()))
@@ -68,10 +67,9 @@ def words2regexp(words):
                         else:
                             node[None] = True
                             break
-            new[key] = node
-        return new
+            yield key, node
 
-    root = concat(root)
+    root = dict(concat(root))
     
     def to_regexp(node):
         if len(node) == 1:
