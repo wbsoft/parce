@@ -86,8 +86,14 @@ def words2regexp(words):
                     groups.append((k, n))
                 else:
                     optional = True
-            if len(groups) == 1 and len(groups[0][0]) == 1:
+            if len(groups) == 1 and len(groups[0][0]) == 1 and not any(groups[0][1]):
+                # only one single-character group and no leafs
                 yield re.escape(groups[0][0])
+            elif all(len(k)==1 and not any(n) for k, n in groups):
+                # all groups are single-char and no leafs
+                yield '['
+                yield re.escape(''.join(k for k, n in groups))
+                yield ']'
             else:
                 yield '(?:'
                 yield '|'.join(re.escape(k) + ''.join(to_regexp(n)) for k, n in groups)
