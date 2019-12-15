@@ -46,6 +46,8 @@ class Words(RegexBuilder):
 
 def words2regexp(words):
     """Convert the word list to an optimized regular expression."""
+    
+    # make a trie structure
     root = {}
     for w in words:
         d = root
@@ -53,43 +55,45 @@ def words2regexp(words):
             d = d.setdefault(c, {})
         d[None] = True  # end
 
+    # concatenate characters that have no branches
     def concat(node):
         for key, node in node.items():
             if key:
-                if len(node) > 1:
-                    node = dict(concat(node))
+                while len(node) == 1:
+                    k, n = next(iter(node.items()))
+                    if k:
+                        key += k
+                        node = n
+                    else:
+                        node[None] = True
+                        break
                 else:
-                    while len(node) == 1:
-                        k, n = next(iter(node.items()))
-                        if k:
-                            key += k
-                            node = n
-                        else:
-                            node[None] = True
-                            break
+                    node = dict(concat(node))
             yield key, node
-
     root = dict(concat(root))
-    
+
     def to_regexp(node):
         if len(node) == 1:
-            for k, v in node.items():
+            for k, n in node.items():
                 if k:
                     yield re.escape(k)
-                    yield from to_regexp(v)
+                    yield from to_regexp(n)
         else:
-            yield '(?:'
-            closeparen = ')'
-            separator = ""
-            for k, v in node.items():
+            groups = []
+            optional = False
+            for k, n in node.items():
                 if k:
-                    yield separator
-                    separator = '|'
-                    yield re.escape(k)
-                    yield from to_regexp(v)
+                    groups.append((k, n))
                 else:
-                    closeparen = ')?'
-            yield closeparen
+                    optional = True
+            if len(groups) == 1 and len(groups[0][0]) == 1:
+                yield re.escape(groups[0][0])
+            else:
+                yield '(?:'
+                yield '|'.join(re.escape(k) + ''.join(to_regexp(n)) for k, n in groups)
+                yield ')'
+            if optional:
+                yield '?'
 
     return ''.join(to_regexp(root))
 
