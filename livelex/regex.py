@@ -51,3 +51,34 @@ class Words(RegexBuilder):
             self.suffix))
 
 
+def words2regexp(words):
+    """Convert the word list to an optimized regular expression."""
+    root = {}
+    for w in words:
+        d = root
+        for c in w:
+            d = d.setdefault(c, {})
+        d[None] = True  # end
+
+    def to_regexp(node):
+        if len(node) == 1:
+            for k, v in node.items():
+                if k:
+                    yield k
+                    yield from to_regexp(v)
+        else:
+            yield '(?:'
+            closeparen = ')'
+            separator = ""
+            for k, v in node.items():
+                if k:
+                    yield separator
+                    separator = '|'
+                    yield k
+                    yield from to_regexp(v)
+                else:
+                    closeparen = ')?'
+            yield closeparen
+
+    return ''.join(to_regexp(root))
+
