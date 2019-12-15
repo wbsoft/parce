@@ -79,27 +79,53 @@ def words2regexp(words):
                     yield re.escape(k)
                     yield from to_regexp(n)
         else:
-            groups = []
+            singles = []
+            rest = []
             optional = False
             for k, n in node.items():
                 if k:
-                    groups.append((k, n))
+                    if len(k) == 1 and not any(n):
+                        singles.append(k)
+                    else:
+                        rest.append((k, n))
                 else:
                     optional = True
-            if len(groups) == 1 and len(groups[0][0]) == 1 and not any(groups[0][1]):
-                # only one single-character group and no leafs
-                yield re.escape(groups[0][0])
-            elif all(len(k)==1 and not any(n) for k, n in groups):
-                # all groups are single-char and no leafs
-                yield '['
-                yield re.escape(''.join(k for k, n in groups))
-                yield ']'
+            
+            groups = []
+            if singles:
+                if len(singles) == 1:
+                    groups.append(re.escape(singles[0]))
+                else:
+                    groups.append('[' + make_charclass(singles) + ']')
+            if rest:
+                groups.extend(re.escape(k) + ''.join(to_regexp(n)) for k, n in rest)
+            if singles and not rest:
+                yield groups[0]
             else:
                 yield '(?:'
-                yield '|'.join(re.escape(k) + ''.join(to_regexp(n)) for k, n in groups)
+                yield '|'.join(groups)
                 yield ')'
             if optional:
                 yield '?'
 
     return ''.join(to_regexp(root))
 
+
+def make_charclass(chars):
+    """Return a string with adjacent characters grouped.
+    
+    eg ('a', 'b', 'c', 'd', 'f') is turned into '[a-df]'.
+    Special characters are properly escaped.
+    
+    """
+    buf = []
+    for c in sorted(map(ord, chars)):
+        if buf and buf[-1][1] == c-1:
+            buf[-1][1] = c
+        else:
+            buf.append([c, c])
+    return ''.join(re.escape(chr(a)) if a == b
+                   else re.escape(chr(a)) + '-' + re.escape(chr(b))
+                   for a, b in buf)
+
+    
