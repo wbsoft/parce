@@ -64,7 +64,7 @@ def words2regexp(words):
         if len(node) == 1:
             for k, v in node.items():
                 if k:
-                    yield k
+                    yield re.escape(k)
                     yield from to_regexp(v)
         else:
             yield '(?:'
@@ -74,7 +74,7 @@ def words2regexp(words):
                 if k:
                     yield separator
                     separator = '|'
-                    yield k
+                    yield re.escape(k)
                     yield from to_regexp(v)
                 else:
                     closeparen = ')?'
