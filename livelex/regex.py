@@ -102,9 +102,7 @@ def words2regexp(words):
             if singles and not rest:
                 yield groups[0]
             else:
-                yield '(?:'
-                yield '|'.join(groups)
-                yield ')'
+                yield '(?:' + '|'.join(groups) + ')'
             if optional:
                 yield '?'
 
@@ -120,12 +118,13 @@ def make_charclass(chars):
     """
     buf = []
     for c in sorted(map(ord, chars)):
-        if buf and buf[-1][1] == c-1:
+        if buf and buf[-1][1] == c - 1:
             buf[-1][1] = c
         else:
             buf.append([c, c])
-    return ''.join(re.escape(chr(a)) if a == b
-                   else re.escape(chr(a)) + '-' + re.escape(chr(b))
+    return ''.join(re.escape(chr(a)) if a == b else
+                   re.escape(chr(a) + chr(b)) if a == b - 1 else
+                   re.escape(chr(a)) + '-' + re.escape(chr(b))
                    for a, b in buf)
 
     
