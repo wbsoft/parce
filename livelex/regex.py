@@ -84,13 +84,32 @@ def words2regexp(words):
                     groups.append('[' + make_charclass(singles) + ']')
             if rest:
                 for keys, node in zip(rest, seen):
-                    #TODO: make subgroups
-                    for k in keys:
-                        groups.append(re.escape(k) + ''.join(to_regexp(node)))
+                    # make subgroups
+                    if any(node):
+                        # keys have the same leaf nodes
+                        if len(keys) > 1:
+                            keys, suffix = common_suffix(keys)
+                            key = '(?:' + '|'.join(map(re.escape, keys)) + ')' + suffix
+                        else:
+                            key = re.escape(keys[0])
+                        groups.append(key + ''.join(to_regexp(node)))
+                    else:
+                        # keys have no leaf nodes
+                        if len(keys) > 1:
+                            keys, suffix = common_suffix(keys)
+                            if suffix:
+                                key = '(?:' + '|'.join(map(re.escape, keys)) + ')' + suffix
+                                groups.append(key)
+                            else:
+                                groups.extend(map(re.escape, keys))
+                        else:
+                            groups.extend(map(re.escape, keys))
             if singles and not rest:
                 yield groups[0]
-            else:
+            elif optional or len(groups) > 1:
                 yield '(?:' + '|'.join(groups) + ')'
+            else:
+                yield ''.join(groups)
             if optional:
                 yield '?'
 
