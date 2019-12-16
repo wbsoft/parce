@@ -148,7 +148,6 @@ def make_trie(words, reverse=False):
                         key = add(key, k)
                         node = n
                     else:
-                        node[None] = True
                         break
                 else:
                     node = dict(concat(node))
