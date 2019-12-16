@@ -47,30 +47,7 @@ class Words(RegexBuilder):
 def words2regexp(words):
     """Convert the word list to an optimized regular expression."""
     
-    # make a trie structure
-    root = {}
-    for w in words:
-        d = root
-        for c in w:
-            d = d.setdefault(c, {})
-        d[None] = True  # end
-
-    # concatenate characters that have no branches
-    def concat(node):
-        for key, node in node.items():
-            if key:
-                while len(node) == 1:
-                    k, n = next(iter(node.items()))
-                    if k:
-                        key += k
-                        node = n
-                    else:
-                        node[None] = True
-                        break
-                else:
-                    node = dict(concat(node))
-            yield key, node
-    root = dict(concat(root))
+    root = make_trie(words)
 
     def to_regexp(node):
         if len(node) == 1:
@@ -138,4 +115,43 @@ def make_charclass(chars):
                    re.escape(chr(a)) + '-' + re.escape(chr(b))
                    for a, b in buf)
 
+
+def make_trie(words, reverse=False):
+    """Return a dict-based trie structure from a list of words.
     
+    Single characters that have only one branch are concatenated. If reverse is 
+    set to True, the trie is made in backward direction, from the end of the 
+    words.
+    
+    """
+    if reverse:
+        chars = lambda word: word[::-1]
+        add = lambda k1, k2: k2 + k1
+    else:
+        chars = lambda word: word
+        add = lambda k1, k2: k1 + k2
+    
+    root = {}
+    for w in words:
+        d = root
+        for c in chars(w):
+            d = d.setdefault(c, {})
+        d[None] = True  # end
+
+    # concatenate characters that have no branches
+    def concat(node):
+        for key, node in node.items():
+            if key:
+                while len(node) == 1:
+                    k, n = next(iter(node.items()))
+                    if k:
+                        key = add(key, k)
+                        node = n
+                    else:
+                        node[None] = True
+                        break
+                else:
+                    node = dict(concat(node))
+            yield key, node
+
+    return dict(concat(root))
