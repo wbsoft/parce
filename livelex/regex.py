@@ -79,15 +79,23 @@ def words2regexp(words):
                     yield re.escape(k)
                     yield from to_regexp(n)
         else:
-            singles = []
-            rest = []
-            optional = False
+            singles = []     # strings of length 1 with no leaf nodes
+            rest = []        # other strings with leaf nodes
+            seen = []        # group rest by leaf nodes
+            optional = False # is there an end node here (i.e. optional match)
             for k, n in node.items():
                 if k:
                     if len(k) == 1 and not any(n):
                         singles.append(k)
                     else:
-                        rest.append((k, n))
+                        try:
+                            i = seen.index(n)
+                        except ValueError:
+                            i = len(seen)
+                            seen.append(n)
+                            rest.append([k])
+                        else:
+                            rest[i].append(k)
                 else:
                     optional = True
             
@@ -98,7 +106,10 @@ def words2regexp(words):
                 else:
                     groups.append('[' + make_charclass(singles) + ']')
             if rest:
-                groups.extend(re.escape(k) + ''.join(to_regexp(n)) for k, n in rest)
+                for keys, node in zip(rest, seen):
+                    #TODO: make subgroups
+                    for k in keys:
+                        groups.append(re.escape(k) + ''.join(to_regexp(node)))
             if singles and not rest:
                 yield groups[0]
             else:
