@@ -46,7 +46,7 @@ class Words(RegexBuilder):
 
 def words2regexp(words):
     """Convert the word list to an optimized regular expression."""
-    
+    words, suffix = common_suffix(words)
     root = make_trie(words)
 
     def to_regexp(node):
@@ -94,7 +94,7 @@ def words2regexp(words):
             if optional:
                 yield '?'
 
-    return ''.join(to_regexp(root))
+    return ''.join(to_regexp(root)) + suffix
 
 
 def make_charclass(chars):
@@ -155,3 +155,21 @@ def make_trie(words, reverse=False):
             yield key, node
 
     return dict(concat(root))
+
+
+def common_suffix(words):
+    """Return (words, suffix), where suffix is the common suffix.
+    
+    If there is no common suffix, words is unchanged, and suffix is an
+    empty string. If there is a common suffix, that is chopped of the returned
+    words.
+    
+    """
+    suffix = ""
+    d = make_trie(words, reverse=True)
+    if len(d) == 1:
+        suffix = d.popitem()[0]
+        i = -len(suffix)
+        words = [word[:i] for word in words]
+    return words, suffix
+
