@@ -101,7 +101,10 @@ def words2regexp(words):
                     groupneeded = True
                 groups.append(rx)
             if len(groups) > 1:
-                return '(?:' + '|'.join(groups) + ')' + optional
+                if optional:
+                    return '(?:' + '|'.join(groups) + ')' + optional
+                else:
+                    return '|'.join(groups)
             elif not groups:
                 return ""
             elif optional and groupneeded:
@@ -132,11 +135,10 @@ def make_charclass(chars):
 
 
 def make_trie(words, reverse=False):
-    """Return a dict-based trie structure from a list of words.
+    """Return a dict-based radix trie structure from a list of words.
     
-    Single characters that have only one branch are concatenated. If reverse is 
-    set to True, the trie is made in backward direction, from the end of the 
-    words.
+    If reverse is set to True, the trie is made in backward direction,
+    from the end of the words.
     
     """
     if reverse:
@@ -153,8 +155,8 @@ def make_trie(words, reverse=False):
             d = d.setdefault(c, {})
         d[None] = True  # end
 
-    # concatenate characters that have no branches
-    def concat(node):
+    # merge characters that are the only child with their parents
+    def merge(node):
         for key, node in node.items():
             if key:
                 while len(node) == 1:
@@ -165,10 +167,10 @@ def make_trie(words, reverse=False):
                     else:
                         break
                 else:
-                    node = dict(concat(node))
+                    node = dict(merge(node))
             yield key, node
 
-    return dict(concat(root))
+    return dict(merge(root))
 
 
 def common_suffix(words):
