@@ -49,71 +49,67 @@ def words2regexp(words):
     words, suffix = common_suffix(words)
     root = make_trie(words)
 
-    def to_regexp(node):
+    def to_regexp(node, reverse=False):
+        if reverse:
+            combine = lambda *strings: ''.join(strings[::-1])
+        else:
+            combine = lambda *strings: ''.join(strings)
+        
         if len(node) == 1:
             for k, n in node.items():
                 if k:
-                    yield re.escape(k)
-                    yield from to_regexp(n)
+                    return combine(re.escape(k), to_regexp(n, reverse))
+                return ''
         else:
-            singles = []     # strings of length 1 with no leaf nodes
-            rest = []        # other strings with leaf nodes
-            seen = []        # group rest by leaf nodes
-            optional = False # is there an end node here (i.e. optional match)
+            seen = []
+            keys = []
+            optional = ''
+            
+            # group the nodes if they have the same leaf node
             for k, n in node.items():
                 if k:
-                    if len(k) == 1 and not any(n):
-                        singles.append(k)
+                    try:
+                        i = seen.index(n)
+                    except ValueError:
+                        i = len(seen)
+                        seen.append(n)
+                        keys.append([k])
                     else:
-                        try:
-                            i = seen.index(n)
-                        except ValueError:
-                            i = len(seen)
-                            seen.append(n)
-                            rest.append([k])
-                        else:
-                            rest[i].append(k)
+                        keys[i].append(k)
                 else:
-                    optional = True
+                    optional = '?'
             
+            groupneeded = False # is (?: ... ) needed when optional?
             groups = []
-            if singles:
-                if len(singles) == 1:
-                    groups.append(re.escape(singles[0]))
+            for keys, node in zip(keys, seen):
+                # make a regexp from the keys
+                if len(keys) == 1:
+                    rx = re.escape(keys[0])
+                    if len(keys[0]) > 1:
+                        groupneeded = True
                 else:
-                    groups.append('[' + make_charclass(singles) + ']')
-            if rest:
-                for keys, node in zip(rest, seen):
-                    # make subgroups
-                    if any(node):
-                        # keys have the same leaf nodes
-                        if len(keys) > 1:
-                            keys, suffix = common_suffix(keys)
-                            key = '(?:' + '|'.join(map(re.escape, keys)) + ')' + suffix
-                        else:
-                            key = re.escape(keys[0])
-                        groups.append(key + ''.join(to_regexp(node)))
+                    if all(len(k) == 1 for k in keys):
+                        rx = '[' + make_charclass(keys) + ']'
+                    elif not reverse:
+                        rx = to_regexp(make_trie(keys, True), True)
+                        if not rx.startswith('('):
+                            groupneeded = True
                     else:
-                        # keys have no leaf nodes
-                        if len(keys) > 1:
-                            keys, suffix = common_suffix(keys)
-                            if suffix:
-                                key = '(?:' + '|'.join(map(re.escape, keys)) + ')' + suffix
-                                groups.append(key)
-                            else:
-                                groups.extend(map(re.escape, keys))
-                        else:
-                            groups.extend(map(re.escape, keys))
-            if singles and not rest:
-                yield groups[0]
-            elif optional or len(groups) > 1:
-                yield '(?:' + '|'.join(groups) + ')'
+                        rx = '(?:' + '|'.join(map(re.escape, keys)) + ')'
+                if any(node):
+                    rx = combine(rx, to_regexp(node, reverse))
+                    groupneeded = True
+                groups.append(rx)
+            if len(groups) > 1:
+                return '(?:' + '|'.join(groups) + ')' + optional
+            elif not groups:
+                return ""
+            elif optional and groupneeded:
+                return '(?:' + groups[0] + ')' + optional
             else:
-                yield ''.join(groups)
-            if optional:
-                yield '?'
+                return groups[0] + optional
 
-    return ''.join(to_regexp(root)) + suffix
+    return to_regexp(root) + suffix
 
 
 def make_charclass(chars):
