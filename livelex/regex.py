@@ -44,6 +44,9 @@ class Words(RegexBuilder):
         return self.prefix + words2regexp(self.words) + self.suffix
 
 
+
+
+
 def words2regexp(words):
     """Convert the word list to an optimized regular expression."""
     words, suffix = common_suffix(words)
@@ -78,41 +81,42 @@ def words2regexp(words):
                         keys[i].append(k)
                 else:
                     optional = '?'
-            
-            groupneeded = False # is (?: ... ) needed when optional?
+
             groups = []
             for keys, node in zip(keys, seen):
                 # make a regexp from the keys
                 if len(keys) == 1:
                     rx = re.escape(keys[0])
-                    if len(keys[0]) > 1:
-                        groupneeded = True
                 else:
                     if all(len(k) == 1 for k in keys):
                         rx = '[' + make_charclass(keys) + ']'
                     elif not reverse:
                         rx = to_regexp(make_trie(keys, True), True)
-                        if not rx.startswith('('):
-                            groupneeded = True
+                    elif not any(node):
+                        groups.extend((re.escape(k), '') for k in keys)
+                        continue
                     else:
                         rx = '(?:' + '|'.join(map(re.escape, keys)) + ')'
-                if any(node):
-                    rx = combine(rx, to_regexp(node, reverse))
-                    groupneeded = True
-                groups.append(rx)
-            if len(groups) > 1:
-                if optional:
-                    return '(?:' + '|'.join(groups) + ')' + optional
-                else:
-                    return '|'.join(groups)
-            elif not groups:
-                return ""
-            elif optional and groupneeded:
-                return '(?:' + groups[0] + ')' + optional
-            else:
-                return groups[0] + optional
+                groups.append((rx, to_regexp(node, reverse, True) if any(node) else ""))
 
-    return to_regexp(root) + suffix
+            if not groups:
+                return ''
+            elif len(groups) == 1:
+                rx, nrx = groups[0]
+                if not nrx:
+                    if rx.startswith('['):
+                        return rx + optional
+                    elif len(rx) == 1 or (len(rx) == 2 and rx.startswith('\\')):
+                        return rx + optional
+                if optional:
+                    return '(?:' + combine(rx, nrx) + ')' + optional
+                return combine(rx, nrx)
+            rx = '|'.join(combine(rx, nrx) for rx, nrx in groups)
+            return '(?:' + rx + ')' + optional
+
+    rx = to_regexp(root)
+    return ('(?:' + rx + ')' + suffix) if suffix else rx
+        
 
 
 def make_charclass(chars):
