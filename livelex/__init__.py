@@ -41,10 +41,6 @@ from .lexicon import (
     default_target,
 )
 
-from .language import (
-    Language,
-)
-
 from .lex import (
     Lexer,
 )
@@ -52,6 +48,10 @@ from .lex import (
 from .regex import (
     Pattern,
     Words,
+)
+
+from .language import (
+    Language,
 )
 
 

@@ -18,8 +18,6 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 
-from livelex import *
-
 
 class Language:
     """A Language represents a set of Lexicons comprising a specific language.
@@ -30,23 +28,3 @@ class Language:
     
     
     """
-
-    @lexicon(re_flags=0)
-    def root(cls):
-        yield Words(('bla', 'BLA')), 'bla action'
-        yield r'ble', 'ble action'
-        yield r'\s+', skip      # this text is skipped
-        yield r'(bl)(ub)', Subgroup('bl act', 'ub act')
-        yield r'blo', 'blo action', cls.blo
-        yield default_action, "TEXT"
-    
-    @lexicon
-    def blo(cls):
-        yield r'\s+', skip      # this text is skipped
-        yield r'1', '1 in blo'
-        yield r'4', '4 in blo, end', -1
-        yield r'[0-9]', Text(lambda t: "has 3" if '3' in t else 'no 3')
-        yield default_action, "unparsed"
-
-
-        
