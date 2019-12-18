@@ -24,3 +24,4 @@ The livelex Python module.
 """
 
 
+version = (0, 0, 5)
