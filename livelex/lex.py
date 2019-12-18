@@ -21,7 +21,7 @@
 import itertools
 
 
-from livelex.action import Action, skip
+from livelex.action import Action
 
 
 class Lexer:
