@@ -30,7 +30,7 @@ from other applications.
 name = "livelex"
 
 #: the current version
-version = "0.0.5"
+version = "0.0.6"
 
 #: short description
 description = "The livelex lexer"
