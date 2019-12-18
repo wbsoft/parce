@@ -32,9 +32,8 @@ class Language:
     
     
     """
-    re_flags = 0
 
-    @lexicon
+    @lexicon(re_flags=0)
     def root(cls):
         yield Words(('bla', 'BLA')), 'bla action'
         yield r'ble', 'ble action'

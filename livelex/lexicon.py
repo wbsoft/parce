@@ -31,9 +31,11 @@ class Lexicon:
     """A Lexicon consists of a set of pattern rules a text is scanned for.
     
     """
-    __slots__ = ('rules_func', 'lexicons')
+    __slots__ = ('rules_func', 'lexicons', 're_flags')
     
-    def __init__(self, rules_func):
+    def __init__(self, rules_func,
+                       re_flags=0,
+        ):
         """Initializes with the rules function.
         
         The rules function accepts the Language class as argument, and yields
@@ -41,6 +43,7 @@ class Lexicon:
         
         """
         self.rules_func = rules_func
+        self.re_flags = re_flags
         self.lexicons = {}
     
     def __get__(self, instance, owner):
@@ -83,6 +86,11 @@ class BoundLexicon:
             f = self._parser_func = self._get_parser_func()
         return f
     
+    @property
+    def re_flags(self):
+        """The re_flags set on instantiation."""
+        return self.lexicon.re_flags
+
     def _get_parser_func(self):
         """Compile the pattern rules and return a parse(text, pos) func."""
         patterns = []
@@ -102,7 +110,7 @@ class BoundLexicon:
                 action_targets.append((action, *target))
         # compile the regexp for all patterns
         rx = re.compile("|".join("(?P<g_{0}>{1})".format(i, pattern)
-            for i, pattern in enumerate(patterns)), self.language.re_flags)
+            for i, pattern in enumerate(patterns)), self.re_flags)
         # make a fast mapping list from matchObj.lastindex to the targets
         indices = sorted(v for k, v in rx.groupindex.items() if k.startswith('g_'))
         index = [None] * (indices[-1] + 1)
@@ -142,9 +150,13 @@ class BoundLexicon:
         return parse
 
 
-def lexicon(rules_func):
+def lexicon(rules_func=None, **kwargs):
     """Decorator to make a function in a Language class definition a Lexicon object."""
-    return Lexicon(rules_func)
+    if rules_func and not kwargs:
+        return Lexicon(rules_func)
+    def lexicon(rules_func):
+        return Lexicon(rules_func, **kwargs)
+    return lexicon
 
 
 
