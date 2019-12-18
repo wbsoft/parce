@@ -108,6 +108,12 @@ def words2regexp(words):
         # first, collect expressions and merge adjacent items that are the same
         
         def get_items(r):
+            """Yield regexp items in tuples (item, mincount, maxcount).
+            
+            an item is either a string like "aa", or a
+            three-tuple(chars, strings, tuples).
+            
+            """
             for item in r:
                 if isinstance(item, str):
                     yield item, 1, 1
@@ -128,7 +134,24 @@ def words2regexp(words):
                         elif k is None:
                             mincount = 0
                     item = (chars, strings, tuples)
-                    yield item, mincount, 1
+                    # optimize for the case of only one subgroup
+                    # remove otherwise empty parent group if possible
+                    if not chars and not strings and len(tuples) == 1:
+                        # there is only one subexpression in the group
+                        r = next(iter(tuples))
+                        items = merge_items(r)
+                        # if our group has no qualifier, just yield the subgroup
+                        if mincount:
+                            yield from items
+                        # if we are optional, check if the qualifier of the subgroup
+                        # can be altered. Possible when mincount <= 1.
+                        elif len(items) == 1 and items[0][1] <= 1:
+                            item, _, maxcount = items[0]
+                            yield item, 0, maxcount
+                        else:
+                            yield item, mincount, 1
+                    else:
+                        yield item, mincount, 1
         
         def merge_items(r):
             items = []
