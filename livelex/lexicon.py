@@ -104,7 +104,7 @@ class BoundLexicon:
             elif pattern is default_target:
                 _default_target = action, *target
             else:
-                if isinstance(pattern, livelex.regex.RegexBuilder):
+                if isinstance(pattern, livelex.regex.Pattern):
                     pattern = pattern.build()
                 patterns.append(pattern)
                 action_targets.append((action, *target))
