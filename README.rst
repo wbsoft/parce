@@ -30,7 +30,7 @@ matches the current text.
 
 Here is a crude example of how to create a Language class and then use it:
 
-.. codeblock:: python
+.. code:: python
 
     from livelex import *
 
