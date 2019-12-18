@@ -41,7 +41,10 @@ class Words(RegexBuilder):
         self.suffix = suffix
 
     def build(self):
-        return self.prefix + words2regexp(self.words) + self.suffix
+        expr = words2regexp(self.words)
+        if self.prefix or self.suffix:
+            return self.prefix + '(?:' + expr + ')' + self.suffix
+        return expr
 
 
 def words2regexp(words):
