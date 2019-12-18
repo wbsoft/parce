@@ -29,7 +29,7 @@ import re
 
 class RegexBuilder:
     """Base class for objects that build a regular expression."""
-    def pattern(self):
+    def build(self):
         raise NotImplementedError
 
 
