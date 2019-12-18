@@ -75,10 +75,10 @@ class Lexer:
         return state[-1]
 
     def filter_actions(self, action, pos, txt, match):
-        """Handle Action instances and filter skip rules."""
+        """Handle filtering via Action instances."""
         if isinstance(action, Action):
             yield from action.filter_actions(self, pos, txt, match)
-        elif action is not skip:
+        else:
             yield pos, txt, action
 
 

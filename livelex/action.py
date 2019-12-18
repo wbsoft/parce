@@ -29,16 +29,20 @@ action, or inside subgroup_actions.
 """
 
 
-# used to suppress a token
-skip = object()
-
-
 class Action:
     def __init__(self, *args):
         self.args = args
     
     def filter_actions(self, lexer, pos, text, match):
         raise NotImplementedError
+
+
+class SkipAction(Action):
+    def __init__(self):
+        pass
+
+    def filter_actions(self, lexer, pos, text, match):
+        yield from ()
 
 
 class Subgroup(Action):
@@ -76,3 +80,5 @@ class Text(Action):
         yield from lexer.filter_actions(action, pos, text, None)
 
 
+# used to suppress a token
+skip = SkipAction()
