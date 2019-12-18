@@ -49,24 +49,24 @@ class Words(RegexBuilder):
 
 def words2regexp(words):
     """Convert the word list to an optimized regular expression."""
-    words, suffix = common_suffix(words)
-    root = make_trie(words)
 
+    # build a regexp as a tuple. A group of alternatives is denoted
+    # by a frozenset, optional if None is present in the set.
     def to_regexp(node, reverse=False):
         if reverse:
-            combine = lambda *strings: ''.join(strings[::-1])
+            combine = lambda r1, r2: r2 + r1
         else:
-            combine = lambda *strings: ''.join(strings)
+            combine = lambda r1, r2: r1 + r2
         
         if len(node) == 1:
             for k, n in node.items():
                 if k:
-                    return combine(re.escape(k), to_regexp(n, reverse))
-                return ''
+                    return combine((k,), to_regexp(n, reverse))
+                return ()
         else:
             seen = []
             keys = []
-            optional = ''
+            groups = set()
             
             # group the nodes if they have the same leaf node
             for k, n in node.items():
@@ -80,42 +80,79 @@ def words2regexp(words):
                     else:
                         keys[i].append(k)
                 else:
-                    optional = '?'
+                    groups.add(None)    # means optional group, may end here
 
-            groups = []
             for keys, node in zip(keys, seen):
-                # make a regexp from the keys
                 if len(keys) == 1:
-                    rx = re.escape(keys[0])
+                    if not any(node):
+                        groups.add(keys[0])
+                    else:
+                        groups.add(combine((keys[0],), to_regexp(node, reverse)))
                 else:
-                    if all(len(k) == 1 for k in keys):
-                        rx = '[' + make_charclass(keys) + ']'
-                    elif not reverse:
-                        rx = to_regexp(make_trie(keys, True), True)
+                    if not reverse:
+                        # try to optimize the keys backwards
+                        r = to_regexp(make_trie(keys, True), True)
+                        if r == (frozenset(keys),) and not any(node):
+                            groups.update(keys)
+                            continue
                     elif not any(node):
-                        groups.extend((re.escape(k), '') for k in keys)
+                        groups.update(keys)
                         continue
                     else:
-                        rx = '(?:' + '|'.join(map(re.escape, keys)) + ')'
-                groups.append((rx, to_regexp(node, reverse, True) if any(node) else ""))
+                        r = (frozenset(keys),)
+                    groups.add(combine(r, to_regexp(node, reverse)))
+            return groups.pop() if len(groups) == 1 else (frozenset(groups),)
 
-            if not groups:
-                return ''
-            elif len(groups) == 1:
-                rx, nrx = groups[0]
-                if not nrx:
-                    if rx.startswith('['):
-                        return rx + optional
-                    elif len(rx) == 1 or (len(rx) == 2 and rx.startswith('\\')):
-                        return rx + optional
+    words, suffix = common_suffix(words)
+    root = make_trie(words)
+    r = to_regexp(root)
+    if suffix:
+        r += (suffix,)
+
+    # now make a regular expression from the tuple
+    def build_regexp(r):
+        enclosegroup = len(r) > 1
+        result = []
+        for item in r:
+            if isinstance(item, str):
+                result.append(re.escape(item))
+            else:
+                # item is a frozenset
+                chars = []
+                strings = []
+                tuples = []
+                optional = False
+                for k in item:
+                    if isinstance(k, str):
+                        if len(k) == 1:
+                            chars.append(k)
+                        else:
+                            strings.append(k)
+                    elif isinstance(k, tuple):
+                        tuples.append(k)
+                    elif k is None:
+                        optional = True
+                group = []
+                if chars:
+                    if len(chars) == 1:
+                        group.append(re.escape(chars[0]))
+                    else:
+                        group.append('[' + make_charclass(chars) + ']')
+                if strings:
+                    group.extend(map(re.escape, sorted(strings)))
+                if tuples:
+                    group.extend(map(build_regexp, tuples))
+                if chars and not strings and not tuples:
+                    rx = group[0]
+                else:
+                    rx = '|'.join(group)
+                    if optional or enclosegroup:
+                        rx = '(?:' + rx + ')'
                 if optional:
-                    return '(?:' + combine(rx, nrx) + ')' + optional
-                return combine(rx, nrx)
-            rx = '|'.join(combine(rx, nrx) for rx, nrx in groups)
-            return '(?:' + rx + ')' + optional
-
-    rx = to_regexp(root)
-    return ('(?:' + rx + ')' + suffix) if suffix else rx
+                    rx += '?'
+                result.append(rx)
+        return ''.join(result)
+    return build_regexp(r)
         
 
 
