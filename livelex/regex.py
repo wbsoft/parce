@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# This file is part of the livelex Python module.
+# This file is part of the livelex Python package.
 #
 # Copyright © 2019 by Wilbert Berendsen <info@wilbertberendsen.nl>
 #
@@ -27,13 +27,13 @@ Helper objects to construct regular expressions.
 import re
 
 
-class RegexBuilder:
+class Pattern:
     """Base class for objects that build a regular expression."""
     def build(self):
         raise NotImplementedError
 
 
-class Words(RegexBuilder):
+class Words(Pattern):
     """Creates a regular expression from a list of words."""
     def __init__(self, words, prefix="", suffix=""):
         self.words = words

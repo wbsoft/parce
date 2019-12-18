@@ -1,0 +1,77 @@
+# -*- coding: utf-8 -*-
+#
+# This file is part of the livelex Python package.
+#
+# Copyright © 2019 by Wilbert Berendsen <info@wilbertberendsen.nl>
+#
+# This module is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This module is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+
+"""
+Setup script.
+"""
+
+import os
+
+try:
+    from setuptools import setup
+except ImportError:
+    from distutils.core import setup
+
+from livelex import pkginfo
+
+
+def packagelist(directory):
+    """Return a sorted list with package names for all packages under the given directory."""
+    folder, basename = os.path.split(directory)
+    return list(sorted(root[len(folder)+1:].replace(os.sep, '.')
+        for root, dirs, files in os.walk(directory)
+        if '__init__.py' in files))
+
+scripts = []
+packages = packagelist('./livelex')
+py_modules = []
+
+with open('README.rst', 'rb') as f:
+    long_description = f.read().decode('utf-8')
+
+package_data = {
+    'ly.xml': ['*.ily', '*.ly'],
+}
+
+classifiers = [
+    'Development Status :: 2 - Pre-Alpha',
+    'Intended Audience :: Developers',
+    'License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)',
+    'Programming Language :: Python :: 3.3',
+    'Topic :: Text Processing',
+]
+
+setup(
+    name = pkginfo.name,
+    version = pkginfo.version,
+    description = pkginfo.description,
+    long_description = long_description,
+    maintainer = pkginfo.maintainer,
+    maintainer_email = pkginfo.maintainer_email,
+    url = pkginfo.url,
+    license = pkginfo.license,
+    
+    scripts = scripts,
+    packages = packages,
+    package_data = package_data,
+    py_modules = py_modules,
+    classifiers = classifiers,
+)
+

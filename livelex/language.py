@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# This file is part of the livelex Python module.
+# This file is part of the livelex Python package.
 #
 # Copyright © 2019 by Wilbert Berendsen <info@wilbertberendsen.nl>
 #
@@ -18,9 +18,7 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 
-from livelex.lexicon import lexicon, default_action, default_target
-from livelex.action import Subgroup, Text, skip
-from livelex.regex import Words
+from livelex import *
 
 
 class Language:

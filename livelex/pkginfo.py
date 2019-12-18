@@ -19,44 +19,35 @@
 
 
 """
-The livelex Python module.
+Meta-information about the livelex package.
+
+This information is used by the install script, and can be queried
+from other applications.
 
 """
 
-import re
+#: name of the package
+name = "livelex"
 
+#: the current version
+version = "0.0.5"
 
-from .action import (
-    Action,
-    Subgroup,
-    Match,
-    Text,
-    skip,
-)
+#: short description
+description = "The livelex lexer"
 
-from .lexicon import (
-    Lexicon,
-    lexicon,
-    default_action,
-    default_target,
-)
+#: long description
+long_description = \
+    "A Python library to lex text."
 
-from .language import (
-    Language,
-)
+#: maintainer name
+maintainer = "Wilbert Berendsen"
 
-from .lex import (
-    Lexer,
-)
+#: maintainer email
+maintainer_email = "info@wilbertberendsen.nl"
 
-from .regex import (
-    Pattern,
-    Words,
-)
+#: homepage
+url = "https://github.com/wbsoft/livelex"
 
-
-def version():
-    from . import pkginfo
-    return tuple(map(int, re.findall(r'\d+', pkginfo.version)))
-
+#: license
+license = "GPL"
 
