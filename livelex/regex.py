@@ -103,39 +103,55 @@ def words2regexp(words):
                     groups.add(combine(r, to_regexp(node, reverse)))
             return groups.pop() if len(groups) == 1 else (frozenset(groups),)
 
-    words, suffix = common_suffix(words)
-    root = make_trie(words)
-    r = to_regexp(root)
-    if suffix:
-        r += (suffix,)
-
     # now make a regular expression from the tuple
     def build_regexp(r):
-        enclosegroup = len(r) > 1
-        result = []
+        # first, collect expressions and merge adjacent items that are the same
+        items = []
         for item in r:
-            if isinstance(item, str):
-                result.append(re.escape(item))
-            else:
+            mincount = 1
+            if not isinstance(item, str):
                 # item is a frozenset
-                chars = []
-                strings = []
-                tuples = []
-                optional = False
+                chars = set()
+                strings = set()
+                tuples = set()
                 for k in item:
                     if isinstance(k, str):
                         if len(k) == 1:
-                            chars.append(k)
+                            chars.add(k)
                         else:
-                            strings.append(k)
+                            strings.add(k)
                     elif isinstance(k, tuple):
-                        tuples.append(k)
+                        tuples.add(k)
                     elif k is None:
-                        optional = True
+                        mincount = 0
+                item = (chars, strings, tuples)
+            if items and items[-1][0] == item:
+                items[-1][1] += mincount
+                items[-1][2] += 1
+            else:
+                items.append([item, mincount, 1])
+        # now really construct the regexp string for each item
+        enclosegroup = len(items) > 1
+        result = []
+        for item, mincount, maxcount in items:
+            # qualifier to use
+            if mincount == 1 and maxcount == 1:
+                qualifier = ''
+            elif mincount == 0 and maxcount == 1:
+                qualifier = "?"
+            elif mincount == maxcount:
+                qualifier = "{{{0}}}".format(maxcount)
+            else:
+                qualifier = "{{{0},{1}}}".format(mincount or '', maxcount or '')
+            # make the rx
+            if isinstance(item, str):
+                rx = re.escape(item)
+            else:
+                chars, strings, tuples = item
                 group = []
                 if chars:
                     if len(chars) == 1:
-                        group.append(re.escape(chars[0]))
+                        group.append(re.escape(next(iter(chars))))
                     else:
                         group.append('[' + make_charclass(chars) + ']')
                 if strings:
@@ -146,12 +162,16 @@ def words2regexp(words):
                     rx = group[0]
                 else:
                     rx = '|'.join(group)
-                    if optional or enclosegroup:
+                    if enclosegroup or qualifier:
                         rx = '(?:' + rx + ')'
-                if optional:
-                    rx += '?'
-                result.append(rx)
+            result.append(rx + qualifier)
         return ''.join(result)
+
+    words, suffix = common_suffix(words)
+    root = make_trie(words)
+    r = to_regexp(root)
+    if suffix:
+        r += (suffix,)
     return build_regexp(r)
         
 
