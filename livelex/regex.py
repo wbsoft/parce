@@ -106,25 +106,31 @@ def words2regexp(words):
     # now make a regular expression from the tuple
     def build_regexp(r):
         # first, collect expressions and merge adjacent items that are the same
+        
+        def get_items(r):
+            for item in r:
+                mincount = 1
+                if isinstance(item, str):
+                    yield item, mincount
+                else:
+                    # item is a frozenset
+                    chars = set()
+                    strings = set()
+                    tuples = set()
+                    for k in item:
+                        if isinstance(k, str):
+                            if len(k) == 1:
+                                chars.add(k)
+                            else:
+                                strings.add(k)
+                        elif isinstance(k, tuple):
+                            tuples.add(k)
+                        elif k is None:
+                            mincount = 0
+                    item = (chars, strings, tuples)
+                    yield item, mincount
         items = []
-        for item in r:
-            mincount = 1
-            if not isinstance(item, str):
-                # item is a frozenset
-                chars = set()
-                strings = set()
-                tuples = set()
-                for k in item:
-                    if isinstance(k, str):
-                        if len(k) == 1:
-                            chars.add(k)
-                        else:
-                            strings.add(k)
-                    elif isinstance(k, tuple):
-                        tuples.add(k)
-                    elif k is None:
-                        mincount = 0
-                item = (chars, strings, tuples)
+        for item, mincount in get_items(r):
             if items and items[-1][0] == item:
                 items[-1][1] += mincount
                 items[-1][2] += 1
