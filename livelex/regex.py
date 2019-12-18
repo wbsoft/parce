@@ -109,11 +109,11 @@ def words2regexp(words):
         
         def get_items(r):
             for item in r:
-                mincount = 1
                 if isinstance(item, str):
-                    yield item, mincount
+                    yield item, 1, 1
                 else:
                     # item is a frozenset
+                    mincount = 1
                     chars = set()
                     strings = set()
                     tuples = set()
@@ -128,14 +128,20 @@ def words2regexp(words):
                         elif k is None:
                             mincount = 0
                     item = (chars, strings, tuples)
-                    yield item, mincount
-        items = []
-        for item, mincount in get_items(r):
-            if items and items[-1][0] == item:
-                items[-1][1] += mincount
-                items[-1][2] += 1
-            else:
-                items.append([item, mincount, 1])
+                    yield item, mincount, 1
+        
+        def merge_items(r):
+            items = []
+            for item, mincount, maxcount in get_items(r):
+                if items and items[-1][0] == item:
+                    items[-1][1] += mincount
+                    items[-1][2] += maxcount
+                else:
+                    items.append([item, mincount, maxcount])
+            return items
+
+        items = merge_items(r)
+        
         # now really construct the regexp string for each item
         enclosegroup = len(items) > 1
         result = []
