@@ -43,11 +43,10 @@ scripts = []
 packages = packagelist('./livelex')
 py_modules = []
 
-with open('README.rst', 'rb') as f:
-    long_description = f.read().decode('utf-8')
+with open('README.rst', encoding="utf-8") as f:
+    long_description = f.read()
 
 package_data = {
-    'ly.xml': ['*.ily', '*.ly'],
 }
 
 classifiers = [
