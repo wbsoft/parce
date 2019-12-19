@@ -65,7 +65,8 @@ Here is a crude example of how to create a Language class and then use it:
     >>> from livelex import Lexer
     >>> from pprint import pprint
     >>> s = "bla pythonBLA blub blablo b39la 1 4 ble"
-    >>> pprint(list(Lexer(MyLang.root).lex(s)))
+    >>> l = Lexer(MyLang.root)
+    >>> pprint(list(l.tokens(s)))
     [(0, 'bla', 'bla action', False),
      (4, 'python', 'TEXT', False),
      (10, 'BLA', 'bla action', False),
