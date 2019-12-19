@@ -1,6 +1,12 @@
 ChangeLog of the Python livelex package
 =======================================
 
+
+
+- Fix missing parentheses around two-character expression, e.g. when creating a 
+  regexp from ['a', 'abc']
+
+
 2019-12-18: livelex-0.0.6
 
 - Fix AttributeError: module 'livelex.regex' has no attribute 'RegexBuilder'
