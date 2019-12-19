@@ -38,7 +38,7 @@ class Lexer:
         """
     
         if state is None:
-            state = []
+            state = self.initial_state()
         lexicon = self.get_lexicon(state)
         state_change = False
         while True:
@@ -60,18 +60,21 @@ class Lexer:
             else:
                 break
         
+    def initial_state(self):
+        """Return a state list with the root lexicon."""
+        return [self.root_lexicon]
+
     def get_lexicon(self, state, target=()):
         """Modify the state according to target and return the topmost lexicon."""
         for t in target:
             if type(t) is int:
                 if t < 0:
+                    t = max(1, len(state) + t)  # never delete the root lexicon
                     del state[t:]
                 elif t > 0:
                     state.extend(itertools.repeat(state[-1], t))
             else:
                 state.append(t)
-        if not state:
-            state.append(self.root_lexicon)
         return state[-1]
 
     def filter_actions(self, action, pos, txt, match):

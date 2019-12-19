@@ -32,7 +32,11 @@ Here is a crude example of how to create a Language class and then use it:
 
 .. code:: python
 
-    from livelex import *
+    from livelex import (
+        Language, lexicon,
+        Words, Subgroup, Text,
+        default_action, skip,
+    )
 
 
     class MyLang(Language):
