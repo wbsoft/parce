@@ -302,10 +302,13 @@ def common_suffix(words):
     words.
 
     """
-    suffix = ""
-    d = make_trie(words, reverse=True)
-    if len(d) == 1:
-        suffix = d.popitem()[0]
+    suffix = []
+    for s in map(set, zip(*map(reversed, words))):
+        if len(s) != 1:
+            break
+        suffix.append(s.pop())
+    suffix = ''.join(reversed(suffix))
+    if suffix:
         i = -len(suffix)
         words = [word[:i] for word in words]
     return words, suffix
