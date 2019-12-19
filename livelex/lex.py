@@ -29,7 +29,7 @@ class Lexer:
     def __init__(self, root_lexicon):
         self.root_lexicon = root_lexicon
     
-    def lex(self, text, state=None, pos=0):
+    def tokens(self, text, state=None, pos=0):
         """Yield tokens for the text.
         
         state is a list of context instances or names(?), the last one is the current
