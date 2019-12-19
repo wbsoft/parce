@@ -193,7 +193,6 @@ def build_regexp(r):
     items = merge_items(r)
 
     # now really construct the regexp string for each item
-    enclosegroup = len(items) > 1
     result = []
     for item, mincount, maxcount in items:
         # qualifier to use
@@ -208,6 +207,7 @@ def build_regexp(r):
         # make the rx
         if isinstance(item, str):
             rx = re.escape(item)
+            enclose = len(item) > 1 and qualifier
         else:
             exprs, tuples = item
             # separate single characters from longer strings
@@ -226,10 +226,12 @@ def build_regexp(r):
                 group.extend(map(build_regexp, tuples))
             if chars and not strings and not tuples:
                 rx = group[0]
+                enclose = False
             else:
                 rx = '|'.join(group)
-                if enclosegroup or qualifier:
-                    rx = '(?:' + rx + ')'
+                enclose = len(items) > 1 or qualifier
+        if enclose:
+            rx = '(?:' + rx + ')'
         result.append(rx + qualifier)
     return ''.join(result)
 
