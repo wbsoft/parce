@@ -29,23 +29,23 @@ default_target = object()
 
 class Lexicon:
     """A Lexicon consists of a set of pattern rules a text is scanned for.
-    
+
     """
     __slots__ = ('rules_func', 'lexicons', 're_flags')
-    
+
     def __init__(self, rules_func,
                        re_flags=0,
         ):
         """Initializes with the rules function.
-        
+
         The rules function accepts the Language class as argument, and yields
         the pattern, action, target, ... tuples.
-        
+
         """
         self.rules_func = rules_func
         self.re_flags = re_flags
         self.lexicons = {}
-    
+
     def __get__(self, instance, owner):
         """Called when accessed as a descriptor, via the Language class."""
         if instance:
@@ -59,13 +59,13 @@ class Lexicon:
 
 class BoundLexicon:
     """A Bound Lexicon is tied to a particular class.
-    
+
     This makes it possible to inherit from a Language class and change
     only some Lexicons.
-    
+
     """
     __slots__ = ('lexicon', 'language', '_parser_func')
-    
+
     def __init__(self, lexicon, language):
         self.lexicon = lexicon
         self.language = language
@@ -73,7 +73,7 @@ class BoundLexicon:
     def __call__(self):
         """Call the original function, yielding the rules."""
         return self.lexicon.rules_func(self.language)
-    
+
     def name(self):
         """Return the 'Language.lexicon' name of this bound lexicon."""
         return '.'.join((self.language.__name__, self.lexicon.rules_func.__name__))
@@ -85,7 +85,7 @@ class BoundLexicon:
         except AttributeError:
             f = self._parser_func = self._get_parser_func()
         return f
-    
+
     @property
     def re_flags(self):
         """The re_flags set on instantiation."""
@@ -116,7 +116,7 @@ class BoundLexicon:
         index = [None] * (indices[-1] + 1)
         for i, action_target in zip(indices, action_targets):
             index[i] = action_target
-        
+
         if _default_action:
             if _default_target:
                 raise RuntimeError(
@@ -151,7 +151,24 @@ class BoundLexicon:
 
 
 def lexicon(rules_func=None, **kwargs):
-    """Decorator to make a function in a Language class definition a Lexicon object."""
+    """Lexicon factory decorator.
+
+    Use this decorator to make a function in a Language class definition a
+    Lexicon object. The Lexicon object is actually a descriptor, and when
+    calling it via the Language class attribute, a BoundLexicon is created,
+    cached and returned.
+
+    You can specify keyword arguments, that will be passed on to the
+    BoundLexicon object as soon as it is created.
+
+    The code body of the function should return (yield) the rules of the
+    lexicon, and is run with the Language class as first argument, as soon as
+    the lexicon is used for the first time.
+
+    You can also call the BoundLexicon object just as an ordinary classmethod,
+    to get the rules, e.g. for inclusion in a different lexicon.
+
+    """
     if rules_func and not kwargs:
         return Lexicon(rules_func)
     def lexicon(rules_func):
