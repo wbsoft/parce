@@ -21,22 +21,51 @@
 import itertools
 
 
-from livelex.action import Action
+from .action import Action
 
 
 class Lexer:
-        
-    def __init__(self, root_lexicon):
+    """A Lexer is used to parse a text.
+
+    A root lexicon is needed to start parsing; rules in the root lexicon
+    can move to other lexicons or leave the current lexicon.
+
+    You can specify the root lexicon on instantiation, but you may also just
+    call tokens() with a state. A state is simply a Python list of lexicons,
+    the last list item being the current lexicon, and the first item is
+    regarded as the root lexicon, i.e. the first lexicon will never be removed.
+
+    If you don't specify a root lexicon, you must specify a state when calling
+    tokens().
+
+    """
+
+    def __init__(self, root_lexicon=None):
         self.root_lexicon = root_lexicon
-    
+
     def tokens(self, text, state=None, pos=0):
         """Yield tokens for the text.
-        
+
         state is a list of lexicons, the last one is the current
         lexicon.
-        
+
+        A token is a four-tuple(pos, text, action, state_change):
+
+        * pos: the position in the source string
+        * text: the text of the token (always a string with length > 0)
+        * action: the action that is associated with the token
+        * state_change: whether this token caused a state change.
+
+        If state_change is False, the matched text did not change the current
+        lexicon. If state_change is None, the token is part of a series of
+        tokens that originates from one single rule match. (This series ends
+        with a token that has either a state_change or True or False.)
+
+        If state_change is True, the state (i.e. the current lexicon) has
+        changed.
+
         """
-    
+
         if state is None:
             state = self.initial_state()
         lexicon = self.get_lexicon(state)
@@ -60,10 +89,12 @@ class Lexer:
                     break # continue with new lexicon
             else:
                 break
-        
+
     def initial_state(self):
         """Return a state list with the root lexicon."""
-        return [self.root_lexicon]
+        if self.root_lexicon:
+            return [self.root_lexicon]
+        raise RuntimeError("Lexer: no root lexicon specified and tokens() called without state")
 
     def update_state(self, state, target):
         """Modify the state according to target."""
