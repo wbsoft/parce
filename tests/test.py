@@ -1,9 +1,21 @@
+# run this to test, from the source folder:
+# python3 tests/test.py
+
+
+import sys
+# pick the livelex module from the source tree
+sys.path.insert(0, '..')
+
+
+import livelex
+
 from livelex import (
     Language, lexicon,
     Words, Subgroup, Text,
     default_action, skip,
 )
 
+print("Version:", livelex.version())
 
 class MyLang(Language):
     """A Language represents a set of Lexicons comprising a specific language.
