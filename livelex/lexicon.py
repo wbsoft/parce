@@ -160,6 +160,10 @@ def lexicon(rules_func=None, **kwargs):
 
     You can specify keyword arguments, that will be passed on to the
     BoundLexicon object as soon as it is created.
+    
+    The following keyword arguments are supported:
+    
+    re_flags: The flags that are passed to the regular expression compiler
 
     The code body of the function should return (yield) the rules of the
     lexicon, and is run with the Language class as first argument, as soon as
