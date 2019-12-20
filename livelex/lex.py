@@ -101,7 +101,7 @@ class Lexer:
         for t in target:
             if type(t) is int:
                 if t < 0:
-                    t = max(1, len(state) + t)  # never delete the root lexicon
+                    t = max(1 - len(state), t)  # never delete the root lexicon
                     del state[t:]
                 elif t > 0:
                     state.extend(itertools.repeat(state[-1], t))
