@@ -32,8 +32,8 @@ class Lexer:
     def tokens(self, text, state=None, pos=0):
         """Yield tokens for the text.
         
-        state is a list of context instances or names(?), the last one is the current
-        context.
+        state is a list of lexicons, the last one is the current
+        lexicon.
         
         """
     
@@ -44,8 +44,9 @@ class Lexer:
         while True:
             for pos, txt, match, action, *target in lexicon.parse(text, pos):
                 if target:
+                    self.update_state(state, target)
                     state_change = True
-                    lexicon = self.get_lexicon(state, target)
+                    lexicon = self.get_lexicon(state)
                 if txt:
                     tokens = list(self.filter_actions(action, pos, txt, match))
                     if tokens:
@@ -54,8 +55,8 @@ class Lexer:
                         for token in tokens[-1:]:
                             yield (*token, state_change)
                         state_change = False
-                    pos += len(txt)
                 if target:
+                    pos += len(txt)
                     break # continue with new lexicon
             else:
                 break
@@ -64,8 +65,8 @@ class Lexer:
         """Return a state list with the root lexicon."""
         return [self.root_lexicon]
 
-    def get_lexicon(self, state, target=()):
-        """Modify the state according to target and return the topmost lexicon."""
+    def update_state(self, state, target):
+        """Modify the state according to target."""
         for t in target:
             if type(t) is int:
                 if t < 0:
@@ -75,6 +76,9 @@ class Lexer:
                     state.extend(itertools.repeat(state[-1], t))
             else:
                 state.append(t)
+
+    def get_lexicon(self, state):
+        """Return the topmost lexicon."""
         return state[-1]
 
     def filter_actions(self, action, pos, txt, match):
