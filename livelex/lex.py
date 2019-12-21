@@ -57,7 +57,7 @@ class Lexer:
         A token is a named four-tuple Token(pos, text, action, target):
 
         * pos: the position in the source string
-        * text: the text of the token (always a string with length > 0)
+        * text: the text of the token
         * action: the action that is associated with the token
         * target: the state change this token caused.
 
