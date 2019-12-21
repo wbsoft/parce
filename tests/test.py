@@ -58,4 +58,9 @@ from livelex import Lexer
 from pprint import pprint
 s = "bla pythonBLA blub blablo b39la 1 4 ble XXXblo4p"
 l = Lexer(MyLang.root)
-pprint(list(l.tokens(s)))
+tokens = list(l.tokens(s))
+pprint(tokens)
+
+print("Tree:")
+from livelex.lex import tree
+pprint(tree(MyLang.root, tokens))

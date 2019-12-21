@@ -171,3 +171,42 @@ class Lexer:
             yield pos, txt, action
 
 
+def tree(root_lexicon, tokens):
+    """Experimental function that puts the tokens in a tree structure.
+
+    The structure consists of nested lists; the first item of each list is the
+    lexicon. The other items are the tokens or child lists.
+
+    """
+    stack = []
+    root = [root_lexicon]
+    stack.append(root)
+    current = root
+    buf = []
+    for t in tokens:
+        if t.target:
+            if t.target.pop:
+                if t.text and not t.target.push:
+                    current.extend(buf)
+                    buf.clear()
+                    current.append(t)
+                del stack[t.target.pop:]
+            for l in t.target.push:
+                node = [l]
+                current.append(node)
+                stack.append(node)
+            current = stack[-1]
+            if t.text and (t.target.push or not t.target.pop):
+                current.extend(buf)
+                buf.clear()
+                current.append(t)
+        elif t.target == False:
+            # hold on, keep tokens originating from one match together
+            buf.append(t)
+        elif t.text:
+            current.extend(buf)
+            buf.clear()
+            current.append(t)
+    return root
+
+
