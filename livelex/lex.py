@@ -63,9 +63,9 @@ class Lexer:
 
         Target can be a named two-tuple Target(pop, push), indicating how the
         state was changed by this token. The pop attribute is zero or negative;
-        if negative it indicates the number of lexicons that were popped of the
-        state. The push attribute is a tuple of zero or more lexicons that are
-        to be added on top of the state.
+        if negative it indicates the number of lexicons that were popped off
+        the state. The push attribute is a tuple of zero or more lexicons that
+        are to be added on top of the state.
 
         The target can also be None or False. If target is None, the matched
         text did not change the current lexicon. If target is False, the token
@@ -186,11 +186,16 @@ def tree(tokens):
             current.append(t)
         if t.target:
             if t.target.pop:
+                # remove empty lists (i.e. lists containing only the lexicon)
                 for i in range(-1, t.target.pop - 1, -1):
                     if len(stack[i]) == 1:
                         del stack[i-1][-1]
+                    else:
+                        break
+                # pop the lists off the stack
                 del stack[t.target.pop:]
                 current = stack[-1]
+            # push new lexicons on the stack if needed
             for lexicon in t.target.push:
                 current = [lexicon]
                 stack[-1].append(current)
