@@ -18,10 +18,15 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 
+import collections
 import itertools
 
 
 from .action import Action
+
+
+Token = collections.namedtuple("Token", "pos text action target")
+Target = collections.namedtuple("Target", "pop push")
 
 
 class Lexer:
@@ -49,41 +54,44 @@ class Lexer:
         state is a list of lexicons, the last one is the current
         lexicon.
 
-        A token is a four-tuple(pos, text, action, state_change):
+        A token is a named four-tuple Token(pos, text, action, target):
 
         * pos: the position in the source string
         * text: the text of the token (always a string with length > 0)
         * action: the action that is associated with the token
-        * state_change: whether this token caused a state change.
+        * target: the state change this token caused.
 
-        If state_change is False, the matched text did not change the current
-        lexicon. If state_change is None, the token is part of a series of
-        tokens that originates from one single rule match. (This series ends
-        with a token that has either a state_change or True or False.)
+        Target can be a named two-tuple Target(pop, push), indicating how the
+        state was changed by this token. The pop attribute is zero or negative;
+        if negative it indicates the number of lexicons that were popped of the
+        state. The push attribute is a tuple of zero or more lexicons that are
+        to be added on top of the state.
 
-        If state_change is True, the state (i.e. the current lexicon) has
-        changed.
+        The target can also be None or False. If target is None, the matched
+        text did not change the current lexicon. If target is False, the token
+        is part of a series of tokens that originates from one single rule
+        match. (This series ends with a token that has either a real target or
+        None.)
 
         """
 
         if state is None:
             state = self.initial_state()
         lexicon = self.get_lexicon(state)
-        state_change = False
+        state_change = None
         while True:
             for pos, txt, match, action, *target in lexicon.parse(text, pos):
                 if target:
-                    self.update_state(state, target)
-                    state_change = True
+                    state_change = self.update_state(state, target, state_change)
                     lexicon = self.get_lexicon(state)
                 if txt:
                     tokens = list(self.filter_actions(action, pos, txt, match))
                     if tokens:
                         for token in tokens[:-1]:
-                            yield (*token, None)
+                            yield Token(*token, False)
                         for token in tokens[-1:]:
-                            yield (*token, state_change)
-                        state_change = False
+                            yield Token(*token, state_change)
+                        state_change = None
                 if target:
                     pos += len(txt)
                     break # continue with new lexicon
@@ -96,17 +104,41 @@ class Lexer:
             return [self.root_lexicon]
         raise RuntimeError("Lexer: no root lexicon specified and tokens() called without state")
 
-    def update_state(self, state, target):
-        """Modify the state according to target."""
-        for t in target:
-            if type(t) is int:
-                if t < 0:
-                    t = max(1 - len(state), t)  # never delete the root lexicon
-                    del state[t:]
-                elif t > 0:
-                    state.extend(itertools.repeat(state[-1], t))
+    def update_state(self, state, target, old=False):
+        """Modify the state according to target.
+
+        Returns a two-tuple(pop, push), where pop is 0 or a negative number
+        indicating how many lexicons were removed, and push the tuple of zero
+        or more lexicons that were added. If you also specify the old state
+        change, it is taken into account, as if the state was updated from
+        before the previous state change. This is useful when a lexicon has a
+        default target, and generates no tokens before switching.
+
+        """
+        # create the state change tuple (pop, push)
+        pop, push = 0, []
+        i = 0
+        while i < len(target) and isinstance(target[i], int) and target[i] < 0:
+            pop += target[i]
+            i += 1
+        pop = max(1 - len(state), pop)  # never delete the root lexicon
+        for t in target[i:]:
+            if isinstance(t, int) and t > 0:
+                push.extend(itertools.repeat(state[pop-1], t))
             else:
-                state.append(t)
+                push.append(t)
+        push = tuple(push)
+        # apply it to the state
+        if pop:
+            del state[pop:]
+        if push:
+            state.extend(push)
+        # take into account the old state change if given
+        if old:
+            if -pop <= len(old.push):
+                return Target(old.pop, old.push[:pop] + push)
+            return Target(old.pop + len(old.push) + pop, push)
+        return Target(pop, push)
 
     def get_lexicon(self, state):
         """Return the topmost lexicon."""
