@@ -108,7 +108,6 @@ class Lexer:
                     for token in tokens[-1:]:
                         yield Token(*token, state_change)
                     state_change = None
-                    tokens.clear()
                 if target:
                     pos += len(txt)
                     break # continue with new lexicon
