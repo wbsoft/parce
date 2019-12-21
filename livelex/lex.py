@@ -84,14 +84,13 @@ class Lexer:
                 if target:
                     state_change = self.update_state(state, target, state_change)
                     lexicon = self.get_lexicon(state)
-                if txt:
-                    tokens = list(self.filter_actions(action, pos, txt, match))
-                    if tokens:
-                        for token in tokens[:-1]:
-                            yield Token(*token, False)
-                        for token in tokens[-1:]:
-                            yield Token(*token, state_change)
-                        state_change = None
+                tokens = list(self.filter_actions(action, pos, txt, match))
+                if tokens:
+                    for token in tokens[:-1]:
+                        yield Token(*token, False)
+                    for token in tokens[-1:]:
+                        yield Token(*token, state_change)
+                    state_change = None
                 if target:
                     pos += len(txt)
                     break # continue with new lexicon
@@ -112,7 +111,8 @@ class Lexer:
         or more lexicons that were added. If you also specify the old state
         change, it is taken into account, as if the state was updated from
         before the previous state change. This is useful when a lexicon has a
-        default target, and generates no tokens before switching.
+        skipped action, while the state was changed, or a default target, and
+        generates no tokens before switching.
 
         """
         # create the state change tuple (pop, push)
@@ -136,9 +136,11 @@ class Lexer:
         # take into account the old state change if given
         if old:
             if -pop <= len(old.push):
-                return Target(old.pop, old.push[:pop] + push)
-            return Target(old.pop + len(old.push) + pop, push)
-        return Target(pop, push)
+                pop, push = old.pop, old.push[:pop] + push
+            else:
+                pop += old.pop + len(old.push)
+        if pop or push:
+            return Target(pop, push)
 
     def get_lexicon(self, state):
         """Return the topmost lexicon."""

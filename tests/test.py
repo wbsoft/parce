@@ -56,6 +56,6 @@ class MyLang(Language):
 
 from livelex import Lexer
 from pprint import pprint
-s = "bla pythonBLA blub blablo b39la 1 4 ble Xlo4p"
+s = "bla pythonBLA blub blablo b39la 1 4 ble Xblo4p"
 l = Lexer(MyLang.root)
 pprint(list(l.tokens(s)))
