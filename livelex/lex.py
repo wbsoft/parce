@@ -171,7 +171,7 @@ class Lexer:
             yield pos, txt, action
 
 
-def tree(root_lexicon, tokens):
+def tree(tokens):
     """Experimental function that puts the tokens in a tree structure.
 
     The structure consists of nested lists; the first item of each list is the
@@ -179,34 +179,32 @@ def tree(root_lexicon, tokens):
 
     """
     stack = []
-    root = [root_lexicon]
+    root = []
     stack.append(root)
     current = root
     buf = []
+    def add(t):
+        current.extend(buf)
+        buf.clear()
+        current.append(t)
     for t in tokens:
         if t.target:
             if t.target.pop:
                 if t.text and not t.target.push:
-                    current.extend(buf)
-                    buf.clear()
-                    current.append(t)
+                    add(t)
                 del stack[t.target.pop:]
-            for l in t.target.push:
-                node = [l]
+            for lexicon in t.target.push:
+                node = [lexicon]
                 current.append(node)
                 stack.append(node)
             current = stack[-1]
             if t.text and (t.target.push or not t.target.pop):
-                current.extend(buf)
-                buf.clear()
-                current.append(t)
+                add(t)
         elif t.target == False:
             # hold on, keep tokens originating from one match together
             buf.append(t)
         elif t.text:
-            current.extend(buf)
-            buf.clear()
-            current.append(t)
+            add(t)
     return root
 
 

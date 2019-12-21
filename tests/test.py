@@ -63,4 +63,4 @@ pprint(tokens)
 
 print("Tree:")
 from livelex.lex import tree
-pprint(tree(MyLang.root, tokens))
+pprint(tree(tokens))
