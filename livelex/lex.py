@@ -79,11 +79,21 @@ class Lexer:
             state = self.initial_state()
         lexicon = self.get_lexicon(state)
         state_change = None
+        circular = set()
         while True:
             for pos, txt, match, action, *target in lexicon.parse(text, pos):
                 if target:
                     state_change = self.update_state(state, target, state_change)
                     lexicon = self.get_lexicon(state)
+                    if match:
+                        circular.clear()
+                    elif lexicon in circular:
+                        raise RuntimeError("Circular default target(s) detected: {}".format(circular))
+                    else:
+                        # we have a state change caused by a default target
+                        if not state_change or len(state_change.push) + state_change.pop > 0:
+                            circular.add(lexicon)
+                        # TODO combine multiple empty tokens with a state change
                 tokens = list(self.filter_actions(action, pos, txt, match))
                 if tokens:
                     for token in tokens[:-1]:
@@ -91,6 +101,7 @@ class Lexer:
                     for token in tokens[-1:]:
                         yield Token(*token, state_change)
                     state_change = None
+                    tokens.clear()
                 if target:
                     pos += len(txt)
                     break # continue with new lexicon
@@ -123,7 +134,7 @@ class Lexer:
             i += 1
         pop = max(1 - len(state), pop)  # never delete the root lexicon
         for t in target[i:]:
-            if isinstance(t, int) and t > 0:
+            if isinstance(t, int) and t >= 0:
                 push.extend(itertools.repeat(state[pop-1], t))
             else:
                 push.append(t)

@@ -49,13 +49,13 @@ class MyLang(Language):
 
     @lexicon
     def xxxxs(cls):
-        yield r'X', 'x action in xxxs'
+        yield r'X', 'x action in xxxs', 1
         yield r'Y', 'Y action', cls.blo
         yield default_target, -1
 
 
 from livelex import Lexer
 from pprint import pprint
-s = "bla pythonBLA blub blablo b39la 1 4 ble Xblo4p"
+s = "bla pythonBLA blub blablo b39la 1 4 ble XXXblo4p"
 l = Lexer(MyLang.root)
 pprint(list(l.tokens(s)))
