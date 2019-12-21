@@ -1,5 +1,5 @@
-# run this to test, from the source folder:
-# python3 tests/test.py
+# run this to test:
+# python3 test.py
 
 
 import sys
@@ -12,7 +12,9 @@ import livelex
 from livelex import (
     Language, lexicon,
     Words, Subgroup, Text,
-    default_action, skip,
+    default_action,
+    default_target,
+    skip,
 )
 
 print("Version:", livelex.version())
@@ -34,6 +36,7 @@ class MyLang(Language):
         yield r'\s+', skip      # this text is skipped
         yield r'(bl)(ub)', Subgroup('bl act', 'ub act')
         yield r'blo', 'blo action', cls.blo
+        yield r'X', 'x action in root', cls.xxxxs
         yield default_action, "TEXT"
 
     @lexicon
@@ -44,9 +47,15 @@ class MyLang(Language):
         yield r'[0-9]', Text(lambda t: "has 3" if '3' in t else 'no 3')
         yield default_action, "unparsed"
 
+    @lexicon
+    def xxxxs(cls):
+        yield r'X', 'x action in xxxs'
+        yield r'Y', 'Y action', cls.blo
+        yield default_target, -1
+
 
 from livelex import Lexer
 from pprint import pprint
-s = "bla pythonBLA blub blablo b39la 1 4 ble"
+s = "bla pythonBLA blub blablo b39la 1 4 ble Xlo4p"
 l = Lexer(MyLang.root)
 pprint(list(l.tokens(s)))
