@@ -61,6 +61,10 @@ l = Lexer(MyLang.root)
 tokens = list(l.tokens(s))
 pprint(tokens)
 
-print("Tree:")
-from livelex.lex import tree
+#print("Tree:")
+#from livelex.lex import tree
+#pprint(tree(tokens))
+
+print("Tree from tree:")
+from livelex.tree import tree
 pprint(tree(tokens))
