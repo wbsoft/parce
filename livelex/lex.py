@@ -186,20 +186,17 @@ def tree(tokens):
             current.append(t)
         if t.target:
             if t.target.pop:
-                # remove empty lists (i.e. lists containing only the lexicon)
                 for i in range(-1, t.target.pop - 1, -1):
-                    if len(stack[i]) == 1:
-                        del stack[i-1][-1]
-                    else:
-                        break
-                # pop the lists off the stack
+                    if len(stack[i]) > 1:
+                        stack[i-1].append(stack[i])
                 del stack[t.target.pop:]
-                current = stack[-1]
-            # push new lexicons on the stack if needed
             for lexicon in t.target.push:
-                current = [lexicon]
-                stack[-1].append(current)
-                stack.append(current)
+                stack.append([lexicon])
+            current = stack[-1]
+    # unwind if we were not back in the root lexicon
+    for i in range(len(stack) - 1, 0, -1):
+        if len(stack[i]) > 1:
+            stack[i-1].append(stack[i])
     return root
 
 
