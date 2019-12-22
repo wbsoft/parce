@@ -93,14 +93,14 @@ def tree(tokens, root_lexicon="root"):
 
 
 def firstleaf(node):
-    """Return the pos of the first token (Leaf) in node."""
+    """Return the first token (Leaf) in node."""
     while node and isinstance(node, Node):
         node = node[0]
     return node
 
 
 def lastleaf(node):
-    """Return the pos of the last token (Leaf) in node."""
+    """Return the last token (Leaf) in node."""
     while node and isinstance(node, Node):
         node = node[-1]
     return node
