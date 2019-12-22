@@ -94,16 +94,22 @@ def tree(tokens, root_lexicon="root"):
 
 def firstleaf(node):
     """Return the first token (Leaf) in node."""
-    while node and isinstance(node, Node):
-        node = node[0]
-    return node
+    try:
+        while isinstance(node, Node):
+            node = node[0]
+        return node
+    except IndexError:
+        pass
 
 
 def lastleaf(node):
     """Return the last token (Leaf) in node."""
-    while node and isinstance(node, Node):
-        node = node[-1]
-    return node
+    try:
+        while isinstance(node, Node):
+            node = node[-1]
+        return node
+    except IndexError:
+        pass
 
 
 def find(node, pos):
