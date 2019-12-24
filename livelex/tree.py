@@ -39,14 +39,59 @@ from . import lex
 
 class NodeMixin:
     """Methods that are shared by Leaf and Node."""
+    def is_root(self):
+        """Return True if this Node has no parent node."""
+        return self.parent is None
+
+    def remove_from_parent(self):
+        """Remove the node from the parent node and set parent to None."""
+        parent = self.parent
+        if parent:
+            parent.remove(self)
+            self.parent = None
+
     def ancestors(self):
         """Climb the tree up over the parents."""
         node = self.parent
         while node:
             yield node
             node = node.parent
-    
-    
+
+    def common_ancestor(self, other):
+        """Return the common ancestor with the Node or Leaf."""
+        ancestors = [self]
+        ancestors.extend(self.ancestors())
+        if other in ancestors:
+            return other
+        for n in other.ancestors():
+            if n in ancestors:
+                return n
+
+    def left_sibling(self):
+        """Return the left sibling of this node, if any.
+
+        Does not decend in child nodes or ascend upto the parent.
+        Fails if called on the root node.
+
+        """
+        i = self.parent.index(self)
+        if i:
+            return self.parent[i-1]
+
+    def right_sibling(self):
+        """Return the left sibling of this node, if any.
+
+        Does not decend in child nodes or ascend upto the parent.
+        Fails if called on the root node.
+
+        """
+        i = self.parent.index(self)
+        if i < len(self.parent) - 1:
+            return self.parent[i+1]
+
+
+
+
 class Leaf(NodeMixin):
     __slots__ = "parent", "pos", "text", "action", "target"
 
@@ -67,7 +112,11 @@ class Leaf(NodeMixin):
     leafs_bw = leafs
 
     def forward(self):
-        """Yield sibling Leafs in forward direction."""
+        """Yield all Leafs in forward direction.
+
+        Descends into child Nodes, and ascends into parent Nodes.
+
+        """
         node = self
         while node.parent:
             i = node.parent.index(node)
@@ -76,7 +125,11 @@ class Leaf(NodeMixin):
             node = node.parent
 
     def backward(self):
-        """Yield sibling Leafs in backward direction."""
+        """Yield sibling Leafs in backward direction.
+
+        Descends into child Nodes, and ascends into parent Nodes.
+
+        """
         node = self
         while node.parent:
             i = node.parent.index(node)
@@ -84,7 +137,7 @@ class Leaf(NodeMixin):
                 for n in node.parent[i-1::-1]:
                     yield from n.leafs_bw()
             node = node.parent
-        
+
     def state_before(self):
         """Reconstruct a state (list of lexicons) right before the Leaf.
 
@@ -99,7 +152,7 @@ class Leaf(NodeMixin):
             state.append(node.lexicon)
         state.reverse()
         return state
-    
+
     def update_state(self, state):
         """Modify the state such as returned by state_before() according to our target."""
         if self.target:
@@ -205,37 +258,37 @@ def tree(tokens, root_lexicon="root"):
 
 class Document:
     """Encapsulates a full tokenized text string.
-    
-    Everytime the text is modified, only the modified part is retokenized. If 
-    that changes the lexicon in which the last part (after the modified part) 
-    starts, that part is also retokenized, until the state (the list of active 
+
+    Everytime the text is modified, only the modified part is retokenized. If
+    that changes the lexicon in which the last part (after the modified part)
+    starts, that part is also retokenized, until the state (the list of active
     lexicons) matches the state of existing tokens.
-    
+
     """
     def __init__(self, text="", root_lexicon=None):
         self._text = text
         self._root_lexicon = root_lexicon
         if text and root_lexicon:
             self.retokenize_full()
-    
+
     def get_text(self):
         """Return all text."""
         return self._text
-        
+
     def set_text(self, text):
         """Replace all text."""
         self._text = text
         self.retokenize_full()
-    
+
     def get_root_lexicon(self):
         """Return the currently set root lexicon."""
         return self._root_lexicon
-    
+
     def set_root_lexicon(self, root_lexicon):
         """Sets the root lexicon to use to tokenize the text."""
         self._root_lexicon = root_lexicon
         self.retokenize_full()
-    
+
     def retokenize_full(self):
         root = self.get_root_lexicon()
         if root and self._text:
@@ -246,7 +299,7 @@ class Document:
     def modify(self, start, end, text):
         """Modify the text: document[start:end] = text."""
         text = self._text[:start] + text + self._text[end:]
-        
+
         # TODO: build the state while finding the token
         # start pos:
         token = find(self.tree, start-1)
@@ -263,6 +316,6 @@ class Document:
         else:
             startstate = [self._root_lexicon]
             startpos = 0
-        
+
         ## we can start lexing at pos, with state
-        
+
