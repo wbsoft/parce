@@ -26,6 +26,8 @@ for tokens, so that is is easy to locate a certain token and reparse a document
 from there, and that it is also easy to know when to stop parsing, because the
 lexicon stack is the same and the old tokens are still valid.
 
+This module is still completely in flux, don't depend on it right now.
+
 """
 
 
@@ -33,7 +35,19 @@ import bisect
 import collections
 
 
-class Leaf:
+from . import lex
+
+class NodeMixin:
+    """Methods that are shared by Leaf and Node."""
+    def ancestors(self):
+        """Climb the tree up over the parents."""
+        node = self.parent
+        while node:
+            yield node
+            node = node.parent
+    
+    
+class Leaf(NodeMixin):
     __slots__ = "parent", "pos", "text", "action", "target"
 
     def __init__(self, parent, token):
@@ -46,8 +60,62 @@ class Leaf:
     def __repr__(self):
         return repr(self.text)
 
+    def leafs(self):
+        """Yield self."""
+        yield self
 
-class Node(list):
+    leafs_bw = leafs
+
+    def forward(self):
+        """Yield sibling Leafs in forward direction."""
+        node = self
+        while node.parent:
+            i = node.parent.index(node)
+            for n in node.parent[i:]:
+                yield from n.leafs()
+            node = node.parent
+
+    def backward(self):
+        """Yield sibling Leafs in backward direction."""
+        node = self
+        while node.parent:
+            i = node.parent.index(node)
+            if i:
+                for n in node.parent[i-1::-1]:
+                    yield from n.leafs_bw()
+            node = node.parent
+        
+    def state_before(self):
+        """Reconstruct a state (list of lexicons) right before the Leaf.
+
+        The leaf should not have a target of False, find the first right
+        sibling that has a non-False target first.
+
+        """
+        state = []
+        node = self
+        while node.parent:
+            node = node.parent
+            state.append(node.lexicon)
+        state.reverse()
+        return state
+    
+    def update_state(self, state):
+        """Modify the state such as returned by state_before() according to our target."""
+        if self.target:
+            if self.target.pop:
+                del state[self.target.pop:]
+            state.extend(self.target.push)
+
+    def state_after(self):
+        """Reconstruct a state (list of lexicons) right after this Leaf."""
+        state = self.state_before()
+        self.update_state(state)
+        return state
+
+
+
+class Node(list, NodeMixin):
     __slots__ = "lexicon", "parent"
 
     def __new__(cls, lexicon, parent):
@@ -60,7 +128,49 @@ class Node(list):
     def __repr__(self):
         return format(self.lexicon) + super().__repr__()
 
+    def leafs(self):
+        """Yield all leaf nodes, descending into nested Nodes."""
+        for n in self:
+            yield from n.leafs()
 
+    def leafs_bw(self):
+        """Yield all leaf nodes, descending into nested Nodes, in backward direction."""
+        for n in self[::-1]:
+            yield from n.leafs_bw()
+
+    def firstleaf(self):
+        """Return the first token (Leaf) in node."""
+        try:
+            node = self[0]
+            while isinstance(node, Node):
+                node = node[0]
+            return node
+        except IndexError:
+            pass
+
+    def lastleaf(self):
+        """Return the last token (Leaf) in node."""
+        try:
+            node = self[-1]
+            while isinstance(node, Node):
+                node = node[-1]
+            return node
+        except IndexError:
+            pass
+
+    def find(self, pos):
+        """Return the Leaf (closest) at position from node."""
+        positions = []
+        for n in self:
+            if isinstance(n, Node):
+                n = n.lastleaf()
+            positions.append(n.pos + len(n.text))
+        i = bisect.bisect_left(positions, pos)
+        if i < len(positions):
+            if isinstance(self[i], Node):
+                return self[i].find(pos)
+            return self[i]
+        return self.lastleaf()
 
 
 def tree(tokens, root_lexicon="root"):
@@ -92,59 +202,67 @@ def tree(tokens, root_lexicon="root"):
     return root
 
 
-def firstleaf(node):
-    """Return the first token (Leaf) in node."""
-    try:
-        while isinstance(node, Node):
-            node = node[0]
-        return node
-    except IndexError:
-        pass
 
-
-def lastleaf(node):
-    """Return the last token (Leaf) in node."""
-    try:
-        while isinstance(node, Node):
-            node = node[-1]
-        return node
-    except IndexError:
-        pass
-
-
-def find(node, pos):
-    """Return the leaf closest at position from node."""
-    positions = []
-    for n in node:
-        if isinstance(n, Node):
-            n = lastleaf(n)
-        positions.append(n.pos + len(n.text))
-    i = bisect.bisect_left(positions, pos)
-    if i < len(positions):
-        if isinstance(node[i], Node):
-            return find(node[i], pos)
-        return node[i]
-    return lastleaf(node)
-
-
-def state(leaf):
-    """Reconstruct a state (list of lexicons) from the Leaf.
-
-    The leaf should not have a target of False, find the first right
-    sibling that has a non-False target first.
-
+class Document:
+    """Encapsulates a full tokenized text string.
+    
+    Everytime the text is modified, only the modified part is retokenized. If 
+    that changes the lexicon in which the last part (after the modified part) 
+    starts, that part is also retokenized, until the state (the list of active 
+    lexicons) matches the state of existing tokens.
+    
     """
-    state = []
-    node = leaf
-    while node.parent:
-        node = node.parent
-        state.append(node.lexicon)
-    state.reverse()
-    if leaf.target:
-        if leaf.target.pop:
-            del state[leaf.target.pop:]
-        state.extend(leaf.target.push)
-    return state
+    def __init__(self, text="", root_lexicon=None):
+        self._text = text
+        self._root_lexicon = root_lexicon
+        if text and root_lexicon:
+            self.retokenize_full()
+    
+    def get_text(self):
+        """Return all text."""
+        return self._text
+        
+    def set_text(self, text):
+        """Replace all text."""
+        self._text = text
+        self.retokenize_full()
+    
+    def get_root_lexicon(self):
+        """Return the currently set root lexicon."""
+        return self._root_lexicon
+    
+    def set_root_lexicon(self, root_lexicon):
+        """Sets the root lexicon to use to tokenize the text."""
+        self._root_lexicon = root_lexicon
+        self.retokenize_full()
+    
+    def retokenize_full(self):
+        root = self.get_root_lexicon()
+        if root and self._text:
+            self.tree = tree(lex.Lexer(root).tokens(self._text), root)
+        else:
+            self.tree = None
 
-
-
+    def modify(self, start, end, text):
+        """Modify the text: document[start:end] = text."""
+        text = self._text[:start] + text + self._text[end:]
+        
+        # TODO: build the state while finding the token
+        # start pos:
+        token = find(self.tree, start-1)
+        # TODO: check if left sibling of token has target None/i.e. originates
+        # from one match
+        if token:
+            startstate = []
+            node = token
+            while node.parent:
+                node = node.parent
+                startstate.append(node.lexicon)
+            startstate.reverse()
+            startpos = token.pos
+        else:
+            startstate = [self._root_lexicon]
+            startpos = 0
+        
+        ## we can start lexing at pos, with state
+        

@@ -17,8 +17,6 @@ from livelex import (
     skip,
 )
 
-print("Version:", livelex.version())
-
 class MyLang(Language):
     """A Language represents a set of Lexicons comprising a specific language.
 
@@ -54,17 +52,22 @@ class MyLang(Language):
         yield default_target, -1
 
 
-from livelex import Lexer
-from pprint import pprint
 s = "bla pythonBLA blub blablo b39la 1 4 ble XXXblo4p"
+from livelex import Lexer
 l = Lexer(MyLang.root)
 tokens = list(l.tokens(s))
-pprint(tokens)
 
-#print("Tree:")
-#from livelex.lex import tree
-#pprint(tree(tokens))
+if __name__ == "__main__":
+    print("livelex version:", livelex.version())
 
-print("Tree from tree:")
-from livelex.tree import tree
-pprint(tree(tokens))
+    from pprint import pprint
+    pprint(tokens)
+
+    #print("Tree:")
+    #from livelex.lex import tree
+    #pprint(tree(tokens))
+
+    print("Tree from tree:")
+    from livelex.tree import tree
+    pprint(tree(tokens))
+
