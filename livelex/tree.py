@@ -39,6 +39,13 @@ from . import lex
 
 class NodeMixin:
     """Methods that are shared by Leaf and Node."""
+    def root(self):
+        """Return the root node."""
+        root = self
+        for root in self.ancestors():
+            pass
+        return root
+
     def is_root(self):
         """Return True if this Node has no parent node."""
         return self.parent is None
