@@ -40,6 +40,8 @@ from .action import Action
 
 
 class NodeMixin:
+    __slots__ = ()
+
     """Methods that are shared by Token and Context."""
     def root(self):
         """Return the root node."""
