@@ -231,8 +231,8 @@ class TreeBuilder:
         while True:
             for pos, txt, match, action, *target in current.lexicon.parse(text, pos):
                 tokens = tuple(self.filter_actions(action, pos, txt, match))
+                pos += len(txt)
                 if txt and tokens:
-                    pos += len(txt)
                     if len(tokens) == 1:
                         current.append(Token(current, *tokens[0]))
                     else:
