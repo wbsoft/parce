@@ -40,7 +40,7 @@ from .action import Action
 
 
 class NodeMixin:
-    """Methods that are shared by Leaf and Node."""
+    """Methods that are shared by Token and Context."""
     def root(self):
         """Return the root node."""
         root = self
@@ -67,7 +67,7 @@ class NodeMixin:
             node = node.parent
 
     def common_ancestor(self, other):
-        """Return the common ancestor with the Node or Leaf."""
+        """Return the common ancestor with the Context or Token."""
         ancestors = [self]
         ancestors.extend(self.ancestors())
         if other in ancestors:
