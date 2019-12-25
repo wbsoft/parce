@@ -104,7 +104,7 @@ class NodeMixin:
 
 
 class Token(str, NodeMixin):
-    __slots__ = "parent", "pos", "text", "action"
+    __slots__ = "parent", "pos", "action"
 
     group = None
 
