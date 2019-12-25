@@ -117,6 +117,22 @@ class Token(NodeMixin):
     def __repr__(self):
         return repr(self.text)
 
+    def __str__(self):
+        return self.text
+
+    def __format__(self, formatstr):
+        return self.text.__format__(formatstr)
+
+    def __eq__(self, other):
+        if isinstance(other, str):
+            return other == self.text
+        return super().__eq__(other)
+
+    def __ne__(self, other):
+        if isinstance(other, str):
+            return other != self.text
+        return super().__ne__(other)
+
     def tokens(self):
         """Yield self."""
         yield self
