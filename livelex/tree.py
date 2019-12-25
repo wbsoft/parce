@@ -212,54 +212,87 @@ class Context(list, NodeMixin):
 
 
 class TreeBuilder:
-    """Build a tree directly from parsing the text."""
+    """Build a tree directly from parsing the text.
+
+    You can either call tree() to build a tree structure from the text,
+    or call tokens() to get the tokens immediately.
+
+    """
 
     def tree(self, root_lexicon, text, pos=0):
         """Return a root Context with all parsed Tokens in nested context lists."""
         root = Context(root_lexicon, None)
-        context, pos = self.parse(root, text, pos)
+        context, pos = self.build(root, text, pos)
         self.unwind(context)
         return root
 
-    def parse(self, context, text, pos=0):
-        """Start parsing text in the current context.
+    def tokens(self, root_lexicon, text, pos=0):
+        """Yield all the Tokens from the text.
+
+        The tree is also built, but tokens are yielded immediately.
+
+        """
+        current = Context(root_lexicon, None)
+        while True:
+            for pos, tokens, target in self.parse_context(current, text, pos):
+                yield from tokens
+                if target:
+                    current = self.update_context(current, target)
+                    break # continue in new context
+            else:
+                break
+
+    def build(self, context, text, pos=0):
+        """Start parsing text in the specified context.
 
         Return a two-tuple(context, pos) describing where the parsing ends.
 
         """
         current = context
         while True:
-            for pos, txt, match, action, *target in current.lexicon.parse(text, pos):
-                tokens = tuple(self.filter_actions(action, pos, txt, match))
-                pos += len(txt)
-                if txt and tokens:
-                    if len(tokens) == 1:
-                        current.append(Token(current, *tokens[0]))
-                    else:
-                        group = tuple(GroupToken(current, *t) for t in tokens)
-                        for token in group:
-                            token.group = group
-                        current.extend(group)
+            for pos, tokens, target in self.parse_context(current, text, pos):
                 if target:
-                    for t in target:
-                        if isinstance(t, int):
-                            for pop in range(t, 0):
-                                if current.parent:
-                                    if not current:
-                                        current.parent.remove(current)
-                                    current = current.parent
-                                else:
-                                    break
-                            for push in range(0, t):
-                                current = Context(current.lexicon, current)
-                                current.parent.append(current)
-                        else:
-                            current = Context(t, current)
-                            current.parent.append(current)
+                    current = self.update_context(current, target)
                     break # continue in new context
             else:
                 break
         return current, pos
+
+    def parse_context(self, context, text, pos=0):
+        """Yield Token instances as long as we are in the current context."""
+        for pos, txt, match, action, *target in context.lexicon.parse(text, pos):
+            tokens = tuple(self.filter_actions(action, pos, txt, match))
+            end = pos + len(txt)
+            if txt and tokens:
+                if len(tokens) == 1:
+                    tokens = Token(context, *tokens[0]),
+                else:
+                    tokens = tuple(GroupToken(context, *t) for t in tokens)
+                    for t in tokens:
+                        t.group = tokens
+                context.extend(tokens)
+            else:
+                tokens = ()
+            yield end, tokens, target
+
+    def update_context(self, context, target):
+        """Move to another context depending on target."""
+        for t in target:
+            if isinstance(t, int):
+                for pop in range(t, 0):
+                    if context.parent:
+                        if not context:
+                            context.parent.remove(context)
+                        context = context.parent
+                    else:
+                        break
+                for push in range(0, t):
+                    context = Context(context.lexicon, context)
+                    context.parent.append(context)
+            else:
+                context = Context(t, context)
+                context.parent.append(context)
+        return context
 
     def filter_actions(self, action, pos, txt, match):
         """Handle filtering via Action instances."""
