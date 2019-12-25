@@ -235,6 +235,7 @@ class TreeBuilder:
         current = Context(root_lexicon, None)
         while True:
             for pos, tokens, target in self.parse_context(current, text, pos):
+                current.extend(tokens)
                 yield from tokens
                 if target:
                     current = self.update_context(current, target)
@@ -251,6 +252,7 @@ class TreeBuilder:
         current = context
         while True:
             for pos, tokens, target in self.parse_context(current, text, pos):
+                current.extend(tokens)
                 if target:
                     current = self.update_context(current, target)
                     break # continue in new context
@@ -270,7 +272,6 @@ class TreeBuilder:
                     tokens = tuple(GroupToken(context, *t) for t in tokens)
                     for t in tokens:
                         t.group = tokens
-                context.extend(tokens)
             else:
                 tokens = ()
             yield end, tokens, target
