@@ -220,19 +220,26 @@ class TreeBuilder:
 
     """
 
-    def tree(self, root_lexicon, text, pos=0):
+    def tree(self, root_lexicon, text):
         """Return a root Context with all parsed Tokens in nested context lists."""
         root = Context(root_lexicon, None)
-        context, pos = self.build(root, text, pos)
+        context, pos = self.build(root, text)
         self.unwind(context)
         return root
 
-    def tokens(self, root_lexicon, text, pos=0):
+    def tokens(self, root_lexicon, text):
         """Yield all the Tokens from the text.
 
         The tree is also built, but tokens are yielded immediately.
 
+        It might be tempting to feed the text in pieces, but you must not do
+        that, as a text might match at the end, although that is part of a
+        longer token. E.g. if a text ends on a token like 'else', while the
+        next pieces starts with 'if', and instead of one token 'elseif' two
+        tokens are matched. So always use the full text to lex.
+
         """
+        pos = 0
         current = Context(root_lexicon, None)
         while True:
             for pos, tokens, target in self.parse_context(current, text, pos):
@@ -243,13 +250,16 @@ class TreeBuilder:
                     break # continue in new context
             else:
                 break
+        # make sure empty contexts are removed
+        self.unwind(current)
 
-    def build(self, context, text, pos=0):
+    def build(self, context, text):
         """Start parsing text in the specified context.
 
         Return a two-tuple(context, pos) describing where the parsing ends.
 
         """
+        pos = 0
         current = context
         while True:
             for pos, tokens, target in self.parse_context(current, text, pos):
@@ -261,7 +271,7 @@ class TreeBuilder:
                 break
         return current, pos
 
-    def parse_context(self, context, text, pos=0):
+    def parse_context(self, context, text, pos):
         """Yield Token instances as long as we are in the current context."""
         for pos, txt, match, action, *target in context.lexicon.parse(text, pos):
             tokens = tuple(self.filter_actions(action, pos, txt, match))
