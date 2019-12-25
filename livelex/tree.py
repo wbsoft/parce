@@ -36,6 +36,8 @@ import collections
 
 
 from . import lex
+from .action import Action
+
 
 class NodeMixin:
     """Methods that are shared by Leaf and Node."""
@@ -51,7 +53,7 @@ class NodeMixin:
         return self.parent is None
 
     def remove_from_parent(self):
-        """Remove the node from the parent node and set parent to None."""
+        """Remove the context from the parent context and set parent to None."""
         parent = self.parent
         if parent:
             parent.remove(self)
@@ -75,10 +77,10 @@ class NodeMixin:
                 return n
 
     def left_sibling(self):
-        """Return the left sibling of this node, if any.
+        """Return the left sibling of this context, if any.
 
         Does not decend in child nodes or ascend upto the parent.
-        Fails if called on the root node.
+        Fails if called on the root context.
 
         """
         i = self.parent.index(self)
@@ -86,10 +88,10 @@ class NodeMixin:
             return self.parent[i-1]
 
     def right_sibling(self):
-        """Return the left sibling of this node, if any.
+        """Return the left sibling of this context, if any.
 
         Does not decend in child nodes or ascend upto the parent.
-        Fails if called on the root node.
+        Fails if called on the root context.
 
         """
         i = self.parent.index(self)
@@ -99,83 +101,59 @@ class NodeMixin:
 
 
 
-class Leaf(NodeMixin):
-    __slots__ = "parent", "pos", "text", "action", "target"
+class Token(NodeMixin):
+    __slots__ = "parent", "pos", "text", "action"
 
-    def __init__(self, parent, token):
+    group = None
+
+    def __init__(self, parent, pos, text, action):
         self.parent = parent
-        self.pos = token.pos
-        self.text = token.text
-        self.action = token.action
-        self.target = token.target
+        self.pos = pos
+        self.text = text
+        self.action = action
 
     def __repr__(self):
         return repr(self.text)
 
-    def leafs(self):
+    def tokens(self):
         """Yield self."""
         yield self
 
-    leafs_bw = leafs
+    tokens_bw = tokens
 
     def forward(self):
-        """Yield all Leafs in forward direction.
+        """Yield all Tokens in forward direction.
 
-        Descends into child Nodes, and ascends into parent Nodes.
+        Descends into child Contexts, and ascends into parent Contexts.
 
         """
-        node = self
-        while node.parent:
-            i = node.parent.index(node)
-            for n in node.parent[i:]:
-                yield from n.leafs()
-            node = node.parent
+        context = self
+        while context.parent:
+            i = context.parent.index(context)
+            for n in context.parent[i:]:
+                yield from n.tokens()
+            context = context.parent
 
     def backward(self):
-        """Yield sibling Leafs in backward direction.
+        """Yield all Tokens in backward direction.
 
-        Descends into child Nodes, and ascends into parent Nodes.
+        Descends into child Contexts, and ascends into parent Contexts.
 
         """
-        node = self
-        while node.parent:
-            i = node.parent.index(node)
+        context = self
+        while context.parent:
+            i = context.parent.index(context)
             if i:
-                for n in node.parent[i-1::-1]:
-                    yield from n.leafs_bw()
-            node = node.parent
-
-    def state_before(self):
-        """Reconstruct a state (list of lexicons) right before the Leaf.
-
-        The leaf should not have a target of False, find the first right
-        sibling that has a non-False target first.
-
-        """
-        state = []
-        node = self
-        while node.parent:
-            node = node.parent
-            state.append(node.lexicon)
-        state.reverse()
-        return state
-
-    def update_state(self, state):
-        """Modify the state such as returned by state_before() according to our target."""
-        if self.target:
-            if self.target.pop:
-                del state[self.target.pop:]
-            state.extend(self.target.push)
-
-    def state_after(self):
-        """Reconstruct a state (list of lexicons) right after this Leaf."""
-        state = self.state_before()
-        self.update_state(state)
-        return state
+                for n in context.parent[i-1::-1]:
+                    yield from n.tokens_bw()
+            context = context.parent
 
 
+class GroupToken(Token):
+    __slots__ = "group"
 
-class Node(list, NodeMixin):
+
+class Context(list, NodeMixin):
     __slots__ = "lexicon", "parent"
 
     def __new__(cls, lexicon, parent):
@@ -188,79 +166,114 @@ class Node(list, NodeMixin):
     def __repr__(self):
         return format(self.lexicon) + super().__repr__()
 
-    def leafs(self):
-        """Yield all leaf nodes, descending into nested Nodes."""
+    def tokens(self):
+        """Yield all Tokens, descending into nested Contexts."""
         for n in self:
-            yield from n.leafs()
+            yield from n.tokens()
 
-    def leafs_bw(self):
-        """Yield all leaf nodes, descending into nested Nodes, in backward direction."""
+    def tokens_bw(self):
+        """Yield all Tokens, descending into nested Contexts, in backward direction."""
         for n in self[::-1]:
-            yield from n.leafs_bw()
+            yield from n.tokens_bw()
 
-    def firstleaf(self):
-        """Return the first token (Leaf) in node."""
+    def first_token(self):
+        """Return our first Token."""
         try:
-            node = self[0]
-            while isinstance(node, Node):
-                node = node[0]
-            return node
+            n = self[0]
+            while isinstance(n, Context):
+                n = n[0]
+            return n
         except IndexError:
             pass
 
-    def lastleaf(self):
-        """Return the last token (Leaf) in node."""
+    def last_token(self):
+        """Return our last token."""
         try:
-            node = self[-1]
-            while isinstance(node, Node):
-                node = node[-1]
-            return node
+            n = self[-1]
+            while isinstance(n, Context):
+                n = n[-1]
+            return n
         except IndexError:
             pass
 
-    def find(self, pos):
-        """Return the Leaf (closest) at position from node."""
+    def find_token(self, pos):
+        """Return the Token (closest) at position from context."""
         positions = []
         for n in self:
-            if isinstance(n, Node):
-                n = n.lastleaf()
+            if isinstance(n, Context):
+                n = n.last_token()
             positions.append(n.pos + len(n.text))
         i = bisect.bisect_left(positions, pos)
         if i < len(positions):
-            if isinstance(self[i], Node):
-                return self[i].find(pos)
+            if isinstance(self[i], Context):
+                return self[i].find_token(pos)
             return self[i]
-        return self.lastleaf()
+        return self.last_token()
 
 
-def tree(tokens, root_lexicon="root"):
-    """Experimental function that puts the tokens in a tree structure.
+class TreeBuilder:
+    """Build a tree directly from parsing the text."""
 
-    The structure consists of nested lists; the first item of each list is the
-    lexicon. The other items are the tokens that were generated by rules of
-    that lexicon, or child lists.
+    def tree(self, root_lexicon, text, pos=0):
+        """Return a root Context with all parsed Tokens in nested context lists."""
+        root = Context(root_lexicon, None)
+        context, pos = self.parse(root, text, pos)
+        self.unwind(context)
+        return root
 
-    """
-    root = current = Node(root_lexicon, None)
-    stack = [root]
-    for t in tokens:
-        if t.text:
-            current.append(Leaf(current, t))
-        if t.target:
-            if t.target.pop:
-                for i in range(-1, t.target.pop - 1, -1):
-                    if stack[i]:
-                        stack[i-1].append(stack[i])
-                del stack[t.target.pop:]
-            for lexicon in t.target.push:
-                stack.append(Node(lexicon, stack[-1]))
-            current = stack[-1]
-    # unwind if we were not back in the root lexicon
-    for i in range(len(stack) - 1, 0, -1):
-        if stack[i]:
-            stack[i-1].append(stack[i])
-    return root
+    def parse(self, context, text, pos=0):
+        """Start parsing text in the current context.
 
+        Return a two-tuple(context, pos) describing where the parsing ends.
+
+        """
+        current = context
+        while True:
+            for pos, txt, match, action, *target in current.lexicon.parse(text, pos):
+                tokens = tuple(self.filter_actions(action, pos, txt, match))
+                if txt and tokens:
+                    pos += len(txt)
+                    if len(tokens) == 1:
+                        current.append(Token(current, *tokens[0]))
+                    else:
+                        group = tuple(GroupToken(current, *t) for t in tokens)
+                        for token in group:
+                            token.group = group
+                        current.extend(group)
+                if target:
+                    for t in target:
+                        if isinstance(t, int):
+                            for pop in range(t, 0):
+                                if current.parent:
+                                    if not current:
+                                        current.parent.remove(current)
+                                    current = current.parent
+                                else:
+                                    break
+                            for push in range(0, t):
+                                current = Context(current.lexicon, current)
+                                current.parent.append(current)
+                        else:
+                            current = Context(t, current)
+                            current.parent.append(current)
+                    break # continue in new context
+            else:
+                break
+        return current, pos
+
+    def filter_actions(self, action, pos, txt, match):
+        """Handle filtering via Action instances."""
+        if isinstance(action, Action):
+            yield from action.filter_actions(self, pos, txt, match)
+        else:
+            yield pos, txt, action
+
+    def unwind(self, context):
+        """Recursively remove the context from its parent if empty."""
+        while context.parent:
+            if not context:
+                context.parent.remove(context)
+            context = context.parent
 
 
 class Document:
@@ -299,7 +312,7 @@ class Document:
     def retokenize_full(self):
         root = self.get_root_lexicon()
         if root and self._text:
-            self.tree = tree(lex.Lexer(root).tokens(self._text), root)
+            self.tree = TreeBuilder().tree(root, self._text)
         else:
             self.tree = None
 
@@ -314,10 +327,10 @@ class Document:
         # from one match
         if token:
             startstate = []
-            node = token
-            while node.parent:
-                node = node.parent
-                startstate.append(node.lexicon)
+            context = token
+            while context.parent:
+                context = context.parent
+                startstate.append(context.lexicon)
             startstate.reverse()
             startpos = token.pos
         else:
