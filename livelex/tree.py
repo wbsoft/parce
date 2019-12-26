@@ -54,11 +54,6 @@ class NodeMixin:
         """Return True if this Node has no parent node."""
         return self.parent is None
 
-    def _add_indices(self):
-        """Internal. Add _index attribute to children for fast sibling lookup."""
-        for index, node in enumerate(self):
-            node._index = index
-
     def ancestors(self):
         """Climb the tree up over the parents."""
         node = self.parent
@@ -83,8 +78,9 @@ class NodeMixin:
         Fails if called on the root context.
 
         """
-        if self._index:
-            return self.parent[self._index-1]
+        i = self.parent.index(self)
+        if i:
+            return self.parent[i-1]
 
     def right_sibling(self):
         """Return the right sibling of this context, if any.
@@ -93,8 +89,9 @@ class NodeMixin:
         Fails if called on the root context.
 
         """
-        if self._index < len(self.parent) - 1:
-            return self.parent[self._index+1]
+        i = self.parent.index(self)
+        if i < len(self.parent) - 1:
+            return self.parent[i+1]
 
     def left_siblings(self):
         """Yield the left siblings of this context in reverse order, if any.
@@ -103,8 +100,9 @@ class NodeMixin:
         Fails if called on the root context.
 
         """
-        if self._index:
-            yield from self.parent[self._index-1::-1]
+        i = self.parent.index(self)
+        if i:
+            yield from self.parent[i-1::-1]
 
     def right_siblings(self):
         """Yield the right siblings of this context, if any.
@@ -113,21 +111,36 @@ class NodeMixin:
         Fails if called on the root context.
 
         """
-        yield from self.parent[self._index+1:]
+        i = self.parent.index(self)
+        yield from self.parent[i+1:]
 
 
-class Token(str, NodeMixin):
-    __slots__ = "parent", "pos", "action", "_index"
+class Token(NodeMixin):
+    __slots__ = "parent", "pos", "text", "action"
 
     group = None
-
-    def __new__(cls, parent, pos, text, action):
-        return str.__new__(cls, text)
 
     def __init__(self, parent, pos, text, action):
         self.parent = parent
         self.pos = pos
+        self.text = text
         self.action = action
+
+    def __repr__(self):
+        return repr(self.text)
+
+    def __eq__(self, other):
+        if isinstance(other, str):
+            return other == self.text
+        return super().__eq__(other)
+
+    def __ne__(self, other):
+        if isinstance(other, str):
+            return other != self.text
+        return super().__ne__(other)
+
+    def __format__(self, formatstr):
+        return self.text.__format__(formatstr)
 
     def tokens(self):
         """Yield self."""
@@ -163,7 +176,8 @@ class Token(str, NodeMixin):
         """Remove this token and all tokens to the right from the tree."""
         node = self
         while node.parent:
-            del node.parent[node._index+1:]
+            i = node.parent.index(node)
+            del node.parent[i+1:]
             node = node.parent
         del self.parent[-1] # including ourselves
 
@@ -179,10 +193,10 @@ class Token(str, NodeMixin):
             for n in node.right_siblings():
                 n.parent = copy
                 copy.append(n)
-            del context[node._index+1:]
+            i = context.index(node)
+            del context[i+1:]
             firstchild.parent = copy
             firstchild = copy
-            copy._add_indices()
             node = context
         del parent[-1]
         return copy
@@ -193,7 +207,7 @@ class GroupToken(Token):
 
 
 class Context(list, NodeMixin):
-    __slots__ = "lexicon", "parent", "_index"
+    __slots__ = "lexicon", "parent"
 
     def __new__(cls, lexicon, parent):
         return list.__new__(cls)
@@ -333,8 +347,6 @@ class TreeBuilder:
                     if context.parent:
                         if not context:
                             context.parent.remove(context)
-                        else:
-                            context._add_indices()
                         context = context.parent
                     else:
                         break
@@ -358,10 +370,7 @@ class TreeBuilder:
         while context.parent:
             if not context:
                 context.parent.remove(context)
-            else:
-                context._add_indices()
             context = context.parent
-        context._add_indices()
 
 
 class Document:
