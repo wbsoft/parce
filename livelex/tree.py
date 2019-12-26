@@ -54,12 +54,10 @@ class NodeMixin:
         """Return True if this Node has no parent node."""
         return self.parent is None
 
-    def remove_from_parent(self):
-        """Remove the context from the parent context and set parent to None."""
-        parent = self.parent
-        if parent:
-            parent.remove(self)
-            self.parent = None
+    def _add_indices(self):
+        """Internal. Add _index attribute to children for fast sibling lookup."""
+        for index, node in enumerate(self):
+            node._index = index
 
     def ancestors(self):
         """Climb the tree up over the parents."""
@@ -85,26 +83,41 @@ class NodeMixin:
         Fails if called on the root context.
 
         """
-        i = self.parent.index(self)
-        if i:
-            return self.parent[i-1]
+        if self._index:
+            return self.parent[self._index-1]
 
     def right_sibling(self):
-        """Return the left sibling of this context, if any.
+        """Return the right sibling of this context, if any.
 
         Does not decend in child nodes or ascend upto the parent.
         Fails if called on the root context.
 
         """
-        i = self.parent.index(self)
-        if i < len(self.parent) - 1:
-            return self.parent[i+1]
+        if self._index < len(self.parent) - 1:
+            return self.parent[self._index+1]
 
+    def left_siblings(self):
+        """Yield the left siblings of this context in reverse order, if any.
 
+        Does not decend in child nodes or ascend upto the parent.
+        Fails if called on the root context.
+
+        """
+        if self._index:
+            yield from self.parent[self._index-1::-1]
+
+    def right_siblings(self):
+        """Yield the right siblings of this context, if any.
+
+        Does not decend in child nodes or ascend upto the parent.
+        Fails if called on the root context.
+
+        """
+        yield from self.parent[self._index+1:]
 
 
 class Token(str, NodeMixin):
-    __slots__ = "parent", "pos", "action"
+    __slots__ = "parent", "pos", "action", "_index"
 
     group = None
 
@@ -128,12 +141,11 @@ class Token(str, NodeMixin):
         Descends into child Contexts, and ascends into parent Contexts.
 
         """
-        context = self
-        while context.parent:
-            i = context.parent.index(context)
-            for n in context.parent[i:]:
+        node = self
+        while node.parent:
+            for n in node.right_siblings():
                 yield from n.tokens()
-            context = context.parent
+            node = node.parent
 
     def backward(self):
         """Yield all Tokens in backward direction.
@@ -141,13 +153,39 @@ class Token(str, NodeMixin):
         Descends into child Contexts, and ascends into parent Contexts.
 
         """
-        context = self
-        while context.parent:
-            i = context.parent.index(context)
-            if i:
-                for n in context.parent[i-1::-1]:
-                    yield from n.tokens_bw()
-            context = context.parent
+        node = self
+        while node.parent:
+            for n in node.left_siblings():
+                yield from n.tokens_bw()
+            node = node.parent
+
+    def cut_right(self):
+        """Remove this token and all tokens to the right from the tree."""
+        node = self
+        while node.parent:
+            del node.parent[node._index+1:]
+            node = node.parent
+        del self.parent[-1] # including ourselves
+
+    def split_right(self):
+        """Split off a new tree, starting with this token."""
+        parent = self.parent
+        node = self
+        firstchild = self
+        while node.parent:
+            context = node.parent
+            copy = Context(context.lexicon, None)
+            copy.append(firstchild)
+            for n in node.right_siblings():
+                n.parent = copy
+                copy.append(n)
+            del context[node._index+1:]
+            firstchild.parent = copy
+            firstchild = copy
+            copy._add_indices()
+            node = context
+        del parent[-1]
+        return copy
 
 
 class GroupToken(Token):
@@ -155,7 +193,7 @@ class GroupToken(Token):
 
 
 class Context(list, NodeMixin):
-    __slots__ = "lexicon", "parent"
+    __slots__ = "lexicon", "parent", "_index"
 
     def __new__(cls, lexicon, parent):
         return list.__new__(cls)
@@ -295,6 +333,8 @@ class TreeBuilder:
                     if context.parent:
                         if not context:
                             context.parent.remove(context)
+                        else:
+                            context._add_indices()
                         context = context.parent
                     else:
                         break
@@ -318,7 +358,10 @@ class TreeBuilder:
         while context.parent:
             if not context:
                 context.parent.remove(context)
+            else:
+                context._add_indices()
             context = context.parent
+        context._add_indices()
 
 
 class Document:
