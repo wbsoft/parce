@@ -127,7 +127,10 @@ class Token(NodeMixin):
         self.action = action
 
     def __repr__(self):
-        return repr(self.text)
+        return "<Token {} at {} ({})>".format(repr(self.text), self.pos, self.action)
+
+    def dump(self, indent=0):
+        print((" " * indent) + repr(self))
 
     def __eq__(self, other):
         if isinstance(other, str):
@@ -209,7 +212,7 @@ class Token(NodeMixin):
             if c1.lexicon != c2.lexicon:
                 return False
         return c1.parent is None and c2.parent is None
-            
+
 
 class GroupToken(Token):
     __slots__ = "group"
@@ -226,7 +229,12 @@ class Context(list, NodeMixin):
         self.parent = parent
 
     def __repr__(self):
-        return format(self.lexicon) + super().__repr__()
+        return "<Context {} ({} children)>".format(repr(self.lexicon.name()), len(self))
+
+    def dump(self, indent=0):
+        print((" " * indent) + repr(self))
+        for n in self:
+            n.dump(indent+2)
 
     def tokens(self):
         """Yield all Tokens, descending into nested Contexts."""
