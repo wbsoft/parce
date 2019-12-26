@@ -201,6 +201,15 @@ class Token(NodeMixin):
         del parent[-1]
         return copy
 
+    def state_matches(self, other):
+        """Return True if the other Token has the same lexicons in the ancestors."""
+        if other is self:
+            return True
+        for c1, c2 in zip(self.ancestors(), other.ancestors()):
+            if c1.lexicon != c2.lexicon:
+                return False
+        return c1.parent is None and c2.parent is None
+            
 
 class GroupToken(Token):
     __slots__ = "group"
