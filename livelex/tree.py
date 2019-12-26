@@ -129,9 +129,6 @@ class Token(NodeMixin):
     def __repr__(self):
         return "<Token {} at {} ({})>".format(repr(self.text), self.pos, self.action)
 
-    def dump(self, indent=0):
-        print((" " * indent) + repr(self))
-
     def __eq__(self, other):
         if isinstance(other, str):
             return other == self.text
@@ -144,6 +141,16 @@ class Token(NodeMixin):
 
     def __format__(self, formatstr):
         return self.text.__format__(formatstr)
+
+    def __len__(self):
+        return len(self.text)
+
+    def dump(self, indent=0):
+        print((" " * indent) + repr(self))
+
+    @property
+    def end(self):
+        return self.pos + len(self.text)
 
     def tokens(self):
         """Yield self."""
@@ -229,7 +236,13 @@ class Context(list, NodeMixin):
         self.parent = parent
 
     def __repr__(self):
-        return "<Context {} ({} children)>".format(repr(self.lexicon.name()), len(self))
+        first, last = self.first_token(), self.last_token()
+        if first and last:
+            pos, end = first.pos, last.end
+        else:
+            pos = end = "?"
+        return "<Context {} at {}-{} ({} children)>".format(
+            self.lexicon.name(), pos, end, len(self))
 
     def dump(self, indent=0):
         print((" " * indent) + repr(self))
