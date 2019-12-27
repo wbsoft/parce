@@ -199,7 +199,7 @@ class Token(NodeMixin):
         if token == "bla":
             do_something()
 
-    You can call len() on a token, which returns the length of the token's
+    You can call `len()` on a token, which returns the length of the token's
     text attribute, and you can use the string format method to embed the
     token's text in another string:
 
@@ -424,7 +424,7 @@ class TreeBuilder:
     """Build a tree directly from parsing the text.
 
     You can either call tree() to build a tree structure from the text,
-    or call tokens() to get the tokens immediately.
+    or call tokens() to get the tokens while the tree is being built.
 
     """
 
