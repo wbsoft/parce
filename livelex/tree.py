@@ -85,7 +85,7 @@ class NodeMixin:
     def ancestors(self):
         """Climb the tree up over the parents."""
         node = self.parent
-        while node:
+        while node is not None:
             yield node
             node = node.parent
 
@@ -507,10 +507,10 @@ class Document:
     lexicons) matches the state of existing tokens.
 
     """
-    def __init__(self, text="", root_lexicon=None):
+    def __init__(self, root_lexicon=None, text=""):
         self._text = text
         self._root_lexicon = root_lexicon
-        if text and root_lexicon:
+        if root_lexicon:
             self.retokenize_full()
 
     def get_text(self):
@@ -533,73 +533,85 @@ class Document:
 
     def retokenize_full(self):
         root = self.get_root_lexicon()
-        if root and self._text:
+        if root:
             self.tree = TreeBuilder().tree(root, self._text)
         else:
             self.tree = None
 
     def modify(self, start, end, text):
         """Modify the text: document[start:end] = text."""
+        if end is None or end > len(self._text):
+            end = len(self._text)
+        offset = len(text) - end + start
+        
         text = self._text = self._text[:start] + text + self._text[end:]
 
         start_token = self.tree.find_token(start)
-        if start_token.group:
-            start_token = start_token.group[0]
-        start = start_token.pos
+        if start_token:
+            if start_token.group:
+                start_token = start_token.group[0]
+            start = start_token.pos
 
-        end_token = self.tree.find_token(end)
-        if end_token.group:
-            end_token = end_token.group[0]
-        end = end_token.pos
+            end_token = self.tree.find_token(end)
+            if end_token.group:
+                end_token = end_token.group[0]
+            end = end_token.pos
+
+            context = start_token.parent
+
+            tail = end_token.split_right()
+            start_token.cut_right()
+            tailtokens = []
+            for t in tail.tokens():
+                if not t.group or (t.group and t is t.group[0]):
+                    # only pick the first of grouped tokens
+                    tailtokens.append(t)
+            tailpositions = [t.pos for t in tailtokens]
+
+        else:
+            tail = False
+            context = self.tree
 
         # if we keep tokens, how far do they move to the right
-        offset = len(text) - end + start
         new_end = end + offset
 
-        context = start_token.parent
         pos = start
         b = TreeBuilder()
 
-        tail = end_token.split_right()
-        start_token.cut_right()
-
-        tailtokens = []
-        for t in tail.tokens():
-            if not t.group or (t.group and t is t.group[0]):
-                # only pick the first of grouped tokens
-                tailtokens.append(t)
-        tailpositions = [t.pos for t in tailtokens]
         done = False
         while not done:
             for pos, tokens, target in b.parse_context(context, text, pos):
-                if tokens and tokens[0].pos >= new_end:
+                if tail and tokens and tokens[0].pos >= new_end:
                     newpos = tokens[0].pos - offset
                     index = bisect.bisect_left(tailpositions, newpos)
-                    if index < len(tailpositions) and tailpositions[index] == newpos:
-                        if tokens[-1].state_matches(tailtokens[index]):
-                            # we can attach the tail here.
-                            # first adjust the positions of all old tokens
-                            tailtoken = tailtokens[i]
+                    if (index < len(tailpositions) and tailpositions[index] == newpos
+                            and tokens[-1].state_matches(tailtokens[index])):
+                        # we can attach the tail here.
+                        # first adjust the positions of all old tokens
+                        tailtoken = tailtokens[index]
+                        if offset:
                             tailtoken.pos += offset
                             for t in tailtoken.forward():
                                 t.pos += offset
-                            # add the old tokens to the current context
-                            context.append(tailtoken)
-                            tailtoken.parent = context
-                            tailnode = tailtoken
-                            while tailnode.parent:
-                                for n in tailnode.right_siblings():
-                                    context.append(n)
-                                    n.parent = context
-                                tailnode = tailnode.parent
-                                context = context.parent
-                            done = True
-                            break
+                        # add the old tokens to the current context
+                        context.append(tailtoken)
+                        tailnode = tailtoken
+                        c = context
+                        while tailnode.parent:
+                            for n in tailnode.right_siblings():
+                                c.append(n)
+                                n.parent = c
+                            tailnode = tailnode.parent
+                            c = c.parent
+                        tailtoken.parent = context
+                        done = True
+                        break
                 context.extend(tokens)
                 if target:
                     context = b.update_context(context, target)
                     break # continue with new context
             else:
                 break
-        return
+        b.unwind(context)
+
 
