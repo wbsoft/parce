@@ -421,12 +421,7 @@ class Context(list, NodeMixin):
 
 
 class TreeBuilder:
-    """Build a tree directly from parsing the text.
-
-    You can either call tree() to build a tree structure from the text,
-    or call tokens() to get the tokens while the tree is being built.
-
-    """
+    """Build a tree directly from parsing the text."""
 
     def tree(self, root_lexicon, text):
         """Return a root Context with all parsed Tokens in nested context lists."""
@@ -434,33 +429,6 @@ class TreeBuilder:
         context, pos = self.build(root, text)
         self.unwind(context)
         return root
-
-    def tokens(self, root_lexicon, text):
-        """Yield all the Tokens from the text.
-
-        The tree is also built, but tokens are yielded immediately.
-
-        It might be tempting to feed the text in pieces, but you must not do
-        that, as a text might match at the end, although that is part of a
-        longer token. E.g. in an imaginary language, if a text ends on a token
-        like 'else', while the next pieces starts with 'if', then instead of
-        one token 'elseif' two tokens are matched. So always use the full text
-        to lex.
-
-        """
-        pos = 0
-        current = Context(root_lexicon, None)
-        while True:
-            for pos, tokens, target in self.parse_context(current, text, pos):
-                current.extend(tokens)
-                yield from tokens
-                if target:
-                    current = self.update_context(current, target)
-                    break # continue in new context
-            else:
-                break
-        # make sure empty contexts are removed
-        self.unwind(current)
 
     def build(self, context, text):
         """Start parsing text in the specified context.
