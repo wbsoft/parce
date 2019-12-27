@@ -571,10 +571,11 @@ class Document:
             if end_token:
                 if end_token.group:
                     end_token = end_token.group[-1]
-                if end_token.pos > end:
-                    end = end_token.pos
-                else:
+                if end_token.pos <= end:
                     end = end_token.end
+                    for end_token in end_token.forward():
+                        end = end_token.pos
+                        break
                 tail = end_token.split_right()
                 tailtokens = []
                 for t in tail.tokens():
