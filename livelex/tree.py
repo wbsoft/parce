@@ -160,12 +160,21 @@ class Token(NodeMixin):
     When that rule would create more than one Token from a single regular
     expression match, GroupToken objects are created instead, carrying the
     tuple of all instances in the `group` attribute. The `group` attribute is
-    None for normal tokens.
+    readonly None for normal tokens.
+
+    GroupTokens are thus always adjacent in the same context. If you want to
+    retokenize text starting at some position, be sure you are at the start of
+    a grouped token, e.g.::
+
+        t = ctx.find_token(45)
+        if t.group:
+            t = t.group[0]
+        pos = t.pos
 
     (A GroupToken is just a normal Token otherwise, the reason a subclass was
     created is that the group attribute is unused in by far the most tokens, so
-    it does not take any memory. You never need to reference the GroupToken
-    class; just test the group attribut if you want to know if a token belongs
+    it does not use any memory. You never need to reference the GroupToken
+    class; just test the group attribute if you want to know if a token belongs
     to a group that originated from a single match.)
 
     When iterating over the children of a Context (which may be Context or
