@@ -40,9 +40,12 @@ from .action import Action
 
 
 class NodeMixin:
+    """Methods that are shared by Token and Context."""
     __slots__ = ()
 
-    """Methods that are shared by Token and Context."""
+    is_token = False
+    is_context = False
+
     def dump(self, depth=0):
         """Prints a nice graphical representation, for debugging purposes."""
         prefix = (" ╰╴" if self.is_last() else " ├╴") if depth else ""
@@ -103,6 +106,7 @@ class NodeMixin:
         Fails if called on the root context.
 
         """
+        # avoid expensive list.index() if not necessary
         if self.parent[0] is not self:
             i = self.parent.index(self)
             return self.parent[i-1]
@@ -144,6 +148,7 @@ class NodeMixin:
 class Token(NodeMixin):
     __slots__ = "parent", "pos", "text", "action"
 
+    is_token = True
     group = None
 
     def __init__(self, parent, pos, text, action):
@@ -250,6 +255,8 @@ class GroupToken(Token):
 
 class Context(list, NodeMixin):
     __slots__ = "lexicon", "parent"
+
+    is_context = True
 
     def __new__(cls, lexicon, parent):
         return list.__new__(cls)
