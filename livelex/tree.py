@@ -471,7 +471,7 @@ class TreeBuilder:
                 for pop in range(t, 0):
                     if context.parent:
                         if not context:
-                            context.parent.remove(context)
+                            del context.parent[-1]
                         context = context.parent
                     else:
                         break
@@ -494,7 +494,7 @@ class TreeBuilder:
         """Recursively remove the context from its parent if empty."""
         while context.parent:
             if not context:
-                context.parent.remove(context)
+                del context.parent[-1]
             context = context.parent
 
 
