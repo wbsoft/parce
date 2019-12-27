@@ -389,7 +389,7 @@ class Context(list, NodeMixin):
         """Return our first Token."""
         try:
             n = self[0]
-            while isinstance(n, Context):
+            while n.is_context:
                 n = n[0]
             return n
         except IndexError:
@@ -399,7 +399,7 @@ class Context(list, NodeMixin):
         """Return our last token."""
         try:
             n = self[-1]
-            while isinstance(n, Context):
+            while n.is_context:
                 n = n[-1]
             return n
         except IndexError:
@@ -409,12 +409,12 @@ class Context(list, NodeMixin):
         """Return the Token (closest) at position from context."""
         positions = []
         for n in self:
-            if isinstance(n, Context):
+            if n.is_context:
                 n = n.last_token()
             positions.append(n.end)
         i = bisect.bisect_left(positions, pos)
         if i < len(positions):
-            if isinstance(self[i], Context):
+            if self[i].is_context:
                 return self[i].find_token(pos)
             return self[i]
         return self.last_token()
