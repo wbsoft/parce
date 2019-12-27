@@ -146,6 +146,60 @@ class NodeMixin:
 
 
 class Token(NodeMixin):
+    """A Token instance represents a lexed piece of text.
+
+    A token has the following attributes:
+
+    `parent`: the Context node to which the token was added
+    `pos`:    the position of the token in the original text
+    `end`:    the end position of the token in the original text
+    `text`:   the text of the token
+    `action`: the action specified by the lexicon rule that created the token
+
+    When a pattern rule in a lexicon matches the text, a Token is created.
+    When that rule would create more than one Token from a single regular
+    expression match, GroupToken objects are created instead, carrying the
+    tuple of all instances in the `group` attribute. The `group` attribute is
+    None for normal tokens.
+
+    (A GroupToken is just a normal Token otherwise, the reason a subclass was
+    created is that the group attribute is unused in by far the most tokens, so
+    it does not take any memory. You never need to reference the GroupToken
+    class; just test the group attribut if you want to know if a token belongs
+    to a group that originated from a single match.)
+
+    When iterating over the children of a Context (which may be Context or
+    Token instances), you can use the `is_token` attribute to determine whether
+    the node child is a token, which is easier than to call `isinstance(t,
+    Token)` each time.
+
+    From a token, you can iterate `forward()` or `backward()` to find adjacent
+    tokens. If you only want to stay in the current context, use the various
+    sibling methods, such as `right_sibling()`.
+
+    By traversing the `ancestors()` of a token or context, you can find which
+    lexicons created the tokens.
+
+    You can compare a Token instance with a string. Instead of::
+
+        if token.text == "bla":
+            do_something()
+
+    you can do::
+
+        if token == "bla":
+            do_something()
+
+    You can call len() on a token, which returns the length of the token's
+    text attribute, and you can use the string format method to embed the
+    token's text in another string:
+
+        s = "blabla {}".format(token)
+
+    A token always has a parent, and that parent is always a Context instance.
+
+    """
+
     __slots__ = "parent", "pos", "text", "action"
 
     is_token = True
@@ -250,10 +304,42 @@ class Token(NodeMixin):
 
 
 class GroupToken(Token):
+    """A Token class that allows setting the `group` attribute."""
     __slots__ = "group"
 
 
 class Context(list, NodeMixin):
+    """A Context represents a list of tokens and contexts.
+
+    The lexicon that created the tokens is in the `lexicon` attribute.
+
+    If a pattern rule jumps to another lexicon, a sub-Context is created and
+    tokens are added there. If that lexicon pops back to the current one, new
+    tokens can appear after the sub-context. (So the token that caused the jump
+    to the sub-context normally preceeds the context it created.)
+
+    A context has a `parent` attribute, which can point to an enclosing
+    context. The root context has `parent` None.
+
+    When iterating over the children of a Context (which may be Context or
+    Token instances), you can use the `is_context` attribute to determine
+    whether the node child is a context, which is easier than to call
+    `isinstance(node, Context)` each time.
+
+    You can quickly find tokens in a context::
+
+        if "bla" in context:
+            # etc
+
+    And if you want to know which token is on a certain position in the text,
+    use e.g.::
+
+        context.find_token(45)
+
+    which, using a bisection algorithm, quickly returns the token, which
+    might be in any sub-context of the current context.
+
+    """
     __slots__ = "lexicon", "parent"
 
     is_context = True
@@ -316,7 +402,7 @@ class Context(list, NodeMixin):
         for n in self:
             if isinstance(n, Context):
                 n = n.last_token()
-            positions.append(n.pos + len(n.text))
+            positions.append(n.end)
         i = bisect.bisect_left(positions, pos)
         if i < len(positions):
             if isinstance(self[i], Context):
@@ -347,9 +433,10 @@ class TreeBuilder:
 
         It might be tempting to feed the text in pieces, but you must not do
         that, as a text might match at the end, although that is part of a
-        longer token. E.g. if a text ends on a token like 'else', while the
-        next pieces starts with 'if', and instead of one token 'elseif' two
-        tokens are matched. So always use the full text to lex.
+        longer token. E.g. in an imaginary language, if a text ends on a token
+        like 'else', while the next pieces starts with 'if', then instead of
+        one token 'elseif' two tokens are matched. So always use the full text
+        to lex.
 
         """
         pos = 0
