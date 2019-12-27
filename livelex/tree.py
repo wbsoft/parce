@@ -412,7 +412,7 @@ class Context(list, NodeMixin):
             if n.is_context:
                 n = n.last_token()
             positions.append(n.end)
-        i = bisect.bisect_left(positions, pos)
+        i = bisect.bisect_left(positions, pos+1)
         if i < len(positions):
             if self[i].is_context:
                 return self[i].find_token(pos)
@@ -510,6 +510,7 @@ class Document:
     def __init__(self, root_lexicon=None, text=""):
         self._text = text
         self._root_lexicon = root_lexicon
+        self._modified_range = None
         if root_lexicon:
             self.retokenize_full()
 
@@ -535,8 +536,10 @@ class Document:
         root = self.get_root_lexicon()
         if root:
             self.tree = TreeBuilder().tree(root, self._text)
+            self._modified_range = True
         else:
             self.tree = None
+            self._modified_range = None
 
     def modify(self, start, end, text):
         """Modify the text: document[start:end] = text."""
@@ -547,16 +550,17 @@ class Document:
             tail = True
         if (start > end or (start == end and not text) or
             (start + len(text) == end and self._text[start:end] == text)):
+            self._modified_range = None
             return
         offset = len(text) - end + start
 
         text = self._text = self._text[:start] + text + self._text[end:]
 
-        start_token = self.tree.find_token(start)
+        start_token = self.tree.find_token(start - 1)
         if start > 0 and start_token:
             if start_token.group:
                 start_token = start_token.group[0]
-            start = start_token.pos
+            start = min(start, start_token.pos)
             context = start_token.parent
         else:
             start = 0
@@ -566,8 +570,11 @@ class Document:
             end_token = self.tree.find_token(end)
             if end_token:
                 if end_token.group:
-                    end_token = end_token.group[0]
-                end = end_token.end
+                    end_token = end_token.group[-1]
+                if end_token.pos > end:
+                    end = end_token.pos
+                else:
+                    end = end_token.end
                 tail = end_token.split_right()
                 tailtokens = []
                 for t in tail.tokens():
@@ -575,24 +582,22 @@ class Document:
                         # only pick the first of grouped tokens
                         tailtokens.append(t)
                 tailpositions = [t.pos for t in tailtokens]
+                tail = bool(tailtokens)
             else:
                 tail = False
 
         if start_token:
-            start_token.cut_right()
+            if start_token is not end_token:
+                start_token.cut_right()
         else:
             context.clear()
 
-        # if we keep tokens, how far do they move to the right
-        new_end = end + offset
-
         pos = start
         b = TreeBuilder()
-
         done = False
         while not done:
             for pos, tokens, target in b.parse_context(context, text, pos):
-                if tail and tokens and tokens[0].pos >= new_end:
+                if tail and tokens and tokens[0].pos - offset >= end:
                     newpos = tokens[0].pos - offset
                     index = bisect.bisect_left(tailpositions, newpos)
                     if (index < len(tailpositions) and tailpositions[index] == newpos
@@ -615,7 +620,7 @@ class Document:
                             tailnode = tailnode.parent
                             c = c.parent
                         tailtoken.parent = context
-                        new_end = tailtoken.pos
+                        end = tailtoken.pos
                         done = True
                         break
                 context.extend(tokens)
@@ -623,8 +628,9 @@ class Document:
                     context = b.update_context(context, target)
                     break # continue with new context
             else:
+                end = pos
                 break
         b.unwind(context)
-        print(start, new_end)
+        self._modified_range = start, end
 
 

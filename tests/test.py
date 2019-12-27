@@ -35,6 +35,7 @@ class MyLang(Language):
         yield r'(bl)(ub)', Subgroup('bl act', 'ub act')
         yield r'blo', 'blo action', cls.blo
         yield r'X', 'x action in root', cls.xxxxs
+        yield r'"', 'string', cls.string
         yield default_action, "TEXT"
 
     @lexicon
@@ -50,6 +51,12 @@ class MyLang(Language):
         yield r'X', 'x action in xxxs', 1
         yield r'Y', 'Y action', cls.blo
         yield default_target, -1
+
+    @lexicon
+    def string(cls):
+        yield r'\\[\\"]', 'string escape'
+        yield r'"', "string", -1
+        yield default_action, "string"
 
 
 s = "bla pythonBLA blub blablo b39la 1 4 ble XXXblo4p"
