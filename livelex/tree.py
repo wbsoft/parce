@@ -102,7 +102,7 @@ class NodeMixin:
     def left_sibling(self):
         """Return the left sibling of this context, if any.
 
-        Does not decend in child nodes or ascend upto the parent.
+        Does not descend in child nodes or ascend upto the parent.
         Fails if called on the root context.
 
         """
@@ -114,7 +114,7 @@ class NodeMixin:
     def right_sibling(self):
         """Return the right sibling of this context, if any.
 
-        Does not decend in child nodes or ascend upto the parent.
+        Does not descend in child nodes or ascend upto the parent.
         Fails if called on the root context.
 
         """
@@ -125,7 +125,7 @@ class NodeMixin:
     def left_siblings(self):
         """Yield the left siblings of this context in reverse order, if any.
 
-        Does not decend in child nodes or ascend upto the parent.
+        Does not descend in child nodes or ascend upto the parent.
         Fails if called on the root context.
 
         """
@@ -136,7 +136,7 @@ class NodeMixin:
     def right_siblings(self):
         """Yield the right siblings of this context, if any.
 
-        Does not decend in child nodes or ascend upto the parent.
+        Does not descend in child nodes or ascend upto the parent.
         Fails if called on the root context.
 
         """
