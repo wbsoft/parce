@@ -43,6 +43,15 @@ class NodeMixin:
     __slots__ = ()
 
     """Methods that are shared by Token and Context."""
+    def dump(self, depth=0):
+        """Prints a nice graphical representation, for debugging purposes."""
+        prefix = (" ╰╴" if self.is_last() else " ├╴") if depth else ""
+        node = self
+        for i in range(depth - 1):
+            node = node.parent
+            prefix = ("   " if node.is_last() else " │ ") + prefix
+        print(prefix + repr(self))
+
     def root(self):
         """Return the root node."""
         root = self
@@ -53,6 +62,22 @@ class NodeMixin:
     def is_root(self):
         """Return True if this Node has no parent node."""
         return self.parent is None
+
+    def is_last(self):
+        """Return True if this Node is the last child of its parent.
+
+        Fails if called on the root element.
+
+        """
+        return self.parent[-1] is self
+
+    def is_first(self):
+        """Return True if this Node is the first child of its parent.
+
+        Fails if called on the root element.
+
+        """
+        return self.parent[0] is self
 
     def ancestors(self):
         """Climb the tree up over the parents."""
@@ -78,8 +103,8 @@ class NodeMixin:
         Fails if called on the root context.
 
         """
-        i = self.parent.index(self)
-        if i:
+        if self.parent[0] is not self:
+            i = self.parent.index(self)
             return self.parent[i-1]
 
     def right_sibling(self):
@@ -89,8 +114,8 @@ class NodeMixin:
         Fails if called on the root context.
 
         """
-        i = self.parent.index(self)
-        if i < len(self.parent) - 1:
+        if self.parent[-1] is not self:
+            i = self.parent.index(self)
             return self.parent[i+1]
 
     def left_siblings(self):
@@ -100,8 +125,8 @@ class NodeMixin:
         Fails if called on the root context.
 
         """
-        i = self.parent.index(self)
-        if i:
+        if self.parent[0] is not self:
+            i = self.parent.index(self)
             yield from self.parent[i-1::-1]
 
     def right_siblings(self):
@@ -111,8 +136,9 @@ class NodeMixin:
         Fails if called on the root context.
 
         """
-        i = self.parent.index(self)
-        yield from self.parent[i+1:]
+        if self.parent[-1] is not self:
+            i = self.parent.index(self)
+            yield from self.parent[i+1:]
 
 
 class Token(NodeMixin):
@@ -144,9 +170,6 @@ class Token(NodeMixin):
 
     def __len__(self):
         return len(self.text)
-
-    def dump(self, indent=0):
-        print((" " * indent) + repr(self))
 
     @property
     def end(self):
@@ -244,10 +267,11 @@ class Context(list, NodeMixin):
         return "<Context {} at {}-{} ({} children)>".format(
             self.lexicon.name(), pos, end, len(self))
 
-    def dump(self, indent=0):
-        print((" " * indent) + repr(self))
+    def dump(self, depth=0):
+        """Prints a nice graphical representation, for debugging purposes."""
+        super().dump(depth)
         for n in self:
-            n.dump(indent+2)
+            n.dump(depth + 1)
 
     def tokens(self):
         """Yield all Tokens, descending into nested Contexts."""
