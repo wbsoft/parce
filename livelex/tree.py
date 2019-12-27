@@ -540,24 +540,66 @@ class Document:
 
     def modify(self, start, end, text):
         """Modify the text: document[start:end] = text."""
-        text = self._text[:start] + text + self._text[end:]
+        text = self._text = self._text[:start] + text + self._text[end:]
 
-        # TODO: build the state while finding the token
-        # start pos:
-        token = find(self.tree, start-1)
-        # TODO: check if left sibling of token has target None/i.e. originates
-        # from one match
-        if token:
-            startstate = []
-            context = token
-            while context.parent:
-                context = context.parent
-                startstate.append(context.lexicon)
-            startstate.reverse()
-            startpos = token.pos
-        else:
-            startstate = [self._root_lexicon]
-            startpos = 0
+        start_token = self.tree.find_token(start)
+        if start_token.group:
+            start_token = start_token.group[0]
+        start = start_token.pos
 
-        ## we can start lexing at pos, with state
+        end_token = self.tree.find_token(end)
+        if end_token.group:
+            end_token = end_token.group[0]
+        end = end_token.pos
+
+        # if we keep tokens, how far do they move to the right
+        offset = len(text) - end + start
+        new_end = end + offset
+
+        context = start_token.parent
+        pos = start
+        b = TreeBuilder()
+
+        tail = end_token.split_right()
+        start_token.cut_right()
+
+        tailtokens = []
+        for t in tail.tokens():
+            if not t.group or (t.group and t is t.group[0]):
+                # only pick the first of grouped tokens
+                tailtokens.append(t)
+        tailpositions = [t.pos for t in tailtokens]
+        done = False
+        while not done:
+            for pos, tokens, target in b.parse_context(context, text, pos):
+                if tokens and tokens[0].pos >= new_end:
+                    newpos = tokens[0].pos - offset
+                    index = bisect.bisect_left(tailpositions, newpos)
+                    if index < len(tailpositions) and tailpositions[index] == newpos:
+                        if tokens[-1].state_matches(tailtokens[index]):
+                            # we can attach the tail here.
+                            # first adjust the positions of all old tokens
+                            tailtoken = tailtokens[i]
+                            tailtoken.pos += offset
+                            for t in tailtoken.forward():
+                                t.pos += offset
+                            # add the old tokens to the current context
+                            context.append(tailtoken)
+                            tailtoken.parent = context
+                            tailnode = tailtoken
+                            while tailnode.parent:
+                                for n in tailnode.right_siblings():
+                                    context.append(n)
+                                    n.parent = context
+                                tailnode = tailnode.parent
+                                context = context.parent
+                            done = True
+                            break
+                context.extend(tokens)
+                if target:
+                    context = b.update_context(context, target)
+                    break # continue with new context
+            else:
+                break
+        return
 
