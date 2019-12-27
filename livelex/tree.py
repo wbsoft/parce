@@ -540,37 +540,48 @@ class Document:
 
     def modify(self, start, end, text):
         """Modify the text: document[start:end] = text."""
-        if end is None or end > len(self._text):
+        if end is None or end >= len(self._text):
             end = len(self._text)
+            tail = False
+        else:
+            tail = True
+        if (start > end or (start == end and not text) or
+            (start + len(text) == end and self._text[start:end] == text)):
+            return
         offset = len(text) - end + start
-        
+
         text = self._text = self._text[:start] + text + self._text[end:]
 
         start_token = self.tree.find_token(start)
-        if start_token:
+        if start > 0 and start_token:
             if start_token.group:
                 start_token = start_token.group[0]
             start = start_token.pos
-
-            end_token = self.tree.find_token(end)
-            if end_token.group:
-                end_token = end_token.group[0]
-            end = end_token.pos
-
             context = start_token.parent
-
-            tail = end_token.split_right()
-            start_token.cut_right()
-            tailtokens = []
-            for t in tail.tokens():
-                if not t.group or (t.group and t is t.group[0]):
-                    # only pick the first of grouped tokens
-                    tailtokens.append(t)
-            tailpositions = [t.pos for t in tailtokens]
-
         else:
-            tail = False
+            start = 0
             context = self.tree
+
+        if tail:
+            end_token = self.tree.find_token(end)
+            if end_token:
+                if end_token.group:
+                    end_token = end_token.group[0]
+                end = end_token.end
+                tail = end_token.split_right()
+                tailtokens = []
+                for t in tail.tokens():
+                    if not t.group or (t.group and t is t.group[0]):
+                        # only pick the first of grouped tokens
+                        tailtokens.append(t)
+                tailpositions = [t.pos for t in tailtokens]
+            else:
+                tail = False
+
+        if start_token:
+            start_token.cut_right()
+        else:
+            context.clear()
 
         # if we keep tokens, how far do they move to the right
         new_end = end + offset
@@ -604,6 +615,7 @@ class Document:
                             tailnode = tailnode.parent
                             c = c.parent
                         tailtoken.parent = context
+                        new_end = tailtoken.pos
                         done = True
                         break
                 context.extend(tokens)
@@ -613,5 +625,6 @@ class Document:
             else:
                 break
         b.unwind(context)
+        print(start, new_end)
 
 
