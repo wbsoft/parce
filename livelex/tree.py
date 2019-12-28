@@ -301,11 +301,11 @@ class Token(NodeMixin):
             context = node.parent
             copy = Context(context.lexicon, None)
             copy.append(firstchild)
-            i = context.index(node)
-            for n in context[i+1:]:
+            s = slice(context.index(node) + 1, None)
+            for n in context[s]:
                 n.parent = copy
-                copy.append(n)
-            del context[i+1:]
+            copy.extend(context[s])
+            del context[s]
             firstchild.parent = copy
             firstchild = copy
             node = context
