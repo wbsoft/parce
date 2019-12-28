@@ -541,6 +541,20 @@ class Document:
             self.tree = None
             self._modified_range = None
 
+    def modified_tokens(self):
+        """Yield all the tokens that were changed in the last update."""
+        if self._modified_range is True:
+            yield from self.tree.tokens()
+        elif self._modified_range is not None:
+            start, end = self._modified_range
+            start_token = self.tree.find_token(start)
+            if start_token:
+                yield start_token
+                for t in start_token.forward():
+                    if t.pos >= end:
+                        break
+                    yield t
+
     def modify(self, start, end, text):
         """Modify the text: document[start:end] = text."""
         # manage end, and record if there is text after the modified part (tail)
@@ -553,6 +567,9 @@ class Document:
         if (start > end or (start == end and not text) or
             (start + len(text) == end and self._text[start:end] == text)):
             self._modified_range = None
+            return
+        elif start == 0 and not tail:
+            self.retokenize_full()
             return
         # record the position change for tail tokens that can be reused
         offset = len(text) - end + start
