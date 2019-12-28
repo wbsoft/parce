@@ -33,6 +33,7 @@ This module is still completely in flux, don't depend on it right now.
 
 import bisect
 import collections
+import itertools
 
 
 from . import lex
@@ -219,6 +220,17 @@ class Token(NodeMixin):
         self.pos = pos
         self.text = text
         self.action = action
+
+    def copy(self):
+        """Return a shallow copy."""
+        return type(self)(self.parent, self.pos, self.text, self.action)
+
+    def equals(self, other):
+        """Return True if other has same parent, pos, text and action."""
+        return (self.parent == other.parent
+                and self.pos == other.pos
+                and self.text == other.text
+                and self.action == other.action)
 
     def __repr__(self):
         return "<Token {} at {} ({})>".format(repr(self.text), self.pos, self.action)
@@ -631,6 +643,7 @@ class Document:
         else:
             tail = True
 
+        # we may be able to use existing tokens for the start if start > 0
         head = start > 0
 
         # optimize for some cases, detect whether the text actually changes
@@ -639,7 +652,7 @@ class Document:
             self._modified_range = None
             return
 
-        # record the position change for tail tokens that can be reused
+        # record the position change for tail tokens that maybe are reused
         offset = len(text) - end + start
 
         # modify the stored text string so we can start parsing
@@ -648,16 +661,16 @@ class Document:
         # find the last token before the modified part, we will start parsing
         # before that token. If there are no tokens, we just start at 0.
         if head:
-            start_token = self.tree.find_token_before(start - 1)
+            start_token = self.tree.find_token_before(start)
             if start_token:
+                # go back some more tokens, you never know a longer match could
+                # be made. In very particular cases a longer token could be found...
+                for start_token in itertools.islice(start_token.backward(), 2):
+                    pass
                 if start_token.group:
                     start_token = start_token.group[0]
-                start = start_token.pos
-                context = start_token.parent
             else:
                 head = False
-                start = 0
-                context = self.tree
 
         # If there remains text after the modified part, make a list of the
         # (old) positions of the tokens
@@ -670,71 +683,89 @@ class Document:
         if not head and not tail:
             self.set_text(text)
             return
+        
+        if head:
+            # make a short list of tokens from the start_token to the place
+            # we want to parse.
+            start_tokens = [start_token.copy()]
+            for t in start_token.forward():
+                start_tokens.append(t.copy())
+                if t.end > start:
+                    break
 
         if tail:
             # make a subtree structure starting with this end_token
-            end = end_token.pos
+            end_parse = end_token.pos + offset
             tail = end_token.split_right()
-            # store the old positions of the tokens
+            # store the new position the tokens would get
             tail_tokens = []
             for t in tail.tokens():
                 if not t.group or (t.group and t is t.group[0]):
                     # only pick the first of grouped tokens
                     tail_tokens.append(t)
-            tail_positions = [t.pos for t in tail_tokens]
+            tail_positions = [t.pos + offset for t in tail_tokens]
             tail = bool(tail_tokens)
 
         # remove the start token and all tokens to the right
         if head:
+            start_parse = start_token.pos
+            context = start_token.parent
             if not tail or start_token is not end_token:
                 start_token.cut_right()
         else:
+            start_parse = 0
+            context = self.tree
             context.clear()
 
         # start parsing
-        pos = start
+        pos = start_parse
         b = TreeBuilder()
         done = False
         while not done:
             for pos, tokens, target in b.parse_context(context, text, pos):
-                if tail and tokens:
-                    oldpos = tokens[0].pos - offset
-                    if oldpos >= end:
-                        index = bisect.bisect_left(tail_positions, oldpos)
-                        if index >= len(tail_positions):
-                            tail = False
-                        elif (tail_positions[index] == oldpos
-                                and tokens[-1].state_matches(tail_tokens[index])):
-                            # we can attach the tail here.
-                            # first adjust the positions of all old tokens
-                            if offset:
-                                for t in tail_tokens[index:]:
-                                    t.pos += offset
-                            # add the old tokens to the current context
-                            tail_token = tail_node = tail_tokens[index]
-                            context.append(tail_token)
-                            c = context
-                            while tail_node.parent:
-                                for n in tail_node.right_siblings():
-                                    c.append(n)
-                                    n.parent = c
-                                tail_node = tail_node.parent
-                                c = c.parent
-                            tail_token.parent = context
-                            end = tail_token.pos
-                            done = True
-                            break
-                        elif index > 10:  # prevent deleting too often
-                            del tail_positions[:index]
-                            del tail_tokens[:index]
+                if tail and tokens and tokens[0].pos >= end_parse:
+                    index = bisect.bisect_left(tail_positions, tokens[0].pos)
+                    if index >= len(tail_positions):
+                        tail = False
+                    elif (tail_positions[index] == tokens[0].pos
+                            and tokens[-1].state_matches(tail_tokens[index])):
+                        # we can attach the tail here.
+                        if offset:
+                            for t in tail_tokens[index:]:
+                                t.pos += offset
+                        # add the old tokens to the current context
+                        tail_token = tail_node = tail_tokens[index]
+                        context.append(tail_token)
+                        c = context
+                        while tail_node.parent:
+                            for n in tail_node.right_siblings():
+                                c.append(n)
+                                n.parent = c
+                            tail_node = tail_node.parent
+                            c = c.parent
+                        tail_token.parent = context
+                        end_parse = tail_token.pos
+                        done = True
+                        break
+                    elif index > 10:  # prevent deleting too often
+                        del tail_positions[:index]
+                        del tail_tokens[:index]
                 context.extend(tokens)
                 if target:
                     context = b.update_context(context, target)
                     break # continue with new context
             else:
-                end = pos
+                end_parse = pos
                 break
         b.unwind(context)
-        self._modified_range = start, end
+        # see if the start_token was changed
+        if head:
+            new_start_token = self.tree.find_token_after(start_parse)
+            if new_start_token:
+                for old, new in zip(start_tokens, new_start_token.forward_including()):
+                    if not old.equals(new):
+                        break
+                    start_parse = new.end
+        self._modified_range = start_parse, end_parse
 
 
