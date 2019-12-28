@@ -273,6 +273,16 @@ class Token(NodeMixin):
                 yield from n.tokens_bw()
             node = node.parent
 
+    def forward_including(self):
+        """Yield all tokens in forward direction, including self."""
+        yield self
+        yield from self.forward()
+
+    def backward_including(self):
+        """Yield all tokens in backward direction, including self."""
+        yield self
+        yield from self.backward()
+
     def cut_right(self):
         """Remove this token and all tokens to the right from the tree."""
         node = self
@@ -541,19 +551,25 @@ class Document:
             self.tree = None
             self._modified_range = None
 
+    def tokens(self, start=0, end=None):
+        """Yield all tokens from start to end if given."""
+        t = self.tree.find_token(start) if start else None
+        gen = t.forward_including() if t else self.tree.tokens()
+        if end is None or end >= len(self._text):
+            yield from gen
+        else:
+            for t in gen:
+                if t.pos >= end:
+                    break
+                yield t
+
     def modified_tokens(self):
         """Yield all the tokens that were changed in the last update."""
         if self._modified_range is True:
-            yield from self.tree.tokens()
+            return self.tree.tokens()
         elif self._modified_range is not None:
             start, end = self._modified_range
-            start_token = self.tree.find_token(start)
-            if start_token:
-                yield start_token
-                for t in start_token.forward():
-                    if t.pos >= end:
-                        break
-                    yield t
+            return self.tokens(start, end)
 
     def modify(self, start, end, text):
         """Modify the text: document[start:end] = text."""
