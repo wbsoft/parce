@@ -606,32 +606,36 @@ class Document:
         done = False
         while not done:
             for pos, tokens, target in b.parse_context(context, text, pos):
-                if tail and tokens and tokens[0].pos - offset >= end:
-                    newpos = tokens[0].pos - offset
-                    index = bisect.bisect_left(tail_positions, newpos)
-                    if (index < len(tail_positions) and tail_positions[index] == newpos
-                            and tokens[-1].state_matches(tail_tokens[index])):
-                        # we can attach the tail here.
-                        # first adjust the positions of all old tokens
-                        tail_token = tail_tokens[index]
-                        if offset:
-                            tail_token.pos += offset
-                            for t in tail_token.forward():
-                                t.pos += offset
-                        # add the old tokens to the current context
-                        context.append(tail_token)
-                        tail_node = tail_token
-                        c = context
-                        while tail_node.parent:
-                            for n in tail_node.right_siblings():
-                                c.append(n)
-                                n.parent = c
-                            tail_node = tail_node.parent
-                            c = c.parent
-                        tail_token.parent = context
-                        end = tail_token.pos
-                        done = True
-                        break
+                if tail and tokens:
+                    oldpos = tokens[0].pos - offset
+                    if oldpos >= end:
+                        index = bisect.bisect_left(tail_positions, oldpos)
+                        if index >= len(tail_positions):
+                            tail = False
+                        elif (tail_positions[index] == oldpos
+                                and tokens[-1].state_matches(tail_tokens[index])):
+                            # we can attach the tail here.
+                            # first adjust the positions of all old tokens
+                            if offset:
+                                for t in tail_tokens[index:]:
+                                    t.pos += offset
+                            # add the old tokens to the current context
+                            tail_token = tail_node = tail_tokens[index]
+                            context.append(tail_token)
+                            c = context
+                            while tail_node.parent:
+                                for n in tail_node.right_siblings():
+                                    c.append(n)
+                                    n.parent = c
+                                tail_node = tail_node.parent
+                                c = c.parent
+                            tail_token.parent = context
+                            end = tail_token.pos
+                            done = True
+                            break
+                        elif index > 10:  # prevent deleting too often
+                            del tail_positions[:index]
+                            del tail_tokens[:index]
                 context.extend(tokens)
                 if target:
                     context = b.update_context(context, target)
