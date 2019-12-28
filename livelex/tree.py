@@ -542,6 +542,23 @@ class Document:
         self._root_lexicon = root_lexicon
         self.retokenize_full()
 
+    def __getitem__(self, k):
+        return self._text[k]
+
+    def __setitem__(self, k, value):
+        if type(k) is slice:
+            if k.step not in (None, 1):
+                raise ValueError("slice step other than 1 not allowed")
+            start = k.start or 0
+            end = k.stop
+        else:
+            start = k
+            end = k + 1
+        self.modify(start, end, value)
+
+    def __delitem__(self, k):
+        self[k] = ''
+
     def retokenize_full(self):
         root = self.get_root_lexicon()
         if root:
@@ -585,7 +602,7 @@ class Document:
             self._modified_range = None
             return
         elif start == 0 and not tail:
-            self.retokenize_full()
+            self.set_text(text)
             return
         # record the position change for tail tokens that can be reused
         offset = len(text) - end + start
