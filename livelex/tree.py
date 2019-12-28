@@ -429,6 +429,40 @@ class Context(list, NodeMixin):
             return self[i]
         return self.last_token()
 
+    def find_token_after(self, pos):
+        """Return the first token completely right from pos.
+
+        Returns None if there is no token right from pos.
+
+        """
+        positions = []
+        for n in self:
+            if n.is_context:
+                n = n.first_token()
+            positions.append(n.pos)
+        i = bisect.bisect_left(positions, pos)
+        if i < len(positions):
+            if self[i].is_context:
+                return self[i].find_token_after(pos)
+            return self[i]
+
+    def find_token_before(self, pos):
+        """Return the last token completely left from pos.
+
+        Returns None if there is no token left from pos.
+
+        """
+        positions = []
+        for n in self:
+            if n.is_context:
+                n = n.last_token()
+            positions.append(n.end)
+        i = bisect.bisect_right(positions, pos) - 1
+        if i >= 0:
+            if self[i].is_context:
+                return self[i].find_token_before(pos)
+            return self[i]
+
 
 class TreeBuilder:
     """Build a tree directly from parsing the text."""
@@ -596,41 +630,50 @@ class Document:
             tail = False
         else:
             tail = True
+
+        head = start > 0
+
         # optimize for some cases, detect whether the text actually changes
         if (start > end or (start == end and not text) or
             (start + len(text) == end and self._text[start:end] == text)):
             self._modified_range = None
             return
-        elif start == 0 and not tail:
-            self.set_text(text)
-            return
+
         # record the position change for tail tokens that can be reused
         offset = len(text) - end + start
+
         # modify the stored text string so we can start parsing
         text = self._text = self._text[:start] + text + self._text[end:]
+
         # find the last token before the modified part, we will start parsing
         # before that token. If there are no tokens, we just start at 0.
-        start_token = self.tree.find_token(start - 1)
-        if start > 0 and start_token:
-            if start_token.group:
-                start_token = start_token.group[0]
-            start = min(start, start_token.pos)
-            context = start_token.parent
-        else:
-            start = 0
-            context = self.tree
+        if head:
+            start_token = self.tree.find_token_before(start - 1)
+            if start_token:
+                if start_token.group:
+                    start_token = start_token.group[0]
+                start = start_token.pos
+                context = start_token.parent
+            else:
+                head = False
+                start = 0
+                context = self.tree
 
         # If there remains text after the modified part, make a list of the
         # (old) positions of the tokens
-        if start_token and tail:
+        if tail:
             # find the first token after the modified part
-            end_token = self.tree.find_token(end)
-            if end_token.pos < end:
-                for end_token in end_token.forward():
-                    if end_token.pos >= end:
-                        break
-            end = end_token.pos
+            end_token = self.tree.find_token_after(end)
+            if not end_token:
+                tail = False
+
+        if not head and not tail:
+            self.set_text(text)
+            return
+
+        if tail:
             # make a subtree structure starting with this end_token
+            end = end_token.pos
             tail = end_token.split_right()
             # store the old positions of the tokens
             tail_tokens = []
@@ -640,12 +683,10 @@ class Document:
                     tail_tokens.append(t)
             tail_positions = [t.pos for t in tail_tokens]
             tail = bool(tail_tokens)
-        else:
-            tail = False
 
         # remove the start token and all tokens to the right
-        if start > 0 and start_token:
-            if start_token is not end_token:
+        if head:
+            if not tail or start_token is not end_token:
                 start_token.cut_right()
         else:
             context.clear()
