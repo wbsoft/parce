@@ -672,8 +672,8 @@ class Document:
             else:
                 head = False
 
-        # If there remains text after the modified part, make a list of the
-        # (old) positions of the tokens
+        # If there remains text after the modified part,
+        # we try to reuse the old tokens
         if tail:
             # find the first token after the modified part
             end_token = self.tree.find_token_after(end)
@@ -686,7 +686,9 @@ class Document:
         
         if head:
             # make a short list of tokens from the start_token to the place
-            # we want to parse.
+            # we want to parse. We copy them because some might get moved to
+            # the tail tree. If they were not changed, we can adjust the
+            # modified region.
             start_tokens = [start_token.copy()]
             for t in start_token.forward():
                 start_tokens.append(t.copy())
