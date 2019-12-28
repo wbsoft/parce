@@ -543,19 +543,23 @@ class Document:
 
     def modify(self, start, end, text):
         """Modify the text: document[start:end] = text."""
+        # manage end, and record if there is text after the modified part (tail)
         if end is None or end >= len(self._text):
             end = len(self._text)
             tail = False
         else:
             tail = True
+        # optimize for some cases, detect whether the text actually changes
         if (start > end or (start == end and not text) or
             (start + len(text) == end and self._text[start:end] == text)):
             self._modified_range = None
             return
+        # record the position change for tail tokens that can be reused
         offset = len(text) - end + start
-
+        # modify the stored text string so we can start parsing
         text = self._text = self._text[:start] + text + self._text[end:]
-
+        # find the last token before the modified part, we will start parsing
+        # before that token. If there are no tokens, we just start at 0.
         start_token = self.tree.find_token(start - 1)
         if start > 0 and start_token:
             if start_token.group:
@@ -566,33 +570,37 @@ class Document:
             start = 0
             context = self.tree
 
-        if tail:
+        # If there remains text after the modified part, make a list of the
+        # (old) positions of the tokens
+        if start_token and tail:
+            # find the first token after the modified part
             end_token = self.tree.find_token(end)
-            if end_token:
-                if end_token.group:
-                    end_token = end_token.group[-1]
-                if end_token.pos <= end:
-                    end = end_token.end
-                    for end_token in end_token.forward():
-                        end = end_token.pos
+            if end_token.pos < end:
+                for end_token in end_token.forward():
+                    if end_token.pos >= end:
                         break
-                tail = end_token.split_right()
-                tailtokens = []
-                for t in tail.tokens():
-                    if not t.group or (t.group and t is t.group[0]):
-                        # only pick the first of grouped tokens
-                        tailtokens.append(t)
-                tailpositions = [t.pos for t in tailtokens]
-                tail = bool(tailtokens)
-            else:
-                tail = False
+            end = end_token.pos
+            # make a subtree structure starting with this end_token
+            tail = end_token.split_right()
+            # store the old positions of the tokens
+            tail_tokens = []
+            for t in tail.tokens():
+                if not t.group or (t.group and t is t.group[0]):
+                    # only pick the first of grouped tokens
+                    tail_tokens.append(t)
+            tail_positions = [t.pos for t in tail_tokens]
+            tail = bool(tail_tokens)
+        else:
+            tail = False
 
-        if start_token:
+        # remove the start token and all tokens to the right
+        if start > 0 and start_token:
             if start_token is not end_token:
                 start_token.cut_right()
         else:
             context.clear()
 
+        # start parsing
         pos = start
         b = TreeBuilder()
         done = False
@@ -600,28 +608,28 @@ class Document:
             for pos, tokens, target in b.parse_context(context, text, pos):
                 if tail and tokens and tokens[0].pos - offset >= end:
                     newpos = tokens[0].pos - offset
-                    index = bisect.bisect_left(tailpositions, newpos)
-                    if (index < len(tailpositions) and tailpositions[index] == newpos
-                            and tokens[-1].state_matches(tailtokens[index])):
+                    index = bisect.bisect_left(tail_positions, newpos)
+                    if (index < len(tail_positions) and tail_positions[index] == newpos
+                            and tokens[-1].state_matches(tail_tokens[index])):
                         # we can attach the tail here.
                         # first adjust the positions of all old tokens
-                        tailtoken = tailtokens[index]
+                        tail_token = tail_tokens[index]
                         if offset:
-                            tailtoken.pos += offset
-                            for t in tailtoken.forward():
+                            tail_token.pos += offset
+                            for t in tail_token.forward():
                                 t.pos += offset
                         # add the old tokens to the current context
-                        context.append(tailtoken)
-                        tailnode = tailtoken
+                        context.append(tail_token)
+                        tail_node = tail_token
                         c = context
-                        while tailnode.parent:
-                            for n in tailnode.right_siblings():
+                        while tail_node.parent:
+                            for n in tail_node.right_siblings():
                                 c.append(n)
                                 n.parent = c
-                            tailnode = tailnode.parent
+                            tail_node = tail_node.parent
                             c = c.parent
-                        tailtoken.parent = context
-                        end = tailtoken.pos
+                        tail_token.parent = context
+                        end = tail_token.pos
                         done = True
                         break
                 context.extend(tokens)
