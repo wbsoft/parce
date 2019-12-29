@@ -23,10 +23,6 @@ import re
 import livelex.regex
 
 
-# detect circular references between default targets
-_circular_default_targets = set()
-
-
 default_action = object()
 default_target = object()
 
@@ -110,7 +106,6 @@ class BoundLexicon:
                 _default_action = action
             elif pattern is default_target:
                 _default_target = action, *target
-                self._check_default_target(_default_target)
             else:
                 if isinstance(pattern, livelex.regex.Pattern):
                     pattern = pattern.build()
@@ -129,7 +124,7 @@ class BoundLexicon:
             if _default_target:
                 raise RuntimeError(
                     "Lexicon {0}: can't have both default_action and "
-                    "default_target".format(self.name()))
+                    "default_target".format(self))
             def parse(text, pos):
                 """Parse text, using a default action for unknown text."""
                 for m in rx.finditer(text, pos):
@@ -140,6 +135,7 @@ class BoundLexicon:
                 if pos < len(text):
                     yield (pos, text[pos:], None, _default_action)
         elif _default_target:
+            self._check_default_target(_default_target)
             def parse(text, pos):
                 """Parse text, stopping with the default target at unknown text."""
                 while True:
@@ -163,20 +159,34 @@ class BoundLexicon:
         This could hang the parser, and we wouldn't like to have that :-)
 
         """
-        _circular_default_targets.add(self)
-        depth = 0
-        for t in target:
-            if isinstance(t, int):
-                if depth is not None:
-                    depth += t
-                    # pushing to self?
-                    if depth > 0:
-                        raise RuntimeError("Default target points to self: {}".format(self))
-            elif t in _circular_default_targets:
-                raise RuntimeError("Circular default target(s) detected: {}".format(
-                    _circular_default_targets))
+        state = [self]
+        circular = set()
+        lexicon = self
+        while True:
+            circular.add(lexicon)
+            depth = len(state)
+            for t in target:
+                if isinstance(t, int):
+                    if t < 0:
+                        if len(state) + t < 1:
+                            return
+                        del state[t:]
+                    else:
+                        state += [lexicon] * t
+                else:
+                    state.append(t)
+            if len(state) == depth:
+                raise RuntimeError("Invalid default target in lexicon: {}".format(lexicon))
+            lexicon = state[-1]
+            if lexicon in circular:
+                state.extend(l for l in circular if l not in state)
+                raise RuntimeError("Circular default target: {}".format(
+                    " -> ".join(map(str, state))))
+            for pattern, *target in lexicon():
+                if pattern is default_target:
+                    break
             else:
-                depth = None    # don't check for integer targets after a lexicon target
+                break
 
 
 def lexicon(rules_func=None, **kwargs):
