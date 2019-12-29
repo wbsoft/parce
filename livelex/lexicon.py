@@ -23,6 +23,10 @@ import re
 import livelex.regex
 
 
+# detect circular references between default targets
+_circular_default_targets = set()
+
+
 default_action = object()
 default_target = object()
 
@@ -106,6 +110,7 @@ class BoundLexicon:
                 _default_action = action
             elif pattern is default_target:
                 _default_target = action, *target
+                self._check_default_target(_default_target)
             else:
                 if isinstance(pattern, livelex.regex.Pattern):
                     pattern = pattern.build()
@@ -151,6 +156,27 @@ class BoundLexicon:
                 for m in rx.finditer(text, pos):
                     yield (m.start(), m.group(), m, *index[m.lastindex])
         return parse
+
+    def _check_default_target(self, target):
+        """Check whether this default target could lead to circular references.
+
+        This could hang the parser, and we wouldn't like to have that :-)
+
+        """
+        _circular_default_targets.add(self)
+        depth = 0
+        for t in target:
+            if isinstance(t, int):
+                if depth is not None:
+                    depth += t
+                    # pushing to self?
+                    if depth > 0:
+                        raise RuntimeError("Default target points to self: {}".format(self))
+            elif t in _circular_default_targets:
+                raise RuntimeError("Circular default target(s) detected: {}".format(
+                    _circular_default_targets))
+            else:
+                depth = None    # don't check for integer targets after a lexicon target
 
 
 def lexicon(rules_func=None, **kwargs):
