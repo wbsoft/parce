@@ -663,10 +663,14 @@ class Document:
         if head:
             start_token = self.tree.find_token_before(start)
             if start_token:
+                pos = start
                 # go back some more tokens, you never know a longer match could
-                # be made. In very particular cases a longer token could be found...
-                for start_token in itertools.islice(start_token.backward(), 2):
-                    pass
+                # be made. In very particular cases a longer token could be found.
+                # So, at least go back to just before a newline.
+                for start_token in itertools.islice(start_token.backward_including(), 4):
+                    if '\n' in text[start_token.pos:pos]:
+                        break
+                    pos = start_token.pos
                 if start_token.group:
                     start_token = start_token.group[0]
             else:
