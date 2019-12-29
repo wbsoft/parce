@@ -60,14 +60,16 @@ class MyLang(Language):
 
 
 s = "bla pythonBLA blub blablo b39la 1 4 ble XXXblo4p"
-from livelex import Lexer
-l = Lexer(MyLang.root)
-tokens = list(l.tokens(s))
 
 if __name__ == "__main__":
     print("livelex version:", livelex.version())
 
     from pprint import pprint
+
+    from livelex import Lexer
+    l = Lexer(MyLang.root)
+    tokens = list(l.tokens(s))
+
     pprint(tokens)
 
     #print("Tree:")
@@ -75,6 +77,6 @@ if __name__ == "__main__":
     #pprint(tree(tokens))
 
     print("Tree from tree:")
-    from livelex.tree import tree
-    pprint(tree(tokens))
+    from livelex.tree import Document
+    Document(MyLang.root, s).tree.dump()
 
