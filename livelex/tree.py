@@ -516,6 +516,8 @@ class TreeBuilder:
                     tokens = tuple(GroupToken(context, *t) for t in tokens)
                     for t in tokens:
                         t.group = tokens
+            else:
+                tokens = ()
             yield end, tokens, target
 
     def update_context(self, context, target):
