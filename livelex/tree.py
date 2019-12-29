@@ -660,17 +660,23 @@ class Document:
 
         # find the last token before the modified part, we will start parsing
         # before that token. If there are no tokens, we just start at 0.
+        # At least go back to just before a newline, if possible.
         if head:
-            start_token = self.tree.find_token_before(start)
+            i = text.rfind('\n', 0, start)
+            if i == -1:
+                start_token = self.tree.find_token_before(start)
+                if start_token:
+                    # go back some more tokens, you never know a longer match
+                    # could be made. In very particular cases a longer token
+                    # could be found. (That's why we tried to go back to a
+                    # newline.)
+                    for start_token in itertools.islice(start_token.backward(), 10):
+                        pass
+            else:
+                start_token = self.tree.find_token_before(i)
             if start_token:
-                pos = start
-                # go back some more tokens, you never know a longer match could
-                # be made. In very particular cases a longer token could be found.
-                # So, at least go back to just before a newline.
-                for start_token in itertools.islice(start_token.backward_including(), 4):
-                    if '\n' in text[start_token.pos:pos]:
-                        break
-                    pos = start_token.pos
+                # don't start in the middle of a group, as they originate from
+                # one single regexp match
                 if start_token.group:
                     start_token = start_token.group[0]
             else:
