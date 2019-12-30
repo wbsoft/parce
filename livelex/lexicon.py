@@ -121,10 +121,6 @@ class BoundLexicon:
             index[i] = action_target
 
         if _default_action:
-            if _default_target:
-                raise RuntimeError(
-                    "Lexicon {0}: can't have both default_action and "
-                    "default_target".format(self))
             def parse(text, pos):
                 """Parse text, using a default action for unknown text."""
                 for m in rx.finditer(text, pos):
@@ -135,7 +131,6 @@ class BoundLexicon:
                 if pos < len(text):
                     yield (pos, text[pos:], None, _default_action)
         elif _default_target:
-            self._check_default_target(_default_target)
             def parse(text, pos):
                 """Parse text, stopping with the default target at unknown text."""
                 while True:
@@ -153,41 +148,6 @@ class BoundLexicon:
                     yield (m.start(), m.group(), m, *index[m.lastindex])
         return parse
 
-    def _check_default_target(self, target):
-        """Check whether this default target could lead to circular references.
-
-        This could hang the parser, and we wouldn't like to have that :-)
-
-        """
-        state = [self]
-        circular = set()
-        lexicon = self
-        while True:
-            circular.add(lexicon)
-            depth = len(state)
-            for t in target:
-                if isinstance(t, int):
-                    if t < 0:
-                        if len(state) + t < 1:
-                            return
-                        del state[t:]
-                    else:
-                        state += [lexicon] * t
-                else:
-                    state.append(t)
-            if len(state) == depth:
-                raise RuntimeError("Invalid default target in lexicon: {}".format(lexicon))
-            lexicon = state[-1]
-            if lexicon in circular:
-                state.extend(l for l in circular if l not in state)
-                raise RuntimeError("Circular default target: {}".format(
-                    " -> ".join(map(str, state))))
-            for pattern, *target in lexicon():
-                if pattern is default_target:
-                    break
-            else:
-                break
-
 
 def lexicon(rules_func=None, **kwargs):
     """Lexicon factory decorator.
@@ -199,9 +159,9 @@ def lexicon(rules_func=None, **kwargs):
 
     You can specify keyword arguments, that will be passed on to the
     BoundLexicon object as soon as it is created.
-    
+
     The following keyword arguments are supported:
-    
+
     re_flags: The flags that are passed to the regular expression compiler
 
     The code body of the function should return (yield) the rules of the
@@ -218,5 +178,80 @@ def lexicon(rules_func=None, **kwargs):
         return Lexicon(rules_func, **kwargs)
     return lexicon
 
+
+def validate_language(lang):
+    """Performs checks to the specified language class.
+
+    Detects circular default targets, empty or invalid regular expressions, etc.
+
+    """
+    lexicons = []
+    for key, value in lang.__dict__.items():
+        if isinstance(value, Lexicon):
+            lexicons.append(getattr(lang, key))
+
+    for lexicon in lexicons:
+        default_act, default_tg = None, None
+        msg = lambda s: print("{}: ".format(lexicon) + s)
+        for pattern, *rest in lexicon():
+            if pattern is default_action:
+                if default_act:
+                    msg("conflicting default actions")
+                else:
+                    default_act = pattern
+            elif pattern is default_target:
+                if default_tg:
+                    msg("conflicting default targets")
+                else:
+                    default_tg = pattern
+                    _check_default_target(lexicon, pattern)
+            else:
+                try:
+                    rx = re.compile(pattern)
+                except re.error as e:
+                    msg("regular expression {} error:".format(repr(pattern)))
+                    print("  {}".format(e))
+                else:
+                    if rx.match(''):
+                        msg("warning: pattern {} matches the empty string".format(repr(pattern)))
+        if default_act and default_tg:
+            msg("can't have both default_action and default_target")
+
+
+
+def _check_default_target(lexicon, target):
+    """Check whether this default target could lead to circular references.
+
+    This could hang the parser, and we wouldn't like to have that :-)
+
+    """
+    state = [lexicon]
+    circular = set()
+    while True:
+        circular.add(lexicon)
+        depth = len(state)
+        for t in target:
+            if isinstance(t, int):
+                if t < 0:
+                    if len(state) + t < 1:
+                        return
+                    del state[t:]
+                else:
+                    state += [lexicon] * t
+            else:
+                state.append(t)
+        if len(state) == depth:
+            print("{}: invalid default target".format(lexicon))
+            return
+        lexicon = state[-1]
+        if lexicon in circular:
+            state.extend(l for l in circular if l not in state)
+            print("{}: circular default target: {}".format(lexicon,
+                " -> ".join(map(str, state))))
+        for pattern, *target in lexicon():
+            if pattern is default_target:
+                break
+        else:
+            break
 
 
