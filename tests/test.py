@@ -3,6 +3,7 @@
 
 
 import sys
+import re
 # pick the livelex module from the source tree
 sys.path.insert(0, '..')
 
@@ -29,37 +30,38 @@ class MyLang(Language):
 
     @lexicon(re_flags=0)
     def root(cls):
-        yield Words(('bla', 'BLA')), 'bla action'
-        yield r'ble', 'ble action'
-        yield r'\s+', skip      # this text is skipped
-        yield r'(bl)(ub)', Subgroup('bl act', 'ub act')
-        yield r'blo', 'blo action', cls.blo
-        yield r'X', 'x action in root', cls.xxxxs
-        yield r'"', 'string', cls.string
-        yield default_action, "TEXT"
-
-    @lexicon
-    def blo(cls):
-        yield r'\s+', skip      # this text is skipped
-        yield r'1', '1 in blo'
-        yield r'4', '4 in blo, end', -1
-        yield r'[0-9]', Text(lambda t: "has 3" if '3' in t else 'no 3')
-        yield default_action, "unparsed"
-
-    @lexicon
-    def xxxxs(cls):
-        yield r'X', 'x action in xxxs', 1
-        yield r'Y', 'Y action', cls.blo
-        yield default_target, -1
-
+        yield r'"', "string", cls.string
+        yield r'\(', "paren", cls.parenthesized
+        yield r'\d+', "number"
+        yield r'%', "comment", cls.comment
+        yield r'[,.!?]', "punctuation"
+        yield r'\w+', "word"
+    
     @lexicon
     def string(cls):
         yield r'\\[\\"]', 'string escape'
         yield r'"', "string", -1
         yield default_action, "string"
 
+    @lexicon(re_flags=re.MULTILINE)
+    def comment(cls):
+        yield r'$', "comment", -1
+        yield r'XXX|TODO', "todo"
+        yield default_action, "comment"
 
-s = "bla pythonBLA blub blablo b39la 1 4 ble XXXblo4p"
+    @lexicon
+    def parenthesized(cls):
+        yield r'\)', "paren", -1
+        yield from cls.root()
+
+
+s = r"""
+This is (an example) text with 12 numbers
+and "a string with \" escaped characters",
+and a % comment that TODO lasts until the end
+of the line.
+"""
+
 
 if __name__ == "__main__":
     print("livelex version:", livelex.version())
