@@ -58,7 +58,7 @@ class Document:
     last exits.
 
     """
-    undoRedoEnabled = True
+    undo_redo_enabled = True
 
     def __init__(self, text=""):
         self._cursors = weakref.WeakSet()
@@ -94,9 +94,7 @@ class Document:
         """Sets whether the text is modified, happens automatically normally."""
         self._modified = modified
         if not modified:
-            # set all undo/redo stages to modified
-            for undo in itertools.chain(self._undo_stack, self._redo_stack):
-                undo[3] = True
+            self._set_all_undo_redo_modified()
 
     def text(self):
         """Return all text."""
@@ -105,8 +103,8 @@ class Document:
     def set_text(self, text):
         """Replace all text."""
         self._text = text
-        self._modified_range = None
-        self._modified = True
+        self._modified_range = True
+        self.set_modified(True)
 
     def __enter__(self):
         """Start the context for modifying the document."""
@@ -125,7 +123,7 @@ class Document:
             self._edit_context = 0
             self._apply()
 
-    def __setitem__(self, key, value):
+    def __setitem__(self, key, text):
         if isinstance(key, Cursor):
             start = key.start
             end = key.end
@@ -135,8 +133,8 @@ class Document:
         else:
             start = key
             end = key + 1
-        if self._text[start:end] != value:
-            self._changes.append((start, end, value))
+        if self._text[start:end] != text:
+            self._changes.append((start, end, text))
             if not self._edit_context:
                 self._apply()
 
@@ -179,10 +177,12 @@ class Document:
                         i += 1  # don't consider this cursor any more
             self._changes.clear()
             text = "".join(result)
-            if self.undoRedoEnabled:
+            if self.undo_redo_enabled:
+                # store start, end, and text needed to undo this change
                 self._handle_undo(head, head + len(text), self._text[head:tail])
             self._modify(head, tail, text)
-            self._modified = True
+            if not self._in_undo:
+                self.set_modified(True) # othw this is handled by undo/redo
 
     def _modify(self, start, end, text):
         """Called by _apply(), replace document[start:end] with text."""
@@ -207,29 +207,37 @@ class Document:
             return self._modified_range
 
     def _handle_undo(self, start, end, text):
+        """Store start, end, and text needed to reconstruct the previous state."""
         if self._in_undo == "undo":
-            self._redo_stack.append([start, end, text, self._modified])
+            self._redo_stack.append([start, end, text, self.modified()])
         else:
-            self._undo_stack.append([start, end, text, self._modified])
-            if self._in_undo is None:
+            self._undo_stack.append([start, end, text, self.modified()])
+            if self._in_undo != "redo":
                 self._redo_stack.clear()
+
+    def _set_all_undo_redo_modified(self):
+        """Called on set_modified(False). Set all undo/redo state to modified."""
+        for undo in itertools.chain(self._undo_stack, self._redo_stack):
+            undo[3] = True
 
     def undo(self):
         """Undo the last modification."""
+        assert self._edit_context == 0, "can't undo while in edit context"
         if self._undo_stack:
             self._in_undo = "undo"
             start, end, text, modified = self._undo_stack.pop()
             self[start:end] = text
-            self._modified = modified
+            self.set_modified(modified)
             self._in_undo = None
 
     def redo(self):
         """Redo the last undone modification."""
+        assert self._edit_context == 0, "can't redo while in edit context"
         if self._redo_stack:
             self._in_undo = "redo"
             start, end, text, modified = self._redo_stack.pop()
             self[start:end] = text
-            self._modified = modified
+            self.set_modified(modified)
             self._in_undo = None
 
     def clear_undo_redo(self):
