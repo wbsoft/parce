@@ -716,9 +716,9 @@ class Document:
                 tail = False
 
         if not head and not tail:
-            self.set_text(text)
+            self._tokenize_full()
             return
-        
+
         if head:
             # make a short list of tokens from the start_token to the place
             # we want to parse. We copy them because some might get moved to
@@ -795,7 +795,7 @@ class Document:
                 end_parse = pos
                 break
         b.unwind(context)
-        # see if the start_token was changed
+        # see if the start_tokens were changed
         if head:
             new_start_token = self._tree.find_token_after(start_parse)
             if new_start_token:
