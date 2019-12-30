@@ -664,12 +664,6 @@ class Document(document.Document):
         # we may be able to use existing tokens for the start if start > 0
         head = start > 0
 
-        # optimize for some cases, detect whether the text actually changes
-        if (start > end or (start == end and not text) or
-            (start + len(text) == end and self._text[start:end] == text)):
-            self._modified_range = None
-            return
-
         # record the position change for tail tokens that maybe are reused
         offset = len(text) - end + start
 

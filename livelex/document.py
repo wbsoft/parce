@@ -133,7 +133,7 @@ class Document:
         else:
             start = key
             end = key + 1
-        if self._text[start:end] != text:
+        if self[start:end] != text:
             self._changes.append((start, end, text))
             if not self._edit_context:
                 self._apply()
@@ -148,6 +148,7 @@ class Document:
 
     def _apply(self):
         """Apply the changes and update the positions of the cursors."""
+        self._modified_range = None
         if self._changes:
             self._changes.sort()
             head = tail = self._changes[0][0]
