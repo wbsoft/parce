@@ -413,6 +413,7 @@ class Context(list, NodeMixin):
             c = n.copy()
             c.parent = copy
             copy.append(c)
+        return copy
 
     def __repr__(self):
         first, last = self.first_token(), self.last_token()
