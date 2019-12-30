@@ -162,7 +162,7 @@ class Document:
             self._modify(head, tail, "".join(result))
 
     def _modify(self, start, end, text):
-        """Called by apply, replace document[start:end] with text."""
+        """Called by _apply(), replace document[start:end] with text."""
         notail = end is None or end >= len(self._text)
         self._text = self._text[:start] + text + self._text[end:]
         if start == 0 and notail:
@@ -239,6 +239,11 @@ class Cursor:
     def text(self):
         """Return the selected text, if any."""
         return self._document[self]
+
+    def select(self, start, end=-1):
+        """Change start and end in one go. End defaults to start."""
+        self.start = start
+        self.end = start if end == -1 else end
 
     def lstrip(self, chars=None):
         """Move start to the right, like Python's lstrip() string method."""
