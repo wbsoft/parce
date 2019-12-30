@@ -58,12 +58,17 @@ class Document:
     last exits.
 
     """
+    undoRedoEnabled = True
+
     def __init__(self, text=""):
         self._cursors = weakref.WeakSet()
         self._edit_context = 0
         self._changes = []
         self._text = text
         self._modified_range = None
+        self._undo_stack = []
+        self._redo_stack = []
+        self._in_undo = None
 
     def __repr__(self):
         text = self._text
@@ -159,7 +164,10 @@ class Document:
                     elif not ahead:
                         i += 1  # don't consider this cursor any more
             self._changes.clear()
-            self._modify(head, tail, "".join(result))
+            text = "".join(result)
+            if self.undoRedoEnabled:
+                self._handle_undo(head, head + len(text), self._text[head:tail])
+            self._modify(head, tail, text)
 
     def _modify(self, start, end, text):
         """Called by _apply(), replace document[start:end] with text."""
@@ -169,7 +177,7 @@ class Document:
             self._modified_range = True
         else:
             self._modified_range = start, start + len(text)
-        
+
     def modified_range(self):
         """Return a two-tuple(start, end) describing the range that was modified.
 
@@ -182,6 +190,43 @@ class Document:
             return 0, 0
         else:
             return self._modified_range
+
+    def _handle_undo(self, start, end, text):
+        if self._in_undo == "undo":
+            self._redo_stack.append((start, end, text))
+        else:
+            self._undo_stack.append((start, end, text))
+            if self._in_undo is None:
+                self._redo_stack.clear()
+
+    def undo(self):
+        """Undo the last modification."""
+        if self._undo_stack:
+            self._in_undo = "undo"
+            start, end, text = self._undo_stack.pop()
+            self[start:end] = text
+            self._in_undo = None
+
+    def redo(self):
+        """Redo the last undone modification."""
+        if self._redo_stack:
+            self._in_undo = "redo"
+            start, end, text = self._redo_stack.pop()
+            self[start:end] = text
+            self._in_undo = None
+
+    def clear_undo_redo(self):
+        """Clear the undo/redo stack."""
+        self._undo_stack.clear()
+        self._redo_stack.clear()
+
+    def can_undo(self):
+        """Return True whether undo is possible."""
+        return bool(self._undo_stack)
+
+    def can_redo(self):
+        """Return True whether redo is possible."""
+        return bool(self._redo_stack)
 
 
 class Cursor:
@@ -204,7 +249,7 @@ class Cursor:
         c.start, c.end --> (8, 16)
 
     You can also use a Cursor as key while editing a document:
-    
+
     .. code-block:: python
 
         c = Cursor(d, 8, 8)
