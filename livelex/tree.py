@@ -101,10 +101,10 @@ class NodeMixin:
                 return n
 
     def left_sibling(self):
-        """Return the left sibling of this context, if any.
+        """Return the left sibling of this node, if any.
 
         Does not descend in child nodes or ascend upto the parent.
-        Fails if called on the root context.
+        Fails if called on the root node.
 
         """
         # avoid expensive list.index() if not necessary
@@ -113,10 +113,10 @@ class NodeMixin:
             return self.parent[i-1]
 
     def right_sibling(self):
-        """Return the right sibling of this context, if any.
+        """Return the right sibling of this node, if any.
 
         Does not descend in child nodes or ascend upto the parent.
-        Fails if called on the root context.
+        Fails if called on the root node.
 
         """
         if self.parent[-1] is not self:
@@ -124,10 +124,10 @@ class NodeMixin:
             return self.parent[i+1]
 
     def left_siblings(self):
-        """Yield the left siblings of this context in reverse order, if any.
+        """Yield the left siblings of this node in reverse order, if any.
 
         Does not descend in child nodes or ascend upto the parent.
-        Fails if called on the root context.
+        Fails if called on the root node.
 
         """
         if self.parent[0] is not self:
@@ -135,10 +135,10 @@ class NodeMixin:
             yield from self.parent[i-1::-1]
 
     def right_siblings(self):
-        """Yield the right siblings of this context, if any.
+        """Yield the right siblings of this node, if any.
 
         Does not descend in child nodes or ascend upto the parent.
-        Fails if called on the root context.
+        Fails if called on the root node.
 
         """
         if self.parent[-1] is not self:
@@ -222,7 +222,11 @@ class Token(NodeMixin):
         self.action = action
 
     def copy(self):
-        """Return a shallow copy."""
+        """Return a shallow copy.
+
+        The parent still points to the parent of the original.
+
+        """
         return type(self)(self.parent, self.pos, self.text, self.action)
 
     def equals(self, other):
@@ -260,6 +264,22 @@ class Token(NodeMixin):
         yield self
 
     tokens_bw = tokens
+
+    def next_token(self):
+        """Return the following Token, if any."""
+        t = self.right_sibling()
+        if not t:
+            for t in self.forward():
+                break
+        return t
+
+    def previous_token(self):
+        """Return the preceding Token, if any."""
+        t = self.left_sibling()
+        if not t:
+            for t in self.backward():
+                break
+        return t
 
     def forward(self):
         """Yield all Tokens in forward direction.
@@ -381,6 +401,18 @@ class Context(list, NodeMixin):
     def __init__(self, lexicon, parent):
         self.lexicon = lexicon
         self.parent = parent
+
+    def copy(self):
+        """Return a copy of this Context node, with copies of all the children.
+
+        The parent of the copy is None.
+
+        """
+        copy = type(self)(self.lexicon, None)
+        for n in self:
+            c = n.copy()
+            c.parent = copy
+            copy.append(c)
 
     def __repr__(self):
         first, last = self.first_token(), self.last_token()
