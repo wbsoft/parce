@@ -38,6 +38,7 @@ import itertools
 
 from . import lex
 from .action import Action
+from . import document
 
 
 class NodeMixin:
@@ -159,7 +160,7 @@ class Token(NodeMixin):
 
     When a pattern rule in a lexicon matches the text, a Token is created.
     When that rule would create more than one Token from a single regular
-    expression match, GroupToken objects are created instead, carrying the
+    expression match, _GroupToken objects are created instead, carrying the
     tuple of all instances in the `group` attribute. The `group` attribute is
     readonly None for normal tokens.
 
@@ -172,9 +173,9 @@ class Token(NodeMixin):
             t = t.group[0]
         pos = t.pos
 
-    (A GroupToken is just a normal Token otherwise, the reason a subclass was
+    (A _GroupToken is just a normal Token otherwise, the reason a subclass was
     created is that the group attribute is unused in by far the most tokens, so
-    it does not use any memory. You never need to reference the GroupToken
+    it does not use any memory. You never need to reference the _GroupToken
     class; just test the group attribute if you want to know if a token belongs
     to a group that originated from a single match.)
 
@@ -348,7 +349,7 @@ class Token(NodeMixin):
         return c1.parent is None and c2.parent is None
 
 
-class GroupToken(Token):
+class _GroupToken(Token):
     """A Token class that allows setting the `group` attribute."""
     __slots__ = "group"
 
@@ -530,7 +531,7 @@ class TreeBuilder:
                 if len(tokens) == 1:
                     tokens = Token(context, *tokens[0]),
                 else:
-                    tokens = tuple(GroupToken(context, *t) for t in tokens)
+                    tokens = tuple(_GroupToken(context, *t) for t in tokens)
                     for t in tokens:
                         t.group = tokens
             else:
@@ -571,7 +572,7 @@ class TreeBuilder:
             context = context.parent
 
 
-class Document:
+class Document(document.Document):
     """Encapsulates a full tokenized text string.
 
     Everytime the text is modified, only the modified part is retokenized. If
@@ -581,9 +582,8 @@ class Document:
 
     """
     def __init__(self, root_lexicon=None, text=""):
-        self._text = text
+        super().__init__(text)
         self._root_lexicon = root_lexicon
-        self._modified_range = None
         if root_lexicon:
             self._tokenize_full()
 
@@ -591,14 +591,10 @@ class Document:
         """Return the root Context of the tree."""
         return self._tree
 
-    def text(self):
-        """Return all text."""
-        return self._text
-
     def set_text(self, text):
         """Replace all text."""
         if text != self._text:
-            self._text = text
+            super().set_text(text)
             self._tokenize_full()
         else:
             self._modified_range = None
@@ -615,21 +611,6 @@ class Document:
         else:
             self._modified_range = None
 
-    def __getitem__(self, k):
-        return self._text[k]
-
-    def __setitem__(self, k, value):
-        if type(k) is slice:
-            start = k.start or 0
-            end = k.stop
-        else:
-            start = k
-            end = k + 1
-        self._modify(start, end, value)
-
-    def __delitem__(self, k):
-        self[k] = ''
-
     def _tokenize_full(self):
         root = self._root_lexicon
         if root:
@@ -645,12 +626,7 @@ class Document:
         If the last modification did not change any tokens, (0, 0) is returned.
 
         """
-        if self._modified_range is True:
-            return 0, len(self._text)
-        elif self._modified_range is None:
-            return 0, 0
-        else:
-            return self._modified_range
+        return super().modified_range()
 
     def modified_tokens(self):
         """Yield all the tokens that were changed in the last update."""
