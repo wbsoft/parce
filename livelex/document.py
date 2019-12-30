@@ -19,28 +19,45 @@
 
 
 """
-A Document is like a mutable string. E.g.:
+Document and Cursor form the basis of handling of documents in the livelex
+package.
 
-.. code-block:: python
+A Document contains a text string that is mutable via item and slice methods.
 
-    d = Document('some string')
-    with d:
-        d[5:5] = 'different '
-    d.text()  --> 'some different string'
+If you make modifications while inside a context (using the Python context
+manager protocol), the modifications are only applied when the context
+exits for the last time.
 
-You can also make modifications outside the a context, they will then
-be applied immediately, which is slower.
+You can use a Cursor to keep track of positions in a document. The position
+(and selection) of a Cursor is adjusted when the text in the document is
+changed.
 
-You can enter a context multiple times, and changes will be applied when the
-last exits.
+For tokenized documents, livelex inherits from this base class.
 
 """
+
 
 
 import weakref
 
 
 class Document:
+    """A Document is like a mutable string. E.g.:
+
+    .. code-block:: python
+
+        d = Document('some string')
+        with d:
+            d[5:5] = 'different '
+        d.text()  --> 'some different string'
+
+    You can also make modifications outside the a context, they will then
+    be applied immediately, which is slower.
+
+    You can enter a context multiple times, and changes will be applied when the
+    last exits.
+
+    """
     def __init__(self, text=""):
         self._cursors = weakref.WeakSet()
         self._edit_context = 0
@@ -221,7 +238,7 @@ class Cursor:
 
     def text(self):
         """Return the selected text, if any."""
-        return self._document.text()[self.start:self.end]
+        return self._document[self]
 
     def lstrip(self, chars=None):
         """Move start to the right, like Python's lstrip() string method."""
