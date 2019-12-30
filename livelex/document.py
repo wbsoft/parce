@@ -265,7 +265,7 @@ class Cursor:
         """Init with document. Start default to 0 and end defaults to start."""
         self._document = document
         self.start = start
-        self.end = end if end is not -1 else start
+        self.end = end if end != -1 else start
         document._cursors.add(self)
 
     def __repr__(self):
