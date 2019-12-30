@@ -434,7 +434,7 @@ class Context(list, NodeMixin):
             if n.is_context:
                 n = n.last_token()
             positions.append(n.end)
-        i = bisect.bisect_left(positions, pos+1)
+        i = bisect.bisect_left(positions, pos + 1)
         if i < len(positions):
             if self[i].is_context:
                 return self[i].find_token(pos)
@@ -568,56 +568,85 @@ class Document:
         self._root_lexicon = root_lexicon
         self._modified_range = None
         if root_lexicon:
-            self.retokenize_full()
+            self._tokenize_full()
 
-    def get_text(self):
+    def root(self):
+        """Return the root Context of the tree."""
+        return self._tree
+
+    def text(self):
         """Return all text."""
         return self._text
 
     def set_text(self, text):
         """Replace all text."""
-        self._text = text
-        self.retokenize_full()
+        if text != self._text:
+            self._text = text
+            self._tokenize_full()
+        else:
+            self._modified_range = None
 
-    def get_root_lexicon(self):
+    def root_lexicon(self):
         """Return the currently set root lexicon."""
         return self._root_lexicon
 
     def set_root_lexicon(self, root_lexicon):
         """Sets the root lexicon to use to tokenize the text."""
-        self._root_lexicon = root_lexicon
-        self.retokenize_full()
+        if root_lexicon is not self._root_lexicon:
+            self._root_lexicon = root_lexicon
+            self._tokenize_full()
+        else:
+            self._modified_range = None
 
     def __getitem__(self, k):
         return self._text[k]
 
     def __setitem__(self, k, value):
         if type(k) is slice:
-            if k.step not in (None, 1):
-                raise ValueError("slice step other than 1 not allowed")
             start = k.start or 0
             end = k.stop
         else:
             start = k
             end = k + 1
-        self.modify(start, end, value)
+        self._modify(start, end, value)
 
     def __delitem__(self, k):
         self[k] = ''
 
-    def retokenize_full(self):
-        root = self.get_root_lexicon()
+    def _tokenize_full(self):
+        root = self._root_lexicon
         if root:
-            self.tree = TreeBuilder().tree(root, self._text)
+            self._tree = self._builder().tree(root, self._text)
             self._modified_range = True
         else:
-            self.tree = None
+            self._tree = None
             self._modified_range = None
+
+    def modified_range(self):
+        """Return a two-tuple(start, end) describing the range that was re-tokenized.
+
+        If the last modification did not change any tokens, (0, 0) is returned.
+
+        """
+        if self._modified_range is True:
+            return 0, len(self._text)
+        elif self._modified_range is None:
+            return 0, 0
+        else:
+            return self._modified_range
+
+    def modified_tokens(self):
+        """Yield all the tokens that were changed in the last update."""
+        if self._modified_range is True:
+            return self._tree.tokens()
+        elif self._modified_range is not None:
+            start, end = self._modified_range
+            return self.tokens(start, end)
 
     def tokens(self, start=0, end=None):
         """Yield all tokens from start to end if given."""
-        t = self.tree.find_token(start) if start else None
-        gen = t.forward_including() if t else self.tree.tokens()
+        t = self._tree.find_token(start) if start else None
+        gen = t.forward_including() if t else self._tree.tokens()
         if end is None or end >= len(self._text):
             yield from gen
         else:
@@ -626,15 +655,11 @@ class Document:
                     break
                 yield t
 
-    def modified_tokens(self):
-        """Yield all the tokens that were changed in the last update."""
-        if self._modified_range is True:
-            return self.tree.tokens()
-        elif self._modified_range is not None:
-            start, end = self._modified_range
-            return self.tokens(start, end)
+    def _builder(self):
+        """Return a TreeBuilder."""
+        return TreeBuilder()
 
-    def modify(self, start, end, text):
+    def _modify(self, start, end, text):
         """Modify the text: document[start:end] = text."""
         # manage end, and record if there is text after the modified part (tail)
         if end is None or end >= len(self._text):
@@ -664,7 +689,7 @@ class Document:
         if head:
             i = text.rfind('\n', 0, start)
             if i == -1:
-                start_token = self.tree.find_token_before(start)
+                start_token = self._tree.find_token_before(start)
                 if start_token:
                     # go back some more tokens, you never know a longer match
                     # could be made. In very particular cases a longer token
@@ -673,7 +698,7 @@ class Document:
                     for start_token in itertools.islice(start_token.backward(), 10):
                         pass
             else:
-                start_token = self.tree.find_token_before(i)
+                start_token = self._tree.find_token_before(i)
             if start_token:
                 # don't start in the middle of a group, as they originate from
                 # one single regexp match
@@ -686,7 +711,7 @@ class Document:
         # we try to reuse the old tokens
         if tail:
             # find the first token after the modified part
-            end_token = self.tree.find_token_after(end)
+            end_token = self._tree.find_token_after(end)
             if not end_token:
                 tail = False
 
@@ -726,12 +751,12 @@ class Document:
                 start_token.cut_right()
         else:
             start_parse = 0
-            context = self.tree
+            context = self._tree
             context.clear()
 
         # start parsing
         pos = start_parse
-        b = TreeBuilder()
+        b = self._builder()
         done = False
         while not done:
             for pos, tokens, target in b.parse_context(context, text, pos):
@@ -772,7 +797,7 @@ class Document:
         b.unwind(context)
         # see if the start_token was changed
         if head:
-            new_start_token = self.tree.find_token_after(start_parse)
+            new_start_token = self._tree.find_token_after(start_parse)
             if new_start_token:
                 for old, new in zip(start_tokens, new_start_token.forward_including()):
                     if not old.equals(new):
