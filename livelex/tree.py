@@ -267,19 +267,13 @@ class Token(NodeMixin):
 
     def next_token(self):
         """Return the following Token, if any."""
-        t = self.right_sibling()
-        if not t:
-            for t in self.forward():
-                break
-        return t
+        for t in self.forward():
+            return t
 
     def previous_token(self):
         """Return the preceding Token, if any."""
-        t = self.left_sibling()
-        if not t:
-            for t in self.backward():
-                break
-        return t
+        for t in self.backward():
+            return t
 
     def forward(self):
         """Yield all Tokens in forward direction.
