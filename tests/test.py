@@ -80,5 +80,5 @@ if __name__ == "__main__":
 
     print("Tree from tree:")
     from livelex.tree import Document
-    Document(MyLang.root, s).tree.dump()
+    Document(MyLang.root, s).root().dump()
 
