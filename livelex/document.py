@@ -37,7 +37,7 @@ For tokenized documents, livelex inherits from this base class.
 """
 
 
-
+import itertools
 import weakref
 
 
@@ -66,6 +66,7 @@ class Document:
         self._changes = []
         self._text = text
         self._modified_range = None
+        self._modified = False
         self._undo_stack = []
         self._redo_stack = []
         self._in_undo = None
@@ -85,6 +86,18 @@ class Document:
     def __len__(self):
         return len(self._text)
 
+    def modified(self):
+        """Return whether the text was modified."""
+        return self._modified
+
+    def set_modified(self, modified=True):
+        """Sets whether the text is modified, happens automatically normally."""
+        self._modified = modified
+        if not modified:
+            # set all undo/redo stages to modified
+            for undo in itertools.chain(self._undo_stack, self._redo_stack):
+                undo[3] = True
+
     def text(self):
         """Return all text."""
         return self._text
@@ -93,6 +106,7 @@ class Document:
         """Replace all text."""
         self._text = text
         self._modified_range = None
+        self._modified = True
 
     def __enter__(self):
         """Start the context for modifying the document."""
@@ -168,6 +182,7 @@ class Document:
             if self.undoRedoEnabled:
                 self._handle_undo(head, head + len(text), self._text[head:tail])
             self._modify(head, tail, text)
+            self._modified = True
 
     def _modify(self, start, end, text):
         """Called by _apply(), replace document[start:end] with text."""
@@ -193,9 +208,9 @@ class Document:
 
     def _handle_undo(self, start, end, text):
         if self._in_undo == "undo":
-            self._redo_stack.append((start, end, text))
+            self._redo_stack.append([start, end, text, self._modified])
         else:
-            self._undo_stack.append((start, end, text))
+            self._undo_stack.append([start, end, text, self._modified])
             if self._in_undo is None:
                 self._redo_stack.clear()
 
@@ -203,16 +218,18 @@ class Document:
         """Undo the last modification."""
         if self._undo_stack:
             self._in_undo = "undo"
-            start, end, text = self._undo_stack.pop()
+            start, end, text, modified = self._undo_stack.pop()
             self[start:end] = text
+            self._modified = modified
             self._in_undo = None
 
     def redo(self):
         """Redo the last undone modification."""
         if self._redo_stack:
             self._in_undo = "redo"
-            start, end, text = self._redo_stack.pop()
+            start, end, text, modified = self._redo_stack.pop()
             self[start:end] = text
+            self._modified = modified
             self._in_undo = None
 
     def clear_undo_redo(self):
