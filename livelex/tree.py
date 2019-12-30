@@ -442,23 +442,13 @@ class Context(list, NodeMixin):
 
     def first_token(self):
         """Return our first Token."""
-        try:
-            n = self[0]
-            while n.is_context:
-                n = n[0]
-            return n
-        except IndexError:
-            pass
+        for t in self.tokens():
+            return t
 
     def last_token(self):
         """Return our last token."""
-        try:
-            n = self[-1]
-            while n.is_context:
-                n = n[-1]
-            return n
-        except IndexError:
-            pass
+        for t in self.tokens_bw():
+            return t
 
     def find_token(self, pos):
         """Return the Token (closest) at position from context."""
