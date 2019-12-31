@@ -63,7 +63,7 @@ class AbstractDocument:
         __getitem__()
 
     Note that if you reimplement __getitem__(), it should be able to handle
-    a Cursor, which has it's own start and end attributes.
+    a Cursor, which has its own start and end attributes.
 
     """
     def __init__(self):
@@ -110,7 +110,7 @@ class AbstractDocument:
             self._edit_context -= 1
         else:
             self._edit_context = 0
-            self._apply()
+            self._apply_changes()
 
     def __setitem__(self, key, text):
         if isinstance(key, Cursor):
@@ -127,7 +127,7 @@ class AbstractDocument:
                 end = len(self)
             self._changes.append((start, end, text))
             if not self._edit_context:
-                self._apply()
+                self._apply_changes()
 
     def __delitem__(self, key):
         self[key] = ""
@@ -137,7 +137,7 @@ class AbstractDocument:
             return self.text()[key.start:key.end]
         return self.text()[key]
 
-    def _apply(self):
+    def _apply_changes(self):
         """Apply the changes and update the positions of the cursors."""
         if self._changes:
             self._changes.sort()

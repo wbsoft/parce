@@ -585,6 +585,7 @@ class TreeDocumentMixin:
     """
     def __init__(self, root_lexicon=None, text=""):
         super().__init__(text)
+        self._modified_range = range(0, 0)
         self._root_lexicon = root_lexicon
         if root_lexicon:
             self._tokenize_full()
@@ -603,16 +604,16 @@ class TreeDocumentMixin:
             self._root_lexicon = root_lexicon
             self._tokenize_full()
         else:
-            self._modified_range = 0, 0
+            self._modified_range = range(0, 0)
 
     def _tokenize_full(self):
         root = self._root_lexicon
         if root:
             self._tree = self._builder().tree(root, self.text())
-            self._modified_range = 0, len(self)
+            self._modified_range = range(0, len(self))
         else:
             self._tree = None
-            self._modified_range = 0, 0
+            self._modified_range = range(0, 0)
 
     def modified_range(self):
         """Return a two-tuple(start, end) describing the range that was re-tokenized."""
@@ -620,9 +621,9 @@ class TreeDocumentMixin:
 
     def modified_tokens(self):
         """Yield all the tokens that were changed in the last update."""
-        start, end = self._modified_range
-        if start < end:
-            return self.tokens(start, end)
+        r = self.modified_range()
+        if r:
+            return self.tokens(r.start, r.stop)
 
     def tokens(self, start=0, end=None):
         """Yield all tokens from start to end if given."""
@@ -639,6 +640,11 @@ class TreeDocumentMixin:
     def _builder(self):
         """Return a TreeBuilder."""
         return TreeBuilder()
+
+    def _apply_changes(self):
+        """Overridden to set modified_range to (0, 0) first."""
+        self._modified_range = range(0, 0)
+        super()._apply_changes()
 
     def contents_changed(self, start, removed, added):
         """Called after modification of the text, retokenizes the modified part."""
@@ -774,6 +780,6 @@ class TreeDocumentMixin:
                     if not old.equals(new):
                         break
                     start_parse = new.end
-        self._modified_range = start_parse, end_parse
+        self._modified_range = range(start_parse, end_parse)
 
 
