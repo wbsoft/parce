@@ -142,17 +142,17 @@ class AbstractDocument:
         if self._changes:
             self._changes.sort()
             # check for overlaps, find the region
-            head = self._changes[0][0]
-            offset = old = 0
+            head = old = self._changes[0][0]
+            added = 0
             for start, end, text in self._changes:
                 if start < old:
                     raise RuntimeError("overlapping changes: {}".format(self._changes))
-                offset += end - start + len(text)
+                added += start - old + len(text)
                 old = end
             self._update_cursors()
             self._update_contents()
             self._changes.clear()
-            self.contents_changed(head, end - head, end - head + offset)
+            self.contents_changed(head, end - head, added)
 
     def _update_cursors(self):
         """Update the positions of the cursors."""
