@@ -156,28 +156,35 @@ class Document:
         if self._changes:
             self._changes.sort()
             self._update_cursors()
-            head = tail = self._changes[0][0]
-            result = []
-            for start, end, text in self._changes:
-                if start > tail:
-                    result.append(self._text[tail:start])
-                if text:
-                    result.append(text)
-                if end is None:
+            head = self._changes[0][0]
+            for i, (start, tail, text) in enumerate(self._changes):
+                if tail is None:
                     tail = len(self)
+                    self._changes[i] = (start, tail, text)
+                    del self._changes[i+1:]
                     break
-                else:
-                    tail = end
+            self._update_contents()
             self._changes.clear()
-            text = "".join(result)
-            if self.undo_redo_enabled:
-                # store start, end, and text needed to undo this change
-                self._handle_undo(head, head + len(text), self._text[head:tail])
             self._modified_range = head, tail
-            self._text = self._text[:head] + text + self._text[tail:]
             self.contents_changed(head, tail - head, len(text))
-            if not self._in_undo:
-                self.set_modified(True) # othw this is handled by undo/redo
+
+    def _update_contents(self):
+        """Apply the changes to the text."""
+        result = []
+        head = tail = self._changes[0][0]
+        for start, end, text in self._changes:
+            if start > tail:
+                result.append(self._text[tail:start])
+            if text:
+                result.append(text)
+            tail = end
+        text = "".join(result)
+        if self.undo_redo_enabled:
+            # store start, end, and text needed to undo this change
+            self._handle_undo(head, head + len(text), self._text[head:tail])
+        self._text = self._text[:head] + text + self._text[tail:]
+        if not self._in_undo:
+            self.set_modified(True) # othw this is handled by undo/redo
 
     def _update_cursors(self):
         """Update the positions of the cursors."""
