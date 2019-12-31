@@ -572,8 +572,10 @@ class TreeBuilder:
             context = context.parent
 
 
-class Document(document.Document):
+class TreeDocumentMixin:
     """Encapsulates a full tokenized text string.
+
+    Combine this class with a subclass of AbstractDocument (see document.py).
 
     Everytime the text is modified, only the modified part is retokenized. If
     that changes the lexicon in which the last part (after the modified part)

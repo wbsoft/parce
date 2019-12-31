@@ -54,6 +54,15 @@ from .language import (
     Language,
 )
 
+from . import tree, document
+
+from .document import Cursor
+
+
+class Document(tree.TreeDocumentMixin, document.Document):
+    """A Document that automatically keeps its contents tokenized."""
+    pass
+
 
 def version():
     from . import pkginfo
