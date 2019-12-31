@@ -41,74 +41,60 @@ import itertools
 import weakref
 
 
-class Document:
-    """A Document is like a mutable string. E.g.:
+class AbstractDocument:
+    """Base class for a Document.
 
-    .. code-block:: python
+    To make a Document work, you should at least implement:
 
-        d = Document('some string')
-        with d:
-            d[5:5] = 'different '
-        d.text()  --> 'some different string'
+        text()
+        _update_contents()
 
-    You can also make modifications outside the a context, they will then
-    be applied immediately, which is slower.
+    The method text() should simply return the entire text string.
 
-    You can enter a context multiple times, and changes will be applied when the
-    last exits.
+    The method _update_contents() should read the (start, end, text) tuples
+    from the list in self._changes, which is already sorted. These changes
+    will never overlap. All start/end positions refer to the original state
+    of the text.
+
+    For efficiency reasons, you might want to reimplement:
+
+        set_text()
+        __len__()
+        __getitem__()
+
+    Note that if you reimplement __getitem__(), it should be able to handle
+    a Cursor, which has it's own start and end attributes.
 
     """
-    undo_redo_enabled = True
-
-    def __init__(self, text=""):
+    def __init__(self):
         self._cursors = weakref.WeakSet()
         self._edit_context = 0
         self._changes = []
-        self._text = text
-        self._modified_range = None
-        self._modified = False
-        self._undo_stack = []
-        self._redo_stack = []
-        self._in_undo = None
+        self._modified_range = 0, 0
+
+    def text(self):
+        """Should return the text."""
+        raise NotImplementedError
+
+    def set_text(self, text):
+        """Set the text."""
+        assert self._edit_context == 0, "can't use set_text() in edit context."
+        self[:] = text
 
     def __repr__(self):
-        text = self._text
+        text = self[:31]
         if len(text) > 30:
             text = text[:28] + "..."
         return "<{} {}>".format(type(self).__name__, repr(text))
 
     def __str__(self):
-        return self._text
+        return self.text()
 
     def __format__(self, formatstr):
-        return self._text.__format__(formatstr)
+        return format(self.text(), formatstr)
 
     def __len__(self):
-        return len(self._text)
-
-    def modified(self):
-        """Return whether the text was modified."""
-        return self._modified
-
-    def set_modified(self, modified):
-        """Sets whether the text is modified, happens automatically normally."""
-        self._modified = modified
-        if not modified and not self._in_undo:
-            self._set_all_undo_redo_modified()
-
-    def text(self):
-        """Return all text."""
-        return self._text
-
-    def set_text(self, text):
-        """Replace all text."""
-        if text != self._text:
-            removed = len(self._text)
-            added = len(text)
-            self._text = text
-            self._modified_range = 0, added
-            self.contents_changed(0, removed, added)
-            self.set_modified(True)
+        return len(self.text())
 
     def __enter__(self):
         """Start the context for modifying the document."""
@@ -147,8 +133,8 @@ class Document:
 
     def __getitem__(self, key):
         if isinstance(key, Cursor):
-            return self._text[key.start:key.end]
-        return self._text[key]
+            return self.text()[key.start:key.end]
+        return self.text()[key]
 
     def _apply(self):
         """Apply the changes and update the positions of the cursors."""
@@ -167,24 +153,6 @@ class Document:
             self._changes.clear()
             self._modified_range = head, tail
             self.contents_changed(head, tail - head, len(text))
-
-    def _update_contents(self):
-        """Apply the changes to the text."""
-        result = []
-        head = tail = self._changes[0][0]
-        for start, end, text in self._changes:
-            if start > tail:
-                result.append(self._text[tail:start])
-            if text:
-                result.append(text)
-            tail = end
-        text = "".join(result)
-        if self.undo_redo_enabled:
-            # store start, end, and text needed to undo this change
-            self._handle_undo(head, head + len(text), self._text[head:tail])
-        self._text = self._text[:head] + text + self._text[tail:]
-        if not self._in_undo:
-            self.set_modified(True) # othw this is handled by undo/redo
 
     def _update_cursors(self):
         """Update the positions of the cursors."""
@@ -206,8 +174,13 @@ class Document:
                 elif not ahead:
                     i += 1  # don't consider this cursor any more
 
+    def _update_contents(self):
+        """Should apply the changes (in self._changes) to the text."""
+        raise NotImplementedError
+
     def contents_changed(self, position, removed, added):
         """Called by _apply(). The default implementation does nothing."""
+        pass
 
     def modified_range(self):
         """Return a two-tuple(start, end) describing the range that was modified.
@@ -216,6 +189,73 @@ class Document:
 
         """
         return self._modified_range
+
+
+
+class Document(AbstractDocument):
+    """A basic Document with undo and modified status.
+
+    This Document implements AbstractDocument by holding the text in a hidden
+    _text attribute. It also adds support for undo/redo and has a modified()
+    state.
+
+    A Document is like a mutable string. E.g.:
+
+    .. code-block:: python
+
+        d = Document('some string')
+        with d:
+            d[5:5] = 'different '
+        d.text()  --> 'some different string'
+
+    You can also make modifications outside the a context, they will then
+    be applied immediately, which is slower.
+
+    You can enter a context multiple times, and changes will be applied when the
+    last exits.
+
+    """
+    undo_redo_enabled = True
+
+    def __init__(self, text=""):
+        super().__init__()
+        self._text = text
+        self._modified = False
+        self._undo_stack = []
+        self._redo_stack = []
+        self._in_undo = None
+
+    def modified(self):
+        """Return whether the text was modified."""
+        return self._modified
+
+    def set_modified(self, modified):
+        """Sets whether the text is modified, happens automatically normally."""
+        self._modified = modified
+        if not modified and not self._in_undo:
+            self._set_all_undo_redo_modified()
+
+    def text(self):
+        """Return all text."""
+        return self._text
+
+    def _update_contents(self):
+        """Apply the changes to the text."""
+        result = []
+        head = tail = self._changes[0][0]
+        for start, end, text in self._changes:
+            if start > tail:
+                result.append(self._text[tail:start])
+            if text:
+                result.append(text)
+            tail = end
+        text = "".join(result)
+        if self.undo_redo_enabled:
+            # store start, end, and text needed to undo this change
+            self._handle_undo(head, head + len(text), self._text[head:tail])
+        self._text = self._text[:head] + text + self._text[tail:]
+        if not self._in_undo:
+            self.set_modified(True) # othw this is handled by undo/redo
 
     def _handle_undo(self, start, end, text):
         """Store start, end, and text needed to reconstruct the previous state."""
