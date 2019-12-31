@@ -591,14 +591,6 @@ class Document(document.Document):
         """Return the root Context of the tree."""
         return self._tree
 
-    def set_text(self, text):
-        """Replace all text."""
-        if text != self._text:
-            super().set_text(text)
-            self._tokenize_full()
-        else:
-            self._modified_range = None
-
     def root_lexicon(self):
         """Return the currently set root lexicon."""
         return self._root_lexicon
@@ -609,38 +601,32 @@ class Document(document.Document):
             self._root_lexicon = root_lexicon
             self._tokenize_full()
         else:
-            self._modified_range = None
+            self._modified_range = 0, 0
 
     def _tokenize_full(self):
         root = self._root_lexicon
         if root:
             self._tree = self._builder().tree(root, self._text)
-            self._modified_range = True
+            self._modified_range = 0, len(self._text)
         else:
             self._tree = None
-            self._modified_range = None
+            self._modified_range = 0, 0
 
     def modified_range(self):
-        """Return a two-tuple(start, end) describing the range that was re-tokenized.
-
-        If the last modification did not change any tokens, (0, 0) is returned.
-
-        """
+        """Return a two-tuple(start, end) describing the range that was re-tokenized."""
         return super().modified_range()
 
     def modified_tokens(self):
         """Yield all the tokens that were changed in the last update."""
-        if self._modified_range is True:
-            return self._tree.tokens()
-        elif self._modified_range is not None:
-            start, end = self._modified_range
+        start, end = self._modified_range
+        if start < end:
             return self.tokens(start, end)
 
     def tokens(self, start=0, end=None):
         """Yield all tokens from start to end if given."""
         t = self._tree.find_token(start) if start else None
         gen = t.forward_including() if t else self._tree.tokens()
-        if end is None or end >= len(self._text):
+        if end is None or end >= len(self):
             yield from gen
         else:
             for t in gen:
@@ -652,23 +638,19 @@ class Document(document.Document):
         """Return a TreeBuilder."""
         return TreeBuilder()
 
-    def _modify(self, start, end, text):
-        """Modify the text: document[start:end] = text."""
+    def contents_changed(self, start, removed, added):
+        """Called after modification of the text, retokenizes the modified part."""
         # manage end, and record if there is text after the modified part (tail)
-        if end is None or end >= len(self._text):
-            end = len(self._text)
-            tail = False
-        else:
-            tail = True
+        end = start + removed
+        tail = start + added < len(self)
 
         # we may be able to use existing tokens for the start if start > 0
         head = start > 0
 
         # record the position change for tail tokens that maybe are reused
-        offset = len(text) - end + start
+        offset = added - removed
 
-        # modify the stored text string so we can start parsing
-        text = self._text = self._text[:start] + text + self._text[end:]
+        text = self.text()
 
         # find the last token before the modified part, we will start parsing
         # before that token. If there are no tokens, we just start at 0.

@@ -90,10 +90,10 @@ class Document:
         """Return whether the text was modified."""
         return self._modified
 
-    def set_modified(self, modified=True):
+    def set_modified(self, modified):
         """Sets whether the text is modified, happens automatically normally."""
         self._modified = modified
-        if not modified:
+        if not modified and not self._in_undo:
             self._set_all_undo_redo_modified()
 
     def text(self):
@@ -102,9 +102,13 @@ class Document:
 
     def set_text(self, text):
         """Replace all text."""
-        self._text = text
-        self._modified_range = True
-        self.set_modified(True)
+        if text != self._text:
+            removed = len(self._text)
+            added = len(text)
+            self._text = text
+            self._modified_range = 0, added
+            self.contents_changed(0, removed, added)
+            self.set_modified(True)
 
     def __enter__(self):
         """Start the context for modifying the document."""
@@ -148,7 +152,7 @@ class Document:
 
     def _apply(self):
         """Apply the changes and update the positions of the cursors."""
-        self._modified_range = None
+        self._modified_range = 0, 0
         if self._changes:
             self._changes.sort()
             head = tail = self._changes[0][0]
@@ -178,21 +182,19 @@ class Document:
                         i += 1  # don't consider this cursor any more
             self._changes.clear()
             text = "".join(result)
+            if tail is None:
+                tail = len(self)
             if self.undo_redo_enabled:
                 # store start, end, and text needed to undo this change
                 self._handle_undo(head, head + len(text), self._text[head:tail])
-            self._modify(head, tail, text)
+            self._modified_range = head, tail
+            self._text = self._text[:head] + text + self._text[tail:]
+            self.contents_changed(head, tail - head, len(text))
             if not self._in_undo:
                 self.set_modified(True) # othw this is handled by undo/redo
 
-    def _modify(self, start, end, text):
-        """Called by _apply(), replace document[start:end] with text."""
-        notail = end is None or end >= len(self._text)
-        self._text = self._text[:start] + text + self._text[end:]
-        if start == 0 and notail:
-            self._modified_range = True
-        else:
-            self._modified_range = start, start + len(text)
+    def contents_changed(self, position, removed, added):
+        """Called by _apply(). The default implementation does nothing."""
 
     def modified_range(self):
         """Return a two-tuple(start, end) describing the range that was modified.
@@ -200,12 +202,7 @@ class Document:
         If the last modification did not change anything, (0, 0) is returned.
 
         """
-        if self._modified_range is True:
-            return 0, len(self._text)
-        elif self._modified_range is None:
-            return 0, 0
-        else:
-            return self._modified_range
+        return self._modified_range
 
     def _handle_undo(self, start, end, text):
         """Store start, end, and text needed to reconstruct the previous state."""
