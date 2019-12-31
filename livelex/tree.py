@@ -606,15 +606,15 @@ class Document(document.Document):
     def _tokenize_full(self):
         root = self._root_lexicon
         if root:
-            self._tree = self._builder().tree(root, self._text)
-            self._modified_range = 0, len(self._text)
+            self._tree = self._builder().tree(root, self.text())
+            self._modified_range = 0, len(self)
         else:
             self._tree = None
             self._modified_range = 0, 0
 
     def modified_range(self):
         """Return a two-tuple(start, end) describing the range that was re-tokenized."""
-        return super().modified_range()
+        return self._modified_range
 
     def modified_tokens(self):
         """Yield all the tokens that were changed in the last update."""
