@@ -155,35 +155,21 @@ class Document:
         self._modified_range = 0, 0
         if self._changes:
             self._changes.sort()
+            self._update_cursors()
             head = tail = self._changes[0][0]
             result = []
-            cursors = sorted(self._cursors, key = lambda c: c.start)
-            i = 0   # cursor index
             for start, end, text in self._changes:
-                if tail is not None:
-                    if start > tail:
-                        result.append(self._text[tail:start])
-                    if text:
-                        result.append(text)
+                if start > tail:
+                    result.append(self._text[tail:start])
+                if text:
+                    result.append(text)
+                if end is None:
+                    tail = len(self)
+                    break
+                else:
                     tail = end
-                for c in cursors[i:]:
-                    ahead = c.start > start
-                    if ahead:
-                        if end is None or end >= c.start:
-                            c.start = start
-                        else:
-                            c.start += start + len(text) - end
-                    if c.end is not None and c.end >= start:
-                        if end is None or end >= c.end:
-                            c.end = start + len(text)
-                        else:
-                            c.end += start + len(text) - end
-                    elif not ahead:
-                        i += 1  # don't consider this cursor any more
             self._changes.clear()
             text = "".join(result)
-            if tail is None:
-                tail = len(self)
             if self.undo_redo_enabled:
                 # store start, end, and text needed to undo this change
                 self._handle_undo(head, head + len(text), self._text[head:tail])
@@ -192,6 +178,26 @@ class Document:
             self.contents_changed(head, tail - head, len(text))
             if not self._in_undo:
                 self.set_modified(True) # othw this is handled by undo/redo
+
+    def _update_cursors(self):
+        """Update the positions of the cursors."""
+        i = 0
+        cursors = sorted(self._cursors, key = lambda c: c.start)
+        for start, end, text in self._changes:
+            for c in cursors[i:]:
+                ahead = c.start > start
+                if ahead:
+                    if end is None or end >= c.start:
+                        c.start = start
+                    else:
+                        c.start += start + len(text) - end
+                if c.end is not None and c.end >= start:
+                    if end is None or end >= c.end:
+                        c.end = start + len(text)
+                    else:
+                        c.end += start + len(text) - end
+                elif not ahead:
+                    i += 1  # don't consider this cursor any more
 
     def contents_changed(self, position, removed, added):
         """Called by _apply(). The default implementation does nothing."""
