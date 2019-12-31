@@ -70,7 +70,6 @@ class AbstractDocument:
         self._cursors = weakref.WeakSet()
         self._edit_context = 0
         self._changes = []
-        self._modified_range = 0, 0
 
     def text(self):
         """Should return the text."""
@@ -124,6 +123,8 @@ class AbstractDocument:
             start = key
             end = key + 1
         if self[start:end] != text:
+            if end is None:
+                end = len(self)
             self._changes.append((start, end, text))
             if not self._edit_context:
                 self._apply()
@@ -138,21 +139,20 @@ class AbstractDocument:
 
     def _apply(self):
         """Apply the changes and update the positions of the cursors."""
-        self._modified_range = 0, 0
         if self._changes:
             self._changes.sort()
-            self._update_cursors()
+            # check for overlaps, find the region
             head = self._changes[0][0]
-            for i, (start, tail, text) in enumerate(self._changes):
-                if tail is None:
-                    tail = len(self)
-                    self._changes[i] = (start, tail, text)
-                    del self._changes[i+1:]
-                    break
+            offset = old = 0
+            for start, end, text in self._changes:
+                if start < old:
+                    raise RuntimeError("overlapping changes: {}".format(self._changes))
+                offset += end - start + len(text)
+                old = end
+            self._update_cursors()
             self._update_contents()
             self._changes.clear()
-            self._modified_range = head, tail
-            self.contents_changed(head, tail - head, len(text))
+            self.contents_changed(head, end - head, end - head + offset)
 
     def _update_cursors(self):
         """Update the positions of the cursors."""
@@ -162,12 +162,12 @@ class AbstractDocument:
             for c in cursors[i:]:
                 ahead = c.start > start
                 if ahead:
-                    if end is None or end >= c.start:
+                    if end >= c.start:
                         c.start = start
                     else:
                         c.start += start + len(text) - end
                 if c.end is not None and c.end >= start:
-                    if end is None or end >= c.end:
+                    if end >= c.end:
                         c.end = start + len(text)
                     else:
                         c.end += start + len(text) - end
@@ -181,15 +181,6 @@ class AbstractDocument:
     def contents_changed(self, position, removed, added):
         """Called by _apply(). The default implementation does nothing."""
         pass
-
-    def modified_range(self):
-        """Return a two-tuple(start, end) describing the range that was modified.
-
-        If the last modification did not change anything, (0, 0) is returned.
-
-        """
-        return self._modified_range
-
 
 
 class Document(AbstractDocument):
