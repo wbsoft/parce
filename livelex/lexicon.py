@@ -206,6 +206,8 @@ def validate_language(lang):
                     default_tg = pattern
                     _check_default_target(lexicon, pattern)
             else:
+                if isinstance(pattern, livelex.Pattern):
+                    pattern = pattern.build()
                 try:
                     rx = re.compile(pattern)
                 except re.error as e:
