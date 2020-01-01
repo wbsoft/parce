@@ -36,6 +36,7 @@ import collections
 import itertools
 
 from livelex.action import Action
+from livelex.lexicon import BoundLexicon
 
 
 class NodeMixin:
@@ -566,18 +567,20 @@ class TreeBuilder:
     def parse_context(self, context, text, pos):
         """Yield Token instances as long as we are in the current context."""
         for pos, txt, match, action, *target in context.lexicon.parse(text, pos):
-            tokens = tuple(self.filter_actions(action, pos, txt, match))
-            end = pos + len(txt)
-            if txt and tokens:
-                if len(tokens) == 1:
-                    tokens = Token(context, *tokens[0]),
+            if txt:
+                if isinstance(action, Action):
+                    tokens = tuple(action.filter_actions(self, pos, txt, match))
+                    if len(tokens) == 1:
+                        tokens = Token(context, *tokens[0]),
+                    else:
+                        tokens = tuple(_GroupToken(context, *t) for t in tokens)
+                        for t in tokens:
+                            t.group = tokens
                 else:
-                    tokens = tuple(_GroupToken(context, *t) for t in tokens)
-                    for t in tokens:
-                        t.group = tokens
+                    tokens = Token(context, pos, txt, action),
             else:
                 tokens = ()
-            yield end, tokens, target
+            yield pos + len(txt), tokens, target
 
     def update_context(self, context, target):
         """Move to another context depending on target."""
