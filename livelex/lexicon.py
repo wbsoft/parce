@@ -193,19 +193,20 @@ def validate_language(lang):
     for lexicon in lexicons:
         default_act, default_tg = None, None
         msg = lambda s: print("{}: ".format(lexicon) + s)
-        for pattern, *rest in lexicon():
+        for pattern, action, *target in lexicon():
             if pattern is default_action:
                 if default_act:
                     msg("conflicting default actions")
                 else:
-                    default_act = pattern
+                    default_act = action
             elif pattern is default_target:
                 if default_tg:
                     msg("conflicting default targets")
                 else:
-                    default_tg = pattern
-                    _check_default_target(lexicon, pattern)
+                    default_tg = action, *target
+                    _check_default_target(lexicon, default_tg)
             else:
+                # validate pattern
                 if isinstance(pattern, livelex.Pattern):
                     pattern = pattern.build()
                 try:
@@ -216,6 +217,18 @@ def validate_language(lang):
                 else:
                     if rx.match(''):
                         msg("warning: pattern {} matches the empty string".format(repr(pattern)))
+                # validate target
+                def targets():
+                    if len(target) == 1 and isinstance(target[0], livelex.Target):
+                        for t in target[0].targets:
+                            yield from t
+                    else:
+                        yield from target
+                for t in targets():
+                    if not isinstance(t, (int, BoundLexicon)):
+                        msg("invalid target {} in targets {}".format(t, target))
+                        break
+
         if default_act and default_tg:
             msg("can't have both default_action and default_target")
 
