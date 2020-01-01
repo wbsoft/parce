@@ -35,26 +35,30 @@ def validate_language(lang):
             lexicons.append(getattr(lang, key))
 
     for lexicon in lexicons:
-        default_act, default_tg = None, None
-        msg = message(lexicon)
-        for pattern, action, *target in lexicon():
-            if pattern is livelex.default_action:
-                if default_act:
-                    msg("conflicting default actions")
-                else:
-                    default_act = action
-            elif pattern is livelex.default_target:
-                if default_tg:
-                    msg("conflicting default targets")
-                else:
-                    default_tg = action, *target
-                    check_default_target(lexicon, default_tg)
-            else:
-                validate_pattern(msg, pattern)
-                validate_target(msg, target)
+        validate_lexicon(lexicon)
 
-        if default_act and default_tg:
-            msg("can't have both default_action and default_target")
+
+def validate_lexicon(lexicon):
+    default_act, default_tg = None, None
+    msg = message(lexicon)
+    for pattern, action, *target in lexicon():
+        if pattern is livelex.default_action:
+            if default_act:
+                msg("conflicting default actions")
+            else:
+                default_act = action
+        elif pattern is livelex.default_target:
+            if default_tg:
+                msg("conflicting default targets")
+            else:
+                default_tg = action, *target
+                check_default_target(lexicon, default_tg)
+        else:
+            validate_pattern(msg, pattern)
+            validate_target(msg, target)
+
+    if default_act and default_tg:
+        msg("can't have both default_action and default_target")
 
 
 def validate_pattern(msg, pattern):
