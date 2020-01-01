@@ -314,8 +314,9 @@ class Token(NodeMixin):
         """Remove this token and all tokens to the right from the tree."""
         node = self
         while node.parent:
-            i = node.parent.index(node)
-            del node.parent[i+1:]
+            if node is not node.parent[-1]:
+                i = node.parent.index(node)
+                del node.parent[i+1:]
             node = node.parent
         del self.parent[-1] # including ourselves
 
@@ -328,11 +329,12 @@ class Token(NodeMixin):
             context = node.parent
             copy = Context(context.lexicon, None)
             copy.append(firstchild)
-            s = slice(context.index(node) + 1, None)
-            for n in context[s]:
-                n.parent = copy
-            copy.extend(context[s])
-            del context[s]
+            if node is not context[-1]:
+                s = slice(context.index(node) + 1, None)
+                for n in context[s]:
+                    n.parent = copy
+                copy.extend(context[s])
+                del context[s]
             firstchild.parent = copy
             firstchild = copy
             node = context
