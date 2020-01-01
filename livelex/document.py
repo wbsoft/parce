@@ -357,6 +357,20 @@ class Cursor:
         self.start = start
         self.end = start if end == -1 else end
 
+    def select_all(self):
+        """Set start to 0 and end to None; selecting all text."""
+        self.start = 0
+        self.end = None
+
+    def select_none(self):
+        """Set end to start."""
+        self.end = self.start
+
+    def has_selection(self):
+        """Return True if text is selected."""
+        end = len(self._document) if self.end is None else self.end
+        return self.start < end
+
     def lstrip(self, chars=None):
         """Move start to the right, like Python's lstrip() string method."""
         text = self.text()
