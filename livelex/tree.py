@@ -283,10 +283,10 @@ class Token(NodeMixin):
 
         """
         node = self
-        while node.parent:
+        for parent in self.ancestors():
             for n in node.right_siblings():
                 yield from n.tokens()
-            node = node.parent
+            node = parent
 
     def backward(self):
         """Yield all Tokens in backward direction.
@@ -295,10 +295,10 @@ class Token(NodeMixin):
 
         """
         node = self
-        while node.parent:
+        for parent in self.ancestors():
             for n in node.left_siblings():
                 yield from n.tokens_bw()
-            node = node.parent
+            node = parent
 
     def forward_including(self):
         """Yield all tokens in forward direction, including self."""
@@ -313,11 +313,11 @@ class Token(NodeMixin):
     def cut(self):
         """Remove this token and all tokens to the right from the tree."""
         node = self
-        while node.parent:
-            if node is not node.parent[-1]:
-                i = node.parent.index(node)
-                del node.parent[i+1:]
-            node = node.parent
+        for parent in self.ancestors():
+            if node is not parent[-1]:
+                i = parent.index(node)
+                del parent[i+1:]
+            node = parent
         del self.parent[-1] # including ourselves
 
     def split(self):
@@ -328,9 +328,9 @@ class Token(NodeMixin):
         the current one. The new tree's root element is returned.
 
         """
-        parent = p = self.parent
+        parent = self.parent
         node = firstchild = self
-        while p:
+        for p in self.ancestors():
             copy = Context(p.lexicon, None)
             copy.append(firstchild)
             if node is not p[-1]:
@@ -342,7 +342,6 @@ class Token(NodeMixin):
             firstchild.parent = copy
             firstchild = copy
             node = p
-            p = p.parent
         del parent[-1]
         return copy
 
@@ -361,15 +360,13 @@ class Token(NodeMixin):
         context.append(self)
         node = self
         c = context
-        p = self.parent
-        while p:
+        for p in self.ancestors():
             if node is not p[-1]:
                 siblings = p[p.index(node)+1:]
                 for n in siblings:
                     n.parent = c
                 c.extend(siblings)
             node = p
-            p = p.parent
             c = c.parent
         self.parent = context
 
