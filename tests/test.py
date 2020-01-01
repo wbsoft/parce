@@ -79,6 +79,6 @@ if __name__ == "__main__":
     #pprint(tree(tokens))
 
     print("Tree from tree:")
-    from livelex.tree import Document
+    from livelex import Document
     Document(MyLang.root, s).root().dump()
 
