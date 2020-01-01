@@ -36,7 +36,7 @@ def validate_language(lang):
 
     for lexicon in lexicons:
         default_act, default_tg = None, None
-        msg = lambda s: print("{}: ".format(lexicon) + s)
+        msg = message(lexicon)
         for pattern, action, *target in lexicon():
             if pattern is livelex.default_action:
                 if default_act:
@@ -50,32 +50,38 @@ def validate_language(lang):
                     default_tg = action, *target
                     check_default_target(lexicon, default_tg)
             else:
-                # validate pattern
-                if isinstance(pattern, livelex.Pattern):
-                    pattern = pattern.build()
-                try:
-                    rx = re.compile(pattern)
-                except re.error as e:
-                    msg("regular expression {} error:".format(repr(pattern)))
-                    print("  {}".format(e))
-                else:
-                    if rx.match(''):
-                        msg("warning: pattern {} matches the empty string".format(repr(pattern)))
-                # validate target
-                def targets():
-                    if len(target) == 1 and isinstance(target[0], livelex.Target):
-                        for t in target[0].targets:
-                            yield from t
-                    else:
-                        yield from target
-                for t in targets():
-                    if not isinstance(t, (int, livelex.BoundLexicon)):
-                        msg("invalid target {} in targets {}".format(t, target))
-                        break
+                validate_pattern(msg, pattern)
+                validate_target(msg, target)
 
         if default_act and default_tg:
             msg("can't have both default_action and default_target")
 
+
+def validate_pattern(msg, pattern):
+    """Validate a regular expression pattern."""
+    if isinstance(pattern, livelex.Pattern):
+        pattern = pattern.build()
+    try:
+        rx = re.compile(pattern)
+    except re.error as e:
+        msg("regular expression {} error:\n  {}".format(repr(pattern), e))
+    else:
+        if rx.match(''):
+            msg("warning: pattern {} matches the empty string".format(repr(pattern)))
+
+
+def validate_target(msg, target):
+    """Validate a target."""
+    def targets():
+        if len(target) == 1 and isinstance(target[0], livelex.Target):
+            for t in target[0].targets:
+                yield from t
+        else:
+            yield from target
+    for t in targets():
+        if not isinstance(t, (int, livelex.BoundLexicon)):
+            msg("invalid target {} in targets {}".format(t, target))
+            break
 
 
 def check_default_target(lexicon, target):
@@ -87,6 +93,7 @@ def check_default_target(lexicon, target):
     state = [lexicon]
     circular = set()
     while True:
+        msg = message(lexicon)
         circular.add(lexicon)
         depth = len(state)
         for t in target:
@@ -98,22 +105,26 @@ def check_default_target(lexicon, target):
                 else:
                     state += [lexicon] * t
             elif not isinstance(t, livelex.BoundLexicon):
-                print("{}: in default target only integer or lexicon allowed".format(lexicon))
+                msg("in default target only integer or lexicon allowed")
                 return
             else:
                 state.append(t)
         if len(state) == depth:
-            print("{}: invalid default target".format(lexicon))
+            msg("invalid default target")
             return
         lexicon = state[-1]
         if lexicon in circular:
             state.extend(l for l in circular if l not in state)
-            print("{}: circular default target: {}".format(lexicon,
-                " -> ".join(map(str, state))))
+            msg("circular default target: {}".format(" -> ".join(map(str, state))))
+            return
         for pattern, *target in lexicon():
             if pattern is livelex.default_target:
                 break
         else:
             break
 
+
+def message(lexicon):
+    """Return a callable that prints a message with the lexicon name prepended."""
+    return lambda s: print("{}: ".format(lexicon) + s)
 
