@@ -46,6 +46,7 @@ from .target import (
 )
 
 from .lexicon import (
+    BoundLexicon,
     Lexicon,
     lexicon,
     default_action,
