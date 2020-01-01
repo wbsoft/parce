@@ -321,25 +321,57 @@ class Token(NodeMixin):
         del self.parent[-1] # including ourselves
 
     def split_right(self):
-        """Split off a new tree, starting with this token."""
-        parent = self.parent
-        node = self
-        firstchild = self
-        while node.parent:
-            context = node.parent
-            copy = Context(context.lexicon, None)
+        """Split off a new tree, starting with this token.
+
+        The new tree has the same ancestor structure as the current. This token
+        and all tokens to the right are moved to the new tree and removed from
+        the current one. The new tree's root element is returned.
+
+        """
+        parent = p = self.parent
+        node = firstchild = self
+        while p:
+            copy = Context(p.lexicon, None)
             copy.append(firstchild)
-            if node is not context[-1]:
-                s = slice(context.index(node) + 1, None)
-                for n in context[s]:
+            if node is not p[-1]:
+                s = slice(p.index(node) + 1, None)
+                for n in p[s]:
                     n.parent = copy
-                copy.extend(context[s])
-                del context[s]
+                copy.extend(p[s])
+                del p[s]
             firstchild.parent = copy
             firstchild = copy
-            node = context
+            node = p
+            p = p.parent
         del parent[-1]
         return copy
+
+    def move_right(self, context):
+        """Move ourselves and all tokens to the right to the context.
+
+        This method assumes that the context has the same parent depth
+        as our own, and only makes sense if that parents also have the same
+        lexicon, i.e. the our state matches the target context (and that
+        the pos attribute of the tokens is adjusted).
+
+        The nodes are not removed from their former parents, just the parent
+        attribute is changed.
+
+        """
+        context.append(self)
+        node = self
+        c = context
+        p = self.parent
+        while p:
+            if node is not p[-1]:
+                siblings = p[p.index(node)+1:]
+                for n in siblings:
+                    n.parent = c
+                c.extend(siblings)
+            node = p
+            p = p.parent
+            c = c.parent
+        self.parent = context
 
     def state_matches(self, other):
         """Return True if the other Token has the same lexicons in the ancestors."""
@@ -750,16 +782,8 @@ class TreeDocumentMixin:
                             for t in tail_tokens[index:]:
                                 t.pos += offset
                         # add the old tokens to the current context
-                        tail_token = tail_node = tail_tokens[index]
-                        context.append(tail_token)
-                        c = context
-                        while tail_node.parent:
-                            for n in tail_node.right_siblings():
-                                c.append(n)
-                                n.parent = c
-                            tail_node = tail_node.parent
-                            c = c.parent
-                        tail_token.parent = context
+                        tail_token = tail_tokens[index]
+                        tail_token.move_right(context)
                         end_parse = tail_token.pos
                         done = True
                         break
