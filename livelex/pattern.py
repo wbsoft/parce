@@ -19,53 +19,29 @@
 
 
 """
-The livelex Python module.
+Helper objects to construct regular expressions.
 
 """
 
-import re
+
+class Pattern:
+    """Base class for objects that build a regular expression."""
+    def build(self):
+        raise NotImplementedError
 
 
-from .action import (
-    Action,
-    Subgroup,
-    Match,
-    Text,
-    skip,
-)
+class Words(Pattern):
+    """Creates a regular expression from a list of words."""
+    def __init__(self, words, prefix="", suffix=""):
+        self.words = words
+        self.prefix = prefix
+        self.suffix = suffix
 
-from .lexicon import (
-    Lexicon,
-    lexicon,
-    default_action,
-    default_target,
-)
-
-from .lex import (
-    Lexer,
-)
-
-from .pattern import (
-    Pattern,
-    Words,
-)
-
-from .language import (
-    Language,
-)
-
-from . import tree, document
-
-from .document import Cursor
-
-
-class Document(tree.TreeDocumentMixin, document.Document):
-    """A Document that automatically keeps its contents tokenized."""
-    pass
-
-
-def version():
-    from . import pkginfo
-    return tuple(map(int, re.findall(r'\d+', pkginfo.version)))
+    def build(self):
+        from . import regex
+        expr = regex.words2regexp(self.words)
+        if self.prefix or self.suffix:
+            return self.prefix + '(?:' + expr + ')' + self.suffix
+        return expr
 
 

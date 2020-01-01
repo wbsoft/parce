@@ -35,10 +35,7 @@ import bisect
 import collections
 import itertools
 
-
-from . import lex
-from .action import Action
-from . import document
+from livelex.action import Action
 
 
 class NodeMixin:

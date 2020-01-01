@@ -19,32 +19,22 @@
 
 
 """
-Helper objects to construct regular expressions.
+This module contains some smart functions to build regular expressions:
+
+* words2regexp() builds an optimized regular expression from a list of words.
+
+The following helper functions are available:
+
+* common_suffix() returns the common suffix of the words, if any.
+* make_trie() makes a dict-based radix tree structure from a list of words.
+* trie_to_regexp_tuple() converts a trie structure to a regexp tuple.
+* build_regexp() converts a tuple to a real regular expression.
+* make_charclass() turns a list of characters into a sensible [a-z] expression.
 
 """
 
 
 import re
-
-
-class Pattern:
-    """Base class for objects that build a regular expression."""
-    def build(self):
-        raise NotImplementedError
-
-
-class Words(Pattern):
-    """Creates a regular expression from a list of words."""
-    def __init__(self, words, prefix="", suffix=""):
-        self.words = words
-        self.prefix = prefix
-        self.suffix = suffix
-
-    def build(self):
-        expr = words2regexp(self.words)
-        if self.prefix or self.suffix:
-            return self.prefix + '(?:' + expr + ')' + self.suffix
-        return expr
 
 
 def words2regexp(words):
