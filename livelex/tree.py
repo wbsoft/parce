@@ -310,7 +310,7 @@ class Token(NodeMixin):
         yield self
         yield from self.backward()
 
-    def cut_right(self):
+    def cut(self):
         """Remove this token and all tokens to the right from the tree."""
         node = self
         while node.parent:
@@ -320,7 +320,7 @@ class Token(NodeMixin):
             node = node.parent
         del self.parent[-1] # including ourselves
 
-    def split_right(self):
+    def split(self):
         """Split off a new tree, starting with this token.
 
         The new tree has the same ancestor structure as the current. This token
@@ -346,8 +346,8 @@ class Token(NodeMixin):
         del parent[-1]
         return copy
 
-    def move_right(self, context):
-        """Move ourselves and all tokens to the right to the context.
+    def join(self, context):
+        """Add ourselves and all tokens to the right to the context.
 
         This method assumes that the context has the same parent depth
         as our own, and only makes sense if that parents also have the same
@@ -744,7 +744,7 @@ class TreeDocumentMixin:
         if tail:
             # make a subtree structure starting with this end_token
             end_parse = end_token.pos + offset
-            tail = end_token.split_right()
+            tail = end_token.split()
             # store the new position the tokens would get
             tail_tokens = []
             for t in tail.tokens():
@@ -759,7 +759,7 @@ class TreeDocumentMixin:
             start_parse = start_token.pos
             context = start_token.parent
             if not tail or start_token is not end_token:
-                start_token.cut_right()
+                start_token.cut()
         else:
             start_parse = 0
             context = self._tree
@@ -783,7 +783,7 @@ class TreeDocumentMixin:
                                 t.pos += offset
                         # add the old tokens to the current context
                         tail_token = tail_tokens[index]
-                        tail_token.move_right(context)
+                        tail_token.join(context)
                         end_parse = tail_token.pos
                         done = True
                         break
