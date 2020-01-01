@@ -21,64 +21,87 @@
 """
 The action module defines Action and its subclasses.
 
-If an instance of Action is encountered in a rule, it is called to return the 
-desired action. Nesting is possible in most cases, only some actions require 
-the match object to be present; and such actions can't be used as default
-action, or inside subgroup_actions.
+If an instance of Action is encountered in a rule, its filter_actions() method
+is called to yield a (pos, text action) tuple. Normally the filter_actions()
+method simply calls back the filter_actions() method of the lexer with the new
+action, which could again be an Action instance.
+
+Nesting is possible in most cases, only some actions require the match object
+to be present; and such actions can't be used as default action, or inside
+subgroup_actions.
+
+An Action object always holds all actions it is able to return in the actions
+attribute. This is done so that it is possible to know all actions a Language
+can generate beforehand, and e.g. translate all the actions in a Language to
+other objects, which could even be methods or functions.
 
 """
 
 
 class Action:
-    def __init__(self, *args):
-        self.args = args
-    
+    """Base class for Action objects.
+
+    All actions an Action object could yield are in the actions attribute.
+
+    """
+    def __init__(self, *actions):
+        self.actions = actions
+
     def filter_actions(self, lexer, pos, text, match):
         raise NotImplementedError
 
 
-class SkipAction(Action):
-    def __init__(self):
-        pass
-
-    def filter_actions(self, lexer, pos, text, match):
-        yield from ()
-
-
 class Subgroup(Action):
-    """Yield actions from subgroups in a match."""
+    """Yield actions from subgroups in a match.
+
+    There should be the same number of subgroups in the regular expression as
+    there are action attributes given to __init__().
+
+    """
     def filter_actions(self, lexer, pos, text, match):
-        for i, action in enumerate(self.args, match.lastindex + 1):
+        for i, action in enumerate(self.actions, match.lastindex + 1):
             yield from lexer.filter_actions(action, match.start(i), match.group(i), None)
-        
+
 
 class Match(Action):
     """Expects a function as argument that is called with the match object.
-    
-    The function should return the desired action.
-    
+
+    The function should return the index indicating the action to return.
+    The function may also return True or False, which are regarded as 1 or 0,
+    respectively.
+
     """
-    def __init__(self, func):
+    def __init__(self, func, *actions):
         self.func = func
+        super().__init__(*actions)
 
     def filter_actions(self, lexer, pos, text, match):
-        action = self.func(match)
+        action = self.actions[self.func(match)]
         yield from lexer.filter_actions(action, pos, text, match)
 
 
 class Text(Action):
     """Expects a function as argument that is called with the matched text.
-    
-    The function should return the desired action.
-    
+
+    The function should return the index indicating the action to return.
+    The function may also return True or False, which are regarded as 1 or 0,
+    respectively.
+
     """
-    def __init__(self, func):
+    def __init__(self, func, *actions):
         self.func = func
+        super().__init__(*actions)
 
     def filter_actions(self, lexer, pos, text, match):
-        action = self.func(text)
+        action = self.actions[self.func(text)]
         yield from lexer.filter_actions(action, pos, text, None)
 
 
+class _SkipAction(Action):
+    """An Action that yields nothing."""
+    def filter_actions(self, lexer, pos, text, match):
+        yield from ()
+
+
 # used to suppress a token
-skip = SkipAction()
+skip = _SkipAction()
