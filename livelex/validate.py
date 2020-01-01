@@ -48,7 +48,7 @@ def validate_language(lang):
                     msg("conflicting default targets")
                 else:
                     default_tg = action, *target
-                    _check_default_target(lexicon, default_tg)
+                    check_default_target(lexicon, default_tg)
             else:
                 # validate pattern
                 if isinstance(pattern, livelex.Pattern):
@@ -78,7 +78,7 @@ def validate_language(lang):
 
 
 
-def _check_default_target(lexicon, target):
+def check_default_target(lexicon, target):
     """Check whether this default target could lead to circular references.
 
     This could hang the parser, and we wouldn't like to have that :-)
@@ -97,6 +97,9 @@ def _check_default_target(lexicon, target):
                     del state[t:]
                 else:
                     state += [lexicon] * t
+            elif not isinstance(t, livelex.BoundLexicon):
+                print("{}: in default target only integer or lexicon allowed".format(lexicon))
+                return
             else:
                 state.append(t)
         if len(state) == depth:
