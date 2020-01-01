@@ -26,12 +26,23 @@ The livelex Python module.
 import re
 
 
+from .pattern import (
+    Pattern,
+    Words,
+)
+
 from .action import (
     Action,
     Subgroup,
     Match,
     Text,
     skip,
+)
+
+from .target import (
+    Target,
+    MatchTarget,
+    TextTarget,
 )
 
 from .lexicon import (
@@ -43,11 +54,6 @@ from .lexicon import (
 
 from .lex import (
     Lexer,
-)
-
-from .pattern import (
-    Pattern,
-    Words,
 )
 
 from .language import (

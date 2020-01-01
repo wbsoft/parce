@@ -71,12 +71,12 @@ class Match(Action):
     respectively.
 
     """
-    def __init__(self, func, *actions):
-        self.func = func
+    def __init__(self, predicate, *actions):
+        self.predicate = predicate
         super().__init__(*actions)
 
     def filter_actions(self, lexer, pos, text, match):
-        index = self.func(match)
+        index = self.predicate(match)
         action = self.actions[index]
         yield from lexer.filter_actions(action, pos, text, match)
 
@@ -89,12 +89,12 @@ class Text(Action):
     respectively.
 
     """
-    def __init__(self, func, *actions):
-        self.func = func
+    def __init__(self, predicate, *actions):
+        self.predicate = predicate
         super().__init__(*actions)
 
     def filter_actions(self, lexer, pos, text, match):
-        index = self.func(text)
+        index = self.predicate(text)
         action = self.actions[index]
         yield from lexer.filter_actions(action, pos, text, None)
 

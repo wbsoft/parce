@@ -36,6 +36,7 @@ import collections
 import itertools
 
 from livelex.action import Action
+from livelex.target import Target
 from livelex.lexicon import BoundLexicon
 
 
@@ -580,6 +581,8 @@ class TreeBuilder:
                     tokens = Token(context, pos, txt, action),
             else:
                 tokens = ()
+            if target and isinstance(target[0], Target):
+                target = target[0].target(txt, match)
             yield pos + len(txt), tokens, target
 
     def update_context(self, context, target):

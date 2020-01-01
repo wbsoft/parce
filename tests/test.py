@@ -16,6 +16,7 @@ from livelex import (
     default_action,
     default_target,
     skip,
+    MatchTarget, TextTarget,
 )
 
 class MyLang(Language):
