@@ -76,7 +76,8 @@ class Match(Action):
         super().__init__(*actions)
 
     def filter_actions(self, lexer, pos, text, match):
-        action = self.actions[self.func(match)]
+        index = self.func(match)
+        action = self.actions[index]
         yield from lexer.filter_actions(action, pos, text, match)
 
 
@@ -93,7 +94,8 @@ class Text(Action):
         super().__init__(*actions)
 
     def filter_actions(self, lexer, pos, text, match):
-        action = self.actions[self.func(text)]
+        index = self.func(text)
+        action = self.actions[index]
         yield from lexer.filter_actions(action, pos, text, None)
 
 
