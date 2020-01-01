@@ -84,12 +84,23 @@ class NodeMixin:
         """
         return self.parent[0] is self
 
-    def ancestors(self):
-        """Climb the tree up over the parents."""
+    def ancestors(self, upto=None):
+        """Climb the tree up over the parents.
+
+        If upto is given and it is one of the ancestors, stop after yielding
+        that ancestor. Otherwise iteration stops at the root node.
+
+        """
         node = self.parent
-        while node is not None:
-            yield node
-            node = node.parent
+        if upto and upto.parent:
+            p = upto.parent
+            while node is not None and node is not p:
+                yield node
+                node = node.parent
+        else:
+            while node is not None:
+                yield node
+                node = node.parent
 
     def common_ancestor(self, other):
         """Return the common ancestor with the Context or Token."""
@@ -276,39 +287,41 @@ class Token(NodeMixin):
         for t in self.backward():
             return t
 
-    def forward(self):
+    def forward(self, upto=None):
         """Yield all Tokens in forward direction.
 
         Descends into child Contexts, and ascends into parent Contexts.
+        If upto is given, does not ascend above that context.
 
         """
         node = self
-        for parent in self.ancestors():
+        for parent in self.ancestors(upto):
             for n in node.right_siblings():
                 yield from n.tokens()
             node = parent
 
-    def backward(self):
+    def backward(self, upto=None):
         """Yield all Tokens in backward direction.
 
         Descends into child Contexts, and ascends into parent Contexts.
+        If upto is given, does not ascend above that context.
 
         """
         node = self
-        for parent in self.ancestors():
+        for parent in self.ancestors(upto):
             for n in node.left_siblings():
                 yield from n.tokens_bw()
             node = parent
 
-    def forward_including(self):
+    def forward_including(self, upto=None):
         """Yield all tokens in forward direction, including self."""
         yield self
-        yield from self.forward()
+        yield from self.forward(upto)
 
-    def backward_including(self):
+    def backward_including(self, upto=None):
         """Yield all tokens in backward direction, including self."""
         yield self
-        yield from self.backward()
+        yield from self.backward(upto)
 
     def cut(self):
         """Remove this token and all tokens to the right from the tree."""
