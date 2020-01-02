@@ -53,10 +53,6 @@ from .lexicon import (
     default_target,
 )
 
-from .lex import (
-    Lexer,
-)
-
 from .language import (
     Language,
 )

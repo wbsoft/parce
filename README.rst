@@ -35,9 +35,11 @@ Here is a crude example of how to create a Language class and then use it:
     from livelex import (
         Language, lexicon,
         Words, Subgroup, Text,
-        default_action, skip,
+        default_action,
+        default_target,
+        skip,
+        MatchTarget, TextTarget,
     )
-
 
     class MyLang(Language):
         """A Language represents a set of Lexicons comprising a specific language.
@@ -51,41 +53,72 @@ Here is a crude example of how to create a Language class and then use it:
 
         @lexicon(re_flags=0)
         def root(cls):
-            yield Words(('bla', 'BLA')), 'bla action'
-            yield r'ble', 'ble action'
-            yield r'\s+', skip      # this text is skipped
-            yield r'(bl)(ub)', Subgroup('bl act', 'ub act')
-            yield r'blo', 'blo action', cls.blo
-            yield default_action, "TEXT"
+            yield r'"', "string", cls.string
+            yield r'\(', "paren", cls.parenthesized
+            yield r'\d+', "number"
+            yield r'%', "comment", cls.comment
+            yield r'[,.!?]', "punctuation"
+            yield r'\w+', "word"
+        
+        @lexicon
+        def string(cls):
+            yield r'\\[\\"]', 'string escape'
+            yield r'"', "string", -1
+            yield default_action, "string"
+
+        @lexicon(re_flags=re.MULTILINE)
+        def comment(cls):
+            yield r'$', "comment", -1
+            yield r'XXX|TODO', "todo"
+            yield default_action, "comment"
 
         @lexicon
-        def blo(cls):
-            yield r'\s+', skip      # this text is skipped
-            yield r'1', '1 in blo'
-            yield r'4', '4 in blo, end', -1
-            yield r'[0-9]', Text(lambda t: "has 3" if '3' in t else 'no 3')
-            yield default_action, "unparsed"
+        def parenthesized(cls):
+            yield r'\)', "paren", -1
+            yield from cls.root()
 
-    >>> from livelex import Lexer
-    >>> from pprint import pprint
-    >>> s = "bla pythonBLA blub blablo b39la 1 4 ble"
-    >>> l = Lexer(MyLang.root)
-    >>> pprint(list(l.tokens(s)))
-    [(0, 'bla', 'bla action', False),
-     (4, 'python', 'TEXT', False),
-     (10, 'BLA', 'bla action', False),
-     (14, 'bl', 'bl act', None),
-     (16, 'ub', 'ub act', False),
-     (19, 'bla', 'bla action', False),
-     (22, 'blo', 'blo action', True),
-     (26, 'b', 'unparsed', False),
-     (27, '3', 'has 3', False),
-     (28, '9', 'no 3', False),
-     (29, 'la', 'unparsed', False),
-     (32, '1', '1 in blo', False),
-     (34, '4', '4 in blo, end', True),
-     (36, 'ble', 'ble action', False)]
 
+    s = r"""
+    This is (an example) text with 12 numbers
+    and "a string with \" escaped characters",
+    and a % comment that TODO lasts until the end
+    of the line.
+    """
+
+
+    >>> from livelex import Document
+    >>> Document(MyLang.root, s).root().dump()
+    <Context MyLang.root at 1-144 (20 children)>
+     ├╴<Token 'This' at 1 (word)>
+     ├╴<Token 'is' at 6 (word)>
+     ├╴<Token '(' at 9 (paren)>
+     ├╴<Context MyLang.parenthesized at 10-21 (3 children)>
+     │  ├╴<Token 'an' at 10 (word)>
+     │  ├╴<Token 'example' at 13 (word)>
+     │  ╰╴<Token ')' at 20 (paren)>
+     ├╴<Token 'text' at 22 (word)>
+     ├╴<Token 'with' at 27 (word)>
+     ├╴<Token '12' at 32 (number)>
+     ├╴<Token 'numbers' at 35 (word)>
+     ├╴<Token 'and' at 43 (word)>
+     ├╴<Token '"' at 47 (string)>
+     ├╴<Context MyLang.string at 48-84 (4 children)>
+     │  ├╴<Token 'a string with ' at 48 (string)>
+     │  ├╴<Token '\\"' at 62 (string escape)>
+     │  ├╴<Token ' escaped characters' at 64 (string)>
+     │  ╰╴<Token '"' at 83 (string)>
+     ├╴<Token ',' at 84 (punctuation)>
+     ├╴<Token 'and' at 86 (word)>
+     ├╴<Token 'a' at 90 (word)>
+     ├╴<Token '%' at 92 (comment)>
+     ├╴<Context MyLang.comment at 93-131 (3 children)>
+     │  ├╴<Token ' comment that ' at 93 (comment)>
+     │  ├╴<Token 'TODO' at 107 (todo)>
+     │  ╰╴<Token ' lasts until the end' at 111 (comment)>
+     ├╴<Token 'of' at 132 (word)>
+     ├╴<Token 'the' at 135 (word)>
+     ├╴<Token 'line' at 139 (word)>
+     ╰╴<Token '.' at 143 (punctuation)>
 
 
 The livelex module is written and maintained by Wilbert Berendsen.

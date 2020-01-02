@@ -91,7 +91,7 @@ class NodeMixin:
 
         """
         node = self.parent
-        if upto and upto.parent:
+        if upto and upto.parent is not None:
             p = upto.parent
             while node is not None and node is not p:
                 yield node

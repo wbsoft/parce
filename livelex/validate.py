@@ -24,9 +24,9 @@ import livelex
 
 
 def validate_language(lang):
-    """Performs checks to the specified language class.
+    """Perform checks to the specified language class.
 
-    Detects circular default targets, empty or invalid regular expressions, etc.
+    Detects circular default targets, invalid regular expressions, etc.
 
     """
     lexicons = []
@@ -83,7 +83,9 @@ def validate_target(msg, target):
         else:
             yield from target
     for t in targets():
-        if not isinstance(t, (int, livelex.BoundLexicon)):
+        if isinstance(t, livelex.Target):
+            msg("a Target must be the only one: {}".format(target))
+        elif not isinstance(t, (int, livelex.BoundLexicon)):
             msg("invalid target {} in targets {}".format(t, target))
             break
 

@@ -67,19 +67,7 @@ of the line.
 if __name__ == "__main__":
     print("livelex version:", livelex.version())
 
-    from pprint import pprint
-
-    from livelex import Lexer
-    l = Lexer(MyLang.root)
-    tokens = list(l.tokens(s))
-
-    pprint(tokens)
-
-    #print("Tree:")
-    #from livelex.lex import tree
-    #pprint(tree(tokens))
-
-    print("Tree from tree:")
+    print("Tree:")
     from livelex import Document
     Document(MyLang.root, s).root().dump()
 
