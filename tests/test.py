@@ -12,7 +12,7 @@ import livelex
 
 from livelex import (
     Language, lexicon,
-    Words, Subgroup, Text,
+    Words, SubgroupAction, TextAction,
     default_action,
     default_target,
     skip,

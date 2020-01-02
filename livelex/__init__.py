@@ -32,15 +32,30 @@ from .pattern import (
 )
 
 from .action import (
-    Action,
-    Subgroup,
-    Match,
-    Text,
+    SubgroupAction,
+    MatchAction,
+    TextAction,
     skip,
+
+    Whitespace,
+    Text,
+
+    Escape,
+    Keyword,
+    Name,
+    Literal,
+    Punctuation,
+    Operator,
+    Comment,
+    Error,
+
+    String,
+    Number,
+    Builtin,
+    Variable,
 )
 
 from .target import (
-    Target,
     MatchTarget,
     TextTarget,
 )

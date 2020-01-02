@@ -35,7 +35,7 @@ import bisect
 import collections
 import itertools
 
-from livelex.action import Action
+from livelex.action import DynamicAction
 from livelex.target import Target
 from livelex.lexicon import BoundLexicon
 
@@ -569,7 +569,7 @@ class TreeBuilder:
         """Yield Token instances as long as we are in the current context."""
         for pos, txt, match, action, *target in context.lexicon.parse(text, pos):
             if txt:
-                if isinstance(action, Action):
+                if isinstance(action, DynamicAction):
                     tokens = tuple(action.filter_actions(self, pos, txt, match))
                     if len(tokens) == 1:
                         tokens = Token(context, *tokens[0]),
@@ -605,8 +605,8 @@ class TreeBuilder:
         return context
 
     def filter_actions(self, action, pos, txt, match):
-        """Handle filtering via Action instances."""
-        if isinstance(action, Action):
+        """Handle filtering via DynamicAction instances."""
+        if isinstance(action, DynamicAction):
             yield from action.filter_actions(self, pos, txt, match)
         else:
             yield pos, txt, action
