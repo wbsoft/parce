@@ -166,7 +166,7 @@ class StandardAction:
         return any(t is self for t in other)
 
     def __and__(self, other):
-        ancestors = list(other)
+        ancestors = frozenset(other)
         for t in self:
             if t in ancestors:
                 return t
