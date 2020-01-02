@@ -582,7 +582,7 @@ class TreeBuilder:
             else:
                 tokens = ()
             if target and isinstance(target[0], Target):
-                target = target[0].target(txt, match)
+                target = target[0].target(match)
             yield pos + len(txt), tokens, target
 
     def update_context(self, context, target):
