@@ -57,7 +57,6 @@ from .action import (
 
 from .target import (
     MatchTarget,
-    TextTarget,
 )
 
 from .lexicon import (

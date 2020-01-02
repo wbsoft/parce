@@ -19,8 +19,8 @@
 
 
 """
-The Target module defines Targets that depend on the text or match objects
-from the lexer.
+The Target module defines Targets that depend on the match object from the
+lexer.
 
 Instead of zero or more targets (which may be lexicons or integers), one
 Target instance can be given as Target in a rule. Its target() method is then
@@ -42,16 +42,15 @@ class Target:
     converted to a single-item list.
 
     """
-    def __init__(self, predicate, *targets):
-        self.predicate = predicate
+    def __init__(self, *targets):
         self.targets = tuple([t] if isinstance(t, (int, BoundLexicon)) else t
             for t in targets)
 
-    def index(self, text, match):
+    def index(self, match):
         raise NotImplementedError
 
-    def target(self, text, match):
-        return self.targets[self.index(text, match)]
+    def target(self, match):
+        return self.targets[self.index(match)]
 
 
 class MatchTarget(Target):
@@ -60,17 +59,11 @@ class MatchTarget(Target):
     The predicate should return the index of the target to choose.
 
     """
-    def index(self, text, match):
+    def __init__(self, predicate, *targets):
+        super().__init__(*targets)
+        self.predicate = predicate
+
+    def index(self, match):
         return self.predicate(match)
-
-
-class TextTarget(Target):
-    """A Target that calls the predicate with the matched text.
-
-    The predicate should return the index of the target to choose.
-
-    """
-    def index(self, text, match):
-        return self.predicate(text)
 
 
