@@ -69,6 +69,8 @@ one, i.e. the other one is one of the ancestors of the current action:
     >>> Literal in String
     False
 
+Finally, the `&` operator returns the common ancestor, if any.
+
 This module defines the following pre-defined standard actions:
 
     Whitespace =  StandardAction("Whitespace")
@@ -162,6 +164,12 @@ class StandardAction:
 
     def __contains__(self, other):
         return any(t is self for t in other)
+
+    def __and__(self, other):
+        ancestors = list(other)
+        for t in self:
+            if t in ancestors:
+                return t
 
     def __copy__(self):
         return self
