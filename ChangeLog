@@ -2,7 +2,10 @@ ChangeLog of the Python livelex package
 =======================================
 
 
+2020-01-02: livelex-0.0.7
 
+- Lots of new stuff, document, tree structure etc, old lexer gone
+- test/validation functions
 - Fix missing parentheses around two-character expression, e.g. when creating a 
   regexp from ['a', 'abc']
 
