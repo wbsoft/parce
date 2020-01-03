@@ -30,18 +30,60 @@ from .language import Language
 from .pkginfo import version, version_tuple
 
 
+# these can be used in rules where a pattern is expected
+default_action = object()   # denotes a default action for unmatched text
+default_target = object()   # denotes a default target when no text matches
+
+
+# used to suppress a token
+skip = action.SkipAction()
+
+# predefined standard actions
+Whitespace = action.StandardAction("Whitespace")
+Text = action.StandardAction("Text")
+
+Escape = action.StandardAction("Escape")
+Keyword = action.StandardAction("Keyword")
+Name = action.StandardAction("Name")
+Literal = action.StandardAction("Literal")
+Punctuation = action.StandardAction("Punctuation")
+Operator = action.StandardAction("Operator")
+Comment = action.StandardAction("Comment")
+Error = action.StandardAction("Error")
+
+String = Literal.String
+Number = Literal.Number
+Builtin = Name.Builtin
+Variable = Name.Variable
+
+
+class Document(tree.TreeDocumentMixin, document.Document):
+    """A Document that automatically keeps its contents tokenized."""
+    pass
+
+
 def words(words):
-    """Return a Pattern object that builds a regular expression from a list of words."""
+    """Return a Pattern object that builds a regular expression from a list of words.
+
+    To be used as a pattern in a rule.
+
+    """
     return pattern.Words(words)
 
 
 def bygroup(*actions):
-    """Return a SubgroupAction that yields tokens for each subgroup in a regular expression."""
+    """Return a SubgroupAction that yields tokens for each subgroup in a regular expression.
+
+    To be used as an action in a rule.
+
+    """
     return action.SubgroupAction(*actions)
 
 
 def bymatch(predicate, *actions):
     """Return a MatchAction that chooses the action based on the match object.
+
+    To be used as an action in a rule.
 
     The predicate is run with the match object as argument and should return
     the (integer) index of the desired action. True and False are also valid
@@ -59,6 +101,8 @@ def bymatch(predicate, *actions):
 def bytext(predicate, *actions):
     """Return a TextAction that chooses the action based on the text.
 
+    To be used as an action in a rule.
+
     The predicate is run with the match object as argument and should return
     the index of the desired action. See also bymatch().
 
@@ -68,6 +112,8 @@ def bytext(predicate, *actions):
 
 def tomatch(predicate, *targets):
     """Return a MatchTarget that chooses the target based on the match object.
+
+    To be used as a target in a rule.
 
     The predicate is run with the match object as argument and should return
     the (integer) index of the desired target. True and False are also valid
@@ -109,38 +155,4 @@ def lexicon(rules_func=None, **kwargs):
     def lexicon(rules_func):
         return lexicon_.Lexicon(rules_func, **kwargs)
     return lexicon
-
-
-
-# used to suppress a token
-skip = action.SkipAction()
-
-# predefined standard actions
-Whitespace = action.StandardAction("Whitespace")
-Text = action.StandardAction("Text")
-
-Escape = action.StandardAction("Escape")
-Keyword = action.StandardAction("Keyword")
-Name = action.StandardAction("Name")
-Literal = action.StandardAction("Literal")
-Punctuation = action.StandardAction("Punctuation")
-Operator = action.StandardAction("Operator")
-Comment = action.StandardAction("Comment")
-Error = action.StandardAction("Error")
-
-String = Literal.String
-Number = Literal.Number
-Builtin = Name.Builtin
-Variable = Name.Variable
-
-
-# these can be used in rules where a pattern is expected
-default_action = object()   # denotes a default action for unmatched text
-default_target = object()   # denotes a default target when no text matches
-
-
-class Document(tree.TreeDocumentMixin, document.Document):
-    """A Document that automatically keeps its contents tokenized."""
-    pass
-
 
