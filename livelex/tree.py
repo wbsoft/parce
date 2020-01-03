@@ -624,19 +624,19 @@ class TreeBuilder:
 
     def rebuild(self, tree, text, start, removed, added):
         """Tokenize the modified part of the text again and update the tree.
-        
-        Returns a tuple(start, end) describing the region in the thext the 
-        tokens were changed. This range can be larger than (start, start + 
+
+        Returns a tuple(start, end) describing the region in the thext the
+        tokens were changed. This range can be larger than (start, start +
         added).
-        
+
         The text is the new text; start is the position where characters were
         removed and others added. The removed and added arguments are integers,
         describing how many characters were removed and added.
-        
+
         This method finds the place we can start parsing again, and when the
         end of the modified region is reached, automatically recognizes when
         the rest of the tokens can be reused.
-        
+
         """
         # manage end, and record if there is text after the modified part (tail)
         end = start + removed
@@ -776,6 +776,7 @@ class TreeDocumentMixin:
 
     """
     def __init__(self, root_lexicon=None):
+        self._modified_range = 0, 0
         self._tree = Context(root_lexicon, None)
 
     def root(self):
@@ -792,7 +793,7 @@ class TreeDocumentMixin:
             self._tree.lexicon = root_lexicon
             self._tokenize_full()
         else:
-            self._modified_range = range(0, 0)
+            self.set_modified_range(0, 0)
 
     def _tokenize_full(self):
         self._tree.clear()
@@ -800,19 +801,29 @@ class TreeDocumentMixin:
             b = self._builder()
             context, pos = b.build(self._tree, self.text())
             b.unwind(context)
-            self._modified_range = range(0, len(self))
+            self.set_modified_range(0, len(self))
         else:
-            self._modified_range = range(0, 0)
+            self.set_modified_range(0, 0)
 
     def modified_range(self):
         """Return a two-tuple(start, end) describing the range that was re-tokenized."""
         return self._modified_range
 
+    def set_modified_range(self, start, end):
+        """Set the modified range.
+
+        Called by _tokenize_full() and contents_changed().
+        You can override this method if you want additional handling of the
+        modified range.
+
+        """
+        self._modified_range = start, end
+
     def modified_tokens(self):
         """Yield all the tokens that were changed in the last update."""
-        r = self.modified_range()
-        if r:
-            return self.tokens(r.start, r.stop)
+        start, end = self.modified_range()
+        if start < end:
+            return self.tokens(start, end)
 
     def tokens(self, start=0, end=None):
         """Yield all tokens from start to end if given."""
@@ -830,16 +841,11 @@ class TreeDocumentMixin:
         """Return a TreeBuilder."""
         return TreeBuilder()
 
-    def _apply_changes(self):
-        """Overridden to set modified_range to (0, 0) first."""
-        self._modified_range = range(0, 0)
-        super()._apply_changes()
-
     def contents_changed(self, start, removed, added):
         """Called after modification of the text, retokenizes the modified part."""
         if self._tree.lexicon:
             start, end = self._builder().rebuild(self._tree, self.text(), start, added, removed)
         else:
             end = start + added
-        self._modified_range = range(start, end)
+        self.set_modified_range(start, end)
 
