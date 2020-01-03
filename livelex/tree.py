@@ -459,8 +459,9 @@ class Context(list, NodeMixin):
             pos, end = first.pos, last.end
         else:
             pos = end = "?"
+        name = self.lexicon and self.lexicon.name()
         return "<Context {} at {}-{} ({} children)>".format(
-            self.lexicon.name(), pos, end, len(self))
+            name, pos, end, len(self))
 
     def dump(self, depth=0):
         """Prints a nice graphical representation, for debugging purposes."""
@@ -773,10 +774,8 @@ class TreeDocumentMixin:
     """
     def __init__(self, root_lexicon=None, text=""):
         super().__init__(text)
-        self._modified_range = range(0, 0)
-        self._root_lexicon = root_lexicon
-        if root_lexicon:
-            self._tokenize_full()
+        self._tree = Context(root_lexicon, None)
+        self._tokenize_full()
 
     def root(self):
         """Return the root Context of the tree."""
@@ -784,23 +783,24 @@ class TreeDocumentMixin:
 
     def root_lexicon(self):
         """Return the currently set root lexicon."""
-        return self._root_lexicon
+        return self._tree.lexicon
 
     def set_root_lexicon(self, root_lexicon):
         """Sets the root lexicon to use to tokenize the text."""
-        if root_lexicon is not self._root_lexicon:
-            self._root_lexicon = root_lexicon
+        if root_lexicon is not self._tree.lexicon:
+            self._tree.lexicon = root_lexicon
             self._tokenize_full()
         else:
             self._modified_range = range(0, 0)
 
     def _tokenize_full(self):
-        root = self._root_lexicon
-        if root:
-            self._tree = self._builder().tree(root, self.text())
+        self._tree.clear()
+        if self._tree.lexicon:
+            b = self._builder()
+            context, pos = b.build(self._tree, self.text())
+            b.unwind(context)
             self._modified_range = range(0, len(self))
         else:
-            self._tree = None
             self._modified_range = range(0, 0)
 
     def modified_range(self):
