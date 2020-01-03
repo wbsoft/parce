@@ -26,11 +26,17 @@ from other applications.
 
 """
 
+import collections
+Version = collections.namedtuple("Version", "major minor patch suffix")
+
+
+
 #: name of the package
 name = "livelex"
 
 #: the current version
-version = "0.0.7"
+version_tuple = (0, 0, 7, "")
+version = "{}.{}.{}{}".format(*version_tuple)
 
 #: short description
 description = "The livelex lexer"

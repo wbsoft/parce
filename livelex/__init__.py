@@ -23,66 +23,124 @@ The livelex Python module.
 
 """
 
-import re
-
-
-from .pattern import (
-    Pattern,
-    Words,
-)
-
-from .action import (
-    SubgroupAction,
-    MatchAction,
-    TextAction,
-    skip,
-
-    Whitespace,
-    Text,
-
-    Escape,
-    Keyword,
-    Name,
-    Literal,
-    Punctuation,
-    Operator,
-    Comment,
-    Error,
-
-    String,
-    Number,
-    Builtin,
-    Variable,
-)
-
-from .target import (
-    MatchTarget,
-)
-
-from .lexicon import (
-    BoundLexicon,
-    Lexicon,
-    lexicon,
-    default_action,
-    default_target,
-)
-
-from .language import (
-    Language,
-)
-
-from . import tree, document
-
+from . import pattern, action, target
+from . import lexicon as lexicon_, tree, document
 from .document import Cursor
+from .language import Language
+from .pkginfo import version, version_tuple
+
+
+def words(words):
+    """Return a Pattern object that builds a regular expression from a list of words."""
+    return pattern.Words(words)
+
+
+def bygroup(*actions):
+    """Return a SubgroupAction that yields tokens for each subgroup in a regular expression."""
+    return action.SubgroupAction(*actions)
+
+
+def bymatch(predicate, *actions):
+    """Return a MatchAction that chooses the action based on the match object.
+
+    The predicate is run with the match object as argument and should return
+    the (integer) index of the desired action. True and False are also valid
+    return values, they count as 1 and 0, respectively.
+
+    This might look cumbersome (it might look easier to just return the action
+    from the function), but this way we know the possible actions beforehand,
+    and we could translate the actions via a mapping and still keep everything
+    working.
+
+    """
+    return action.MatchAction(predicate, *actions)
+
+
+def bytext(predicate, *actions):
+    """Return a TextAction that chooses the action based on the text.
+
+    The predicate is run with the match object as argument and should return
+    the index of the desired action. See also bymatch().
+
+    """
+    return action.TextAction(predicate, *actions)
+
+
+def tomatch(predicate, *targets):
+    """Return a MatchTarget that chooses the target based on the match object.
+
+    The predicate is run with the match object as argument and should return
+    the (integer) index of the desired target. True and False are also valid
+    return values, they count as 1 and 0, respectively.
+
+    Each target can be a list or tuple of targets, just like in normal rules,
+    where the third and more items form a list of targets. A target can also be
+    a single integer or a lexicon. Use () or 0 for a target that does nothing.
+
+    """
+    return target.MatchTarget(predicate, *targets)
+
+
+def lexicon(rules_func=None, **kwargs):
+    """Lexicon factory decorator.
+
+    Use this decorator to make a function in a Language class definition a
+    Lexicon object. The Lexicon object is actually a descriptor, and when
+    calling it via the Language class attribute, a BoundLexicon is created,
+    cached and returned.
+
+    You can specify keyword arguments, that will be passed on to the
+    BoundLexicon object as soon as it is created.
+
+    The following keyword arguments are supported:
+
+    re_flags: The flags that are passed to the regular expression compiler
+
+    The code body of the function should return (yield) the rules of the
+    lexicon, and is run with the Language class as first argument, as soon as
+    the lexicon is used for the first time.
+
+    You can also call the BoundLexicon object just as an ordinary classmethod,
+    to get the rules, e.g. for inclusion in a different lexicon.
+
+    """
+    if rules_func and not kwargs:
+        return lexicon_.Lexicon(rules_func)
+    def lexicon(rules_func):
+        return lexicon_.Lexicon(rules_func, **kwargs)
+    return lexicon
+
+
+
+# used to suppress a token
+skip = action.SkipAction()
+
+# predefined standard actions
+Whitespace = action.StandardAction("Whitespace")
+Text = action.StandardAction("Text")
+
+Escape = action.StandardAction("Escape")
+Keyword = action.StandardAction("Keyword")
+Name = action.StandardAction("Name")
+Literal = action.StandardAction("Literal")
+Punctuation = action.StandardAction("Punctuation")
+Operator = action.StandardAction("Operator")
+Comment = action.StandardAction("Comment")
+Error = action.StandardAction("Error")
+
+String = Literal.String
+Number = Literal.Number
+Builtin = Name.Builtin
+Variable = Name.Variable
+
+
+# these can be used in rules where a pattern is expected
+default_action = object()   # denotes a default action for unmatched text
+default_target = object()   # denotes a default target when no text matches
 
 
 class Document(tree.TreeDocumentMixin, document.Document):
     """A Document that automatically keeps its contents tokenized."""
     pass
-
-
-def version():
-    from . import pkginfo
-    return tuple(map(int, re.findall(r'\d+', pkginfo.version)))
 
 

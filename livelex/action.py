@@ -203,7 +203,22 @@ class SubgroupAction(DynamicAction):
             yield from lexer.filter_actions(action, match.start(i), match.group(i), None)
 
 
-class MatchAction(DynamicAction):
+class PredicateAction(DynamicAction):
+    """Base class expecting a predicate function and actions."""
+    def __init__(self, predicate, *actions):
+        self.predicate = predicate
+        super().__init__(*actions)
+
+    def index(self, text, match):
+        raise NotImplementedError
+
+    def filter_actions(self, lexer, pos, text, match):
+        index = self.index(text, match)
+        action = self.actions[index]
+        yield from lexer.filter_actions(action, pos, text, match)
+
+
+class MatchAction(PredicateAction):
     """Expects a function as argument that is called with the match object.
 
     The function should return the index indicating the action to return.
@@ -211,14 +226,8 @@ class MatchAction(DynamicAction):
     respectively.
 
     """
-    def __init__(self, predicate, *actions):
-        self.predicate = predicate
-        super().__init__(*actions)
-
-    def filter_actions(self, lexer, pos, text, match):
-        index = self.predicate(match)
-        action = self.actions[index]
-        yield from lexer.filter_actions(action, pos, text, match)
+    def index(self, text, match):
+        return self.predicate(match)
 
 
 class TextAction(DynamicAction):
@@ -229,43 +238,12 @@ class TextAction(DynamicAction):
     respectively.
 
     """
-    def __init__(self, predicate, *actions):
-        self.predicate = predicate
-        super().__init__(*actions)
-
-    def filter_actions(self, lexer, pos, text, match):
-        index = self.predicate(text)
-        action = self.actions[index]
-        yield from lexer.filter_actions(action, pos, text, None)
+    def index(self, text, match):
+        return self.predicate(text)
 
 
-class _SkipAction(DynamicAction):
+class SkipAction(DynamicAction):
     """A DynamicAction that yields nothing."""
     def filter_actions(self, lexer, pos, text, match):
         yield from ()
-
-
-# used to suppress a token
-skip = _SkipAction()
-
-# predefined standard actions
-Whitespace = StandardAction("Whitespace")
-Text = StandardAction("Text")
-
-Escape = StandardAction("Escape")
-Keyword = StandardAction("Keyword")
-Name = StandardAction("Name")
-Literal = StandardAction("Literal")
-Punctuation = StandardAction("Punctuation")
-Operator = StandardAction("Operator")
-Comment = StandardAction("Comment")
-Error = StandardAction("Error")
-
-String = Literal.String
-Number = Literal.Number
-Builtin = Name.Builtin
-Variable = Name.Variable
-
-
-
 

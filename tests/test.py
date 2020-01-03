@@ -12,11 +12,11 @@ import livelex
 
 from livelex import (
     Language, lexicon,
-    Words, SubgroupAction, TextAction,
+    words, bygroup, bymatch, bytext,
     default_action,
     default_target,
     skip,
-    MatchTarget
+    tomatch,
 )
 
 class MyLang(Language):
@@ -37,7 +37,7 @@ class MyLang(Language):
         yield r'%', "comment", cls.comment
         yield r'[,.!?]', "punctuation"
         yield r'\w+', "word"
-    
+
     @lexicon
     def string(cls):
         yield r'\\[\\"]', 'string escape'
@@ -65,7 +65,12 @@ of the line.
 
 
 if __name__ == "__main__":
-    print("livelex version:", livelex.version())
+    import livelex.pkginfo
+    print("livelex version:", livelex.pkginfo.version)
+
+    print("Validate:")
+    from livelex.validate import validate_language
+    validate_language(MyLang)
 
     print("Tree:")
     from livelex import Document

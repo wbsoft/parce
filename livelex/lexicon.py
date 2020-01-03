@@ -20,11 +20,7 @@
 
 import re
 
-import livelex
-
-
-default_action = object()
-default_target = object()
+import livelex.pattern
 
 
 class Lexicon:
@@ -98,16 +94,16 @@ class BoundLexicon:
         """Compile the pattern rules and return a parse(text, pos) func."""
         patterns = []
         action_targets = []
-        _default_action = None
-        _default_target = None
+        default_action = None
+        default_target = None
         # make lists of pattern, action and possible targets
         for pattern, action, *target in self():
-            if pattern is default_action:
-                _default_action = action
-            elif pattern is default_target:
-                _default_target = action, *target
+            if pattern is livelex.default_action:
+                default_action = action
+            elif pattern is livelex.default_target:
+                default_target = action, *target
             else:
-                if isinstance(pattern, livelex.Pattern):
+                if isinstance(pattern, livelex.pattern.Pattern):
                     pattern = pattern.build()
                 patterns.append(pattern)
                 action_targets.append((action, *target))
@@ -120,17 +116,17 @@ class BoundLexicon:
         for i, action_target in zip(indices, action_targets):
             index[i] = action_target
 
-        if _default_action:
+        if default_action:
             def parse(text, pos):
                 """Parse text, using a default action for unknown text."""
                 for m in rx.finditer(text, pos):
                     if m.start() > pos:
-                        yield pos, text[pos:m.start()], None, _default_action
+                        yield pos, text[pos:m.start()], None, default_action
                     yield (m.start(), m.group(), m, *index[m.lastindex])
                     pos = m.end()
                 if pos < len(text):
-                    yield (pos, text[pos:], None, _default_action)
-        elif _default_target:
+                    yield (pos, text[pos:], None, default_action)
+        elif default_target:
             def parse(text, pos):
                 """Parse text, stopping with the default target at unknown text."""
                 while True:
@@ -139,7 +135,7 @@ class BoundLexicon:
                         yield (pos, m.group(), m, *index[m.lastindex])
                         pos = m.end()
                     else:
-                        yield (pos, "", None, None, *_default_target)
+                        yield (pos, "", None, None, *default_target)
                         break
         else:
             def parse(text, pos):
@@ -148,33 +144,4 @@ class BoundLexicon:
                     yield (m.start(), m.group(), m, *index[m.lastindex])
         return parse
 
-
-def lexicon(rules_func=None, **kwargs):
-    """Lexicon factory decorator.
-
-    Use this decorator to make a function in a Language class definition a
-    Lexicon object. The Lexicon object is actually a descriptor, and when
-    calling it via the Language class attribute, a BoundLexicon is created,
-    cached and returned.
-
-    You can specify keyword arguments, that will be passed on to the
-    BoundLexicon object as soon as it is created.
-
-    The following keyword arguments are supported:
-
-    re_flags: The flags that are passed to the regular expression compiler
-
-    The code body of the function should return (yield) the rules of the
-    lexicon, and is run with the Language class as first argument, as soon as
-    the lexicon is used for the first time.
-
-    You can also call the BoundLexicon object just as an ordinary classmethod,
-    to get the rules, e.g. for inclusion in a different lexicon.
-
-    """
-    if rules_func and not kwargs:
-        return Lexicon(rules_func)
-    def lexicon(rules_func):
-        return Lexicon(rules_func, **kwargs)
-    return lexicon
 

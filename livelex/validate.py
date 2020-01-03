@@ -21,6 +21,9 @@
 import re
 
 import livelex
+from livelex.lexicon import Lexicon, BoundLexicon
+from livelex.pattern import Pattern
+from livelex.target import Target
 
 
 def validate_language(lang):
@@ -31,7 +34,7 @@ def validate_language(lang):
     """
     lexicons = []
     for key, value in lang.__dict__.items():
-        if isinstance(value, livelex.Lexicon):
+        if isinstance(value, Lexicon):
             lexicons.append(getattr(lang, key))
 
     for lexicon in lexicons:
@@ -63,7 +66,7 @@ def validate_lexicon(lexicon):
 
 def validate_pattern(msg, pattern):
     """Validate a regular expression pattern."""
-    if isinstance(pattern, livelex.Pattern):
+    if isinstance(pattern, Pattern):
         pattern = pattern.build()
     try:
         rx = re.compile(pattern)
@@ -77,15 +80,15 @@ def validate_pattern(msg, pattern):
 def validate_target(msg, target):
     """Validate a target."""
     def targets():
-        if len(target) == 1 and isinstance(target[0], livelex.Target):
+        if len(target) == 1 and isinstance(target[0], Target):
             for t in target[0].targets:
                 yield from t
         else:
             yield from target
     for t in targets():
-        if isinstance(t, livelex.Target):
+        if isinstance(t, Target):
             msg("a Target must be the only one: {}".format(target))
-        elif not isinstance(t, (int, livelex.BoundLexicon)):
+        elif not isinstance(t, (int, BoundLexicon)):
             msg("invalid target {} in targets {}".format(t, target))
             break
 
@@ -110,7 +113,7 @@ def check_default_target(lexicon, target):
                     del state[t:]
                 else:
                     state += [lexicon] * t
-            elif not isinstance(t, livelex.BoundLexicon):
+            elif not isinstance(t, BoundLexicon):
                 msg("in default target only integer or lexicon allowed")
                 return
             else:
