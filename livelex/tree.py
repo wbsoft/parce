@@ -36,6 +36,7 @@ import collections
 import itertools
 
 from livelex.action import DynamicAction
+from livelex.document import AbstractDocument
 from livelex.target import Target
 from livelex.lexicon import BoundLexicon
 
@@ -774,10 +775,8 @@ class TreeDocumentMixin:
     lexicons) matches the state of existing tokens.
 
     """
-    def __init__(self, root_lexicon=None, text=""):
-        super().__init__(text)
+    def __init__(self, root_lexicon=None):
         self._tree = Context(root_lexicon, None)
-        self._tokenize_full()
 
     def root(self):
         """Return the root Context of the tree."""

@@ -59,7 +59,10 @@ Variable = Name.Variable
 
 class Document(tree.TreeDocumentMixin, document.Document):
     """A Document that automatically keeps its contents tokenized."""
-    pass
+    def __init__(self, root_lexicon=None, text=""):
+        document.Document.__init__(self, text)
+        tree.TreeDocumentMixin.__init__(self, root_lexicon)
+        self._tokenize_full()
 
 
 def words(words):
