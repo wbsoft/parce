@@ -47,12 +47,11 @@ matches the current text.
 Parsing
 -------
 
-Parsing (better: lexing) text always starts in lexicon, which is called the
-root lexicon. The rules in that lexicon are tried one by one.
-
-As soon as there is a match, a Token is generated with the matching text, the
-position of the text and the action that was specified in the rule. And if a
-target was specified, parsing continues in a different lexicon.
+Parsing (better: lexing) text always starts in a lexicon, which is called the
+root lexicon. The rules in that lexicon are tried one by one. As soon as there
+is a match, a Token is generated with the matching text, the position of the
+text and the action that was specified in the rule. And if a target was
+specified, parsing continues in a different lexicon.
 
 The tokens are put in a tree structure. Every active lexicon creates a Context
 list that holds the tokens and child contexts. If a target pops back to a
