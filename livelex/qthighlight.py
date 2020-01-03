@@ -70,7 +70,8 @@ class QSyntaxHighlighterMixin(TreeDocumentMixin, AbstractDocument):
     def _update_contents(self):
         d = self.document()
         # get a QTextCursor without having access to Qt
-        c = sys.modules[self.document().__module__].QTextCursor(d)
+        QTextCursor = sys.modules[self.document().__module__].QTextCursor
+        c = QTextCursor(d)
         c.beginEditBlock()
         for start, end, text in reversed(self._changes):
             c.setPosition(end)
