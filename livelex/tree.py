@@ -387,7 +387,9 @@ class Token(NodeMixin):
         if other is self:
             return True
         for c1, c2 in zip(self.ancestors(), other.ancestors()):
-            if c1.lexicon != c2.lexicon:
+            if c1 is c2:
+                return True
+            elif c1.lexicon != c2.lexicon:
                 return False
         return c1.parent is None and c2.parent is None
 
