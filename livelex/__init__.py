@@ -156,3 +156,14 @@ def lexicon(rules_func=None, **kwargs):
         return lexicon_.Lexicon(rules_func, **kwargs)
     return lexicon
 
+
+def root(root_lexicon, text):
+    """Return the root context of the tree structure of all tokens from text."""
+    return tree.TreeBuilder().tree(root_lexicon, text)
+
+
+def tokens(root_lexicon, text):
+    """Convenience function that yields all the tokens from the text."""
+    return root(root_lexicon, text).tokens()
+
+
