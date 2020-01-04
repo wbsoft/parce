@@ -516,16 +516,18 @@ class Context(list, NodeMixin):
 
     def find(self, pos):
         trail = []
+        pos += 1
         def find(node):
-            l = len(node)
-            i = node.bisect_left_end(pos + 1)
-            if i >= l:
-                i = l - 1
-            node = node[i]
-            if node.is_context:
-                node = find(node)
-            trail.append(i)
-            return node
+            if node:
+                l = len(node)
+                i = node.bisect_left_end(pos)
+                if i >= l:
+                    i = l - 1
+                node = node[i]
+                if node.is_context:
+                    node = find(node)
+                trail.append(i)
+                return node
         return find(self), trail
 
     def find_token(self, pos):
