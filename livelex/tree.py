@@ -514,22 +514,6 @@ class Context(list, NodeMixin):
         for t in self.tokens_bw():
             return t
 
-    def find(self, pos):
-        trail = []
-        pos += 1
-        def find(node):
-            if node:
-                l = len(node)
-                i = node.bisect_left_end(pos)
-                if i >= l:
-                    i = l - 1
-                node = node[i]
-                if node.is_context:
-                    node = find(node)
-                trail.append(i)
-                return node
-        return find(self), trail
-
     def find_token(self, pos):
         """Return the Token (closest) at position from context."""
         i = self.bisect_left_end(pos + 1)
@@ -610,6 +594,114 @@ class Context(list, NodeMixin):
             else:
                 lo = mid + 1
         return lo
+
+
+class Trail:
+    """Trail finds tokens based on position.
+
+    Stores a single token and the indices of the token and its ancestors
+    in their respective parents.
+
+    Then you can use forward(), forward_including() and backward() and
+    backward_including() of the trail object, preventing the expensive
+    list.index() method from being used.
+
+    """
+    __slots__ = 'token', 'trail'
+
+    @classmethod
+    def find_token(cls, context, pos):
+        """Return the Token (closest) at position from context."""
+        trail = []
+        pos += 1
+        def find(node):
+            if node:
+                l = len(node)
+                i = node.bisect_left_end(pos)
+                if i < l:
+                    i = l - 1
+                node = node[i]
+                if node.is_context:
+                    node = find(node)
+                trail.append(i)
+                return node
+        return cls(find(context), trail)
+
+    @classmethod
+    def find_token_after(cls, context, pos):
+        """Return the first token completely right from pos.
+
+        Returns None if there is no token right from pos.
+
+        """
+        trail = []
+        def find(node):
+            l = len(node)
+            i = node.bisect_left_pos(pos)
+            if i < l:
+                node = node[i]
+                if node.is_context:
+                    node = find(node)
+                trail.append(i)
+                return node
+        return cls(find(context), trail)
+
+    @classmethod
+    def find_token_before(cls, context, pos):
+        """Return the last token completely left from pos.
+
+        Returns None if there is no token left from pos.
+
+        """
+        trail = []
+        def find(node):
+            i = node.bisect_right_pos(pos) - 1
+            if i >= 0:
+                node = node[i]
+                if node.is_context:
+                    node = find(node)
+                trail.append(i)
+                return node
+        return cls(find(context), trail)
+
+    def __init__(self, token, trail):
+        """Initialize with token and trail."""
+        self.token = token
+        self.trail = trail
+
+    def ancestors(self, upto=None):
+        ancestors = self.token.ancestors(upto)
+        n = self.token
+        for i, n in zip(self.trail, ancestors):
+            yield i, n
+        # normally we don't come here, but it could happen that the trail
+        # does not trace back to the root context
+        for p in ancestors:
+            if n is p[0]:
+                yield 0, p
+            elif n is p[-1]:
+                yield len(p) - 1, p
+            else:
+                yield p.index(n), p
+            n = p
+
+    def forward(self, upto=None):
+        for index, parent in self.ancestors(upto):
+            for n in parent[index+1:]:
+                yield from n.tokens()
+
+    def backward(self, upto=None):
+        for index, parent in self.ancestors(upto):
+            for n in parent[index-1::-1]:
+                yield from n.tokens_bw()
+
+    def forward_including(self, upto=None):
+        yield self.token
+        yield from self.forward(upto)
+
+    def backward_including(self, upto=None):
+        yield self.token
+        yield from self.backward(upto)
 
 
 class TreeBuilder:
