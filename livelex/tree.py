@@ -323,6 +323,16 @@ class Token(NodeMixin):
         yield self
         yield from self.backward(upto)
 
+    def mimic(self):
+        """Return an empty context tree mimicing ours."""
+        copy = c1 = Context(self.parent.lexicon, None)
+        for node in self.parent.ancestors():
+            c = Context(node.lexicon, None)
+            c.append(c1)
+            c1.parent = c
+            c1 = c
+        return copy
+
     def cut(self):
         """Remove this token and all tokens to the right from the tree."""
         node = self
