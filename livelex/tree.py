@@ -271,12 +271,6 @@ class Token(NodeMixin):
     def end(self):
         return self.pos + len(self.text)
 
-    def tokens(self):
-        """Yield self."""
-        yield self
-
-    tokens_bw = tokens
-
     def next_token(self):
         """Return the following Token, if any."""
         for t in self.forward():
@@ -497,12 +491,18 @@ class Context(list, NodeMixin):
     def tokens(self):
         """Yield all Tokens, descending into nested Contexts."""
         for n in self:
-            yield from n.tokens()
+            if n.is_token:
+                yield n
+            else:
+                yield from n.tokens()
 
     def tokens_bw(self):
         """Yield all Tokens, descending into nested Contexts, in backward direction."""
         for n in self[::-1]:
-            yield from n.tokens_bw()
+            if n.is_token:
+                yield n
+            else:
+                yield from n.tokens_bw()
 
     def first_token(self):
         """Return our first Token."""
