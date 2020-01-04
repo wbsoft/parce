@@ -514,6 +514,25 @@ class Context(list, NodeMixin):
         for t in self.tokens_bw():
             return t
 
+    def find(self, pos):
+        if self:
+            i = self.bisect_left_end(pos + 1)
+            if i >= len(self):
+                i = len(self) - 1
+            trail = [i]
+            node = self[i]
+            while node.is_context:
+                if node:
+                    i = node.bisect_left_end(pos + 1)
+                    if i >= len(node):
+                        i = len(node) - 1
+                    trail.append(i)
+                    node = node[i]
+                else:
+                    return None, None
+            return node, trail
+        return None, None
+
     def find_token(self, pos):
         """Return the Token (closest) at position from context."""
         i = self.bisect_left_end(pos + 1)
