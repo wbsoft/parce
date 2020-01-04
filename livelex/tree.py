@@ -482,6 +482,18 @@ class Context(list, NodeMixin):
         for n in self:
             n.dump(depth + 1)
 
+    @property
+    def pos(self):
+        """Return the position or our first token. Returns None if empty."""
+        for t in self.tokens():
+            return t.pos
+
+    @property
+    def end(self):
+        """Return the end position or our last token. Returns None if empty."""
+        for t in self.tokens_bw():
+            return t.end
+
     def tokens(self):
         """Yield all Tokens, descending into nested Contexts."""
         for n in self:
@@ -504,9 +516,8 @@ class Context(list, NodeMixin):
 
     def find_token(self, pos):
         """Return the Token (closest) at position from context."""
-        positions = [n.end if n.is_token else n.last_token().end for n in self]
-        i = bisect.bisect_left(positions, pos + 1)
-        if i < len(positions):
+        i = self.bisect_left_end(pos + 1)
+        if i < len(self):
             if self[i].is_context:
                 return self[i].find_token(pos)
             return self[i]
@@ -518,9 +529,8 @@ class Context(list, NodeMixin):
         Returns None if there is no token right from pos.
 
         """
-        positions = [n.pos if n.is_token else n.first_token().pos for n in self]
-        i = bisect.bisect_left(positions, pos)
-        if i < len(positions):
+        i = self.bisect_left_pos(pos)
+        if i < len(self):
             if self[i].is_context:
                 return self[i].find_token_after(pos)
             return self[i]
@@ -531,12 +541,63 @@ class Context(list, NodeMixin):
         Returns None if there is no token left from pos.
 
         """
-        positions = [n.end if n.is_token else n.last_token().end for n in self]
-        i = bisect.bisect_right(positions, pos) - 1
+        i = self.bisect_right_end(pos) - 1
         if i >= 0:
             if self[i].is_context:
                 return self[i].find_token_before(pos)
             return self[i]
+
+    def bisect_left_end(self, pos):
+        """Bisect left on end positions."""
+        lo = 0
+        hi = len(self)
+        while lo < hi:
+            mid = (lo + hi) // 2
+            print("bisect", mid)
+            if self[mid].end < pos:
+                lo = mid + 1
+            else:
+                hi = mid
+        return lo
+
+    def bisect_left_pos(self, pos):
+        """Bisect left on start positions."""
+        lo = 0
+        hi = len(self)
+        while lo < hi:
+            mid = (lo + hi) // 2
+            print("bisect", mid)
+            if self[mid].pos < pos:
+                lo = mid + 1
+            else:
+                hi = mid
+        return lo
+
+    def bisect_right_end(self, pos):
+        """Bisect right on end positions."""
+        lo = 0
+        hi = len(self)
+        while lo < hi:
+            mid = (lo + hi) // 2
+            print("bisect", mid)
+            if pos < self[mid].end:
+                hi = mid
+            else:
+                lo = mid + 1
+        return lo
+
+    def bisect_right_pos(self, pos):
+        """Bisect right on start positions."""
+        lo = 0
+        hi = len(self)
+        while lo < hi:
+            mid = (lo + hi) // 2
+            print("bisect", mid)
+            if pos < self[mid].pos:
+                hi = mid
+            else:
+                lo = mid + 1
+        return lo
 
 
 class TreeBuilder:
