@@ -553,7 +553,6 @@ class Context(list, NodeMixin):
         hi = len(self)
         while lo < hi:
             mid = (lo + hi) // 2
-            print("bisect", mid)
             if self[mid].end < pos:
                 lo = mid + 1
             else:
@@ -566,7 +565,6 @@ class Context(list, NodeMixin):
         hi = len(self)
         while lo < hi:
             mid = (lo + hi) // 2
-            print("bisect", mid)
             if self[mid].pos < pos:
                 lo = mid + 1
             else:
@@ -579,7 +577,6 @@ class Context(list, NodeMixin):
         hi = len(self)
         while lo < hi:
             mid = (lo + hi) // 2
-            print("bisect", mid)
             if pos < self[mid].end:
                 hi = mid
             else:
@@ -592,7 +589,6 @@ class Context(list, NodeMixin):
         hi = len(self)
         while lo < hi:
             mid = (lo + hi) // 2
-            print("bisect", mid)
             if pos < self[mid].pos:
                 hi = mid
             else:
