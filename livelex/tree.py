@@ -754,16 +754,15 @@ class TreeBuilder:
 
         if tail:
             # make a subtree structure starting with this end_token
-            end_parse = end_token.pos + offset
-            tail = end_token.split()
-            # store the new position the tokens would get
-            tail_tokens = []
-            for t in tail.tokens():
-                if not t.group or (t.group and t is t.group[0]):
-                    # only pick the first of grouped tokens
-                    tail_tokens.append(t)
-            tail_positions = [t.pos + offset for t in tail_tokens]
-            tail = bool(tail_tokens)
+            tail_tree = end_token.split()
+            tail_gen = ((t, t.pos + offset)
+                for t in tail_tree.tokens()
+                    if not t.group or (t.group and t is t.group[0]))
+            # store the new position the first tail token would get
+            for tail_token, tail_pos in tail_gen:
+                break
+            else:
+                tail = False
 
         # remove the start token and all tokens to the right
         if head:
@@ -781,25 +780,24 @@ class TreeBuilder:
         done = False
         while not done:
             for pos, tokens, target in self.parse_context(context, text, pos):
-                if tail and tokens and tokens[0].pos >= end_parse:
-                    index = bisect.bisect_left(tail_positions, tokens[0].pos)
-                    if index >= len(tail_positions):
-                        tail = False
-                    elif (tail_positions[index] == tokens[0].pos
-                            and tokens[-1].state_matches(tail_tokens[index])):
+                if tail and tokens:
+                    if tokens[0].pos > tail_pos:
+                        for tail_token, tail_pos in tail_gen:
+                            if tail_pos >= tokens[0].pos:
+                                break
+                        else:
+                            tail = False
+                    if (tokens[0].pos == tail_pos
+                            and tokens[0].state_matches(tail_token)):
                         # we can attach the tail here.
                         if offset:
-                            for t in tail_tokens[index:]:
+                            for t in tail_token.forward_including():
                                 t.pos += offset
                         # add the old tokens to the current context
-                        tail_token = tail_tokens[index]
                         tail_token.join(context)
-                        end_parse = tail_token.pos
+                        end_parse = tail_pos
                         done = True
                         break
-                    elif index > 10:  # prevent deleting too often
-                        del tail_positions[:index]
-                        del tail_tokens[:index]
                 context.extend(tokens)
                 if target:
                     context = self.update_context(context, target)
