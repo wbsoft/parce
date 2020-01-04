@@ -504,11 +504,7 @@ class Context(list, NodeMixin):
 
     def find_token(self, pos):
         """Return the Token (closest) at position from context."""
-        positions = []
-        for n in self:
-            if n.is_context:
-                n = n.last_token()
-            positions.append(n.end)
+        positions = [n.end if n.is_token else n.last_token().end for n in self]
         i = bisect.bisect_left(positions, pos + 1)
         if i < len(positions):
             if self[i].is_context:
@@ -522,11 +518,7 @@ class Context(list, NodeMixin):
         Returns None if there is no token right from pos.
 
         """
-        positions = []
-        for n in self:
-            if n.is_context:
-                n = n.first_token()
-            positions.append(n.pos)
+        positions = [n.pos if n.is_token else n.first_token().pos for n in self]
         i = bisect.bisect_left(positions, pos)
         if i < len(positions):
             if self[i].is_context:
@@ -539,11 +531,7 @@ class Context(list, NodeMixin):
         Returns None if there is no token left from pos.
 
         """
-        positions = []
-        for n in self:
-            if n.is_context:
-                n = n.last_token()
-            positions.append(n.end)
+        positions = [n.end if n.is_token else n.last_token().end for n in self]
         i = bisect.bisect_right(positions, pos) - 1
         if i >= 0:
             if self[i].is_context:
