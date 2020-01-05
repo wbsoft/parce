@@ -124,7 +124,7 @@ class NodeMixin:
         """Yield the ancestors(upto), and the index of each node in the parent."""
         n = self
         for p in self.ancestors(upto):
-            yield n.parent_index(), p
+            yield p, n.parent_index()
             n = p
 
     def common_ancestor(self, other):
@@ -296,6 +296,12 @@ class Token(NodeMixin):
     def end(self):
         return self.pos + len(self.text)
 
+    def tokens(self):
+        """Yield self."""
+        yield self
+
+    tokens_bw = tokens
+
     def next_token(self):
         """Return the following Token, if any."""
         for t in self.forward():
@@ -313,12 +319,9 @@ class Token(NodeMixin):
         If upto is given, does not ascend above that context.
 
         """
-        for index, parent in self.ancestors_with_index(upto):
+        for parent, index in self.ancestors_with_index(upto):
             for n in parent[index+1:]:
-                if n.is_token:
-                    yield n
-                else:
-                    yield from n.tokens()
+                yield from n.tokens()
 
     def backward(self, upto=None):
         """Yield all Tokens in backward direction.
@@ -327,11 +330,9 @@ class Token(NodeMixin):
         If upto is given, does not ascend above that context.
 
         """
-        for index, parent in self.ancestors_with_index(upto):
-            for n in parent[index-1::-1]:
-                if n.is_token:
-                    yield n
-                else:
+        for parent, index in self.ancestors_with_index(upto):
+            if index:
+                for n in parent[index-1::-1]:
                     yield from n.tokens_bw()
 
     def forward_including(self, upto=None):
@@ -346,7 +347,7 @@ class Token(NodeMixin):
 
     def cut(self):
         """Remove this token and all tokens to the right from the tree."""
-        for index, parent in self.ancestors_with_index():
+        for parent, index in self.ancestors_with_index():
             del parent[index+1:]
         del self.parent[-1] # including ourselves
 
@@ -360,7 +361,7 @@ class Token(NodeMixin):
         """
         parent = self.parent
         node = firstchild = self
-        for i, p in self.ancestors_with_index():
+        for p, i in self.ancestors_with_index():
             copy = Context(p.lexicon, None)
             copy.append(firstchild)
             if node is not p[-1]:
@@ -390,7 +391,7 @@ class Token(NodeMixin):
         context.append(self)
         node = self
         c = context
-        for i, p in self.ancestors_with_index():
+        for p, i in self.ancestors_with_index():
             if node is not p[-1]:
                 siblings = p[i+1:]
                 for n in siblings:
@@ -504,18 +505,12 @@ class Context(list, NodeMixin):
     def tokens(self):
         """Yield all Tokens, descending into nested Contexts."""
         for n in self:
-            if n.is_token:
-                yield n
-            else:
-                yield from n.tokens()
+            yield from n.tokens()
 
     def tokens_bw(self):
         """Yield all Tokens, descending into nested Contexts, in backward direction."""
         for n in self[::-1]:
-            if n.is_token:
-                yield n
-            else:
-                yield from n.tokens_bw()
+            yield from n.tokens_bw()
 
     def first_token(self):
         """Return our first Token."""
