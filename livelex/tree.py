@@ -142,7 +142,6 @@ class NodeMixin:
         Fails if called on the root node.
 
         """
-        # avoid expensive list.index() if not necessary
         if self.parent[0] is not self:
             i = self.parent_index()
             return self.parent[i-1]
@@ -294,12 +293,6 @@ class Token(NodeMixin):
     def end(self):
         return self.pos + len(self.text)
 
-    def tokens(self):
-        """Yield self."""
-        yield self
-
-    tokens_bw = tokens
-
     def next_token(self):
         """Return the following Token, if any."""
         for t in self.forward():
@@ -319,7 +312,10 @@ class Token(NodeMixin):
         """
         for parent, index in self.ancestors_with_index(upto):
             for n in parent[index+1:]:
-                yield from n.tokens()
+                if n.is_token:
+                    yield n
+                else:
+                    yield from n.tokens()
 
     def backward(self, upto=None):
         """Yield all Tokens in backward direction.
@@ -331,7 +327,10 @@ class Token(NodeMixin):
         for parent, index in self.ancestors_with_index(upto):
             if index:
                 for n in parent[index-1::-1]:
-                    yield from n.tokens_bw()
+                    if n.is_token:
+                        yield n
+                    else:
+                        yield from n.tokens_bw()
 
     def forward_including(self, upto=None):
         """Yield all tokens in forward direction, including self."""
@@ -503,12 +502,18 @@ class Context(list, NodeMixin):
     def tokens(self):
         """Yield all Tokens, descending into nested Contexts."""
         for n in self:
-            yield from n.tokens()
+            if n.is_token:
+                yield n
+            else:
+                yield from n.tokens()
 
     def tokens_bw(self):
         """Yield all Tokens, descending into nested Contexts, in backward direction."""
         for n in self[::-1]:
-            yield from n.tokens_bw()
+            if n.is_token:
+                yield n
+            else:
+                yield from n.tokens_bw()
 
     def first_token(self):
         """Return our first Token."""
