@@ -474,10 +474,8 @@ class Context(list, NodeMixin):
         return copy
 
     def __repr__(self):
-        first, last = self.first_token(), self.last_token()
-        if first and last:
-            pos, end = first.pos, last.end
-        else:
+        pos, end = self.pos, self.end
+        if pos is None:
             pos = end = "?"
         name = self.lexicon and self.lexicon.name()
         return "<Context {} at {}-{} ({} children)>".format(
