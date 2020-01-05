@@ -48,6 +48,24 @@ class NodeMixin:
     is_token = False
     is_context = False
 
+    def parent_index(self):
+        """Return our index in the parent.
+
+        This value is lazily cached by this method and the various find methods
+        in the _index attribute. The value is always checked befor using.
+
+        """
+        p = self.parent
+        try:
+            i = self._index
+            if p[i] is self:
+                return i
+        except (AttributeError, IndexError):
+            pass
+        i = 0 if p[0] is self else len(p) - 1 if p[-1] is self else p.index(self)
+        self._index = i
+        return i
+
     def dump(self, depth=0):
         """Prints a nice graphical representation, for debugging purposes."""
         prefix = (" ╰╴" if self.is_last() else " ├╴") if depth else ""
@@ -102,6 +120,13 @@ class NodeMixin:
                 yield node
                 node = node.parent
 
+    def ancestors_with_index(self, upto=None):
+        """Yield the ancestors(upto), and the index of each node in the parent."""
+        n = self
+        for p in self.ancestors(upto):
+            yield n.parent_index(), p
+            n = p
+
     def common_ancestor(self, other):
         """Return the common ancestor with the Context or Token."""
         ancestors = [self]
@@ -121,7 +146,7 @@ class NodeMixin:
         """
         # avoid expensive list.index() if not necessary
         if self.parent[0] is not self:
-            i = self.parent.index(self)
+            i = self.parent_index()
             return self.parent[i-1]
 
     def right_sibling(self):
@@ -132,7 +157,7 @@ class NodeMixin:
 
         """
         if self.parent[-1] is not self:
-            i = self.parent.index(self)
+            i = self.parent_index()
             return self.parent[i+1]
 
     def left_siblings(self):
@@ -143,7 +168,7 @@ class NodeMixin:
 
         """
         if self.parent[0] is not self:
-            i = self.parent.index(self)
+            i = self.parent_index()
             yield from self.parent[i-1::-1]
 
     def right_siblings(self):
@@ -154,7 +179,7 @@ class NodeMixin:
 
         """
         if self.parent[-1] is not self:
-            i = self.parent.index(self)
+            i = self.parent_index()
             yield from self.parent[i+1:]
 
 
@@ -222,7 +247,7 @@ class Token(NodeMixin):
 
     """
 
-    __slots__ = "parent", "pos", "text", "action"
+    __slots__ = "parent", "pos", "text", "action", "_index"
 
     is_token = True
     group = None
@@ -288,11 +313,12 @@ class Token(NodeMixin):
         If upto is given, does not ascend above that context.
 
         """
-        node = self
-        for parent in self.ancestors(upto):
-            for n in node.right_siblings():
-                yield from n.tokens()
-            node = parent
+        for index, parent in self.ancestors_with_index(upto):
+            for n in parent[index+1:]:
+                if n.is_token:
+                    yield n
+                else:
+                    yield from n.tokens()
 
     def backward(self, upto=None):
         """Yield all Tokens in backward direction.
@@ -301,11 +327,12 @@ class Token(NodeMixin):
         If upto is given, does not ascend above that context.
 
         """
-        node = self
-        for parent in self.ancestors(upto):
-            for n in node.left_siblings():
-                yield from n.tokens_bw()
-            node = parent
+        for index, parent in self.ancestors_with_index(upto):
+            for n in parent[index-1::-1]:
+                if n.is_token:
+                    yield n
+                else:
+                    yield from n.tokens_bw()
 
     def forward_including(self, upto=None):
         """Yield all tokens in forward direction, including self."""
@@ -317,24 +344,10 @@ class Token(NodeMixin):
         yield self
         yield from self.backward(upto)
 
-    def mimic(self):
-        """Return an empty context tree mimicing ours."""
-        copy = c1 = Context(self.parent.lexicon, None)
-        for node in self.parent.ancestors():
-            c = Context(node.lexicon, None)
-            c.append(c1)
-            c1.parent = c
-            c1 = c
-        return copy
-
     def cut(self):
         """Remove this token and all tokens to the right from the tree."""
-        node = self
-        for parent in self.ancestors():
-            if node is not parent[-1]:
-                i = parent.index(node)
-                del parent[i+1:]
-            node = parent
+        for index, parent in self.ancestors_with_index():
+            del parent[index+1:]
         del self.parent[-1] # including ourselves
 
     def split(self):
@@ -347,11 +360,11 @@ class Token(NodeMixin):
         """
         parent = self.parent
         node = firstchild = self
-        for p in self.ancestors():
+        for i, p in self.ancestors_with_index():
             copy = Context(p.lexicon, None)
             copy.append(firstchild)
             if node is not p[-1]:
-                s = slice(p.index(node) + 1, None)
+                s = slice(i + 1, None)
                 for n in p[s]:
                     n.parent = copy
                 copy.extend(p[s])
@@ -377,9 +390,9 @@ class Token(NodeMixin):
         context.append(self)
         node = self
         c = context
-        for p in self.ancestors():
+        for i, p in self.ancestors_with_index():
             if node is not p[-1]:
-                siblings = p[p.index(node)+1:]
+                siblings = p[i+1:]
                 for n in siblings:
                     n.parent = c
                 c.extend(siblings)
@@ -436,7 +449,7 @@ class Context(list, NodeMixin):
     might be in any sub-context of the current context.
 
     """
-    __slots__ = "lexicon", "parent"
+    __slots__ = "lexicon", "parent", "_index"
 
     is_context = True
 
@@ -518,6 +531,7 @@ class Context(list, NodeMixin):
         """Return the Token (closest) at position from context."""
         i = self.bisect_left_end(pos + 1)
         if i < len(self):
+            self[i]._index = i
             if self[i].is_context:
                 return self[i].find_token(pos)
             return self[i]
@@ -531,6 +545,7 @@ class Context(list, NodeMixin):
         """
         i = self.bisect_left_pos(pos)
         if i < len(self):
+            self[i]._index = i
             if self[i].is_context:
                 return self[i].find_token_after(pos)
             return self[i]
@@ -543,6 +558,7 @@ class Context(list, NodeMixin):
         """
         i = self.bisect_right_end(pos) - 1
         if i >= 0:
+            self[i]._index = i
             if self[i].is_context:
                 return self[i].find_token_before(pos)
             return self[i]
@@ -594,114 +610,6 @@ class Context(list, NodeMixin):
             else:
                 lo = mid + 1
         return lo
-
-
-class Trail:
-    """Trail finds tokens based on position.
-
-    Stores a single token and the indices of the token and its ancestors
-    in their respective parents.
-
-    Then you can use forward(), forward_including() and backward() and
-    backward_including() of the trail object, preventing the expensive
-    list.index() method from being used.
-
-    """
-    __slots__ = 'token', 'trail'
-
-    @classmethod
-    def find_token(cls, context, pos):
-        """Return the Token (closest) at position from context."""
-        trail = []
-        pos += 1
-        def find(node):
-            if node:
-                l = len(node)
-                i = node.bisect_left_end(pos)
-                if i < l:
-                    i = l - 1
-                node = node[i]
-                if node.is_context:
-                    node = find(node)
-                trail.append(i)
-                return node
-        return cls(find(context), trail)
-
-    @classmethod
-    def find_token_after(cls, context, pos):
-        """Return the first token completely right from pos.
-
-        Returns None if there is no token right from pos.
-
-        """
-        trail = []
-        def find(node):
-            l = len(node)
-            i = node.bisect_left_pos(pos)
-            if i < l:
-                node = node[i]
-                if node.is_context:
-                    node = find(node)
-                trail.append(i)
-                return node
-        return cls(find(context), trail)
-
-    @classmethod
-    def find_token_before(cls, context, pos):
-        """Return the last token completely left from pos.
-
-        Returns None if there is no token left from pos.
-
-        """
-        trail = []
-        def find(node):
-            i = node.bisect_right_pos(pos) - 1
-            if i >= 0:
-                node = node[i]
-                if node.is_context:
-                    node = find(node)
-                trail.append(i)
-                return node
-        return cls(find(context), trail)
-
-    def __init__(self, token, trail):
-        """Initialize with token and trail."""
-        self.token = token
-        self.trail = trail
-
-    def ancestors(self, upto=None):
-        ancestors = self.token.ancestors(upto)
-        n = self.token
-        for i, n in zip(self.trail, ancestors):
-            yield i, n
-        # normally we don't come here, but it could happen that the trail
-        # does not trace back to the root context
-        for p in ancestors:
-            if n is p[0]:
-                yield 0, p
-            elif n is p[-1]:
-                yield len(p) - 1, p
-            else:
-                yield p.index(n), p
-            n = p
-
-    def forward(self, upto=None):
-        for index, parent in self.ancestors(upto):
-            for n in parent[index+1:]:
-                yield from n.tokens()
-
-    def backward(self, upto=None):
-        for index, parent in self.ancestors(upto):
-            for n in parent[index-1::-1]:
-                yield from n.tokens_bw()
-
-    def forward_including(self, upto=None):
-        yield self.token
-        yield from self.forward(upto)
-
-    def backward_including(self, upto=None):
-        yield self.token
-        yield from self.backward(upto)
 
 
 class TreeBuilder:
