@@ -235,11 +235,16 @@ class AbstractDocument:
         If count > 0, specifies the maximum number of occurrences to be
         replaced.
 
+        The replacement argument can also be a funtion, which is then called
+        with the match object and should return the replacement string.
+
         """
         text = self[start:end]
+        if not callable(replacement):
+            replacement = (lambda repl: lambda m: m.expand(repl))(replacement)
         with self:
             for i, m in enumerate(re.finditer(pattern, text, flags), 1):
-                self[m.start():m.end()] = m.expand(replacement)
+                self[m.start():m.end()] = replacement(m)
                 if i == count:
                     break
 
