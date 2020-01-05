@@ -229,10 +229,12 @@ class AbstractDocument:
         length = len(old)
         with self:
             pos = text.find(old)
-            while pos >= 0 and count >= 1:
-                count -= 1
+            while pos >= 0:
                 self[start+pos:start+pos+length] = new
                 pos = text.find(old, pos + 1)
+                count -= 1
+                if count == 0:
+                    break
 
     def re_sub(self, pattern, replacement, start=0, end=None, count=0, flags=0):
         """Replaces regular expression matches of pattern with replacement.
