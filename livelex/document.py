@@ -112,7 +112,8 @@ class AbstractDocument:
 
     def __setitem__(self, key, text):
         start, end = self._parse_key(key)
-        if self[start:end] != text:
+        if ((text or start != end) and
+            (end - start != len(text) or self[start:end] != text)):
             self._changes.append((start, end, text))
             if not self._edit_context:
                 self._apply_changes()
