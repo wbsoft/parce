@@ -31,8 +31,6 @@ This module is still completely in flux, don't depend on it right now.
 """
 
 
-import bisect
-import collections
 import itertools
 
 from livelex.action import DynamicAction
