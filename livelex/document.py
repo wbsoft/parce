@@ -210,6 +210,11 @@ class AbstractDocument:
         """Should apply the changes (in self._changes) to the text."""
         raise NotImplementedError
 
+    def insert(self, pos, text):
+        """Insert text at pos."""
+        if text:
+            self[pos:pos] = text
+
     def contents_changed(self, position, removed, added):
         """Called by _apply(). The default implementation does nothing."""
         pass
