@@ -38,6 +38,7 @@ For tokenized documents, livelex inherits from this base class.
 
 
 import itertools
+import re
 import weakref
 
 
@@ -226,6 +227,21 @@ class AbstractDocument:
             while pos >= 0:
                 self[start+pos:start+pos+length] = new
                 pos = text.find(old, pos + 1)
+
+    def re_sub(self, pattern, replacement, start=0, end=None, count=0, flags=0):
+        """Replaces regular expression matches of pattern with replacement.
+
+        Backreferences are allowed. The region can be set with start and end.
+        If count > 0, specifies the maximum number of occurrences to be
+        replaced.
+
+        """
+        text = self[start:end]
+        with self:
+            for i, m in enumerate(re.finditer(pattern, text, flags), 1):
+                self[m.start():m.end()] = m.expand(replacement)
+                if i == count:
+                    break
 
     def contents_changed(self, position, removed, added):
         """Called by _apply(). The default implementation does nothing."""
