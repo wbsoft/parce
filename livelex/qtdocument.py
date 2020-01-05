@@ -86,6 +86,15 @@ class QtDocument(TreeDocumentMixin, AbstractDocument):
         c.endEditBlock()
         self._applying_changes = False
 
+    def _get_contents(self, start, end):
+        """Get a fragment of our text."""
+        doc = self.document()
+        QTextCursor = sys.modules[doc.__module__].QTextCursor
+        c = QTextCursor(self.document())
+        c.setPosition(end)
+        c.setPosition(start, QTextCursor.KeepAnchor)
+        return c.selection().toPlainText()
+
     def contents_changed(self, position, removed, added):
         """Overridden to prevent double call to contents_changed when changing ourselves."""
         if not self._applying_changes:
