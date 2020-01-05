@@ -215,6 +215,18 @@ class AbstractDocument:
         if text:
             self[pos:pos] = text
 
+    def replace(self, old, new, start=0, end=None):
+        """Replace occurrences of old with new in region start->end."""
+        if old == new:
+            return
+        text = self[start:end]
+        length = len(old)
+        with self:
+            pos = text.find(old)
+            while pos >= 0:
+                self[start+pos:start+pos+length] = new
+                pos = text.find(old, pos + 1)
+
     def contents_changed(self, position, removed, added):
         """Called by _apply(). The default implementation does nothing."""
         pass
