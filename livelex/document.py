@@ -65,9 +65,6 @@ class AbstractDocument:
         __len__()
         _get_contents() (called by __getitem__)
 
-    Note that if you reimplement __getitem__(), it should be able to handle
-    a Cursor, which has its own start and end attributes.
-
     """
     def __init__(self):
         self._cursors = weakref.WeakSet()
@@ -114,28 +111,7 @@ class AbstractDocument:
             self._apply_changes()
 
     def __setitem__(self, key, text):
-        if isinstance(key, slice):
-            start = key.start or 0
-            end = key.stop
-        elif isinstance(key, Cursor):
-            start = key.start
-            end = key.end
-        else:
-            start = key
-            end = key + 1
-        total = len(self)
-        if start is None:
-            start = 0
-        elif start > total:
-            start = total
-        elif start < 0:
-            start += total
-        if end is None or end > total:
-            end = total
-        elif end < 0:
-            end += total
-        if end < start:
-            end = start
+        start, end = self._parse_key(key)
         if self[start:end] != text:
             self._changes.append((start, end, text))
             if not self._edit_context:
@@ -145,6 +121,16 @@ class AbstractDocument:
         self[key] = ""
 
     def __getitem__(self, key):
+        start, end = self._parse_key(key)
+        if start == end:
+            return ""
+        elif start == 0 and end == len(self):
+            return self.text()
+        return self._get_contents(start, end)
+
+    def _parse_key(self, key):
+        """Get start and end values from key. Called by __[gs]etitem__."""
+        total = len(self)
         if isinstance(key, slice):
             start = key.start or 0
             end = key.stop
@@ -152,26 +138,25 @@ class AbstractDocument:
             start = key.start
             end = key.end
         else:
-            start = key
-            end = key + 1
-        total = len(self)
-        if start is None:
+            # single integer
+            if key < 0:
+                key += total
+            if 0 <= key < total:
+                return key, key + 1
+            raise IndexError("index out of range")
+        if start is None or start < -total:
             start = 0
-        elif start > total:
-            start = total
         elif start < 0:
             start += total
         if end is None or end > total:
             end = total
+        elif end < -total:
+            end = 0
         elif end < 0:
             end += total
         if end < start:
             end = start
-        if start == end:
-            return ""
-        elif start == 0 and end == total:
-            return self.text()
-        return self._get_contents(start, end)
+        return start, end
 
     def _get_contents(self, start, end):
         """Return the selected range of the text.
