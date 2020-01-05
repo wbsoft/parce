@@ -63,7 +63,7 @@ class AbstractDocument:
 
         set_text()
         __len__()
-        __getitem__()
+        _get_contents() (called by __getitem__)
 
     Note that if you reimplement __getitem__(), it should be able to handle
     a Cursor, which has its own start and end attributes.
@@ -114,18 +114,25 @@ class AbstractDocument:
             self._apply_changes()
 
     def __setitem__(self, key, text):
-        if isinstance(key, Cursor):
-            start = key.start
-            end = key.end
-        elif isinstance(key, slice):
+        if isinstance(key, slice):
             start = key.start or 0
             end = key.stop
+        elif isinstance(key, Cursor):
+            start = key.start
+            end = key.end
         else:
             start = key
             end = key + 1
+        total = len(self)
+        if start is None:
+            start = 0
+        elif start > total:
+            start = total
+        if end is None or end > total:
+            end = total
+        elif end < start:
+            end = start
         if self[start:end] != text:
-            if end is None:
-                end = len(self)
             self._changes.append((start, end, text))
             if not self._edit_context:
                 self._apply_changes()
@@ -134,9 +141,37 @@ class AbstractDocument:
         self[key] = ""
 
     def __getitem__(self, key):
-        if isinstance(key, Cursor):
-            return self.text()[key.start:key.end]
-        return self.text()[key]
+        if isinstance(key, slice):
+            start = key.start or 0
+            end = key.stop
+        elif isinstance(key, Cursor):
+            start = key.start
+            end = key.end
+        else:
+            start = key
+            end = key + 1
+        total = len(self)
+        if start is None:
+            start = 0
+        elif start > total:
+            start = total
+        if end is None or end > total:
+            end = total
+        elif end < start:
+            end = start
+        if start == end:
+            return ""
+        elif start == 0 and end == total:
+            return self.text()
+        return self._get_contents(start, end)
+
+    def _get_contents(self, start, end):
+        """Return the selected range of the text.
+
+        Called by __getitem__(), only if a fragment was requested.
+
+        """
+        return self.text()[start:end]
 
     def _apply_changes(self):
         """Apply the changes and update the positions of the cursors."""
