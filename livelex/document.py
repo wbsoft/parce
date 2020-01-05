@@ -41,6 +41,9 @@ import itertools
 import weakref
 
 
+from . import util
+
+
 class AbstractDocument:
     """Base class for a Document.
 
@@ -81,10 +84,8 @@ class AbstractDocument:
         self[:] = text
 
     def __repr__(self):
-        text = self[:31]
-        if len(text) > 30:
-            text = text[:28] + "..."
-        return "<{} {}>".format(type(self).__name__, repr(text))
+        text = util.abbreviate_repr(self[:31])
+        return "<{} {}>".format(type(self).__name__, text)
 
     def __str__(self):
         return self.text()

@@ -37,6 +37,7 @@ from livelex.action import DynamicAction
 from livelex.document import AbstractDocument
 from livelex.target import Target
 from livelex.lexicon import BoundLexicon
+from livelex import util
 
 
 class NodeMixin:
@@ -271,7 +272,8 @@ class Token(NodeMixin):
                 and self.action == other.action)
 
     def __repr__(self):
-        return "<Token {} at {} ({})>".format(repr(self.text), self.pos, self.action)
+        text = util.abbreviate_repr(self.text[:31])
+        return "<Token {} at {}:{} ({})>".format(text, self.pos, self.end, self.action)
 
     def __eq__(self, other):
         if isinstance(other, str):
