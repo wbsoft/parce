@@ -148,6 +148,8 @@ class AbstractDocument:
             start = 0
         elif start < 0:
             start += total
+        elif start > total:
+            start = total
         if end is None or end > total:
             end = total
         elif end < -total:
