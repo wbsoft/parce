@@ -128,9 +128,13 @@ class AbstractDocument:
             start = 0
         elif start > total:
             start = total
+        elif start < 0:
+            start += total
         if end is None or end > total:
             end = total
-        elif end < start:
+        elif end < 0:
+            end += total
+        if end < start:
             end = start
         if self[start:end] != text:
             self._changes.append((start, end, text))
@@ -155,9 +159,13 @@ class AbstractDocument:
             start = 0
         elif start > total:
             start = total
+        elif start < 0:
+            start += total
         if end is None or end > total:
             end = total
-        elif end < start:
+        elif end < 0:
+            end += total
+        if end < start:
             end = start
         if start == end:
             return ""
