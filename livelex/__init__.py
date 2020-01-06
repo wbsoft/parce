@@ -74,6 +74,16 @@ def words(words):
     return pattern.Words(words)
 
 
+def char(chars, positive=True):
+    """Return a Pattern matching one of the characters in the specified string.
+
+    If positive is False, the Pattern matches any single character that is not
+    in the specified string.
+
+    """
+    return pattern.Char(chars, positive)
+
+
 def bygroup(*actions):
     """Return a SubgroupAction that yields tokens for each subgroup in a regular expression.
 

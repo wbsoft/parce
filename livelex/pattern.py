@@ -45,3 +45,20 @@ class Words(Pattern):
         return expr
 
 
+class Char(Pattern):
+    """Create a regular expression matching one of the characters in the string.
+
+    If positive is False, the expression is negated, i.e. to match one character
+    if it is not in the string.
+
+    """
+    def __init__(self, chars, positive=True):
+        self.chars = chars
+        self.positive = positive
+
+    def build(self):
+        from . import regex
+        negate = "" if self.positive else "^"
+        return '[' + negate + regex.make_charclass(set(self.chars)) + ']'
+
+
