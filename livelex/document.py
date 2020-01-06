@@ -471,3 +471,53 @@ class Cursor:
         self.rstrip(chars)
         self.lstrip(chars)
 
+
+class Changes:
+    """Keep position, removed and added attributes.
+
+    Calling add() merges new values with the existing values.
+    On init and clear() the values are set to -1, 0, 0.
+
+    """
+    __slots__ = "position", "added", "removed"
+
+    def __init__(self):
+        """Initialize position to -1, removed to 0 and added to 0."""
+        self.position = -1
+        self.removed = 0
+        self.added = 0
+
+    clear = __init__
+
+    def __bool__(self):
+        """Return True if there are changes."""
+        return self.position != -1
+
+    def __repr__(self):
+        return "<Changes at {} -{} +{}>".format(self.position, self.removed, self.added)
+
+    def add(self, position, removed, added):
+        """Merge new change with existing changes."""
+        if self.position == -1:
+            # there were no previous changes
+            self.position = position
+            self.removed = removed
+            self.added = added
+            return
+        # determine the offset for removed and added
+        if position + removed < self.position:
+            offset = self.position - position - removed
+        elif position > self.position + self.added:
+            offset = position - self.position - self.added
+        else:
+            offset = 0
+        # determine which part of removed falls inside existing changes
+        start = max(position, self.position)
+        end = min(position + removed, self.position + self.added)
+        inside = max(0, end - start)
+        removed -= inside
+        # set the new values
+        self.position = min(self.position, position)
+        self.removed += removed + offset
+        self.added += added - inside + offset
+
