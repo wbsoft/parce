@@ -265,11 +265,11 @@ class Token(NodeMixin):
         return type(self)(self.parent, self.pos, self.text, self.action)
 
     def equals(self, other):
-        """Return True if other has same parent lexicon, pos, text and action."""
-        return (self.parent.lexicon == other.parent.lexicon
-                and self.pos == other.pos
+        """Return True if other has same pos, text and action and state."""
+        return (self.pos == other.pos
                 and self.text == other.text
-                and self.action == other.action)
+                and self.action == other.action
+                and self.state_matches(other))
 
     def __repr__(self):
         text = util.abbreviate_repr(self.text[:31])
