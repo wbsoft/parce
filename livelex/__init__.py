@@ -77,8 +77,8 @@ def words(words):
 def char(chars, positive=True):
     """Return a Pattern matching one of the characters in the specified string.
 
-    If positive is False, the Pattern matches any single character that is not
-    in the specified string.
+    If positive is False, the set of characters is complemented, i.e. the
+    Pattern matches any single character that is not in the specified string.
 
     """
     return pattern.Char(chars, positive)
