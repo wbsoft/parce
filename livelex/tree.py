@@ -777,35 +777,36 @@ class TreeBuilder:
         done = False
         while not done:
             for pos, tokens, target in self.parse_context(context, text, pos):
-                if head and tokens:
-                    # move start_parse if the tokens before start didn't change
-                    if (start_token_index + len(tokens) <= len(start_tokens) and
-                        all(new.equals(old)
-                            for old, new in zip(start_tokens[start_token_index:], tokens))):
-                        start_parse = pos
-                        start_token_index += len(tokens)
-                    else:
-                        start_parse = tokens[0].pos
-                        head = False    # stop looking further
-                if tail and tokens:
-                    if tokens[0].pos > tail_pos:
-                        for tail_token, tail_pos in tail_gen:
-                            if tail_pos >= tokens[0].pos:
-                                break
+                if tokens:
+                    if head:
+                        # move start_parse if the tokens before start didn't change
+                        if (start_token_index + len(tokens) <= len(start_tokens) and
+                            all(new.equals(old)
+                                for old, new in zip(start_tokens[start_token_index:], tokens))):
+                            start_parse = pos
+                            start_token_index += len(tokens)
                         else:
-                            tail = False
-                    if (tokens[0].pos == tail_pos
-                            and tokens[0].state_matches(tail_token)):
-                        # we can attach the tail here.
-                        if offset:
-                            for t in tail_token.forward_including():
-                                t.pos += offset
-                        # add the old tokens to the current context
-                        tail_token.join(context)
-                        end_parse = tail_pos
-                        done = True
-                        break
-                context.extend(tokens)
+                            start_parse = tokens[0].pos
+                            head = False    # stop looking further
+                    if tail:
+                        if tokens[0].pos > tail_pos:
+                            for tail_token, tail_pos in tail_gen:
+                                if tail_pos >= tokens[0].pos:
+                                    break
+                            else:
+                                tail = False
+                        if (tokens[0].pos == tail_pos
+                                and tokens[0].state_matches(tail_token)):
+                            # we can attach the tail here.
+                            if offset:
+                                for t in tail_token.forward_including():
+                                    t.pos += offset
+                            # add the old tokens to the current context
+                            tail_token.join(context)
+                            end_parse = tail_pos
+                            done = True
+                            break
+                    context.extend(tokens)
                 if target:
                     context = self.update_context(context, target)
                     break # continue with new context
