@@ -514,10 +514,9 @@ class Changes:
         # determine which part of removed falls inside existing changes
         start = max(position, self.position)
         end = min(position + removed, self.position + self.added)
-        inside = max(0, end - start)
-        removed -= inside
+        offset -= max(0, end - start)
         # set the new values
         self.position = min(self.position, position)
         self.removed += removed + offset
-        self.added += added - inside + offset
+        self.added += added + offset
 
