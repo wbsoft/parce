@@ -265,8 +265,8 @@ class Token(NodeMixin):
         return type(self)(self.parent, self.pos, self.text, self.action)
 
     def equals(self, other):
-        """Return True if other has same parent, pos, text and action."""
-        return (self.parent == other.parent
+        """Return True if other has same parent lexicon, pos, text and action."""
+        return (self.parent.lexicon == other.parent.lexicon
                 and self.pos == other.pos
                 and self.text == other.text
                 and self.action == other.action)
@@ -760,6 +760,7 @@ class TreeBuilder:
             # we want to parse. We copy them because some might get moved to
             # the tail tree. If they were not changed, we can adjust the
             # modified region.
+            before_start = start_token.previous_token()
             start_tokens = [start_token.copy()]
             for t in start_token.forward():
                 start_tokens.append(t.copy())
@@ -822,12 +823,11 @@ class TreeBuilder:
         self.unwind(context)
         # see if the start_tokens were changed
         if head:
-            new_start_token = tree.find_token_after(start_parse)
-            if new_start_token:
-                for old, new in zip(start_tokens, new_start_token.forward_including()):
-                    if not old.equals(new):
-                        break
-                    start_parse = new.end
+            new_tokens = before_start.forward() if before_start else tree.tokens()
+            for old, new in zip(start_tokens, new_tokens):
+                if not old.equals(new):
+                    break
+                start_parse = new.end
         return start_parse, end_parse
 
 
