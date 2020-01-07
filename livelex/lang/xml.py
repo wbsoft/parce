@@ -23,6 +23,7 @@ from livelex import *
 
 
 CDATA = Literal.CDATA
+DOCTYPE = Comment.DOCTYPE
 PI = Comment.PI
 
 
@@ -32,6 +33,7 @@ class Xml(Language):
     def root(cls):
         yield r'<!--', Comment.Start, cls.comment
         yield r'<!\[CDATA\[', CDATA.Start, cls.cdata
+        yield r'<!DOCTYPE\b', DOCTYPE.Start, cls.doctype
         yield r'<\?', PI.Start, cls.pi
         yield r'(<)\s*?(/?)\s*(\w+([:.-]\w+)*)', bygroup(Keyword, Keyword, Name.Tag), cls.tag
         yield r'&\S*?;', Name.Entity
@@ -51,6 +53,18 @@ class Xml(Language):
     def pi(cls):
         yield default_action, PI
         yield r'\?>', PI.End, -1
+
+    @lexicon
+    def doctype(cls):
+        yield r'\w+', Text
+        yield r'"', String, cls.dqstring
+        yield r'\[', DOCTYPE.Start, cls.internal_dtd
+        yield r'>', DOCTYPE.End, -1
+
+    @lexicon
+    def internal_dtd(cls):
+        yield default_action, Text  # TODO include dtd language
+        yield r'\]', DOCTYPE.End, -1
 
     @lexicon
     def tag(cls):
