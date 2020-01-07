@@ -46,11 +46,11 @@ Escape = action.StandardAction("Escape")
 Keyword = action.StandardAction("Keyword")
 Name = action.StandardAction("Name")
 Literal = action.StandardAction("Literal")
-Punctuation = action.StandardAction("Punctuation")
-Operator = action.StandardAction("Operator")
+Delimiter = action.StandardAction("Delimiter")
 Comment = action.StandardAction("Comment")
 Error = action.StandardAction("Error")
 
+Verbatim= Literal.Verbatim
 String = Literal.String
 Number = Literal.Number
 Builtin = Name.Builtin

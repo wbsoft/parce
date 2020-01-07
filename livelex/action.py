@@ -73,22 +73,24 @@ Finally, the `&` operator returns the common ancestor, if any.
 
 This module defines the following pre-defined standard actions:
 
-    Whitespace =  StandardAction("Whitespace")
-    Text =        StandardAction("Text")
+    Whitespace = action.StandardAction("Whitespace")
+    Text = action.StandardAction("Text")
 
-    Escape =      StandardAction("Escape")
-    Keyword =     StandardAction("Keyword")
-    Name =        StandardAction("Name")
-    Literal =     StandardAction("Literal")
-    Punctuation = StandardAction("Punctuation")
-    Operator =    StandardAction("Operator")
-    Comment =     StandardAction("Comment")
-    Error =       StandardAction("Error")
+    Escape = action.StandardAction("Escape")
+    Keyword = action.StandardAction("Keyword")
+    Name = action.StandardAction("Name")
+    Literal = action.StandardAction("Literal")
+    Delimiter = action.StandardAction("Delimiter")
+    Comment = action.StandardAction("Comment")
+    Error = action.StandardAction("Error")
 
+    Verbatim= Literal.Verbatim
     String = Literal.String
     Number = Literal.Number
     Builtin = Name.Builtin
     Variable = Name.Variable
+
+(This list may be out of date, see __init__.py for the exact list.)
 
 
 DynamicAction
