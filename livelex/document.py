@@ -467,14 +467,22 @@ class Cursor:
         return self.start < end
 
     def lstrip(self, chars=None):
-        """Move start to the right, like Python's lstrip() string method."""
+        """Move start to the right, if specified characters can be skipped.
+
+        By default whitespace is skipped, like Python's lstrip() string method.
+
+        """
         text = self.text()
         if text:
             offset = len(text) - len(text.lstrip(chars))
             self.start += offset
 
     def rstrip(self, chars=None):
-        """Move end to the left, like Python's lstrip() string method."""
+        """Move end to the left, if specified characters can be skipped.
+
+        By default whitespace is skipped, like Python's rstrip() string method.
+
+        """
         text = self.text()
         if text:
             offset = len(text) - len(text.rstrip(chars))
@@ -484,7 +492,7 @@ class Cursor:
                 self.end -= offset
 
     def strip(self, chars=None):
-        """Strip chars from the selection, like Python's strip() method."""
+        """Adjust start and end, like Python's strip() method."""
         self.rstrip(chars)
         self.lstrip(chars)
 
