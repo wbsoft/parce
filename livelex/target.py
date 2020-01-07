@@ -19,12 +19,12 @@
 
 
 """
-The Target module defines Targets that depend on the match object from the
+The target module defines targets that depend on the match object from the
 lexer.
 
 Instead of zero or more targets (which may be lexicons or integers), one
-Target instance can be given as Target in a rule. Its target() method is then
-called to return the desired tuple of targets.
+DynamicTarget instance can be given as DynamicTarget in a rule. Its target()
+method is then called to return the desired tuple of targets.
 
 """
 
@@ -32,8 +32,8 @@ called to return the desired tuple of targets.
 from livelex.lexicon import BoundLexicon
 
 
-class Target:
-    """Base class for Target objects.
+class DynamicTarget:
+    """Base class for DynamicTarget objects, that choose a target at runtime.
 
     The possible targets are in the targets attribute.
     An index() function returns the index of the target to choose.
@@ -53,8 +53,8 @@ class Target:
         return self.targets[self.index(match)]
 
 
-class MatchTarget(Target):
-    """A Target that calls the predicate with the match object.
+class MatchTarget(DynamicTarget):
+    """A DynamicTarget that calls the predicate with the match object.
 
     The predicate should return the index of the target to choose.
 

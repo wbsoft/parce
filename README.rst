@@ -35,7 +35,7 @@ A rule consists of three parts: a pattern, an action and a target.
   that lexing the text continues with a previous lexicon. It is also possible
   to pop a lexicon and push a different one.
 
-  Instead of a list of objects, a Target object can also be used, which
+  Instead of a list of objects, a DynamicTarget object can also be used, which
   can change the target based on the match object.
 
 Using a special rule, a lexicon may specify a default action, which is

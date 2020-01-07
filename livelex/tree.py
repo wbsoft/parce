@@ -35,7 +35,7 @@ import itertools
 
 from livelex.action import DynamicAction
 from livelex.document import AbstractDocument
-from livelex.target import Target
+from livelex.target import DynamicTarget
 from livelex.lexicon import BoundLexicon
 from livelex import util
 
@@ -829,7 +829,7 @@ class TreeBuilder:
                     tokens = Token(context, pos, txt, action),
             else:
                 tokens = ()
-            if target and isinstance(target[0], Target):
+            if target and isinstance(target[0], DynamicTarget):
                 target = target[0].target(match)
             yield pos + len(txt), tokens, target
 

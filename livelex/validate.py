@@ -23,7 +23,7 @@ import re
 import livelex
 from livelex.lexicon import Lexicon, BoundLexicon
 from livelex.pattern import Pattern
-from livelex.target import Target
+from livelex.target import DynamicTarget
 
 
 def validate_language(lang):
@@ -80,14 +80,14 @@ def validate_pattern(msg, pattern):
 def validate_target(msg, target):
     """Validate a target."""
     def targets():
-        if len(target) == 1 and isinstance(target[0], Target):
+        if len(target) == 1 and isinstance(target[0], DynamicTarget):
             for t in target[0].targets:
                 yield from t
         else:
             yield from target
     for t in targets():
-        if isinstance(t, Target):
-            msg("a Target must be the only one: {}".format(target))
+        if isinstance(t, DynamicTarget):
+            msg("a DynamicTarget must be the only one: {}".format(target))
         elif not isinstance(t, (int, BoundLexicon)):
             msg("invalid target {} in targets {}".format(t, target))
             break
