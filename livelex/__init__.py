@@ -53,6 +53,7 @@ Error = action.StandardAction("Error")
 Verbatim= Literal.Verbatim
 String = Literal.String
 Number = Literal.Number
+Operator = Delimiter.Operator
 Builtin = Name.Builtin
 Variable = Name.Variable
 

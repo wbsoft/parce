@@ -18,6 +18,8 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 
+import re
+
 
 from livelex import *
 
@@ -29,13 +31,13 @@ PI = Comment.PI
 
 class Xml(Language):
     """Parse XML."""
-    @lexicon
+    @lexicon(re_flags=re.IGNORECASE)
     def root(cls):
         yield r'<!--', Comment.Start, cls.comment
         yield r'<!\[CDATA\[', CDATA.Start, cls.cdata
         yield r'<!DOCTYPE\b', DOCTYPE.Start, cls.doctype
         yield r'<\?', PI.Start, cls.pi
-        yield r'(<)\s*?(/?)\s*(\w+([:.-]\w+)*)', bygroup(Keyword, Keyword, Name.Tag), cls.tag
+        yield r'(<\s*?/?)\s*(\w+([:.-]\w+)*)', bygroup(Delimiter, Name.Tag), cls.tag
         yield r'&\S*?;', Name.Entity
         yield default_action, Text
 
@@ -70,10 +72,10 @@ class Xml(Language):
     @lexicon
     def tag(cls):
         yield r'\w+([:.-]\w+)*', Name.Attribute
-        yield r'=', Keyword
+        yield r'=', Operator
         yield r'"', String, cls.dqstring
         yield r"'", String, cls.sqstring
-        yield r'(/?)\s*?(>)', bygroup(Keyword, Keyword), -1
+        yield r'(/?\s*?>)', Delimiter, -1
 
     @lexicon
     def dqstring(cls):
