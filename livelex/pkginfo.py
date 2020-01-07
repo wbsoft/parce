@@ -35,7 +35,7 @@ Version = collections.namedtuple("Version", "major minor patch suffix")
 name = "livelex"
 
 #: the current version
-version_tuple = (0, 0, 7, "")
+version_tuple = (0, 0, 8, "")
 version = "{}.{}.{}{}".format(*version_tuple)
 
 #: short description
