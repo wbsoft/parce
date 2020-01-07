@@ -19,14 +19,40 @@
 
 
 """
-Tree structure of tokens.
+This module defines the tree structure a text is parsed into.
 
-This module is highly experimental and tries to establish a tree structure
-for tokens, so that is is easy to locate a certain token and reparse a document
-from there, and that it is also easy to know when to stop parsing, because the
-lexicon stack is the same and the old tokens are still valid.
+A tree consists of Context and Token objects.
 
-This module is still completely in flux, don't depend on it right now.
+A Context is a list containing Tokens and other Contexts. A Context is created
+when a lexicon becomes active. A Context knows its parent Context and its
+lexicon.
+
+A Token represents one parsed piece of text. A Token is created when a rule in
+the lexicon matches. A Token knows its parent Context, its position in the text
+and the action that was specified in the rule.
+
+The root Context is always one, and it represents the root lexicon. A Context
+is always non-empty, except for the root Context, which is empty if the
+document did not generate a single token.
+
+The tree structure is very easy to navigate, no special objects or iterators
+are necessary for that.
+
+To find a token at a certain position in a context, use find_token() and its
+relatives. From every token you can iterate forward() and backward(). Use the
+methods like left_siblings() and right_siblings() to traverse the current
+context.
+
+See also the documentation for Token and Context.
+
+Finally, a TreeBuilder is used to build() a tree structure from a text, using
+a root lexicon.
+
+Using the rebuild() method, TreeBuilder is also capable of regenerating only
+part of an existing tree, e.g. when part of a long text is modified through a
+text editor. It is smart enough to recognize whether existing tokens before and
+after the modified region can be reused or not, and it reuses tokens as much as
+possible.
 
 """
 
