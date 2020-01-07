@@ -602,100 +602,62 @@ class Context(list, NodeMixin):
 
 
 class TreeBuilder:
-    """Build a tree directly from parsing the text."""
+    """Build a tree directly from parsing the text.
+
+    After calling build() or rebuild(), three instance variables are set:
+
+        start, end:
+            indicate the region the tokens were changed. After build(), start
+            is always 0 and end = len(text), but after rebuild(), these values
+            indicate the range that was actually re-tokenized.
+
+        lexicons:
+            the list of open lexicons (excluding the root lexicons) at the end
+            of the document. This way you can see in which lexicon parsing
+            ended.
+
+    No other variables or state are kept, so if you don't need the above
+    information anymore, you can throw away the TreeBuilder after use.
+
+    """
+
+    start = 0
+    end = 0
+    lexicons = ()
 
     def tree(self, root_lexicon, text):
-        """Return a root Context with all parsed Tokens in nested context lists."""
+        """Convenience method returning a new tree with all tokens."""
         root = Context(root_lexicon, None)
-        context, pos = self.build(root, text)
-        self.unwind(context)
+        self.build(root, text)
         return root
 
     def build(self, context, text):
-        """Start parsing text in the specified context.
+        """Tokenize the full text, starting in the given context.
 
-        Return a two-tuple(context, pos) describing where the parsing ends.
+        Returns a three-tuple(start, end, lexicons). Start and end are always 0
+        and len(text), respectively. lexicons is a list of the lexicons that
+        were not closed at the end of the text. (If the parser ended in the
+        root context, the list is empty.)
 
         """
         pos = 0
-        current = context
         while True:
-            for pos, tokens, target in self.parse_context(current, text, pos):
-                current.extend(tokens)
+            for pos, tokens, target in self.parse_context(context, text, pos):
+                context.extend(tokens)
                 if target:
-                    current = self.update_context(current, target)
+                    context = self.update_context(context, target)
                     break # continue in new context
             else:
                 break
-        return current, pos
-
-    def parse_context(self, context, text, pos):
-        """Yield Token instances as long as we are in the current context."""
-        for pos, txt, match, action, *target in context.lexicon.parse(text, pos):
-            if txt:
-                if isinstance(action, DynamicAction):
-                    tokens = tuple(action.filter_actions(self, pos, txt, match))
-                    if len(tokens) == 1:
-                        tokens = Token(context, *tokens[0]),
-                    else:
-                        tokens = tuple(_GroupToken(context, *t) for t in tokens)
-                        for t in tokens:
-                            t.group = tokens
-                else:
-                    tokens = Token(context, pos, txt, action),
-            else:
-                tokens = ()
-            if target and isinstance(target[0], Target):
-                target = target[0].target(match)
-            yield pos + len(txt), tokens, target
-
-    def update_context(self, context, target):
-        """Move to another context depending on target."""
-        for t in target:
-            if isinstance(t, int):
-                for pop in range(t, 0):
-                    if context.parent:
-                        if not context:
-                            del context.parent[-1]
-                        context = context.parent
-                    else:
-                        break
-                for push in range(0, t):
-                    context = Context(context.lexicon, context)
-                    context.parent.append(context)
-            else:
-                context = Context(t, context)
-                context.parent.append(context)
-        return context
-
-    def filter_actions(self, action, pos, txt, match):
-        """Handle filtering via DynamicAction instances."""
-        if isinstance(action, DynamicAction):
-            yield from action.filter_actions(self, pos, txt, match)
-        elif txt:
-            yield pos, txt, action
-
-    def unwind(self, context):
-        """Recursively remove the context from its parent if empty.
-
-        Returns a list of lexicons that were left open. When parsing the
-        text ended in the root context, the returned list is empty.
-
-        """
-        lexicons = []
-        while context.parent:
-            lexicons.append(context.lexicon)
-            if not context:
-                del context.parent[-1]
-            context = context.parent
-        return lexicons
+        self.unwind(context)
+        self.start, self.end = 0, len(text)
 
     def rebuild(self, tree, text, start, removed, added):
         """Tokenize the modified part of the text again and update the tree.
 
-        Returns a tuple(start, end) describing the region in the thext the
-        tokens were changed. This range can be larger than (start, start +
-        added).
+        Returns, just like build(), a three-tuple(start, end, lexicons)
+        describing the region in the thext the tokens were changed. This range
+        can be larger than (start, start + added).
 
         The text is the new text; start is the position where characters were
         removed and others added. The removed and added arguments are integers,
@@ -748,10 +710,10 @@ class TreeBuilder:
                 tail = False
 
         if not head and not tail:
+            # nothing can be reused
             tree.clear()
-            context, pos = self.build(tree, text)
-            self.unwind(context)
-            return 0, len(text)
+            self.build(tree, text)
+            return
 
         if head:
             # make a short list of tokens from the start_token to the place
@@ -833,9 +795,69 @@ class TreeBuilder:
                     break # continue with new context
             else:
                 end_parse = pos
+                self.unwind(context)
                 break
-        self.unwind(context)
-        return start_parse, end_parse
+        self.start, self.end = start_parse, end_parse
+
+    def unwind(self, context):
+        """Recursively remove the context from its parent if empty.
+
+        Leaves the list of lexicons that were left open in the `lexicons`
+        attribute. When parsing ended in the root context, that list is empty.
+
+        """
+        self.lexicons = []
+        while context.parent:
+            self.lexicons.append(context.lexicon)
+            if not context:
+                del context.parent[-1]
+            context = context.parent
+
+    def parse_context(self, context, text, pos):
+        """Yield Token instances as long as we are in the current context."""
+        for pos, txt, match, action, *target in context.lexicon.parse(text, pos):
+            if txt:
+                if isinstance(action, DynamicAction):
+                    tokens = tuple(action.filter_actions(self, pos, txt, match))
+                    if len(tokens) == 1:
+                        tokens = Token(context, *tokens[0]),
+                    else:
+                        tokens = tuple(_GroupToken(context, *t) for t in tokens)
+                        for t in tokens:
+                            t.group = tokens
+                else:
+                    tokens = Token(context, pos, txt, action),
+            else:
+                tokens = ()
+            if target and isinstance(target[0], Target):
+                target = target[0].target(match)
+            yield pos + len(txt), tokens, target
+
+    def update_context(self, context, target):
+        """Move to another context depending on target."""
+        for t in target:
+            if isinstance(t, int):
+                for pop in range(t, 0):
+                    if context.parent:
+                        if not context:
+                            del context.parent[-1]
+                        context = context.parent
+                    else:
+                        break
+                for push in range(0, t):
+                    context = Context(context.lexicon, context)
+                    context.parent.append(context)
+            else:
+                context = Context(t, context)
+                context.parent.append(context)
+        return context
+
+    def filter_actions(self, action, pos, txt, match):
+        """Handle filtering via DynamicAction instances."""
+        if isinstance(action, DynamicAction):
+            yield from action.filter_actions(self, pos, txt, match)
+        elif txt:
+            yield pos, txt, action
 
 
 class TreeDocumentMixin:
@@ -852,6 +874,7 @@ class TreeDocumentMixin:
     def __init__(self, root_lexicon=None):
         self._modified_range = 0, 0
         self._tree = Context(root_lexicon, None)
+        self._builder = TreeBuilder()
 
     def root(self):
         """Return the root Context of the tree."""
@@ -862,19 +885,34 @@ class TreeDocumentMixin:
         return self._tree.lexicon
 
     def set_root_lexicon(self, root_lexicon):
-        """Sets the root lexicon to use to tokenize the text."""
+        """Set the root lexicon to use to tokenize the text."""
         if root_lexicon is not self._tree.lexicon:
             self._tree.lexicon = root_lexicon
             self._tokenize_full()
         else:
             self.set_modified_range(0, 0)
 
+    def tree_builder(self):
+        """Return the tree builder. By default an instance of TreeBuilder."""
+        return self._builder
+
+    def set_tree_builder(self, builder):
+        """Set a different tree builder. Normally not needed. Does not reparse."""
+        self._builder = builder
+
+    def open_lexicons(self):
+        """Return the list of lexicons that were left open at the end of the text.
+
+        The root lexicon is not included; if parsing ended in the root lexicon,
+        this list is empty, and the text can be considered "complete."
+
+        """
+        return self._builder.lexicons
+
     def _tokenize_full(self):
         self._tree.clear()
         if self._tree.lexicon:
-            b = self._builder()
-            context, pos = b.build(self._tree, self.text())
-            b.unwind(context)
+            self._builder.build(self._tree, self.text())
             self.set_modified_range(0, len(self))
         else:
             self.set_modified_range(0, 0)
@@ -911,15 +949,11 @@ class TreeDocumentMixin:
                     break
                 yield t
 
-    def _builder(self):
-        """Return a TreeBuilder."""
-        return TreeBuilder()
-
     def contents_changed(self, start, removed, added):
         """Called after modification of the text, retokenizes the modified part."""
         if self._tree.lexicon:
-            start, end = self._builder().rebuild(self._tree, self.text(), start, removed, added)
+            self._builder.rebuild(self._tree, self.text(), start, removed, added)
+            self.set_modified_range(self._builder.start, self._builder.end)
         else:
-            end = start + added
-        self.set_modified_range(start, end)
+            self.set_modified_range(start, start + added)
 
