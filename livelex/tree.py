@@ -676,11 +676,19 @@ class TreeBuilder:
             yield pos, txt, action
 
     def unwind(self, context):
-        """Recursively remove the context from its parent if empty."""
+        """Recursively remove the context from its parent if empty.
+
+        Returns a list of lexicons that were left open. When parsing the
+        text ended in the root context, the returned list is empty.
+
+        """
+        lexicons = []
         while context.parent:
+            lexicons.append(context.lexicon)
             if not context:
                 del context.parent[-1]
             context = context.parent
+        return lexicons
 
     def rebuild(self, tree, text, start, removed, added):
         """Tokenize the modified part of the text again and update the tree.
