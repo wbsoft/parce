@@ -50,20 +50,26 @@ class NodeMixin:
     def parent_index(self):
         """Return our index in the parent.
 
-        This value is lazily cached by this method and the various find methods
-        in the _index attribute. The value is always checked befor using.
+        This is recommended above using parent.index(self), because this method
+        finds our index using a binary search on position, while the latter
+        is a linear search, which is certainly slower with a large number of
+        children.
 
         """
         p = self.parent
-        try:
-            i = self._index
-            if p[i] is self:
-                return i
-        except (AttributeError, IndexError):
-            pass
-        i = 0 if p[0] is self else len(p) - 1 if p[-1] is self else p.index(self)
-        self._index = i
-        return i
+        pos = self.pos
+        lo = 0
+        hi = len(p)
+        while lo < hi:
+            mid = (lo + hi) // 2
+            n = p[mid]
+            if n.pos < pos:
+                lo = mid + 1
+            elif n is self:
+                return mid
+            else:
+                hi = mid
+        return lo
 
     def dump(self, depth=0):
         """Prints a nice graphical representation, for debugging purposes."""
@@ -245,7 +251,7 @@ class Token(NodeMixin):
 
     """
 
-    __slots__ = "parent", "pos", "text", "action", "_index"
+    __slots__ = "parent", "pos", "text", "action"
 
     is_token = True
     group = None
@@ -350,6 +356,11 @@ class Token(NodeMixin):
             del parent[index+1:]
         del self.parent[-1] # including ourselves
 
+    def cut_left(self):
+        """Remove all tokens to the left from the tree."""
+        for parent, index in self.ancestors_with_index():
+            del parent[:index]
+
     def split(self):
         """Split off a new tree, starting with this token.
 
@@ -449,7 +460,7 @@ class Context(list, NodeMixin):
     might be in any sub-context of the current context.
 
     """
-    __slots__ = "lexicon", "parent", "_index"
+    __slots__ = "lexicon", "parent"
 
     is_context = True
 
@@ -539,7 +550,6 @@ class Context(list, NodeMixin):
             else:
                 hi = mid
         if i < len(self):
-            self[i]._index = i
             if self[i].is_context:
                 return self[i].find_token(pos)
             return self[i]
@@ -563,7 +573,6 @@ class Context(list, NodeMixin):
             else:
                 hi = mid
         if i < len(self):
-            self[i]._index = i
             if self[i].is_context:
                 return self[i].find_token_after(pos)
             return self[i]
@@ -587,7 +596,6 @@ class Context(list, NodeMixin):
                 i = mid + 1
         if i > 0:
             i -= 1
-            self[i]._index = i
             if self[i].is_context:
                 return self[i].find_token_before(pos)
             return self[i]
@@ -799,7 +807,12 @@ class TreeBuilder:
                                 and tokens[0].state_matches(tail_token)):
                             # we can attach the tail here.
                             if offset:
-                                for t in tail_token.forward_including():
+                                # adjust the pos of the old tail tokens.
+                                # We don't use tail_token.forward() because
+                                # it uses parent_index() which depends on sorted
+                                # pos values
+                                tail_token.cut_left()
+                                for t in tail_tree.tokens():
                                     t.pos += offset
                             # add the old tokens to the current context
                             tail_token.join(context)
