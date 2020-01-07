@@ -24,7 +24,7 @@ The livelex Python module.
 """
 
 from . import pattern, action, target
-from . import lexicon as lexicon_, tree, document
+from . import lexicon as lexicon_, tree, document, treedocument
 from .document import Cursor
 from .language import Language
 from .pkginfo import version, version_tuple
@@ -57,11 +57,11 @@ Builtin = Name.Builtin
 Variable = Name.Variable
 
 
-class Document(tree.TreeDocumentMixin, document.Document):
+class Document(treedocument.TreeDocumentMixin, document.Document):
     """A Document that automatically keeps its contents tokenized."""
     def __init__(self, root_lexicon=None, text=""):
         document.Document.__init__(self, text)
-        tree.TreeDocumentMixin.__init__(self, root_lexicon)
+        treedocument.TreeDocumentMixin.__init__(self, root_lexicon)
         self._tokenize_full()
 
 

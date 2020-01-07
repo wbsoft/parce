@@ -25,7 +25,7 @@ This module implements a Document encapsulating a QTextDocument.
 import sys
 import weakref
 
-from livelex.tree import TreeDocumentMixin
+from livelex.treedocument import TreeDocumentMixin
 from livelex.document import AbstractDocument
 
 
