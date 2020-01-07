@@ -63,6 +63,7 @@ class Xml(Language):
 
     @lexicon
     def internal_dtd(cls):
+        yield r'<![^>]*>', DOCTYPE
         yield default_action, Text  # TODO include dtd language
         yield r'\]', DOCTYPE.End, -1
 
