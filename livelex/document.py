@@ -237,7 +237,7 @@ class AbstractDocument:
                     break
 
     def re_sub(self, pattern, replacement, start=0, end=None, count=0, flags=0):
-        """Replaces regular expression matches of pattern with replacement.
+        """Replace regular expression matches of pattern with replacement.
 
         Backreferences are allowed. The region can be set with start and end.
         If count > 0, specifies the maximum number of occurrences to be
@@ -255,6 +255,23 @@ class AbstractDocument:
                 self[m.start():m.end()] = replacement(m)
                 if i == count:
                     break
+
+    def trim(self, start=0, end=None):
+        """Remove trialing whitespace in the specified region."""
+        self.re_sub(r'\s+$', '', start, end, flags=re.MULTILINE)
+
+    def translate(self, mapping, start=0, end=None, count=0, whole_words=False):
+        """Replace every occurrence of a key in mapping with its value.
+
+        If whole_words is True, only match the keys at word boundaries.
+
+        """
+        from . import regex
+        expr = regex.words2regexp(mapping.keys())
+        if whole_words:
+            expr = r"\b({})\b".format(expr)
+        repl = lambda m: mapping[m.group()]
+        self.re_sub(expr, repl, start, end, count)
 
     def contents_changed(self, position, removed, added):
         """Called by _apply(). The default implementation does nothing."""
