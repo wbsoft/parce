@@ -660,10 +660,10 @@ class TreeBuilder:
     def build(self, context, text):
         """Tokenize the full text, starting in the given context.
 
-        Returns a three-tuple(start, end, lexicons). Start and end are always 0
-        and len(text), respectively. lexicons is a list of the lexicons that
-        were not closed at the end of the text. (If the parser ended in the
-        root context, the list is empty.)
+        Sets three instance variables start, end, lexicons). Start and end
+        are always 0 and len(text), respectively. lexicons is a list of the
+        lexicons that were not closed at the end of the text. (If the parser
+        ended in the root context, the list is empty.)
 
         """
         pos = 0
@@ -681,7 +681,7 @@ class TreeBuilder:
     def rebuild(self, tree, text, start, removed, added):
         """Tokenize the modified part of the text again and update the tree.
 
-        Returns, just like build(), a three-tuple(start, end, lexicons)
+        Sets, just like build(), three instance variables start, end, lexicons,
         describing the region in the thext the tokens were changed. This range
         can be larger than (start, start + added).
 
@@ -691,7 +691,9 @@ class TreeBuilder:
 
         This method finds the place we can start parsing again, and when the
         end of the modified region is reached, automatically recognizes when
-        the rest of the tokens can be reused.
+        the rest of the tokens can be reused. When old tokens at the end are
+        reused, the lexicons instance variable is not reset, the existing
+        value is still relevant in that case.
 
         """
         # manage end, and record if there is text after the modified part (tail)
