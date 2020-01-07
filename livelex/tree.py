@@ -672,7 +672,7 @@ class TreeBuilder:
         """Handle filtering via DynamicAction instances."""
         if isinstance(action, DynamicAction):
             yield from action.filter_actions(self, pos, txt, match)
-        else:
+        elif txt:
             yield pos, txt, action
 
     def unwind(self, context):
