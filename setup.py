@@ -59,7 +59,7 @@ classifiers = [
 
 setup(
     name = pkginfo.name,
-    version = pkginfo.version,
+    version = pkginfo.version_string,
     description = pkginfo.description,
     long_description = long_description,
     maintainer = pkginfo.maintainer,

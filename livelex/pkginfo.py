@@ -27,7 +27,7 @@ from other applications.
 """
 
 import collections
-Version = collections.namedtuple("Version", "major minor patch suffix")
+Version = collections.namedtuple("Version", "major minor patch")
 
 
 
@@ -35,8 +35,9 @@ Version = collections.namedtuple("Version", "major minor patch suffix")
 name = "livelex"
 
 #: the current version
-version_tuple = (0, 1, 0, "")
-version = "{}.{}.{}{}".format(*version_tuple)
+version = Version(0, 1, 0)
+version_suffix = ""
+version_string = "{}.{}.{}".format(*version) + version_suffix
 
 #: short description
 description = "The livelex lexer"

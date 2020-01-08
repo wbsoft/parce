@@ -27,7 +27,7 @@ from . import pattern, action, target
 from . import lexicon as lexicon_, tree, document, treedocument
 from .document import Cursor
 from .language import Language
-from .pkginfo import version, version_tuple
+from .pkginfo import version, version_string
 
 
 # these can be used in rules where a pattern is expected
