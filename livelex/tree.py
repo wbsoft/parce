@@ -416,7 +416,7 @@ class Token(NodeMixin):
         """Add ourselves and all tokens to the right to the context.
 
         This method assumes that the context has the same parent depth
-        as our own, and only makes sense if that parents also have the same
+        as our own, and only makes sense if those parents also have the same
         lexicon, i.e. the our state matches the target context (and that
         the pos attribute of the tokens is adjusted).
 
