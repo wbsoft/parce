@@ -37,7 +37,8 @@ class Xml(Language):
         yield r'<!\[CDATA\[', CDATA.Start, cls.cdata
         yield r'<!DOCTYPE\b', DOCTYPE.Start, cls.doctype
         yield r'<\?', PI.Start, cls.pi
-        yield r'(<\s*?/?)\s*(\w+([:.-]\w+)*)', bygroup(Delimiter, Name.Tag), cls.tag
+        yield r'(<\s*?/)\s*(\w+(?:[:.-]\w+)*)\s*(>)', bygroup(Delimiter, Name.Tag, Delimiter), -1
+        yield r'(<)\s*(\w+([:.-]\w+)*)', bygroup(Delimiter, Name.Tag), cls.tag
         yield r'&\S*?;', Name.Entity
         yield default_action, Text
 
@@ -50,7 +51,7 @@ class Xml(Language):
     def cdata(cls):
         yield default_action, CDATA
         yield r'\]\]>', CDATA.End, -1
-    
+
     @lexicon
     def pi(cls):
         yield default_action, PI
@@ -75,17 +76,20 @@ class Xml(Language):
         yield r'=', Operator
         yield r'"', String, cls.dqstring
         yield r"'", String, cls.sqstring
-        yield r'(/?\s*?>)', Delimiter, -1
+        yield r'/\s*>', Delimiter, -1
+        yield r'>', Delimiter, -1, cls.root
+        yield r'\s+', skip
+        yield default_action, Error
 
     @lexicon
     def dqstring(cls):
         yield r'&\S*?;', Name.Entity
         yield default_action, String
         yield r'"', String, -1
-    
+
     @lexicon
     def sqstring(cls):
         yield r'&\S*?;', Name.Entity
         yield default_action, String
         yield r"'", String, -1
-    
+
