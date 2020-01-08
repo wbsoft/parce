@@ -66,7 +66,7 @@ of the line.
 
 if __name__ == "__main__":
     import livelex.pkginfo
-    print("livelex version:", livelex.pkginfo.version)
+    print("livelex version:", livelex.pkginfo.version_string)
 
     print("Validate:")
     from livelex.validate import validate_language

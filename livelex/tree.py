@@ -671,17 +671,7 @@ class TreeBuilder:
         ended in the root context, the list is empty.)
 
         """
-        pos = 0
-        while True:
-            for pos, tokens, target in self.parse_context(context, text, pos):
-                context.extend(tokens)
-                if target:
-                    context = self.update_context(context, target)
-                    break # continue in new context
-            else:
-                break
-        self.unwind(context)
-        self.start, self.end = 0, len(text)
+        self.rebuild(context, text, 0, 0, len(text))
 
     def rebuild(self, tree, text, start, removed, added):
         """Tokenize the modified part of the text again and update the tree.
@@ -731,6 +721,18 @@ class TreeBuilder:
                 # one single regexp match
                 if start_token.group:
                     start_token = start_token.group[0]
+
+                # make a short list of tokens from the start_token to the place
+                # we want to parse. We copy them because some might get moved to
+                # the tail tree. If they were not changed, we can adjust the
+                # modified region.
+                start_tokens = [start_token.copy()]
+                for t in start_token.forward():
+                    start_tokens.append(t.copy())
+                    if t.end > start:
+                        break
+                start_token_index = 0
+
             else:
                 head = False
 
@@ -739,36 +741,17 @@ class TreeBuilder:
         if tail:
             # find the first token after the modified part
             end_token = tree.find_token_after(end)
-            if not end_token:
-                tail = False
-
-        if not head and not tail:
-            # nothing can be reused
-            tree.clear()
-            self.build(tree, text)
-            return
-
-        if head:
-            # make a short list of tokens from the start_token to the place
-            # we want to parse. We copy them because some might get moved to
-            # the tail tree. If they were not changed, we can adjust the
-            # modified region.
-            start_tokens = [start_token.copy()]
-            for t in start_token.forward():
-                start_tokens.append(t.copy())
-                if t.end > start:
+            if end_token:
+                # make a subtree structure starting with this end_token
+                tail_tree = end_token.split()
+                tail_gen = ((t, t.pos + offset)
+                    for t in tail_tree.tokens()
+                        if not t.group or (t.group and t is t.group[0]))
+                # store the new position the first tail token would get
+                for tail_token, tail_pos in tail_gen:
                     break
-            start_token_index = 0
-
-        if tail:
-            # make a subtree structure starting with this end_token
-            tail_tree = end_token.split()
-            tail_gen = ((t, t.pos + offset)
-                for t in tail_tree.tokens()
-                    if not t.group or (t.group and t is t.group[0]))
-            # store the new position the first tail token would get
-            for tail_token, tail_pos in tail_gen:
-                break
+                else:
+                    tail = False
             else:
                 tail = False
 
