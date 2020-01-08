@@ -2,8 +2,9 @@ ChangeLog of the Python livelex package
 =======================================
 
 
-2020-01-08: livelex-0.0.8
+2020-01-08: livelex-0.1.0
 
+- Moved from pre-alpha to alpha :-)
 - Much more documention in code
 - Tree construction and partial rebuild very robust now
 - Standard actions defined
