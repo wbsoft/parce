@@ -642,6 +642,11 @@ class TreeBuilder:
             of the document. This way you can see in which lexicon parsing
             ended.
 
+            If a tree was rebuilt, and old tail tokens were reused, the
+            lexicons variable is not set, meaning that the old value is still
+            valid. If the TreeBuilder was not used before, lexicons is then
+            None.
+
     No other variables or state are kept, so if you don't need the above
     information anymore, you can throw away the TreeBuilder after use.
 
@@ -649,7 +654,7 @@ class TreeBuilder:
 
     start = 0
     end = 0
-    lexicons = ()
+    lexicons = None
 
     def tree(self, root_lexicon, text):
         """Convenience method returning a new tree with all tokens."""
