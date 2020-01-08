@@ -38,9 +38,14 @@ class Xml(Language):
         yield r'<!DOCTYPE\b', DOCTYPE.Start, cls.doctype
         yield r'<\?', PI.Start, cls.pi
         yield r'(<\s*?/)\s*(\w+(?:[:.-]\w+)*)\s*(>)', bygroup(Delimiter, Name.Tag, Delimiter), -1
-        yield r'(<)\s*(\w+([:.-]\w+)*)', bygroup(Delimiter, Name.Tag), cls.tag
+        yield r'(<)\s*(\w+(?:[:.-]\w+)*)\s*(>)', bygroup(Delimiter, Name.Tag, Delimiter), cls.tag
+        yield r'(<)\s*(\w+(?:[:.-]\w+)*)', bygroup(Delimiter, Name.Tag), cls.attrs
         yield r'&\S*?;', Name.Entity
         yield default_action, Text
+
+    @lexicon
+    def tag(cls):
+        yield from cls.root()
 
     @lexicon
     def comment(cls):
@@ -71,13 +76,13 @@ class Xml(Language):
         yield r'\]', DOCTYPE.End, -1
 
     @lexicon
-    def tag(cls):
+    def attrs(cls):
         yield r'\w+([:.-]\w+)*', Name.Attribute
         yield r'=', Operator
         yield r'"', String, cls.dqstring
         yield r"'", String, cls.sqstring
         yield r'/\s*>', Delimiter, -1
-        yield r'>', Delimiter, -1, cls.root
+        yield r'>', Delimiter, -1, cls.tag
         yield r'\s+', skip
         yield default_action, Error
 
