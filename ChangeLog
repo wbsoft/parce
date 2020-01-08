@@ -2,6 +2,18 @@ ChangeLog of the Python livelex package
 =======================================
 
 
+2020-01-08: livelex-0.0.8
+
+- Much more documention in code
+- Tree construction and partial rebuild very robust now
+- Standard actions defined
+- add lang/xml.py as a skectch how to implement a language with lexicons
+- Full api in livelex.*
+- experimental QtDocument, implementing TreeDocument around a QTextDocument
+- Improvements in tree navigation and iteration speed
+- Nice find/replace methods for AbstractDocument
+
+
 2020-01-02: livelex-0.0.7
 
 - Lots of new stuff, document, tree structure etc, old lexer gone
