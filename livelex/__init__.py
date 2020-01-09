@@ -24,7 +24,7 @@ The livelex Python module.
 """
 
 from . import pattern, action, target
-from . import lexicon as lexicon_, tree, document, treedocument
+from . import lexicon as lexicon_, treebuilder, document, treedocument
 from .document import Cursor
 from .language import Language
 from .pkginfo import version, version_string
@@ -173,7 +173,7 @@ def lexicon(rules_func=None, **kwargs):
 
 def root(root_lexicon, text):
     """Return the root context of the tree structure of all tokens from text."""
-    return tree.TreeBuilder(root_lexicon).tree(text)
+    return treebuilder.TreeBuilder(root_lexicon).tree(text)
 
 
 def tokens(root_lexicon, text):

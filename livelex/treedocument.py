@@ -25,7 +25,7 @@ When the text is modified, retokenizes only the modified part.
 """
 
 
-from livelex.tree import Context, TreeBuilder
+import livelex.treebuilder
 
 
 class TreeDocumentMixin:
@@ -40,7 +40,7 @@ class TreeDocumentMixin:
 
     """
 
-    TreeBuilder = TreeBuilder
+    TreeBuilder = livelex.treebuilder.TreeBuilder
 
     def __init__(self, root_lexicon=None):
         self._modified_range = 0, 0
