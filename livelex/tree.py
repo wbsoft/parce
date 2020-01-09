@@ -395,6 +395,10 @@ class Token(NodeMixin):
             firstchild = copy
             node = p
         del parent[-1]
+        # remove empty context in the old tree
+        while not parent and parent.parent:
+            parent = parent.parent
+            del parent[-1]
         return copy
 
     def join(self, context):
