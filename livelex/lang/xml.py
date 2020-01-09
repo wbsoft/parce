@@ -26,6 +26,7 @@ from livelex import *
 
 CDATA = Literal.CDATA
 DOCTYPE = Comment.DOCTYPE
+ENTITY = Comment.ENTITY
 PI = Comment.PI
 
 
@@ -40,7 +41,7 @@ class Xml(Language):
         yield r'(<\s*?/)\s*(\w+(?:[:.-]\w+)*)\s*(>)', bygroup(Delimiter, Name.Tag, Delimiter), -1
         yield r'(<)\s*(\w+(?:[:.-]\w+)*)\s*(>)', bygroup(Delimiter, Name.Tag, Delimiter), cls.tag
         yield r'(<)\s*(\w+(?:[:.-]\w+)*)', bygroup(Delimiter, Name.Tag), cls.attrs
-        yield r'&\S*?;', Name.Entity
+        yield r'&\S*?;', Escape.Entity
         yield default_action, Text
 
     @lexicon
@@ -71,9 +72,16 @@ class Xml(Language):
 
     @lexicon
     def internal_dtd(cls):
+        yield r'<!ENTITY\b', ENTITY.Start, cls.entity
         yield r'<![^>]*>', DOCTYPE
         yield default_action, Text  # TODO include dtd language
         yield r'\]', DOCTYPE.End, -1
+
+    @lexicon
+    def entity(cls):
+        yield r'\w+', Name.Entity
+        yield r'"', String, cls.dqstring
+        yield r'>', ENTITY.End, -1
 
     @lexicon
     def attrs(cls):
@@ -88,13 +96,13 @@ class Xml(Language):
 
     @lexicon
     def dqstring(cls):
-        yield r'&\S*?;', Name.Entity
+        yield r'&\S*?;', Escape.Entity
         yield default_action, String
         yield r'"', String, -1
 
     @lexicon
     def sqstring(cls):
-        yield r'&\S*?;', Name.Entity
+        yield r'&\S*?;', Escape.Entity
         yield default_action, String
         yield r"'", String, -1
 
