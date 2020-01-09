@@ -18,6 +18,23 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 
+"""
+A Lexicon groups rules to match.
+
+A Lexicon is created by decorating a function yielding rules with the
+`@lexicon` decorator. A Lexicon acts as a descriptor; when accessed for
+the first time via a Language class, a BoundLexicon for that class is
+created and cached, and returned each time that attribute is accessed.
+
+The BoundLexicon can parse text according to the rules. When parsing for the
+first time, the rules-function is run with the language class as argument, and
+the rules it creates are cached.
+
+This makes it possible to inherit from a Language class and only re-implement
+some lexicons, the others keep working as in the base class.
+
+"""
+
 import re
 import threading
 
@@ -25,9 +42,7 @@ import livelex.pattern
 
 
 class Lexicon:
-    """A Lexicon consists of a set of pattern rules a text is scanned for.
-
-    """
+    """A Lexicon consists of a set of pattern rules a text is scanned for."""
     __slots__ = ('rules_func', 'lexicons', '_lock', 're_flags')
 
     def __init__(self, rules_func,
@@ -90,7 +105,12 @@ class BoundLexicon:
         return '.'.join((self.language.__name__, self.lexicon.rules_func.__name__))
 
     def __getattr__(self, name):
-        """Implemented to create the parse() function when that is called for the first time."""
+        """Implemented to create the parse() function when called for the first time.
+
+        The function is created by _get_parser_func() and is set as instance
+        variable, so __getattr__ is not called again.
+
+        """
         try:
             lock = object.__getattribute__(self, "_lock")
         except AttributeError:
