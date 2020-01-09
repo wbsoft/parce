@@ -19,6 +19,7 @@
 
 
 import re
+import threading
 
 import livelex.pattern
 
@@ -27,7 +28,7 @@ class Lexicon:
     """A Lexicon consists of a set of pattern rules a text is scanned for.
 
     """
-    __slots__ = ('rules_func', 'lexicons', 're_flags')
+    __slots__ = ('rules_func', 'lexicons', '_lock', 're_flags')
 
     def __init__(self, rules_func,
                        re_flags=0,
@@ -41,16 +42,19 @@ class Lexicon:
         self.rules_func = rules_func
         self.re_flags = re_flags
         self.lexicons = {}
+        self._lock = threading.Lock()
 
     def __get__(self, instance, owner):
         """Called when accessed as a descriptor, via the Language class."""
         if instance:
             raise RuntimeError('Language should never be instantiated')
-        try:
-            lexicon = self.lexicons[owner]
-        except KeyError:
-            lexicon = self.lexicons[owner] = BoundLexicon(self, owner)
-        return lexicon
+        # prevent instantiating the same BoundLexicon multiple times
+        with self._lock:
+            try:
+                lexicon = self.lexicons[owner]
+            except KeyError:
+                lexicon = self.lexicons[owner] = BoundLexicon(self, owner)
+            return lexicon
 
 
 class BoundLexicon:
@@ -59,12 +63,17 @@ class BoundLexicon:
     This makes it possible to inherit from a Language class and change
     only some Lexicons.
 
+    Call BoundLexicon.parse(text, pos) to do the actual parsing work.
+    This function is created as soon as it is called for the first time.
+
     """
-    __slots__ = ('lexicon', 'language', '_parser_func')
+    __slots__ = ('lexicon', 'language', 'parse', '_lock')
 
     def __init__(self, lexicon, language):
         self.lexicon = lexicon
         self.language = language
+        # lock is used once when creating the parse() instance function
+        self._lock = threading.Lock()
 
     def __call__(self):
         """Call the original function, yielding the rules."""
@@ -77,13 +86,21 @@ class BoundLexicon:
         """Return the 'Language.lexicon' name of this bound lexicon."""
         return '.'.join((self.language.__name__, self.lexicon.rules_func.__name__))
 
-    @property
-    def parse(self):
+    def __getattr__(self, name):
+        """Implemented to create the parse() function when that is called for the first time."""
         try:
-            f = self._parser_func
+            lock = object.__getattribute__(self, "_lock")
+            with lock:
+                if name == "parse":
+                    try:
+                        return object.__getattribute__(self, name)
+                    except AttributeError:
+                        self.parse = self._get_parser_func()
+                    del self._lock
+                    return self.parse
         except AttributeError:
-            f = self._parser_func = self._get_parser_func()
-        return f
+            pass
+        return object.__getattribute__(self, name)
 
     @property
     def re_flags(self):
