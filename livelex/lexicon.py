@@ -48,13 +48,16 @@ class Lexicon:
         """Called when accessed as a descriptor, via the Language class."""
         if instance:
             raise RuntimeError('Language should never be instantiated')
-        # prevent instantiating the same BoundLexicon multiple times
-        with self._lock:
-            try:
-                lexicon = self.lexicons[owner]
-            except KeyError:
-                lexicon = self.lexicons[owner] = BoundLexicon(self, owner)
-            return lexicon
+        try:
+            return self.lexicons[owner]
+        except KeyError:
+            # prevent instantiating the same BoundLexicon multiple times
+            with self._lock:
+                try:
+                    lexicon = self.lexicons[owner]
+                except KeyError:
+                    lexicon = self.lexicons[owner] = BoundLexicon(self, owner)
+                return lexicon
 
 
 class BoundLexicon:
