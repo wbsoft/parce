@@ -90,6 +90,9 @@ class BoundLexicon:
         """Implemented to create the parse() function when that is called for the first time."""
         try:
             lock = object.__getattribute__(self, "_lock")
+        except AttributeError:
+            pass # the lock was already deleted, meaning parse is in place already
+        else:
             with lock:
                 if name == "parse":
                     try:
@@ -98,8 +101,6 @@ class BoundLexicon:
                         self.parse = self._get_parser_func()
                     del self._lock
                     return self.parse
-        except AttributeError:
-            pass
         return object.__getattribute__(self, name)
 
     @property
