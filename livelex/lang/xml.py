@@ -25,8 +25,8 @@ from livelex import *
 
 
 CDATA = Literal.CDATA
-DOCTYPE = Comment.DOCTYPE
-ENTITY = Comment.ENTITY
+DOCTYPE = Keyword.DOCTYPE
+ENTITY = Keyword.ENTITY
 PI = Comment.PI
 
 
@@ -60,6 +60,8 @@ class Xml(Language):
 
     @lexicon
     def pi(cls):
+        yield r'(\w+(?:[:.-]\w+)*)\s*?(=)(?=\s*?")', bygroup(Name.Attribute, Operator)
+        yield r'"', String, cls.dqstring
         yield default_action, PI
         yield r'\?>', PI.End, -1
 
