@@ -630,6 +630,8 @@ class Context(list, NodeMixin):
 class TreeBuilder:
     """Build a tree directly from parsing the text.
 
+    The root node of the tree is in the `root` instance attribute.
+
     After calling build() or rebuild(), three instance variables are set:
 
         start, end:
@@ -656,14 +658,16 @@ class TreeBuilder:
     end = 0
     lexicons = None
 
-    def tree(self, root_lexicon, text):
-        """Convenience method returning a new tree with all tokens."""
-        root = Context(root_lexicon, None)
-        self.build(root, text)
-        return root
+    def __init__(self, root_lexicon=None):
+        self.root = Context(root_lexicon, None)
 
-    def build(self, context, text):
-        """Tokenize the full text, starting in the given context.
+    def tree(self, text):
+        """Convenience method returning the tree with all tokens."""
+        self.build(text)
+        return self.root
+
+    def build(self, text):
+        """Tokenize the full text.
 
         Sets three instance variables start, end, lexicons). Start and end
         are always 0 and len(text), respectively. lexicons is a list of the
@@ -671,9 +675,9 @@ class TreeBuilder:
         ended in the root context, the list is empty.)
 
         """
-        self.rebuild(context, text, 0, 0, len(text))
+        self.rebuild(text, 0, 0, len(text))
 
-    def rebuild(self, tree, text, start, removed, added):
+    def rebuild(self, text, start, removed, added):
         """Tokenize the modified part of the text again and update the tree.
 
         Sets, just like build(), three instance variables start, end, lexicons,
@@ -706,9 +710,9 @@ class TreeBuilder:
         # At least go back to just before a newline, if possible.
         if head:
             i = text.rfind('\n', 0, start)
-            start_token = tree.find_token_before(i) if i > -1 else None
+            start_token = self.root.find_token_before(i) if i > -1 else None
             if not start_token:
-                start_token = tree.find_token_before(start)
+                start_token = self.root.find_token_before(start)
                 if start_token:
                     # go back some more tokens, you never know a longer match
                     # could be made. In very particular cases a longer token
@@ -724,7 +728,7 @@ class TreeBuilder:
 
                 # make a short list of tokens from the start_token to the place
                 # we want to parse. We copy them because some might get moved to
-                # the tail tree. If they were not changed, we can adjust the
+                # the tail self.root. If they were not changed, we can adjust the
                 # modified region.
                 start_tokens = [start_token.copy()]
                 for t in start_token.forward():
@@ -740,7 +744,7 @@ class TreeBuilder:
         # we try to reuse the old tokens
         if tail:
             # find the first token after the modified part
-            end_token = tree.find_token_after(end)
+            end_token = self.root.find_token_after(end)
             if end_token:
                 # make a subtree structure starting with this end_token
                 tail_tree = end_token.split()
@@ -763,7 +767,7 @@ class TreeBuilder:
                 start_token.cut()
         else:
             start_parse = 0
-            context = tree
+            context = self.root
             context.clear()
 
         # start parsing
