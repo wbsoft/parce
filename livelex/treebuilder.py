@@ -116,41 +116,6 @@ class TreeBuilder:
         # record the position change for tail tokens that maybe are reused
         offset = added - removed
 
-        # find the last token before the modified part, we will start parsing
-        # before that token. If there are no tokens, we just start at 0.
-        # At least go back to just before a newline, if possible.
-        if head:
-            i = text.rfind('\n', 0, start)
-            start_token = self.root.find_token_before(i) if i > -1 else None
-            if not start_token:
-                start_token = self.root.find_token_before(start)
-                if start_token:
-                    # go back some more tokens, you never know a longer match
-                    # could be made. In very particular cases a longer token
-                    # could be found. (That's why we tried to go back to a
-                    # newline.)
-                    for start_token in itertools.islice(start_token.backward(), 10):
-                        pass
-            if start_token:
-                # don't start in the middle of a group, as they originate from
-                # one single regexp match
-                if start_token.group:
-                    start_token = start_token.group[0]
-
-                # make a short list of tokens from the start_token to the place
-                # we want to parse. We copy them because some might get moved to
-                # the tail self.root. If they were not changed, we can adjust the
-                # modified region.
-                start_tokens = [start_token.copy()]
-                for t in start_token.forward():
-                    start_tokens.append(t.copy())
-                    if t.end > start:
-                        break
-                start_token_index = 0
-
-            else:
-                head = False
-
         # If there remains text after the modified part,
         # we try to reuse the old tokens
         if tail:
@@ -170,63 +135,101 @@ class TreeBuilder:
             else:
                 tail = False
 
-        # remove the start token and all tokens to the right
-        if head:
-            start_parse = start_token.pos
-            context = start_token.parent
-            if not tail or start_token is not end_token:
-                start_token.cut()
-        else:
-            start_parse = 0
-            context = self.root
-            context.clear()
+        while True:
+            restart = False
 
-        # start parsing
-        pos = start_parse
-        done = False
-        while not done:
-            for pos, tokens, target in self.parse_context(context, text, pos):
-                if tokens:
-                    if head:
-                        # move start_parse if the tokens before start didn't change
-                        if (start_token_index + len(tokens) <= len(start_tokens) and
-                            all(new.equals(old)
-                                for old, new in zip(start_tokens[start_token_index:], tokens))):
-                            start_parse = pos
-                            start_token_index += len(tokens)
-                        else:
-                            start_parse = tokens[0].pos
-                            head = False    # stop looking further
-                    if tail:
-                        if tokens[0].pos > tail_pos:
-                            for tail_token, tail_pos in tail_gen:
-                                if tail_pos >= tokens[0].pos:
-                                    break
-                            else:
-                                tail = False
-                        if (tokens[0].pos == tail_pos
-                                and tokens[0].state_matches(tail_token)):
-                            # we can attach the tail here.
-                            if offset:
-                                # adjust the pos of the old tail tokens.
-                                # We don't use tail_token.forward() because
-                                # it uses parent_index() which depends on sorted
-                                # pos values
-                                tail_token.cut_left()
-                                for t in tail_tree.tokens():
-                                    t.pos += offset
-                            # add the old tokens to the current context
-                            tail_token.join(context)
-                            end_parse = tail_pos
-                            done = True
+            # find the last token before the modified part, we will start parsing
+            # before that token. If there are no tokens, we just start at 0.
+            # At least go back to just before a newline, if possible.
+            if head:
+                i = text.rfind('\n', 0, start)
+                start_token = self.root.find_token_before(i) if i > -1 else None
+                if not start_token:
+                    start_token = self.root.find_token_before(start)
+                    if start_token:
+                        # go back some more tokens, you never know a longer match
+                        # could be made. In very particular cases a longer token
+                        # could be found. (That's why we tried to go back to a
+                        # newline.)
+                        for start_token in itertools.islice(start_token.backward(), 10):
+                            pass
+                if start_token:
+                    # don't start in the middle of a group, as they originate from
+                    # one single regexp match
+                    if start_token.group:
+                        start_token = start_token.group[0]
+
+                    # make a short list of tokens from the start_token to the place
+                    # we want to parse. We copy them because some might get moved to
+                    # the tail self.root. If they were not changed, we can adjust the
+                    # modified region.
+                    start_tokens = [start_token.copy()]
+                    for t in start_token.forward():
+                        start_tokens.append(t.copy())
+                        if t.end > start:
                             break
-                    context.extend(tokens)
-                if target:
-                    context = self.update_context(context, target)
-                    break # continue with new context
+                    start_token_index = 0
+                else:
+                    head = False
+
+            if head:
+                # remove the start token and all tokens to the right
+                start_parse = start_token.pos
+                context = start_token.parent
+                start_token.cut()
             else:
-                end_parse = pos
-                self.unwind(context)
+                start_parse = 0
+                context = self.root
+                context.clear()
+
+            # start parsing
+            pos = start_parse
+            done = False
+            while not done:
+                for pos, tokens, target in self.parse_context(context, text, pos):
+                    if tokens:
+                        if head:
+                            # move start_parse if the tokens before start didn't change
+                            if (start_token_index + len(tokens) <= len(start_tokens) and
+                                all(new.equals(old)
+                                    for old, new in zip(start_tokens[start_token_index:], tokens))):
+                                start_parse = pos
+                                start_token_index += len(tokens)
+                            else:
+                                start_parse = tokens[0].pos
+                                head = False    # stop looking further
+                        if tail:
+                            if tokens[0].pos > tail_pos:
+                                for tail_token, tail_pos in tail_gen:
+                                    if tail_pos >= tokens[0].pos:
+                                        break
+                                else:
+                                    tail = False
+                            if (tokens[0].pos == tail_pos
+                                    and tokens[0].state_matches(tail_token)):
+                                # we can attach the tail here.
+                                if offset:
+                                    # adjust the pos of the old tail tokens.
+                                    # We don't use tail_token.forward() because
+                                    # it uses parent_index() which depends on sorted
+                                    # pos values
+                                    tail_token.cut_left()
+                                    for t in tail_tree.tokens():
+                                        t.pos += offset
+                                # add the old tokens to the current context
+                                tail_token.join(context)
+                                end_parse = tail_pos
+                                done = True
+                                break
+                        context.extend(tokens)
+                    if target:
+                        context = self.update_context(context, target)
+                        break # continue with new context
+                else:
+                    end_parse = len(text)
+                    self.unwind(context)
+                    break
+            if not restart:
                 break
         self.start, self.end = start_parse, end_parse
 
