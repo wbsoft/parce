@@ -79,7 +79,7 @@ class TreeBuilder:
 
     @contextlib.contextmanager
     def change(self):
-        """Return the changes object and start a context to add changes."""
+        """Return a Changes object and start a context to add changes."""
         with self.lock:
             if not self.changes:
                 self.changes = Changes()
@@ -90,7 +90,7 @@ class TreeBuilder:
 
     def process_changes(self):
         c = self.get_changes()
-        while c and c.has_changes:
+        while c and c.has_changes():
             if c.root_lexicon != False and c.root_lexicon != self.root.lexicon:
                 self.root.lexicon = c.root_lexicon
                 self.build(c.text)
