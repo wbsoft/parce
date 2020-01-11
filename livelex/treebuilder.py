@@ -121,6 +121,28 @@ class TreeBuilder:
             c, self.changes = self.changes, None
             return c
 
+    def get_root(self, wait=False, callback=None):
+        """Get the root element of the completed tree.
+
+        If wait is True, this call blocks until tokenizing is done, and the
+        full tree is returned. If wait is False, None is returned if the tree
+        is still busy being built.
+
+        If a callback is given and tokenizing is still busy, that callback is
+        called (once) upon completion with the builder as argument (the
+        completed tree is in the root attribute).
+
+        """
+        with self.lock:
+            job = self.job
+            if not job:
+                return self.root
+            if callback:
+                self.oneshot_callbacks.add(callback)
+        if wait:
+            job.join()
+            return self.root
+
     def tree(self, text):
         """Convenience method returning the tree with all tokens."""
         self.build(text)
