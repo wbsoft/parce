@@ -31,7 +31,9 @@ possible.
 """
 
 
+import contextlib
 import itertools
+import threading
 
 from livelex.action import DynamicAction
 from livelex.target import DynamicTarget
@@ -71,6 +73,42 @@ class TreeBuilder:
 
     def __init__(self, root_lexicon=None):
         self.root = Context(root_lexicon, None)
+        self.job = None
+        self.changes = None
+        self.lock = threading.Lock()
+
+    @contextlib.contextmanager
+    def change(self):
+        """Return the changes object and start a context to add changes."""
+        with self.lock:
+            if not self.changes:
+                self.changes = Changes()
+            yield self.changes
+            if not self.job:
+                self.job = threading.Thread(target=self.process_changes)
+                self.job.start()
+
+    def process_changes(self):
+        c = self.get_changes()
+        while c and c.has_changes:
+            if c.root_lexicon != False and c.root_lexicon != self.root.lexicon:
+                self.root.lexicon = c.root_lexicon
+                self.build(c.text)
+            else:
+                self.rebuild(c.text, c.position, c.removed, c.added)
+            c = self.get_changes()
+        self.finalize()
+
+    def finalize(self):
+        """Called when the thread exits."""
+        with self.lock:
+            self.job = None
+
+    def get_changes(self):
+        """Get the changes once. To be used from within the thread."""
+        with self.lock:
+            c, self.changes = self.changes, None
+            return c
 
     def tree(self, text):
         """Convenience method returning the tree with all tokens."""
@@ -320,10 +358,6 @@ class Changes:
         self.removed = 0
         self.added = 0
 
-    def __bool__(self):
-        """Return True if there are changes."""
-        return self.position != -1 or self.root_lexicon is not False
-
     def __repr__(self):
         changes = []
         if self.root_lexicon != False:
@@ -362,5 +396,9 @@ class Changes:
     def change_root_lexicon(self, root_lexicon):
         """Store a root lexicon change."""
         self.root_lexicon = root_lexicon
+
+    def has_changes(self):
+        """Return True when there are actually changes."""
+        return self.position != -1 or self.root_lexicon != False
 
 
