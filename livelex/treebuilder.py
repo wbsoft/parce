@@ -300,31 +300,43 @@ class TreeBuilder:
 
 
 class Changes:
-    """Keep position, removed and added attributes.
+    """Store changes that have to be made to a tree.
 
-    Calling add() merges new values with the existing values.
-    On init and clear() the values are set to -1, 0, 0.
+    Calling change_text() merges new changes with the existing changes.
+    Calling change_root_lexicon() stores a root lexicon change.
+    On init and clear() the changes are reset.
 
     """
-    __slots__ = "position", "added", "removed"
+    __slots__ = "root_lexicon", "text", "position", "added", "removed"
 
     def __init__(self):
-        """Initialize position to -1, removed to 0 and added to 0."""
-        self.position = -1
+        self.clear()
+
+    def clear(self):
+        """Initialize."""
+        self.root_lexicon = False   # meaning no change is requested
+        self.text = ""
+        self.position = -1          # meaning no text is altered
         self.removed = 0
         self.added = 0
 
-    clear = __init__
-
     def __bool__(self):
         """Return True if there are changes."""
-        return self.position != -1
+        return self.position != -1 or self.root_lexicon is not False
 
     def __repr__(self):
-        return "<Changes at {} -{} +{}>".format(self.position, self.removed, self.added)
+        changes = []
+        if self.root_lexicon != False:
+            changes.append("root_lexicon: {}".format(self.root_lexicon))
+        if self.position != -1:
+            changes.append("text: {} -{} +{}".format(self.position, self.removed, self.added))
+        if not changes:
+            changes.append("(no changes)")
+        return "<Changes {}>".format(', '.join(changes))
 
-    def add(self, position, removed, added):
+    def change_text(self, text, position, removed, added):
         """Merge new change with existing changes."""
+        self.text = text
         if self.position == -1:
             # there were no previous changes
             self.position = position
@@ -346,4 +358,9 @@ class Changes:
         self.position = min(self.position, position)
         self.removed += removed + offset
         self.added += added + offset
+
+    def change_root_lexicon(self, root_lexicon):
+        """Store a root lexicon change."""
+        self.root_lexicon = root_lexicon
+
 
