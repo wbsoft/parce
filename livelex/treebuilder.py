@@ -106,6 +106,11 @@ class TreeBuilder:
         value is still relevant in that case.
 
         """
+        if not self.root.lexicon:
+            self.root.clear()
+            self.start, self.end = 0, len(text)
+            return
+
         # manage end, and record if there is text after the modified part (tail)
         end = start + removed
         tail = start + added < len(text)
