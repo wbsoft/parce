@@ -65,6 +65,23 @@ class TreeBuilder:
     No other variables or state are kept, so if you don't need the above
     information anymore, you can throw away the TreeBuilder after use.
 
+    TreeBuilder also supports tokenizing in a background thread. Then you must
+    specify changes to the document using the Changes object returned by the
+    change() context manager method:
+
+        with builder.change() as c:
+            c.change_text("new text", position, removed, added)
+
+    Tokenizing then starts on the background. During tokenizing it is still
+    possible to add new changes using change(). You can add callbacks to the
+    `callbacks` attribute that are called everytime the whole document is
+    tokenized.
+
+    You can also add callbacks to the `oneshot_callbacks` attribute, those are
+    called once when all pending changes are processed.
+
+    To be sure you get a complete tree, call get_root().
+
     """
 
     start = 0
@@ -103,17 +120,16 @@ class TreeBuilder:
                 self.build(c.text)
             else:
                 self.rebuild(c.text, c.position, c.removed, c.added)
+            self.build_finished()
             c = self.get_changes()
         self.finish_processing()
 
     def finish_processing(self):
-        """Called when process_changes() quits. Calls desired callbacks."""
+        """Called when process_changes() quits. Calls oneshot callbacks."""
         with self.lock:
             self.job = None
         while self.oneshot_callbacks:
             self.oneshot_callbacks.pop()(self)
-        for c in self.callbacks:
-            c(self)
 
     def get_changes(self):
         """Get the changes once. To be used from within the thread."""
@@ -142,6 +158,16 @@ class TreeBuilder:
         if wait:
             job.join()
             return self.root
+
+    def build_finished(self):
+        """Called when a build() or rebuild() finished and the tree is complete.
+
+        The default implementation calls all callbacks in the `callbacks`
+        attribute with self as argument.
+
+        """
+        for cb in self.callbacks:
+            cb(self)
 
     def tree(self, text):
         """Convenience method returning the tree with all tokens."""
