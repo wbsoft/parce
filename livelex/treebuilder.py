@@ -76,6 +76,8 @@ class TreeBuilder:
         self.job = None
         self.changes = None
         self.lock = threading.Lock()
+        self.callbacks = set()
+        self.oneshot_callbacks = set()
 
     @contextlib.contextmanager
     def change(self):
@@ -84,11 +86,16 @@ class TreeBuilder:
             if not self.changes:
                 self.changes = Changes()
             yield self.changes
-            if not self.job:
-                self.job = threading.Thread(target=self.process_changes)
-                self.job.start()
+            self.start_processing()
+
+    def start_processing(self):
+        """Start a background job if needed."""
+        if not self.job:
+            self.job = threading.Thread(target=self.process_changes)
+            self.job.start()
 
     def process_changes(self):
+        """Process changes as long as they are added. Called in the background."""
         c = self.get_changes()
         while c and c.has_changes():
             if c.root_lexicon != False and c.root_lexicon != self.root.lexicon:
@@ -97,12 +104,16 @@ class TreeBuilder:
             else:
                 self.rebuild(c.text, c.position, c.removed, c.added)
             c = self.get_changes()
-        self.finalize()
+        self.finish_processing()
 
-    def finalize(self):
-        """Called when the thread exits."""
+    def finish_processing(self):
+        """Called when process_changes() quits. Calls desired callbacks."""
         with self.lock:
             self.job = None
+        while self.oneshot_callbacks:
+            self.oneshot_callbacks.pop()(self)
+        for c in self.callbacks:
+            c(self)
 
     def get_changes(self):
         """Get the changes once. To be used from within the thread."""
