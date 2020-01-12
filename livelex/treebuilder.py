@@ -72,13 +72,14 @@ class TreeBuilder:
         with builder.change() as c:
             c.change_text("new text", position, removed, added)
 
-    Tokenizing then starts on the background. During tokenizing it is still
+    Tokenizing then starts in the background. During tokenizing it is still
     possible to add new changes using change(). You can add callbacks to the
-    `callbacks` attribute that are called everytime the whole document is
-    tokenized.
+    `updated_callbacks` attribute (using add_build_updated_callback()) that are
+    called everytime the whole document is tokenized.
 
-    You can also add callbacks to the `oneshot_callbacks` attribute, those are
-    called once when all pending changes are processed.
+    You can also add callbacks to the `finished_callbacks` attribute, using
+    add_finished_callback(); those are called once when all pending changes are
+    processed and then forgotten again.
 
     To be sure you get a complete tree, call get_root().
 
