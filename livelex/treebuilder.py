@@ -477,8 +477,9 @@ class Changes:
         self.removed += removed + offset
         self.added += added + offset
 
-    def change_root_lexicon(self, root_lexicon):
+    def change_root_lexicon(self, text, root_lexicon):
         """Store a root lexicon change."""
+        self.text = text
         self.root_lexicon = root_lexicon
 
     def has_changes(self):

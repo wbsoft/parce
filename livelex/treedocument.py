@@ -43,7 +43,6 @@ class TreeDocumentMixin:
     TreeBuilder = livelex.treebuilder.TreeBuilder
 
     def __init__(self, root_lexicon=None, text=""):
-        self._modified_range = 0, 0
         self._builder = self.TreeBuilder(root_lexicon)
         self._builder.add_callback(self.update)
         if text:
@@ -51,7 +50,7 @@ class TreeDocumentMixin:
                 c.change_text(text, 0, 0, len(text))
 
     def get_root(self, wait=False, callback=None, args=None, kwargs=None):
-        """Return the root Context of the tree."""
+        """Return the root Context of the tree. See TreeBuilder.get_root()."""
         return self._builder.get_root(wait, callback, args, kwargs)
 
     def root_lexicon(self):
@@ -63,8 +62,9 @@ class TreeDocumentMixin:
 
     def set_root_lexicon(self, root_lexicon):
         """Set the root lexicon to use to tokenize the text."""
-        with self._builder.change() as c:
-            c.change_root_lexicon(root_lexicon)
+        if root_lexicon != self.root_lexicon():
+            with self._builder.change() as c:
+                c.change_root_lexicon(self.text(), root_lexicon)
 
     def open_lexicons(self):
         """Return the list of lexicons that were left open at the end of the text.
@@ -77,17 +77,8 @@ class TreeDocumentMixin:
 
     def modified_range(self):
         """Return a two-tuple(start, end) describing the range that was re-tokenized."""
-        return self._modified_range
-
-    def set_modified_range(self, start, end):
-        """Set the modified range.
-
-        Called by _tokenize_full() and contents_changed().
-        You can override this method if you want additional handling of the
-        modified range.
-
-        """
-        self._modified_range = start, end
+        b = self._builder
+        return b.start, b.end
 
     def contents_changed(self, start, removed, added):
         """Called after modification of the text, retokenizes the modified part."""
@@ -96,6 +87,6 @@ class TreeDocumentMixin:
 
     def update(self):
         """Called when the document is fully tokenized."""
-        self.set_modified_range(self._builder.start, self._builder.end)
+        pass
 
 
