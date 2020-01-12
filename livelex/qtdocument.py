@@ -25,7 +25,7 @@ This module implements a Document encapsulating a QTextDocument.
 import sys
 import weakref
 
-from PyQt5.QtCore import pyqtSignal, QObject, QThread
+from PyQt5.QtCore import pyqtSignal, QObject, Qt, QThread
 from PyQt5.QtGui import QTextCursor
 
 from livelex.treebuilder import TreeBuilder
@@ -111,6 +111,7 @@ class QtDocument(TreeDocumentMixin, AbstractDocument):
         self._applying_changes = False
         # make sure we get notified when the user changes the document
         document.contentsChange.connect(self.contents_changed)
+        self._builder.updated.connect(self.update_range, Qt.BlockingQueuedConnection)
 
     def document(self):
         """Return our QTextDocument."""
@@ -149,5 +150,13 @@ class QtDocument(TreeDocumentMixin, AbstractDocument):
         """Overridden to prevent double call to contents_changed when changing ourselves."""
         if not self._applying_changes:
             super().contents_changed(position, removed, added)
+
+    def update_range(self, start, end):
+        """Called in the GUI thread when a range of text is retokenized.
+
+        Implement this method e.g. for syntax highlighting.
+
+        """
+        pass
 
 
