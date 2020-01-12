@@ -45,7 +45,7 @@ class Job(QThread):
 class QTreeBuilder(QObject, TreeBuilder):
     """A TreeBuilder that uses Qt signals instead of callbacks."""
     updated = pyqtSignal(int, int)  # emitted when one full run finished
-    finished = pyqtSignal() 		# emitted when no more changes left
+    finished = pyqtSignal()         # emitted when no more changes left
 
     def __init__(self, root_lexicon=None):
         QObject.__init__(self)
