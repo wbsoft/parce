@@ -108,8 +108,13 @@ class TreeBuilder:
     def start_processing(self):
         """Start a background job if needed."""
         if not self.job:
-            self.job = threading.Thread(target=self.process_changes)
+            self.job = threading.Thread(target=self.process_and_finish)
             self.job.start()
+
+    def process_and_finish(self):
+        """Call process_changes() and then finish_processing()."""
+        self.process_changes()
+        self.finish_processing()
 
     def process_changes(self):
         """Process changes as long as they are added. Called in the background."""
@@ -122,7 +127,6 @@ class TreeBuilder:
                 self.rebuild(c.text, c.position, c.removed, c.added)
             self.build_finished()
             c = self.get_changes()
-        self.finish_processing()
 
     def finish_processing(self):
         """Called when process_changes() quits. Calls oneshot callbacks."""
