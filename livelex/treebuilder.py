@@ -93,8 +93,8 @@ class TreeBuilder:
         self.job = None
         self.changes = None
         self.lock = threading.Lock()
-        self.callbacks = set()
-        self.oneshot_callbacks = set()
+        self.callbacks = []
+        self.oneshot_callbacks = []
 
     @contextlib.contextmanager
     def change(self):
@@ -129,7 +129,8 @@ class TreeBuilder:
         with self.lock:
             self.job = None
         while self.oneshot_callbacks:
-            self.oneshot_callbacks.pop()(self)
+            callback, args, kwargs = self.oneshot_callbacks.pop()
+            callback(*args, **kwargs)
 
     def get_changes(self):
         """Get the changes once. To be used from within the thread."""
@@ -137,7 +138,7 @@ class TreeBuilder:
             c, self.changes = self.changes, None
             return c
 
-    def get_root(self, wait=False, callback=None):
+    def get_root(self, wait=False, callback=None, args=None, kwargs=None):
         """Get the root element of the completed tree.
 
         If wait is True, this call blocks until tokenizing is done, and the
@@ -146,7 +147,9 @@ class TreeBuilder:
 
         If a callback is given and tokenizing is still busy, that callback is
         called (once) upon completion with the builder as argument (the
-        completed tree is in the root attribute).
+        completed tree is in the root attribute). If given, args and kwargs
+        are the arguments the callback is called with, defaulting to () and
+        {}, respectively.
 
         """
         with self.lock:
@@ -154,7 +157,7 @@ class TreeBuilder:
             if not job:
                 return self.root
             if callback:
-                self.oneshot_callbacks.add(callback)
+                self.add_callback(callback, args, kwargs, True)
         if wait:
             job.join()
             return self.root
@@ -166,8 +169,30 @@ class TreeBuilder:
         attribute with self as argument.
 
         """
-        for cb in self.callbacks:
-            cb(self)
+        for cb, args, kwargs in self.callbacks:
+            cb(*args, **kwargs)
+
+    def add_callback(self, callback, args=None, kwargs=None, one_shot=False):
+        """Add a callback to be called when tokenizing finishes.
+
+        If one_shot is True, the callback is called once, when the background
+        thread exits. If False, it is called each time when the document is
+        tokenized.
+
+        """
+        if args is None: args = ()
+        if kwargs is None: kwargs={}
+        cb = (callback, args, kwargs)
+        l = self.oneshot_callbacks if one_shot else self.callbacks
+        if cb not in l: l.append(cb)
+
+    def remove_callback(self, callback, args=None, kwargs=None, one_shot=False):
+        """Remove a callback to be called when tokenizing finishes."""
+        if args is None: args = ()
+        if kwargs is None: kwargs={}
+        cb = (callback, args, kwargs)
+        l = self.oneshot_callbacks if one_shot else self.callbacks
+        if cb in l: l.remove(cb)
 
     def tree(self, text):
         """Convenience method returning the tree with all tokens."""
