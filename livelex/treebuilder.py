@@ -146,10 +146,14 @@ class TreeBuilder:
         is still busy being built.
 
         If a callback is given and tokenizing is still busy, that callback is
-        called (once) upon completion with the builder as argument (the
-        completed tree is in the root attribute). If given, args and kwargs
-        are the arguments the callback is called with, defaulting to () and
-        {}, respectively.
+        called once when tokenizing is ready. If given, args and kwargs are the
+        arguments the callback is called with, defaulting to () and {},
+        respectively.
+
+        Note that, for the lifetime of a TreeBuilder, the root element is always
+        the same. The root element is also accessible in the `root` attribute.
+        But using this method you can be sure that you are dealing with a
+        complete and fully intact tree.
 
         """
         with self.lock:
@@ -424,7 +428,8 @@ class TreeBuilder:
 class Changes:
     """Store changes that have to be made to a tree.
 
-    Calling change_text() merges new changes with the existing changes.
+    This object is used through TreeBuilder.change().
+    Calling change_contents() merges new changes with the existing changes.
     Calling change_root_lexicon() stores a root lexicon change.
     On init and clear() the changes are reset.
 
@@ -432,10 +437,6 @@ class Changes:
     __slots__ = "root_lexicon", "text", "position", "added", "removed"
 
     def __init__(self):
-        self.clear()
-
-    def clear(self):
-        """Initialize."""
         self.root_lexicon = False   # meaning no change is requested
         self.text = ""
         self.position = -1          # meaning no text is altered
@@ -452,7 +453,7 @@ class Changes:
             changes.append("(no changes)")
         return "<Changes {}>".format(', '.join(changes))
 
-    def change_text(self, text, position, removed, added):
+    def change_contents(self, text, position, removed, added):
         """Merge new change with existing changes."""
         self.text = text
         if self.position == -1:

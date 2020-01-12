@@ -47,10 +47,25 @@ class TreeDocumentMixin:
         self._builder.add_callback(self.update)
         if text:
             with self._builder.change() as c:
-                c.change_text(text, 0, 0, len(text))
+                c.change_contents(text, 0, 0, len(text))
 
     def get_root(self, wait=False, callback=None, args=None, kwargs=None):
-        """Return the root Context of the tree. See TreeBuilder.get_root()."""
+        """Get the root element of the completed tree.
+
+        If wait is True, this call blocks until tokenizing is done, and the
+        full tree is returned. If wait is False, None is returned if the tree
+        is still busy being built.
+
+        If a callback is given and tokenizing is still busy, that callback is
+        called once when tokenizing is ready. If given, args and kwargs are the
+        arguments the callback is called with, defaulting to () and {},
+        respectively.
+
+        Note that, for the lifetime of a Document, the root element is always
+        the same. But using this method you can be sure that you are dealing
+        with a complete and fully intact tree.
+
+        """
         return self._builder.get_root(wait, callback, args, kwargs)
 
     def root_lexicon(self):
@@ -83,7 +98,7 @@ class TreeDocumentMixin:
     def contents_changed(self, start, removed, added):
         """Called after modification of the text, retokenizes the modified part."""
         with self._builder.change() as c:
-            c.change_text(self.text(), start, removed, added)
+            c.change_contents(self.text(), start, removed, added)
 
     def update(self):
         """Called when the document is fully tokenized."""
