@@ -103,8 +103,8 @@ class TreeDocumentMixin:
     def update(self, start, end):
         """Called when the document is fully tokenized.
 
-		The `start` and `end` arguments denote the region that was tokenized.
-		The same values can be found using the modified_range() method.
+        The `start` and `end` arguments denote the region that was tokenized.
+        The same values can be found using the modified_range() method.
 
         """
         pass
