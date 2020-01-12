@@ -25,7 +25,7 @@ This module implements a Document encapsulating a QTextDocument.
 import sys
 import weakref
 
-from PyQt5.QtCore import pyqtSignal, QObject, Qt, QThread
+from PyQt5.QtCore import pyqtSignal,QEventLoop, QObject, Qt, QThread
 from PyQt5.QtGui import QTextCursor
 
 from livelex.treebuilder import TreeBuilder
@@ -69,14 +69,14 @@ class QTreeBuilder(QObject, TreeBuilder):
         self.updated.emit(start, end)
 
     def wait(self):
-        """Wait for completion if a background job is running.
-
-        Reimplemented because QThread uses wait() rather than join().
-
-        """
+        """Wait for completion if a background job is running."""
         job = self.job
-        if job:
-            job.wait()
+        if job and job.isRunning():
+            # we can't simply job.wait() because signals that are executed
+            # in the main thread would then deadlock.
+            loop = QEventLoop()
+            job.finished.connect(loop.quit)
+            loop.exec_()
 
 
 class QtDocument(TreeDocumentMixin, AbstractDocument):
