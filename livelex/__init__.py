@@ -62,8 +62,7 @@ class Document(treedocument.TreeDocumentMixin, document.Document):
     """A Document that automatically keeps its contents tokenized."""
     def __init__(self, root_lexicon=None, text=""):
         document.Document.__init__(self, text)
-        treedocument.TreeDocumentMixin.__init__(self, root_lexicon)
-        self._tokenize_full()
+        treedocument.TreeDocumentMixin.__init__(self, root_lexicon, text)
 
 
 def words(words):

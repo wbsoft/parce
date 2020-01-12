@@ -42,25 +42,29 @@ class TreeDocumentMixin:
 
     TreeBuilder = livelex.treebuilder.TreeBuilder
 
-    def __init__(self, root_lexicon=None):
+    def __init__(self, root_lexicon=None, text=""):
         self._modified_range = 0, 0
         self._builder = self.TreeBuilder(root_lexicon)
+        self._builder.add_callback(self.update)
+        if text:
+            with self._builder.change() as c:
+                c.change_text(text, 0, 0, len(text))
 
-    def root(self):
+    def get_root(self, wait=False, callback=None, args=None, kwargs=None):
         """Return the root Context of the tree."""
-        return self._builder.root
+        return self._builder.get_root(wait, callback, args, kwargs)
 
     def root_lexicon(self):
         """Return the currently set root lexicon."""
+        c = self._builder.changes
+        if c and c.root_lexicon != False:
+            return c.root_lexicon
         return self._builder.root.lexicon
 
     def set_root_lexicon(self, root_lexicon):
         """Set the root lexicon to use to tokenize the text."""
-        if root_lexicon is not self._builder.root.lexicon:
-            self._builder.root.lexicon = root_lexicon
-            self._tokenize_full()
-        else:
-            self.set_modified_range(0, 0)
+        with self._builder.change() as c:
+            c.change_root_lexicon(root_lexicon)
 
     def open_lexicons(self):
         """Return the list of lexicons that were left open at the end of the text.
@@ -70,15 +74,6 @@ class TreeDocumentMixin:
 
         """
         return self._builder.lexicons
-
-    def _tokenize_full(self):
-        """Re-tokenize the whole document. Called if the root lexicon is changed."""
-        if self._builder.root.lexicon:
-            self._builder.build(self.text())
-            self.set_modified_range(0, len(self))
-        else:
-            self._builder.root.clear()
-            self.set_modified_range(0, 0)
 
     def modified_range(self):
         """Return a two-tuple(start, end) describing the range that was re-tokenized."""
@@ -94,29 +89,13 @@ class TreeDocumentMixin:
         """
         self._modified_range = start, end
 
-    def modified_tokens(self):
-        """Yield all the tokens that were changed in the last update."""
-        start, end = self.modified_range()
-        if start < end:
-            return self.tokens(start, end)
-
-    def tokens(self, start=0, end=None):
-        """Yield all tokens from start to end if given."""
-        t = self.root().find_token(start) if start else None
-        gen = t.forward_including() if t else self.root().tokens()
-        if end is None or end >= len(self):
-            yield from gen
-        else:
-            for t in gen:
-                if t.pos >= end:
-                    break
-                yield t
-
     def contents_changed(self, start, removed, added):
         """Called after modification of the text, retokenizes the modified part."""
-        if self._builder.root.lexicon:
-            self._builder.rebuild(self.text(), start, removed, added)
-            self.set_modified_range(self._builder.start, self._builder.end)
-        else:
-            self.set_modified_range(start, start + added)
+        with self._builder.change() as c:
+            c.change_text(self.text(), start, removed, added)
+
+    def update(self):
+        """Called when the document is fully tokenized."""
+        self.set_modified_range(self._builder.start, self._builder.end)
+
 

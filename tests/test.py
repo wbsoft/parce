@@ -74,5 +74,5 @@ if __name__ == "__main__":
 
     print("Tree:")
     from livelex import Document
-    Document(MyLang.root, s).root().dump()
+    Document(MyLang.root, s).get_root(True).dump()
 
