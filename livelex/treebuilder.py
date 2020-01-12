@@ -453,8 +453,17 @@ class Changes:
             changes.append("(no changes)")
         return "<Changes {}>".format(', '.join(changes))
 
-    def change_contents(self, text, position, removed, added):
-        """Merge new change with existing changes."""
+    def change_contents(self, text, position=0, removed=None, added=None):
+        """Merge new change with existing changes.
+
+        If added and removed are not given, all text after position is
+        considered to be replaced.
+
+        """
+        if removed is None:
+            removed = len(self.text) - position
+        if added is None:
+            added = len(text) - position
         self.text = text
         if self.position == -1:
             # there were no previous changes
