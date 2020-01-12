@@ -174,7 +174,7 @@ class TreeBuilder:
         """Called when a build() or rebuild() finished and the tree is complete.
 
         The default implementation calls all callbacks in the `callbacks`
-        attribute with self as argument.
+        attribute.
 
         """
         for cb, args, kwargs in self.callbacks:
