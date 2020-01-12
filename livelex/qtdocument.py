@@ -44,8 +44,8 @@ class Job(QThread):
 
 class QTreeBuilder(QObject, TreeBuilder):
     """A TreeBuilder that uses Qt signals instead of callbacks."""
-    updated = pyqtSignal(int, int)
-    finished = pyqtSignal()
+    updated = pyqtSignal()  # emitted when one full run finished
+    finished = pyqtSignal() # emitted when no more changes left
 
     def __init__(self, root_lexicon=None):
         QObject.__init__(self)
@@ -66,7 +66,7 @@ class QTreeBuilder(QObject, TreeBuilder):
     def build_finished(self):
         """Called when a build() or rebuild() ends."""
         super().build_finished()
-        self.updated.emit(self.start, self.end)
+        self.updated.emit()
 
     def wait(self):
         """Wait for completion if a background job is running.
@@ -111,7 +111,9 @@ class QtDocument(TreeDocumentMixin, AbstractDocument):
         self._applying_changes = False
         # make sure we get notified when the user changes the document
         document.contentsChange.connect(self.contents_changed)
-        self._builder.updated.connect(self.update_range, Qt.BlockingQueuedConnection)
+        # make sure update() is called in the GUI thread
+        self._builder.remove_callback(self.update)
+        self._builder.updated.connect(self.update, Qt.BlockingQueuedConnection)
 
     def document(self):
         """Return our QTextDocument."""
@@ -150,13 +152,4 @@ class QtDocument(TreeDocumentMixin, AbstractDocument):
         """Overridden to prevent double call to contents_changed when changing ourselves."""
         if not self._applying_changes:
             super().contents_changed(position, removed, added)
-
-    def update_range(self, start, end):
-        """Called in the GUI thread when a range of text is retokenized.
-
-        Implement this method e.g. for syntax highlighting.
-
-        """
-        pass
-
 
