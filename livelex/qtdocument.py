@@ -25,8 +25,58 @@ This module implements a Document encapsulating a QTextDocument.
 import sys
 import weakref
 
+from PyQt5.QtCore import pyqtSignal, QObject, QThread
+from PyQt5.QtGui import QTextCursor
+
+from livelex.treebuilder import TreeBuilder
 from livelex.treedocument import TreeDocumentMixin
 from livelex.document import AbstractDocument
+
+
+class Job(QThread):
+    def __init__(self, builder):
+        super().__init__()
+        self.builder = builder
+
+    def run(self):
+        self.builder.process_changes()
+
+
+class QTreeBuilder(QObject, TreeBuilder):
+    """A TreeBuilder that uses Qt signals instead of callbacks."""
+    updated = pyqtSignal(int, int)
+    finished = pyqtSignal()
+
+    def __init__(self, root_lexicon=None):
+        QObject.__init__(self)
+        TreeBuilder.__init__(self, root_lexicon)
+
+    def start_processing(self):
+        """Start a background job if needed."""
+        if not self.job:
+            j = self.job = Job(self)
+            j.finished.connect(self.finish_processing)
+            j.start()
+
+    def finish_processing(self):
+        """Called when the background thread ends."""
+        super().finish_processing()
+        self.finished.emit()
+
+    def build_finished(self):
+        """Called when a build() or rebuild() ends."""
+        super().build_finished()
+        self.updated.emit(self.start, self.end)
+
+    def wait(self):
+        """Wait for completion if a background job is running.
+
+        Reimplemented because QThread uses wait() rather than join().
+
+        """
+        job = self.job
+        if job:
+            job.wait()
 
 
 class QtDocument(TreeDocumentMixin, AbstractDocument):
@@ -39,6 +89,8 @@ class QtDocument(TreeDocumentMixin, AbstractDocument):
     a Document created.
 
     """
+    TreeBuilder = QTreeBuilder
+
     @classmethod
     def instance(cls, document, default_root_lexicon=None):
         """Get the same instance back, creating it if necessary."""
@@ -74,7 +126,6 @@ class QtDocument(TreeDocumentMixin, AbstractDocument):
     def _update_contents(self):
         """Apply the changes to our QTextDocument."""
         doc = self.document()
-        QTextCursor = sys.modules[doc.__module__].QTextCursor
         c = QTextCursor(self.document())
         c.beginEditBlock()
         self._applying_changes = True
@@ -89,7 +140,6 @@ class QtDocument(TreeDocumentMixin, AbstractDocument):
     def _get_contents(self, start, end):
         """Get a fragment of our text."""
         doc = self.document()
-        QTextCursor = sys.modules[doc.__module__].QTextCursor
         c = QTextCursor(self.document())
         c.setPosition(end)
         c.setPosition(start, QTextCursor.KeepAnchor)

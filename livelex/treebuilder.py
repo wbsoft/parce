@@ -142,6 +142,12 @@ class TreeBuilder:
             c, self.changes = self.changes, None
             return c
 
+    def wait(self):
+        """Wait for completion if a background job is running."""
+        job = self.job
+        if job:
+            job.join()
+
     def get_root(self, wait=False, callback=None, args=None, kwargs=None):
         """Get the root element of the completed tree.
 
@@ -167,7 +173,7 @@ class TreeBuilder:
             if callback:
                 self.add_callback(callback, args, kwargs, True)
         if wait:
-            job.join()
+            self.wait()
             return self.root
 
     def build_finished(self):
