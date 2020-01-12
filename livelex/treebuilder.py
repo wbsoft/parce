@@ -93,8 +93,8 @@ class TreeBuilder:
         self.job = None
         self.changes = None
         self.lock = threading.Lock()
-        self.callbacks = []
-        self.oneshot_callbacks = []
+        self.updated_callbacks = []
+        self.finished_callbacks = []
 
     @contextlib.contextmanager
     def change(self):
@@ -125,15 +125,15 @@ class TreeBuilder:
                 self.build(c.text)
             else:
                 self.rebuild(c.text, c.position, c.removed, c.added)
-            self.build_finished()
+            self.build_updated(self.start, self.end)
             c = self.get_changes()
 
     def finish_processing(self):
         """Called when process_changes() quits. Calls oneshot callbacks."""
         with self.lock:
             self.job = None
-        while self.oneshot_callbacks:
-            callback, args, kwargs = self.oneshot_callbacks.pop()
+        while self.finished_callbacks:
+            callback, args, kwargs = self.finished_callbacks.pop()
             callback(*args, **kwargs)
 
     def get_changes(self):
@@ -171,42 +171,61 @@ class TreeBuilder:
             if not job:
                 return self.root
             if callback:
-                self.add_callback(callback, args, kwargs, True)
+                self.add_finished_callback(callback, args, kwargs)
         if wait:
             self.wait()
             return self.root
 
-    def build_finished(self):
+    def build_updated(self, start, end):
         """Called when a build() or rebuild() finished and the tree is complete.
 
-        The default implementation calls all callbacks in the `callbacks`
-        attribute.
+        The default implementation calls all callbacks in the
+        `updated_callbacks` attribute, with the (start, end) arguments. (The
+        same values are also accessible in the `start` and `end` attributes.)
 
         """
-        for cb, args, kwargs in self.callbacks:
-            cb(*args, **kwargs)
+        for cb in self.updated_callbacks:
+            cb(start, end)
 
-    def add_callback(self, callback, args=None, kwargs=None, one_shot=False):
+    def add_build_updated_callback(self, callback):
+        """Add a callback to be called when the whole text is tokenized.
+
+        The callback is called with two arguments (start, end) denoting
+        the range in the text that was tokenized again.
+
+        """
+        if callback not in self.updated_callbacks:
+            self.updated_callbacks.append(callback)
+
+    def remove_build_updated_callback(self, callback):
+        """Remove a previously registered callback to be called when the whole text is tokenized."""
+        if callback in self.updated_callbacks:
+            self.updated_callbacks.remove(callback)
+
+    def add_finished_callback(self, callback, args=None, kwargs=None):
         """Add a callback to be called when tokenizing finishes.
 
-        If one_shot is True, the callback is called once, when the background
-        thread exits. If False, it is called each time when the document is
-        tokenized.
+        This callback will be called once, directly after being called
+        it will be forgotten.
 
         """
-        if args is None: args = ()
-        if kwargs is None: kwargs={}
+        if args is None:
+            args = ()
+        if kwargs is None:
+            kwargs = {}
         cb = (callback, args, kwargs)
-        l = self.oneshot_callbacks if one_shot else self.callbacks
-        if cb not in l: l.append(cb)
+        if cb not in self.finished_callbacks:
+            self.finished_callbacks.append(cb)
 
-    def remove_callback(self, callback, args=None, kwargs=None, one_shot=False):
-        """Remove a callback to be called when tokenizing finishes."""
-        if args is None: args = ()
-        if kwargs is None: kwargs={}
+    def remove_finished_callback(self, callback, args=None, kwargs=None):
+        """Remove a callback that was registered to be called when tokenizing finishes."""
+        if args is None:
+            args = ()
+        if kwargs is None:
+            kwargs = {}
         cb = (callback, args, kwargs)
-        l = self.oneshot_callbacks if one_shot else self.callbacks
-        if cb in l: l.remove(cb)
+        if cb in self.finished_callbacks:
+            self.finished_callbacks.remove(cb)
 
     def tree(self, text):
         """Convenience method returning the tree with all tokens."""

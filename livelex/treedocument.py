@@ -44,7 +44,7 @@ class TreeDocumentMixin:
 
     def __init__(self, root_lexicon=None, text=""):
         self._builder = self.TreeBuilder(root_lexicon)
-        self._builder.add_callback(self.update)
+        self._builder.add_build_updated_callback(self.update)
         if text:
             with self._builder.change() as c:
                 c.change_contents(text, 0, 0, len(text))
@@ -100,11 +100,11 @@ class TreeDocumentMixin:
         with self._builder.change() as c:
             c.change_contents(self.text(), start, removed, added)
 
-    def update(self):
+    def update(self, start, end):
         """Called when the document is fully tokenized.
 
-        The region that was tokenized again can be determined using the
-        modified_range() method.
+		The `start` and `end` arguments denote the region that was tokenized.
+		The same values can be found using the modified_range() method.
 
         """
         pass

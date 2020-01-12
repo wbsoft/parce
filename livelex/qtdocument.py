@@ -44,8 +44,8 @@ class Job(QThread):
 
 class QTreeBuilder(QObject, TreeBuilder):
     """A TreeBuilder that uses Qt signals instead of callbacks."""
-    updated = pyqtSignal()  # emitted when one full run finished
-    finished = pyqtSignal() # emitted when no more changes left
+    updated = pyqtSignal(int, int)  # emitted when one full run finished
+    finished = pyqtSignal() 		# emitted when no more changes left
 
     def __init__(self, root_lexicon=None):
         QObject.__init__(self)
@@ -63,10 +63,10 @@ class QTreeBuilder(QObject, TreeBuilder):
         super().finish_processing()
         self.finished.emit()
 
-    def build_finished(self):
-        """Called when a build() or rebuild() ends."""
-        super().build_finished()
-        self.updated.emit()
+    def build_updated(self, start, end):
+        """Reimplemented to emit the updated() signal."""
+        super().build_updated(start, end)
+        self.updated.emit(start, end)
 
     def wait(self):
         """Wait for completion if a background job is running.
@@ -112,7 +112,7 @@ class QtDocument(TreeDocumentMixin, AbstractDocument):
         # make sure we get notified when the user changes the document
         document.contentsChange.connect(self.contents_changed)
         # make sure update() is called in the GUI thread
-        self._builder.remove_callback(self.update)
+        self._builder.remove_build_updated_callback(self.update)
         self._builder.updated.connect(self.update, Qt.BlockingQueuedConnection)
 
     def document(self):
