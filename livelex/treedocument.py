@@ -101,7 +101,12 @@ class TreeDocumentMixin:
             c.change_contents(self.text(), start, removed, added)
 
     def update(self):
-        """Called when the document is fully tokenized."""
+        """Called when the document is fully tokenized.
+
+        The region that was tokenized again can be determined using the
+        modified_range() method.
+
+        """
         pass
 
 
