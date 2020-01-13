@@ -43,7 +43,7 @@ class TreeDocumentMixin:
     def __init__(self, builder):
         """Initialize with a TreeBuilder instance, which is doing the work."""
         self._builder = builder
-        self._builder.add_build_updated_callback(self.update)
+        builder.add_build_updated_callback(self.update)
 
     def get_root(self, wait=False, callback=None, args=None, kwargs=None):
         """Get the root element of the completed tree.
@@ -104,5 +104,4 @@ class TreeDocumentMixin:
 
         """
         pass
-
 
