@@ -104,7 +104,8 @@ class TreeBuilder:
             if not self.changes:
                 self.changes = Changes()
             yield self.changes
-            self.start_processing()
+            if self.changes.has_changes():
+                self.start_processing()
 
     def start_processing(self):
         """Start a background job if needed."""
@@ -120,19 +121,39 @@ class TreeBuilder:
     def process_changes(self):
         """Process changes as long as they are added. Called in the background."""
         c = self.get_changes()
+        start = -1
+        end = -1
         while c and c.has_changes():
             if c.root_lexicon != False and c.root_lexicon != self.root.lexicon:
                 self.root.lexicon = c.root_lexicon
                 self.build(c.text)
             else:
                 self.rebuild(c.text, c.position, c.removed, c.added)
-            self.build_updated(self.start, self.end)
+            start = self.start if start == -1 else min(start, self.start)
+            end = self.end if end == -1 else max(c.new_position(end), self.end)
             c = self.get_changes()
+        if start != -1:
+            self.start = start
+        if end != -1:
+            self.end = end
 
     def finish_processing(self):
-        """Called when process_changes() quits. Calls oneshot callbacks."""
+        """Called when process_changes() quits. Calls oneshot callbacks.
+
+        In GUI applications, this method should run when the job has finished,
+        in the GUI thread.
+
+        """
         with self.lock:
             self.job = None
+        # this happens when still changes were added.
+        c = self.changes
+        if c and c.has_changes():
+            start, end = self.start, self.end
+            self.process_changes()
+            self.start = min(start, self.start)
+            self.end = max(c.new_position(end), self.end)
+        self.build_updated()
         while self.finished_callbacks:
             callback, args, kwargs = self.finished_callbacks.pop()
             callback(*args, **kwargs)
@@ -177,7 +198,7 @@ class TreeBuilder:
             self.wait()
             return self.root
 
-    def build_updated(self, start, end):
+    def build_updated(self):
         """Called when a build() or rebuild() finished and the tree is complete.
 
         The default implementation calls all callbacks in the
@@ -186,7 +207,7 @@ class TreeBuilder:
 
         """
         for cb in self.updated_callbacks:
-            cb(start, end)
+            cb(self.start, self.end)
 
     def add_build_updated_callback(self, callback):
         """Add a callback to be called when the whole text is tokenized.
@@ -526,4 +547,11 @@ class Changes:
         """Return True when there are actually changes."""
         return self.position != -1 or self.root_lexicon != False
 
+    def new_position(self, pos):
+        """Return how the current changes would affect an older position."""
+        if pos < self.position:
+            return pos
+        elif pos < self.position + self.removed:
+            return self.position + self.added
+        return pos - self.removed + self.added
 

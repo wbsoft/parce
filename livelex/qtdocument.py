@@ -64,10 +64,10 @@ class QTreeBuilder(QObject, TreeBuilder):
         super().finish_processing()
         self.finished.emit()
 
-    def build_updated(self, start, end):
+    def build_updated(self):
         """Reimplemented to emit the updated() signal."""
-        super().build_updated(start, end)
-        self.updated.emit(start, end)
+        super().build_updated()
+        self.updated.emit(self.start, self.end)
 
     def wait(self):
         """Wait for completion if a background job is running."""
@@ -117,7 +117,7 @@ class QtDocument(TreeDocumentMixin, AbstractDocument):
         document.contentsChange.connect(self.contents_changed)
         # make sure update() is called in the GUI thread
         builder.remove_build_updated_callback(self.update)
-        builder.updated.connect(self.update, Qt.BlockingQueuedConnection)
+        builder.updated.connect(self.update)
 
     def document(self):
         """Return our QTextDocument."""
@@ -175,16 +175,9 @@ class QtSyntaxHighlighter(QtDocument):
     def update(self, start, end):
         doc = self.document()
         block = doc.findBlock(start)
-        # the doc might be changed during tokenizing, will be called again :-)
-        if not block.isValid():
-            return
         start = pos = block.position()
         last_block = self.document().findBlock(end)
-        if last_block.isValid():
-            end = last_block.position() + last_block.length() - 1
-        else:
-            # don't go beyond the current end
-            end = len(self)
+        end = last_block.position() + last_block.length() - 1
         formats = []
         for t in self._builder.root.tokens_range(start, end):
             while t.pos >= pos + block.length():
@@ -209,10 +202,9 @@ class QtSyntaxHighlighter(QtDocument):
             r.length = t_end - pos - r.start
             formats.append(r)
         block.layout().setFormats(formats)
-        if last_block.isValid():
-            while block < last_block:
-                block = block.next()
-                block.layout().clearFormats()
+        while block < last_block:
+            block = block.next()
+            block.layout().clearFormats()
         doc.markContentsDirty(start, end - start)
 
     def get_format(self, action):
