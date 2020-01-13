@@ -48,6 +48,8 @@ See also the documentation for Token and Context.
 """
 
 
+import itertools
+
 from livelex import util
 
 
@@ -614,5 +616,11 @@ class Context(list, NodeMixin):
             if self[i].is_context:
                 return self[i].find_token_before(pos)
             return self[i]
+
+    def tokens_range(self, start=0, end=None):
+        """Yield all tokens in this text range. Use from the root Context."""
+        t = self.find_token(start) if start else None
+        gen = t.forward_including() if t else self.tokens()
+        yield from gen if end is None else itertools.takewhile(lambda t: t.end < end, gen)
 
 
