@@ -621,6 +621,6 @@ class Context(list, NodeMixin):
         """Yield all tokens in this text range. Use from the root Context."""
         t = self.find_token(start) if start else None
         gen = t.forward_including() if t else self.tokens()
-        yield from gen if end is None else itertools.takewhile(lambda t: t.end < end, gen)
+        yield from gen if end is None else itertools.takewhile(lambda t: t.pos < end, gen)
 
 
