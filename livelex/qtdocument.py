@@ -182,7 +182,6 @@ class QtSyntaxHighlighter(QtDocument):
         for t in self._builder.root.tokens_range(start, end):
             while t.pos >= pos + block.length():
                 block.layout().setFormats(formats)
-                doc.markContentsDirty(pos, block.length())
                 block = block.next()
                 pos = block.position()
                 formats = []
@@ -194,7 +193,6 @@ class QtSyntaxHighlighter(QtDocument):
                 r.length = block.length() - r.start - 1
                 formats.append(r)
                 block.layout().setFormats(formats)
-                doc.markContentsDirty(pos, block.length())
                 block = block.next()
                 pos = block.position()
                 formats = []
@@ -204,11 +202,10 @@ class QtSyntaxHighlighter(QtDocument):
             r.length = t_end - pos - r.start
             formats.append(r)
         block.layout().setFormats(formats)
-        doc.markContentsDirty(pos, block.length())
         while block < last_block:
             block = block.next()
             block.layout().clearFormats()
-            doc.markContentsDirty(block.position(), block.length())
+        doc.markContentsDirty(start, end - start)
 
     def get_format(self, action):
         """Implement this method to return a QTextCharFormat for the action."""
