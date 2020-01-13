@@ -165,9 +165,16 @@ class QtDocument(TreeDocumentMixin, AbstractDocument):
 
 
 class QtSyntaxHighlighter(QtDocument):
-    """Provides syntax highlighting using livelex parsers."""
+    """Provides syntax highlighting using livelex parsers.
+
+    Implement get_format() and instantiate with:
+
+        MyHighlighter.instance(qTextDocument, root_lexicon)
+
+    """
     def update(self, start, end):
-        block = self.document().findBlock(start)
+        doc = self.document()
+        block = doc.findBlock(start)
         start = pos = block.position()
         last_block = self.document().findBlock(end)
         end = last_block.position() + last_block.length() - 1
@@ -175,6 +182,7 @@ class QtSyntaxHighlighter(QtDocument):
         for t in self._builder.root.tokens_range(start, end):
             while t.pos >= pos + block.length():
                 block.layout().setFormats(formats)
+                doc.markContentsDirty(pos, block.length())
                 block = block.next()
                 pos = block.position()
                 formats = []
@@ -186,6 +194,7 @@ class QtSyntaxHighlighter(QtDocument):
                 r.length = block.length() - r.start - 1
                 formats.append(r)
                 block.layout().setFormats(formats)
+                doc.markContentsDirty(pos, block.length())
                 block = block.next()
                 pos = block.position()
                 formats = []
@@ -195,7 +204,11 @@ class QtSyntaxHighlighter(QtDocument):
             r.length = t_end - pos - r.start
             formats.append(r)
         block.layout().setFormats(formats)
-        self.document().markContentsDirty(start, end)
+        doc.markContentsDirty(pos, block.length())
+        while block < last_block:
+            block = block.next()
+            block.layout().clearFormats()
+            doc.markContentsDirty(block.position(), block.length())
 
     def get_format(self, action):
         """Implement this method to return a QTextCharFormat for the action."""
