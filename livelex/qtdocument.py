@@ -175,9 +175,16 @@ class QtSyntaxHighlighter(QtDocument):
     def update(self, start, end):
         doc = self.document()
         block = doc.findBlock(start)
+        # the doc might be changed during tokenizing, will be called again :-)
+        if not block.isValid():
+            return
         start = pos = block.position()
         last_block = self.document().findBlock(end)
-        end = last_block.position() + last_block.length() - 1
+        if last_block.isValid():
+            end = last_block.position() + last_block.length() - 1
+        else:
+            # don't go beyond the current end
+            end = len(self)
         formats = []
         for t in self._builder.root.tokens_range(start, end):
             while t.pos >= pos + block.length():
@@ -202,9 +209,10 @@ class QtSyntaxHighlighter(QtDocument):
             r.length = t_end - pos - r.start
             formats.append(r)
         block.layout().setFormats(formats)
-        while block < last_block:
-            block = block.next()
-            block.layout().clearFormats()
+        if last_block.isValid():
+            while block < last_block:
+                block = block.next()
+                block.layout().clearFormats()
         doc.markContentsDirty(start, end - start)
 
     def get_format(self, action):
