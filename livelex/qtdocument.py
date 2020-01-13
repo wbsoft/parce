@@ -181,8 +181,9 @@ class QtSyntaxHighlighter(QtDocument):
             r = QTextLayout.FormatRange()
             r.format = f = self.get_format(t.action)
             r.start = t.pos - pos
-            while t.end > pos + block.length():
-                r.length = block.length() - r.start
+            t_end = min(end, t.end)
+            while t_end > pos + block.length():
+                r.length = block.length() - r.start - 1
                 formats.append(r)
                 block.layout().setFormats(formats)
                 block = block.next()
@@ -191,7 +192,7 @@ class QtSyntaxHighlighter(QtDocument):
                 r = QTextLayout.FormatRange()
                 r.format = f
                 r.start = 0
-            r.length = t.end - pos - r.start
+            r.length = t_end - pos - r.start
             formats.append(r)
         block.layout().setFormats(formats)
         self.document().markContentsDirty(start, end)
