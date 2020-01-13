@@ -26,8 +26,9 @@ import sys
 import weakref
 
 from PyQt5.QtCore import pyqtSignal,QEventLoop, QObject, Qt, QThread
-from PyQt5.QtGui import QTextCursor
+from PyQt5.QtGui import QTextCursor, QTextCharFormat, QTextDocument, QTextLayout
 
+import livelex
 from livelex.treebuilder import TreeBuilder
 from livelex.treedocument import TreeDocumentMixin
 from livelex.document import AbstractDocument
@@ -89,8 +90,6 @@ class QtDocument(TreeDocumentMixin, AbstractDocument):
     a Document created.
 
     """
-    TreeBuilder = QTreeBuilder
-
     @classmethod
     def instance(cls, document, default_root_lexicon=None):
         """Get the same instance back, creating it if necessary."""
@@ -103,26 +102,33 @@ class QtDocument(TreeDocumentMixin, AbstractDocument):
         new = cls._instances[document] = cls(document, default_root_lexicon)
         return new
 
-    def __init__(self, document, root_lexicon=None):
-        """Initialize with QTextDocument."""
+    def __init__(self, document=None, root_lexicon=None):
+        """Initialize with QTextDocument.
+
+        If document is None, a new QTextDocument is created.
+
+        """
         AbstractDocument.__init__(self)
-        TreeDocumentMixin.__init__(self, root_lexicon)
-        self._document = document
+        builder = QTreeBuilder(root_lexicon)
+        TreeDocumentMixin.__init__(self, builder)
+        self._document = document or QTextDocument()
         self._applying_changes = False
         # make sure we get notified when the user changes the document
         document.contentsChange.connect(self.contents_changed)
         # make sure update() is called in the GUI thread
-        self._builder.remove_build_updated_callback(self.update)
-        self._builder.updated.connect(self.update, Qt.BlockingQueuedConnection)
+        builder.remove_build_updated_callback(self.update)
+        builder.updated.connect(self.update, Qt.BlockingQueuedConnection)
 
     def document(self):
         """Return our QTextDocument."""
         return self._document
 
     def text(self):
+        """Reimplemented to get the text from the QTextDocument."""
         return self.document().toPlainText()
 
     def __len__(self):
+        """Reimplemented to return the length of the text in the QTextDocument."""
         # see https://bugreports.qt.io/browse/QTBUG-4841
         return self.document().characterCount() - 1
 
@@ -141,7 +147,11 @@ class QtDocument(TreeDocumentMixin, AbstractDocument):
         self._applying_changes = False
 
     def _get_contents(self, start, end):
-        """Get a fragment of our text."""
+        """Reimplemented to get a fragment of our text.
+
+        This is faster than getting the whole text and using Python to slice it.
+
+        """
         doc = self.document()
         c = QTextCursor(self.document())
         c.setPosition(end)
@@ -152,4 +162,44 @@ class QtDocument(TreeDocumentMixin, AbstractDocument):
         """Overridden to prevent double call to contents_changed when changing ourselves."""
         if not self._applying_changes:
             super().contents_changed(position, removed, added)
+
+
+class QtSyntaxHighlighter(QtDocument):
+    """Provides syntax highlighting using livelex parsers."""
+    def update(self, start, end):
+        block = self.document().findBlock(start)
+        start = pos = block.position()
+        last_block = self.document().findBlock(end)
+        end = last_block.position() + last_block.length() - 1
+        formats = []
+        for t in self._builder.root.tokens_range(start, end):
+            while t.pos >= pos + block.length():
+                block.layout().setFormats(formats)
+                block = block.next()
+                pos = block.position()
+                formats = []
+            r = QTextLayout.FormatRange()
+            r.format = f = self.get_format(t.action)
+            r.start = t.pos - pos
+            while t.end > pos + block.length():
+                r.length = block.length() - r.start
+                formats.append(r)
+                block.layout().setFormats(formats)
+                block = block.next()
+                pos = block.position()
+                formats = []
+                r = QTextLayout.FormatRange()
+                r.format = f
+                r.start = 0
+            r.length = t.end - pos - r.start
+            formats.append(r)
+        block.layout().setFormats(formats)
+        self.document().markContentsDirty(start, end)
+
+    def get_format(self, action):
+        """Implement this method to return a QTextCharFormat for the action."""
+        f = QTextCharFormat()
+        if action in livelex.String:
+            f.setForeground(Qt.red)
+        return f
 
