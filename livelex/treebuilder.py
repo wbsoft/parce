@@ -28,6 +28,9 @@ text editor. It is smart enough to recognize whether existing tokens before and
 after the modified region can be reused or not, and it reuses tokens as much as
 possible.
 
+BackgroundTreeBuilder can be used to tokenize a text into a tree in a background
+thread.
+
 """
 
 
@@ -65,24 +68,6 @@ class TreeBuilder:
     No other variables or state are kept, so if you don't need the above
     information anymore, you can throw away the TreeBuilder after use.
 
-    TreeBuilder also supports tokenizing in a background thread. Then you must
-    specify changes to the document using the Changes object returned by the
-    change() context manager method:
-
-        with builder.change() as c:
-            c.change_text("new text", position, removed, added)
-
-    Tokenizing then starts in the background. During tokenizing it is still
-    possible to add new changes using change(). You can add callbacks to the
-    `updated_callbacks` attribute (using add_build_updated_callback()) that are
-    called everytime the whole document is tokenized.
-
-    You can also add callbacks to the `finished_callbacks` attribute, using
-    add_finished_callback(); those are called once when all pending changes are
-    processed and then forgotten again.
-
-    To be sure you get a complete tree, call get_root().
-
     """
 
     start = 0
@@ -91,163 +76,6 @@ class TreeBuilder:
 
     def __init__(self, root_lexicon=None):
         self.root = Context(root_lexicon, None)
-        self.job = None
-        self.changes = None
-        self.lock = threading.Lock()
-        self.updated_callbacks = []
-        self.finished_callbacks = []
-
-    @contextlib.contextmanager
-    def change(self):
-        """Return a Changes object and start a context to add changes."""
-        with self.lock:
-            if not self.changes:
-                self.changes = Changes()
-            yield self.changes
-            if self.changes.has_changes():
-                self.start_processing()
-
-    def start_processing(self):
-        """Start a background job if needed."""
-        if not self.job:
-            self.job = threading.Thread(target=self.process_and_finish)
-            self.job.start()
-
-    def process_and_finish(self):
-        """Call process_changes() and then finish_processing()."""
-        self.process_changes()
-        self.finish_processing()
-
-    def process_changes(self):
-        """Process changes as long as they are added. Called in the background."""
-        c = self.get_changes()
-        start = -1
-        end = -1
-        while c and c.has_changes():
-            if c.root_lexicon != False and c.root_lexicon != self.root.lexicon:
-                self.root.lexicon = c.root_lexicon
-                self.build(c.text)
-            else:
-                self.rebuild(c.text, c.position, c.removed, c.added)
-            start = self.start if start == -1 else min(start, self.start)
-            end = self.end if end == -1 else max(c.new_position(end), self.end)
-            c = self.get_changes()
-        if start != -1:
-            self.start = start
-        if end != -1:
-            self.end = end
-
-    def finish_processing(self):
-        """Called when process_changes() quits. Calls oneshot callbacks.
-
-        In GUI applications, this method should run when the job has finished,
-        in the GUI thread.
-
-        """
-        with self.lock:
-            self.job = None
-        # this happens when still changes were added.
-        c = self.changes
-        if c and c.has_changes():
-            start, end = self.start, self.end
-            self.process_changes()
-            self.start = min(start, self.start)
-            self.end = max(c.new_position(end), self.end)
-        self.build_updated()
-        while self.finished_callbacks:
-            callback, args, kwargs = self.finished_callbacks.pop()
-            callback(*args, **kwargs)
-
-    def get_changes(self):
-        """Get the changes once. To be used from within the thread."""
-        with self.lock:
-            c, self.changes = self.changes, None
-            return c
-
-    def wait(self):
-        """Wait for completion if a background job is running."""
-        job = self.job
-        if job:
-            job.join()
-
-    def get_root(self, wait=False, callback=None, args=None, kwargs=None):
-        """Get the root element of the completed tree.
-
-        If wait is True, this call blocks until tokenizing is done, and the
-        full tree is returned. If wait is False, None is returned if the tree
-        is still busy being built.
-
-        If a callback is given and tokenizing is still busy, that callback is
-        called once when tokenizing is ready. If given, args and kwargs are the
-        arguments the callback is called with, defaulting to () and {},
-        respectively.
-
-        Note that, for the lifetime of a TreeBuilder, the root element is always
-        the same. The root element is also accessible in the `root` attribute.
-        But using this method you can be sure that you are dealing with a
-        complete and fully intact tree.
-
-        """
-        with self.lock:
-            job = self.job
-            if not job:
-                return self.root
-            if callback:
-                self.add_finished_callback(callback, args, kwargs)
-        if wait:
-            self.wait()
-            return self.root
-
-    def build_updated(self):
-        """Called when a build() or rebuild() finished and the tree is complete.
-
-        The default implementation calls all callbacks in the
-        `updated_callbacks` attribute, with the (start, end) arguments. (The
-        same values are also accessible in the `start` and `end` attributes.)
-
-        """
-        for cb in self.updated_callbacks:
-            cb(self.start, self.end)
-
-    def add_build_updated_callback(self, callback):
-        """Add a callback to be called when the whole text is tokenized.
-
-        The callback is called with two arguments (start, end) denoting
-        the range in the text that was tokenized again.
-
-        """
-        if callback not in self.updated_callbacks:
-            self.updated_callbacks.append(callback)
-
-    def remove_build_updated_callback(self, callback):
-        """Remove a previously registered callback to be called when the whole text is tokenized."""
-        if callback in self.updated_callbacks:
-            self.updated_callbacks.remove(callback)
-
-    def add_finished_callback(self, callback, args=None, kwargs=None):
-        """Add a callback to be called when tokenizing finishes.
-
-        This callback will be called once, directly after being called
-        it will be forgotten.
-
-        """
-        if args is None:
-            args = ()
-        if kwargs is None:
-            kwargs = {}
-        cb = (callback, args, kwargs)
-        if cb not in self.finished_callbacks:
-            self.finished_callbacks.append(cb)
-
-    def remove_finished_callback(self, callback, args=None, kwargs=None):
-        """Remove a callback that was registered to be called when tokenizing finishes."""
-        if args is None:
-            args = ()
-        if kwargs is None:
-            kwargs = {}
-        cb = (callback, args, kwargs)
-        if cb in self.finished_callbacks:
-            self.finished_callbacks.remove(cb)
 
     def tree(self, text):
         """Convenience method returning the tree with all tokens."""
@@ -474,6 +302,189 @@ class TreeBuilder:
             yield from action.filter_actions(self, pos, txt, match)
         elif txt:
             yield pos, txt, action
+
+
+class BackgroundTreeBuilder(TreeBuilder):
+    """A TreeBuilder that can tokenize a text in a background thread.
+
+    BackgroundTreeBuilder supports tokenizing in a background thread. You
+    must specify changes to the document using the Changes object returned by
+    the change() context manager method:
+
+        with builder.change() as c:
+            c.change_text("new text", position, removed, added)
+
+    Tokenizing then starts in the background. During tokenizing it is still
+    possible to add new changes using change(). You can add callbacks to the
+    `updated_callbacks` attribute (using add_build_updated_callback()) that are
+    called everytime the whole document is tokenized.
+
+    You can also add callbacks to the `finished_callbacks` attribute, using
+    add_finished_callback(); those are called once when all pending changes are
+    processed and then forgotten again.
+
+    To be sure you get a complete tree, call get_root().
+
+    """
+    def __init__(self, root_lexicon=None):
+        super().__init__(root_lexicon)
+        self.job = None
+        self.changes = None
+        self.lock = threading.Lock()
+        self.updated_callbacks = []
+        self.finished_callbacks = []
+
+    @contextlib.contextmanager
+    def change(self):
+        """Return a Changes object and start a context to add changes."""
+        with self.lock:
+            if not self.changes:
+                self.changes = Changes()
+            yield self.changes
+            if self.changes.has_changes():
+                self.start_processing()
+
+    def start_processing(self):
+        """Start a background job if needed."""
+        if not self.job:
+            self.job = threading.Thread(target=self.process_and_finish)
+            self.job.start()
+
+    def process_and_finish(self):
+        """Call process_changes() and then finish_processing()."""
+        self.process_changes()
+        self.finish_processing()
+
+    def process_changes(self):
+        """Process changes as long as they are added. Called in the background."""
+        c = self.get_changes()
+        start = -1
+        end = -1
+        while c and c.has_changes():
+            if c.root_lexicon != False and c.root_lexicon != self.root.lexicon:
+                self.root.lexicon = c.root_lexicon
+                self.build(c.text)
+            else:
+                self.rebuild(c.text, c.position, c.removed, c.added)
+            start = self.start if start == -1 else min(start, self.start)
+            end = self.end if end == -1 else max(c.new_position(end), self.end)
+            c = self.get_changes()
+        if start != -1:
+            self.start = start
+        if end != -1:
+            self.end = end
+
+    def finish_processing(self):
+        """Called when process_changes() quits. Calls oneshot callbacks.
+
+        In GUI applications, this method should run when the job has finished,
+        in the GUI thread.
+
+        """
+        with self.lock:
+            self.job = None
+        # this happens when still changes were added.
+        c = self.changes
+        if c and c.has_changes():
+            start, end = self.start, self.end
+            self.process_changes()
+            self.start = min(start, self.start)
+            self.end = max(c.new_position(end), self.end)
+        self.build_updated()
+        while self.finished_callbacks:
+            callback, args, kwargs = self.finished_callbacks.pop()
+            callback(*args, **kwargs)
+
+    def get_changes(self):
+        """Get the changes once. To be used from within the thread."""
+        with self.lock:
+            c, self.changes = self.changes, None
+            return c
+
+    def wait(self):
+        """Wait for completion if a background job is running."""
+        job = self.job
+        if job:
+            job.join()
+
+    def get_root(self, wait=False, callback=None, args=None, kwargs=None):
+        """Get the root element of the completed tree.
+
+        If wait is True, this call blocks until tokenizing is done, and the
+        full tree is returned. If wait is False, None is returned if the tree
+        is still busy being built.
+
+        If a callback is given and tokenizing is still busy, that callback is
+        called once when tokenizing is ready. If given, args and kwargs are the
+        arguments the callback is called with, defaulting to () and {},
+        respectively.
+
+        Note that, for the lifetime of a TreeBuilder, the root element is always
+        the same. The root element is also accessible in the `root` attribute.
+        But using this method you can be sure that you are dealing with a
+        complete and fully intact tree.
+
+        """
+        with self.lock:
+            job = self.job
+            if not job:
+                return self.root
+            if callback:
+                self.add_finished_callback(callback, args, kwargs)
+        if wait:
+            self.wait()
+            return self.root
+
+    def build_updated(self):
+        """Called when a build() or rebuild() finished and the tree is complete.
+
+        The default implementation calls all callbacks in the
+        `updated_callbacks` attribute, with the (start, end) arguments. (The
+        same values are also accessible in the `start` and `end` attributes.)
+
+        """
+        for cb in self.updated_callbacks:
+            cb(self.start, self.end)
+
+    def add_build_updated_callback(self, callback):
+        """Add a callback to be called when the whole text is tokenized.
+
+        The callback is called with two arguments (start, end) denoting
+        the range in the text that was tokenized again.
+
+        """
+        if callback not in self.updated_callbacks:
+            self.updated_callbacks.append(callback)
+
+    def remove_build_updated_callback(self, callback):
+        """Remove a previously registered callback to be called when the whole text is tokenized."""
+        if callback in self.updated_callbacks:
+            self.updated_callbacks.remove(callback)
+
+    def add_finished_callback(self, callback, args=None, kwargs=None):
+        """Add a callback to be called when tokenizing finishes.
+
+        This callback will be called once, directly after being called
+        it will be forgotten.
+
+        """
+        if args is None:
+            args = ()
+        if kwargs is None:
+            kwargs = {}
+        cb = (callback, args, kwargs)
+        if cb not in self.finished_callbacks:
+            self.finished_callbacks.append(cb)
+
+    def remove_finished_callback(self, callback, args=None, kwargs=None):
+        """Remove a callback that was registered to be called when tokenizing finishes."""
+        if args is None:
+            args = ()
+        if kwargs is None:
+            kwargs = {}
+        cb = (callback, args, kwargs)
+        if cb in self.finished_callbacks:
+            self.finished_callbacks.remove(cb)
 
 
 class Changes:
