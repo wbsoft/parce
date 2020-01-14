@@ -30,7 +30,7 @@ from PyQt5.QtGui import QTextCursor, QTextCharFormat, QTextDocument, QTextLayout
 
 import livelex
 from livelex import util
-from livelex.treebuilder import TreeBuilder
+from livelex.treebuilder import BackgroundTreeBuilder
 from livelex.treedocument import TreeDocumentMixin
 from livelex.document import AbstractDocument
 
@@ -44,14 +44,14 @@ class Job(QThread):
         self.builder.process_changes()
 
 
-class QTreeBuilder(QObject, TreeBuilder):
+class QTreeBuilder(QObject, BackgroundTreeBuilder):
     """A TreeBuilder that uses Qt signals instead of callbacks."""
     updated = pyqtSignal(int, int)  # emitted when one full run finished
     finished = pyqtSignal()         # emitted when no more changes left
 
     def __init__(self, root_lexicon=None):
         QObject.__init__(self)
-        TreeBuilder.__init__(self, root_lexicon)
+        BackgroundTreeBuilder.__init__(self, root_lexicon)
 
     def start_processing(self):
         """Start a background job if needed."""
