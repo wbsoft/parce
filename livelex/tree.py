@@ -332,11 +332,7 @@ class Token(NodeMixin):
 
         """
         for parent, index in self.ancestors_with_index(upto):
-            for n in parent[index+1:]:
-                if n.is_token:
-                    yield n
-                else:
-                    yield from n.tokens()
+            yield from tokens(parent[index+1:])
 
     def backward(self, upto=None):
         """Yield all Tokens in backward direction.
@@ -347,11 +343,7 @@ class Token(NodeMixin):
         """
         for parent, index in self.ancestors_with_index(upto):
             if index:
-                for n in parent[index-1::-1]:
-                    if n.is_token:
-                        yield n
-                    else:
-                        yield from n.tokens_bw()
+                yield from tokens_bw(parent[index-1::-1])
 
     def forward_including(self, upto=None):
         """Yield all tokens in forward direction, including self."""
@@ -557,19 +549,11 @@ class Context(list, NodeMixin):
 
     def tokens(self):
         """Yield all Tokens, descending into nested Contexts."""
-        for n in self:
-            if n.is_token:
-                yield n
-            else:
-                yield from n.tokens()
+        yield from tokens(self)
 
     def tokens_bw(self):
         """Yield all Tokens, descending into nested Contexts, in backward direction."""
-        for n in self[::-1]:
-            if n.is_token:
-                yield n
-            else:
-                yield from n.tokens_bw()
+        yield from tokens_bw(self[::-1])
 
     def first_token(self):
         """Return our first Token."""
@@ -688,27 +672,33 @@ class Context(list, NodeMixin):
             yield start_token
             p = start_token.parent
             for i in trail_start[:0:-1]:
-                for n in p[i+1:]:
-                    if n.is_token:
-                        yield n
-                    else:
-                        yield from n.tokens()
+                yield from tokens(p[i+1:])
                 p = p.parent
             # yield intermediate tokens
-            for n in context[trail_start[0]+1:trail_end[0]]:
-                if n.is_token:
-                    yield n
-                else:
-                    yield from n.tokens()
+            yield from tokens(context[trail_start[0]+1:trail_end[0]])
             # then climb up the tree for the end token
             node = context[trail_end[0]]
             for i in trail_end[1:]:
-                for n in node[:i]:
-                    if n.is_token:
-                        yield n
-                    else:
-                        yield from n.tokens()
+                yield from tokens(node[:i])
                 node = node[i]
             yield node  # == end_token
+
+
+def tokens(nodes):
+    """Helper to yield tokens from the iterable of nodes."""
+    for n in nodes:
+        if n.is_token:
+            yield n
+        else:
+            yield from n.tokens()
+
+
+def tokens_bw(nodes):
+    """Helper to yield tokens from the iterable in backward direction."""
+    for n in nodes:
+        if n.is_token:
+            yield n
+        else:
+            yield from n.tokens_bw()
 
 
