@@ -28,3 +28,24 @@ def abbreviate_repr(s, length=30):
         return repr(s[:length-2]) + "..."
     return repr(s)
 
+
+def merge_adjacent_actions(tokens):
+    """Yield three-tuples (pos, end, action).
+
+    Adjacent actions that are the same are merged into
+    one range.
+
+    """
+    stream = ((t.pos, t.end, t.action) for t in tokens)
+    for pos, end, action in stream:
+        npos = -1
+        for npos, nend, naction in stream:
+            if naction != action or npos > end:
+                yield pos, end, action
+                pos, end, action = npos, nend, naction
+            else:
+                end = nend
+        if npos != pos:
+            yield pos, end, action
+
+
