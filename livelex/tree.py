@@ -572,6 +572,26 @@ class Context(list, NodeMixin):
             return self[i]
         return self.last_token()
 
+    def find_token_left(self, pos):
+        """Return the Token at or to the left of position."""
+        i = 0
+        hi = len(self)
+        while i < hi:
+            mid = (i + hi) // 2
+            n = self[mid]
+            if n.is_context:
+                n = n.first_token()
+            if n.pos < pos:
+                i = mid + 1
+            else:
+                hi = mid
+        if i > 0:
+            i -= 1
+            if self[i].is_context:
+                return self[i].find_token_left(pos)
+            return self[i]
+        return self.first_token()
+
     def find_token_after(self, pos):
         """Return the first token completely right from pos.
 
@@ -617,6 +637,16 @@ class Context(list, NodeMixin):
                 return self[i].find_token_before(pos)
             return self[i]
 
+    def tokens_range(self, start, end=None):
+        """Yield all tokens in this text range. Use from the root Context."""
+        if self:
+            start_token = self.find_token(start) if start else self.first_token()
+            if end is None or end >= self.end:
+                yield from start_token.forward_including()
+            else:
+                end_token = self.find_token(end)
+                
+                
     def tokens_range(self, start=0, end=None):
         """Yield all tokens in this text range. Use from the root Context."""
         t = self.find_token(start) if start else None
