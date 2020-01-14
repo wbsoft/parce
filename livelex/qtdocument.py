@@ -29,6 +29,7 @@ from PyQt5.QtCore import pyqtSignal,QEventLoop, QObject, Qt, QThread
 from PyQt5.QtGui import QTextCursor, QTextCharFormat, QTextDocument, QTextLayout
 
 import livelex
+from livelex import util
 from livelex.treebuilder import TreeBuilder
 from livelex.treedocument import TreeDocumentMixin
 from livelex.document import AbstractDocument
@@ -179,16 +180,17 @@ class QtSyntaxHighlighter(QtDocument):
         last_block = self.document().findBlock(end)
         end = last_block.position() + last_block.length() - 1
         formats = []
-        for t in self._builder.root.tokens_range(start, end):
-            while t.pos >= pos + block.length():
+        for t_pos, t_end, action in util.merge_adjacent_actions(
+                self._builder.root.tokens_range(start, end)):
+            while t_pos >= pos + block.length():
                 block.layout().setFormats(formats)
                 block = block.next()
                 pos = block.position()
                 formats = []
             r = QTextLayout.FormatRange()
-            r.format = f = self.get_format(t.action)
-            r.start = t.pos - pos
-            t_end = min(end, t.end)
+            r.format = f = self.get_format(action)
+            r.start = t_pos - pos
+            t_end = min(end, t_end)
             while t_end > pos + block.length():
                 r.length = block.length() - r.start - 1
                 formats.append(r)
