@@ -439,6 +439,34 @@ class Token(NodeMixin):
                 return False
         return c1.parent is None and c2.parent is None
 
+    def common_ancestor_with_trail(self, other):
+        """Return (context, trail_self, trail_other).
+
+        The context is the common ancestor such as returned by common_ancestor,
+        if any. trail_self is a tuple of indices from the common ancestor upto
+        self, and trail_other is a tuple of indices from the same ancestor upto
+        the other Token.
+
+        If there is no common ancestor, all three are None. But normally,
+        all nodes share the root context, so that will normally be the upmost
+        common ancestor.
+
+        """
+        if other is self:
+            i = self.parent_index()
+            return self.parent, (i,), (i,)
+        s_ancestors, s_indices = zip(*self.ancestors_with_index())
+        o_indices = []
+        for n, i in other.ancestors_with_index():
+            o_indices.append(i)
+            try:
+                s_i = s_ancestors.index(n)
+            except ValueError:
+                continue
+            else:
+                return n, s_indices[s_i::-1], o_indices[::-1]
+        return None, None, None
+
 
 class _GroupToken(Token):
     """A Token class that allows setting the `group` attribute."""
@@ -639,18 +667,48 @@ class Context(list, NodeMixin):
 
     def tokens_range(self, start, end=None):
         """Yield all tokens in this text range. Use from the root Context."""
-        if self:
-            start_token = self.find_token(start) if start else self.first_token()
-            if end is None or end >= self.end:
-                yield from start_token.forward_including()
-            else:
-                end_token = self.find_token(end)
-                
-                
-    def tokens_range(self, start=0, end=None):
-        """Yield all tokens in this text range. Use from the root Context."""
-        t = self.find_token(start) if start else None
-        gen = t.forward_including() if t else self.tokens()
-        yield from gen if end is None else itertools.takewhile(lambda t: t.pos < end, gen)
+        if not self:
+            return  # empty
+        start_token = self.find_token(start) if start else self.first_token()
+        if end is None or end >= self.end:
+            yield from start_token.forward_including()
+            return
+        if start_token.end >= end:
+            yield start_token
+            return
+        end_token = self.find_token_left(end)
+        if end_token is start_token:
+            yield start_token
+            return
+        if end_token.pos > start_token.pos:
+            # all this is just to avoid a pos comparison on *each* token
+            # which is faster for large ranges of tokens
+            context, trail_start, trail_end = start_token.common_ancestor_with_trail(end_token)
+            # yield start token and then climb down the tree
+            yield start_token
+            p = start_token.parent
+            for i in trail_start[:0:-1]:
+                for n in p[i+1:]:
+                    if n.is_token:
+                        yield n
+                    else:
+                        yield from n.tokens()
+                p = p.parent
+            # yield intermediate tokens
+            for n in context[trail_start[0]+1:trail_end[0]]:
+                if n.is_token:
+                    yield n
+                else:
+                    yield from n.tokens()
+            # then climb up the tree for the end token
+            node = context[trail_end[0]]
+            for i in trail_end[1:]:
+                for n in node[:i]:
+                    if n.is_token:
+                        yield n
+                    else:
+                        yield from n.tokens()
+                node = node[i]
+            yield node  # == end_token
 
 
