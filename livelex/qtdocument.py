@@ -211,8 +211,19 @@ class QtSyntaxHighlighter(QtDocument):
 
     def get_format(self, action):
         """Implement this method to return a QTextCharFormat for the action."""
+        ### TEMP!
+        from PyQt5.QtGui import QFont
         f = QTextCharFormat()
         if action in livelex.String:
             f.setForeground(Qt.red)
+        elif action in livelex.Name:
+            f.setForeground(Qt.blue)
+        if action in livelex.Comment:
+            f.setForeground(Qt.darkGray)
+            f.setFontItalic(True)
+        if action in livelex.Delimiter:
+            f.setFontWeight(QFont.Bold)
+        if action in livelex.Escape:
+            f.setForeground(Qt.darkGreen)
         return f
 
