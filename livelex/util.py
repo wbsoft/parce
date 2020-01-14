@@ -42,9 +42,8 @@ def merge_adjacent_actions(tokens):
         for npos, nend, naction in stream:
             if naction != action or npos > end:
                 yield pos, end, action
-                pos, end, action = npos, nend, naction
-            else:
-                end = nend
+                pos, action = npos, naction
+            end = nend
         if npos != pos:
             yield pos, end, action
 
