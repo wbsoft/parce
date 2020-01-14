@@ -338,10 +338,10 @@ class BackgroundTreeBuilder(TreeBuilder):
     def change(self):
         """Return a Changes object and start a context to add changes."""
         with self.lock:
-            if not self.changes:
-                self.changes = Changes()
-            yield self.changes
-            if self.changes.has_changes():
+            c = self.changes or Changes()
+            yield c
+            if c.has_changes():
+                self.changes = c
                 self.start_processing()
 
     def start_processing(self):
