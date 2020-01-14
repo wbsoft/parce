@@ -694,7 +694,11 @@ def tokens(nodes):
 
 
 def tokens_bw(nodes):
-    """Helper to yield tokens from the iterable in backward direction."""
+    """Helper to yield tokens from the iterable in backward direction.
+
+    Make sure nodes is already in backward direction.
+
+    """
     for n in nodes:
         if n.is_token:
             yield n
