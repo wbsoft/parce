@@ -455,8 +455,7 @@ class Token(NodeMixin):
                 s_i = s_ancestors.index(n)
             except ValueError:
                 continue
-            else:
-                return n, s_indices[s_i::-1], o_indices[::-1]
+            return n, s_indices[s_i::-1], o_indices[::-1]
         return None, None, None
 
 
