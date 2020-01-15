@@ -2,6 +2,12 @@ ChangeLog of the Python livelex package
 =======================================
 
 
+2020-01-15: livelex-0.2.0
+
+- API added to tokenize in background thread
+- qtdocument moved to livelex-qt
+
+
 2020-01-08: livelex-0.1.0
 
 - Moved from pre-alpha to alpha :-)
