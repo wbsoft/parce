@@ -43,7 +43,7 @@ class TreeDocumentMixin:
     def __init__(self, builder):
         """Initialize with a TreeBuilder instance, which is doing the work."""
         self._builder = builder
-        builder.add_build_updated_callback(self.update)
+        builder.add_build_updated_callback(self.updated)
 
     def get_root(self, wait=False, callback=None, args=None, kwargs=None):
         """Get the root element of the completed tree.
@@ -96,7 +96,7 @@ class TreeDocumentMixin:
         with self._builder.change() as c:
             c.change_contents(self.text(), start, removed, added)
 
-    def update(self, start, end):
+    def updated(self, start, end):
         """Called when the document is fully tokenized.
 
         The `start` and `end` arguments denote the region that was tokenized.

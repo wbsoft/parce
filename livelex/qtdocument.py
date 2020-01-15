@@ -117,8 +117,8 @@ class QtDocument(TreeDocumentMixin, AbstractDocument):
         # make sure we get notified when the user changes the document
         document.contentsChange.connect(self.contents_changed)
         # make sure update() is called in the GUI thread
-        builder.remove_build_updated_callback(self.update)
-        builder.updated.connect(self.update)
+        builder.remove_build_updated_callback(self.updated)
+        builder.updated.connect(self.updated)
 
     def document(self):
         """Return our QTextDocument."""
@@ -173,7 +173,7 @@ class QtSyntaxHighlighter(QtDocument):
         MyHighlighter.instance(qTextDocument, root_lexicon)
 
     """
-    def update(self, start, end):
+    def updated(self, start, end):
         doc = self.document()
         block = doc.findBlock(start)
         start = pos = block.position()
