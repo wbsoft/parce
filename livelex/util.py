@@ -38,13 +38,11 @@ def merge_adjacent_actions(tokens):
     """
     stream = ((t.pos, t.end, t.action) for t in tokens)
     for pos, end, action in stream:
-        npos = -1
         for npos, nend, naction in stream:
             if naction != action or npos > end:
                 yield pos, end, action
                 pos, action = npos, naction
             end = nend
-        if npos != pos:
-            yield pos, end, action
+        yield pos, end, action
 
 

@@ -41,7 +41,7 @@ class TreeDocumentMixin:
     """
 
     def __init__(self, builder):
-        """Initialize with a TreeBuilder instance, which is doing the work."""
+        """Initialize with a BackgroundTreeBuilder instance, which is doing the work."""
         self._builder = builder
         builder.add_build_updated_callback(self.updated)
 
