@@ -311,10 +311,6 @@ def to_string(expr):
     "".find(), which would be faster than using re.search().
 
     """
-    try:
-        re.compile(expr)    # this should not fail
-    except re.error:
-        return
     if set(re.sub(r'\\.', '', expr)) & set("^$|.()[]{}+*?"):
         return  # there are unescaped special characters like (, [, ? etc.
     # handle all escapes, there may be fails, in that case we can't use the expr as string
