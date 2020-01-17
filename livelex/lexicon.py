@@ -38,7 +38,9 @@ some lexicons, the others keep working as in the base class.
 import re
 import threading
 
+import livelex.action
 import livelex.pattern
+import livelex.regex
 
 
 class Lexicon:
@@ -148,6 +150,49 @@ class BoundLexicon:
                     pattern = pattern.build()
                 patterns.append(pattern)
                 action_targets.append((action, *target))
+        # if there is only one pattern, and no dynamic action or target,
+        # see if the pattern is simple enough to just use str.find
+        if (len(patterns) == 1
+            and not isinstance(action_targets[0][0], livelex.action.DynamicAction)
+            and not any(isinstance(target, livelex.target.DynamicTarget)
+                            for target in action_targets[0][1:])):
+            needle = livelex.regex.to_string(patterns[0])
+            if needle:
+                l= len(needle)
+                action_target = action_targets[0]
+                if default_action:
+                    def parse(text, pos):
+                        """Parse text, using a default action for unknown text."""
+                        while True:
+                            i = text.find(needle, pos)
+                            if i > pos:
+                                yield pos, text[pos:i], None, default_action
+                            elif i == -1:
+                                break
+                            yield (i, needle, None, *action_target)
+                            pos = i + l
+                        if pos < len(text):
+                            yield pos, text[pos:], None, default_action
+                elif default_target:
+                    def parse(text, pos):
+                        """Parse text, stopping with the default target at unknown text."""
+                        while True:
+                            if needle == text[pos:pos+l]:
+                                yield (pos, needle, None, *action_target)
+                                pos += l
+                            else:
+                                yield (pos, "", None, None, *default_target)
+                                break
+                else:
+                    def parse(text, pos):
+                        """Parse text, skipping unknown text."""
+                        while True:
+                            i = text.find(needle, pos)
+                            if i == -1:
+                                break
+                            yield (i, needle, None, *action_target)
+                            pos = i + l
+                return parse
         # compile the regexp for all patterns
         rx = re.compile("|".join("(?P<g_{0}>{1})".format(i, pattern)
             for i, pattern in enumerate(patterns)), self.re_flags)
