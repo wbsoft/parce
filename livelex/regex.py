@@ -320,17 +320,17 @@ def to_string(expr):
     # handle all escapes, there may be fails, in that case we can't use the expr as string
     pat = (r'\\(?:'
         r'x([0-9a-fA-F]{2})'    # 1 hex
-        r'|([abfnrtv\\])'       # 2 normal escaped character like \n
+        r'|([abfnrtv])'         # 2 normal escaped character like \n
         r'|(\d{1,3})'           # 3 octal , or fail if back ref
         r'|u([0-9a-fA-F]{4})'   # 4 \uxxxx
         r'|U([0-9a-fA-F]{8})'   # 5 \Uxxxxxxxx
-        r'|([\^\$\|\.\(\)\[\]\{\}\+\*\?])'  # special re char that was escaped
+        r'|([\^\$\|\.\(\)\[\]\{\}\+\*\?\\])'  # special re char that was escaped
         r'|)')
     def replace_escapes(m):
         if m.group(1):
             return chr(int(m.group(1), 16))
         elif m.group(2):
-            return chr({'a':7, 'b':8, 'f':12, 'n':10, 'r':13, 't':9, 'v':11, '\\':92}[m.group(2)])
+            return chr({'a':7, 'b':8, 'f':12, 'n':10, 'r':13, 't':9, 'v':11}[m.group(2)])
         elif m.group(3):
             if 0 < int(m.group(3)) <= 99 and not m.group(3).startswith("0"):
                 raise ValueError
