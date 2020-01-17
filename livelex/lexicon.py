@@ -176,13 +176,10 @@ class BoundLexicon:
                 elif default_target:
                     def parse(text, pos):
                         """Parse text, stopping with the default target at unknown text."""
-                        while True:
-                            if needle == text[pos:pos+l]:
-                                yield (pos, needle, None, *action_target)
-                                pos += l
-                            else:
-                                yield (pos, "", None, None, *default_target)
-                                break
+                        while needle == text[pos:pos+l]:
+                            yield (pos, needle, None, *action_target)
+                            pos += l
+                        yield (pos, "", None, None, *default_target)
                 else:
                     def parse(text, pos):
                         """Parse text, skipping unknown text."""
