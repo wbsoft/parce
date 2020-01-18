@@ -69,6 +69,7 @@ class TreeBuilder:
     information anymore, you can throw away the TreeBuilder after use.
 
     """
+    changes = None
 
     start = 0
     end = 0
@@ -145,7 +146,8 @@ class TreeBuilder:
             else:
                 tail = False
 
-        while True:
+        restart = True
+        while restart:
             restart = False
 
             # find the last token before the modified part, we will start parsing
@@ -232,6 +234,34 @@ class TreeBuilder:
                                 done = True
                                 break
                         context.extend(tokens)
+                        # we check for new changes here, so we always have tokens
+                        # in the current context
+                        if self.changes:
+                            c = self.get_changes()
+                            if c:
+                                # break out and adjust the current tokenizing process
+                                text = c.text
+                                start = c.position
+                                head = start > 0
+                                if c.root_lexicon != False:
+                                    self.root.lexicon = c.root_lexicon
+                                    head = tail = False
+                                elif tail:
+                                    # reuse old tail?
+                                    new_tail_pos = start + c.added
+                                    if new_tail_pos >= len(text):
+                                        tail = False
+                                    else:
+                                        offset += c.added - c.removed
+                                        tail_pos += offset
+                                        if new_tail_pos > tail_pos:
+                                            for tail_token, tail_pos in tail_gen:
+                                                if tail_pos >= new_tail_pos:
+                                                    break
+                                            else:
+                                                tail = False
+                                restart = done = True
+                                break # restart at new start position
                     if target:
                         context = self.update_context(context, target)
                         break # continue with new context
@@ -239,8 +269,6 @@ class TreeBuilder:
                     end_parse = len(text)
                     self.unwind(context)
                     break
-            if not restart:
-                break
         self.start, self.end = start_parse, end_parse
 
     def unwind(self, context):
