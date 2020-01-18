@@ -34,6 +34,7 @@ thread.
 """
 
 
+import sys
 import contextlib
 import itertools
 import threading
@@ -146,6 +147,7 @@ class TreeBuilder:
             else:
                 tail = False
 
+        lowest_start = sys.maxsize
         restart = True
         while restart:
             restart = False
@@ -186,16 +188,15 @@ class TreeBuilder:
 
             if head:
                 # remove the start token and all tokens to the right
-                start_parse = start_token.pos
+                pos = start_token.pos
                 context = start_token.parent
                 start_token.cut()
             else:
-                start_parse = 0
+                pos = lowest_start = 0
                 context = self.root
                 context.clear()
 
             # start parsing
-            pos = start_parse
             done = False
             while not done:
                 for pos, tokens, target in self.parse_context(context, text, pos):
@@ -205,10 +206,10 @@ class TreeBuilder:
                             if (start_token_index + len(tokens) <= len(start_tokens) and
                                 all(new.equals(old)
                                     for old, new in zip(start_tokens[start_token_index:], tokens))):
-                                start_parse = pos
+                                lowest_start = min(lowest_start, pos)
                                 start_token_index += len(tokens)
                             else:
-                                start_parse = tokens[0].pos
+                                lowest_start = min(lowest_start, tokens[0].pos)
                                 head = False    # stop looking further
                         if tail:
                             if tokens[0].pos > tail_pos:
@@ -230,7 +231,7 @@ class TreeBuilder:
                                         t.pos += offset
                                 # add the old tokens to the current context
                                 tail_token.join(context)
-                                end_parse = tail_pos
+                                end = tail_pos
                                 done = True
                                 break
                         context.extend(tokens)
@@ -266,10 +267,10 @@ class TreeBuilder:
                         context = self.update_context(context, target)
                         break # continue with new context
                 else:
-                    end_parse = len(text)
+                    end = len(text)
                     self.unwind(context)
                     break
-        self.start, self.end = start_parse, end_parse
+        self.start, self.end = lowest_start, end
 
     def unwind(self, context):
         """Recursively remove the context from its parent if empty.
