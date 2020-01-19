@@ -29,6 +29,11 @@ import re
 from livelex import *
 
 
+RE_LILYPOND_ID_RIGHT_BOUND = r"(?![_-]?[^\W\d])"
+
+
+
+
 class LilyPond(Language):
 
     @lexicon
@@ -42,6 +47,20 @@ class LilyPond(Language):
         yield r'%', Comment, cls.singleline_comment
         yield r'"', String, cls.string
         yield r'#', Delimiter.SchemeStart, cls.scheme
+        yield r"(\\markup(?:lines|list)?)\s*?(\{)", bygroup(Keyword, Delimiter.OpenBrace), cls.markup_environ
+        yield r"\\markup(lines|list)?" + RE_LILYPOND_ID_RIGHT_BOUND, Keyword, cls.markup
+
+    @lexicon
+    def markup_environ(cls):
+        """Markup until } ."""
+        yield r'\}', Delimiter.CloseBrace, -1
+        
+        #TODO
+    
+    @lexicon
+    def markup(cls):
+        """Markup without environment..."""
+        
 
     
     # -------------- Scheme ---------------------
