@@ -232,7 +232,7 @@ class MatchAction(PredicateAction):
         return self.predicate(match)
 
 
-class TextAction(DynamicAction):
+class TextAction(PredicateAction):
     """Expects a function as argument that is called with the matched text.
 
     The function should return the index indicating the action to return.
