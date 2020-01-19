@@ -31,6 +31,37 @@ class Scheme(Language):
         """Pick one thing and pop back."""
         # temp
         yield r'\d+', Number, -1
+        yield r'"', String, -1, cls.string
+        yield r';', Comment, -1, cls.singleline_comment
+        yield r'#!', Comment, -1, cls.multiline_comment
+
+    # -------------- String ---------------------
+    @lexicon
+    def string(cls):
+        yield r'"', String, -1
+        yield from cls.string_common()
+
+    @classmethod
+    def string_common(cls):
+        yield r'\\[\\"]', String.Escape
+        yield default_action, String
+
+    # -------------- Comment ---------------------
+    @lexicon
+    def multiline_comment(cls):
+        yield r'!#', Comment, -1
+        yield from cls.comment_common()
+
+    @lexicon(re_flags=re.MULTILINE)
+    def singleline_comment(cls):
+        yield from cls.comment_common()
+        yield r'$', Comment, -1
+
+    @classmethod
+    def comment_common(cls):
+        yield default_action, Comment
+
+
 
 
 
