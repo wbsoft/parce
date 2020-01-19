@@ -23,7 +23,7 @@ ChangeLog of the Python livelex package
 - Much more documention in code
 - Tree construction and partial rebuild very robust now
 - Standard actions defined
-- add lang/xml.py as a skectch how to implement a language with lexicons
+- add lang/xml.py as a sketch how to implement a language with lexicons
 - Full api in livelex.*
 - experimental QtDocument, implementing TreeDocument around a QTextDocument
 - Improvements in tree navigation and iteration speed
