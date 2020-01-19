@@ -60,7 +60,7 @@ class Scheme(Language):
         """Pick one thing and pop back."""
         yield r"['`,]", Delimiter.Scheme.Quote
         yield r"\(", Delimiter.OpenParen, -1, cls.list
-        yield r"#\(", Delimiter.Vector.Start, -1, cls.vector
+        yield r"#\(", Delimiter.OpenVector, -1, cls.vector
         yield r'"', String, -1, cls.string
         yield r';', Comment, -1, cls.singleline_comment
         yield r'#!', Comment, -1, cls.multiline_comment
