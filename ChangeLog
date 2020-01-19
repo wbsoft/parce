@@ -2,6 +2,15 @@ ChangeLog of the Python livelex package
 =======================================
 
 
+2020-01-??: livelex-0.3.0
+
+- fixed util.merge_adjacent_tokens()
+- optimize: when there is only one rule in a lexicon and the pattern does not
+  use regexp classes or qualifiers, and there are no dynamic actions or
+  targets that depend on a match object; convert it to a string and use
+  str.find instead of re.search.
+
+
 2020-01-15: livelex-0.2.0
 
 - API added to tokenize in background thread
@@ -25,7 +34,7 @@ ChangeLog of the Python livelex package
 
 - Lots of new stuff, document, tree structure etc, old lexer gone
 - test/validation functions
-- Fix missing parentheses around two-character expression, e.g. when creating a 
+- Fix missing parentheses around two-character expression, e.g. when creating a
   regexp from ['a', 'abc']
 
 
