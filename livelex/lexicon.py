@@ -150,6 +150,20 @@ class BoundLexicon:
                     pattern = pattern.build()
                 patterns.append(pattern)
                 action_targets.append((action, *target))
+
+        if not patterns:
+            if default_action:
+                def parse(text, pos):
+                    yield pos, text[pos:], None, default_action
+            elif default_target:
+                def parse(text, pos):
+                    yield (pos, "", None, None, *default_target)
+            else:
+                # just quits parsing
+                def parse(text, pos):
+                    yield from ()
+            return parse
+
         # if there is only one pattern, and no dynamic action or target,
         # see if the pattern is simple enough to just use str.find
         if (len(patterns) == 1
