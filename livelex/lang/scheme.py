@@ -56,22 +56,6 @@ class Scheme(Language):
         yield r'[^()"{}\s]+', cls.get_word_action()
 
     @lexicon
-    def one_arg(cls):
-        """Pick one thing and pop back."""
-        yield r"['`,]", Delimiter.Scheme.Quote
-        yield r"\(", Delimiter.OpenParen, -1, cls.list
-        yield r"#\(", Delimiter.OpenVector, -1, cls.vector
-        yield r'"', String, -1, cls.string
-        yield r';', Comment, -1, cls.singleline_comment
-        yield r'#!', Comment, -1, cls.multiline_comment
-        yield RE_SCHEME_FRACTION, Number.Fraction, -1
-        yield RE_SCHEME_FLOAT, Number.Float, -1
-        yield RE_SCHEME_NUMBER, Number, -1
-        yield r"#[tf]\b", Boolean, -1
-        yield r"#\\([a-z]+|.)", Char, -1
-        yield r'[^()"{}\s]+', cls.get_word_action(), -1
-        
-    @lexicon
     def list(cls):
         yield r"\)", Delimiter.CloseParen, -1
         yield from cls.common()
@@ -86,10 +70,8 @@ class Scheme(Language):
         """Return a dynamic action that is chosen based on the text."""
         def test(text):
             from . import scheme_words
-            if text in scheme_words.keywords:
-                return 0
-            return 1
-        return bytext(test, Keyword, Name)
+            return text in scheme_words.keywords
+        return bytext(test, Name, Keyword)
 
         
     # -------------- String ---------------------
@@ -117,4 +99,29 @@ class Scheme(Language):
     @classmethod
     def comment_common(cls):
         yield default_action, Comment
+
+
+class SchemeLily(Scheme):
+    """Scheme used with LilyPond."""
+    @lexicon
+    def one_arg(cls):
+        """Pick one thing and pop back."""
+        yield r"['`,]", Delimiter.Scheme.Quote
+        yield r"\(", Delimiter.OpenParen, -1, cls.list
+        yield r"#\(", Delimiter.OpenVector, -1, cls.vector
+        yield r'"', String, -1, cls.string
+        yield r';', Comment, -1, cls.singleline_comment
+        yield r'#!', Comment, -1, cls.multiline_comment
+        yield RE_SCHEME_FRACTION, Number.Fraction, -1
+        yield RE_SCHEME_FLOAT, Number.Float, -1
+        yield RE_SCHEME_NUMBER, Number, -1
+        yield r"#[tf]\b", Boolean, -1
+        yield r"#\\([a-z]+|.)", Char, -1
+        yield r'[^()"{}\s]+', cls.get_word_action(), -1
+        
+    @classmethod
+    def common(cls):
+        yield from super().common()
+        from . import lilypond
+        yield r"#{", Delimiter.LilyPond, lilypond.LilyPond.schemelily
 

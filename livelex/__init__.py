@@ -57,6 +57,7 @@ Boolean = Literal.Boolean
 Char = Literal.Char
 Operator = Delimiter.Operator
 Builtin = Name.Builtin
+Function = Name.Function
 Variable = Name.Variable
 
 

@@ -97,7 +97,7 @@ class BoundLexicon:
 
     def __call__(self):
         """Call the original function, yielding the rules."""
-        return self.lexicon.rules_func(self.language)
+        return self.lexicon.rules_func(self.language) or ()
 
     def __repr__(self):
         return self.name()
