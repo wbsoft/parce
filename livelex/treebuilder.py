@@ -165,8 +165,10 @@ class TreeBuilder:
                         # could be made. In very particular cases a longer token
                         # could be found. (That's why we tried to go back to a
                         # newline.)
-                        for start_token in itertools.islice(start_token.backward(), 10):
+                        gen = start_token.backward()
+                        for start_token in itertools.islice(gen, 9):
                             pass
+                        start_token = next(gen, None)
                 if start_token:
                     # don't start in the middle of a group, as they originate from
                     # one single regexp match
