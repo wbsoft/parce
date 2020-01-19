@@ -188,11 +188,11 @@ class TreeBuilder:
 
             if head:
                 # remove the start token and all tokens to the right
-                pos = start_token.pos
+                pos = start = start_token.pos
                 context = start_token.parent
                 start_token.cut()
             else:
-                pos = lowest_start = 0
+                pos = start = lowest_start = 0
                 context = self.root
                 context.clear()
 
@@ -202,14 +202,14 @@ class TreeBuilder:
                 for pos, tokens, target in self.parse_context(context, text, pos):
                     if tokens:
                         if head:
-                            # move start_parse if the tokens before start didn't change
+                            # move start if the tokens before start didn't change
                             if (start_token_index + len(tokens) <= len(start_tokens) and
                                 all(new.equals(old)
                                     for old, new in zip(start_tokens[start_token_index:], tokens))):
-                                lowest_start = min(lowest_start, pos)
+                                start = pos
                                 start_token_index += len(tokens)
                             else:
-                                lowest_start = min(lowest_start, tokens[0].pos)
+                                start = tokens[0].pos
                                 head = False    # stop looking further
                         if tail:
                             if tokens[0].pos > tail_pos:
@@ -270,7 +270,7 @@ class TreeBuilder:
                     end = len(text)
                     self.unwind(context)
                     break
-        self.start, self.end = lowest_start, end
+        self.start, self.end = min(start, lowest_start), end
 
     def unwind(self, context):
         """Recursively remove the context from its parent if empty.
