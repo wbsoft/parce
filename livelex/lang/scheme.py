@@ -23,18 +23,72 @@ import re
 
 from livelex import *
 
+RE_SCHEME_NUMBER = (
+    r"("
+    r"-?\d+|"
+    r"#(b[0-1]+|o[0-7]+|x[0-9a-fA-F]+)|"
+    r"[-+]inf.0|[-+]?nan.0"
+    r")(?=$|[)\s])"
+)
 
 class Scheme(Language):
+    @lexicon
+    def root(cls):
+        yield from cls.common()
     
+    @classmethod
+    def common(cls):
+        yield r"['`,]", Delimiter.Scheme.Quote
+        yield r"\(", Delimiter.OpenParen, cls.list
+        yield r"#\(", Delimiter.OpenVector, cls.vector
+        yield r'"', String, cls.string
+        yield r';', Comment, cls.singleline_comment
+        yield r'#!', Comment, cls.multiline_comment
+        yield r"-?\d+/\d+(?=$|[)\s])", Number.Fraction
+        yield r"-?((\d+(\.\d*)|\.\d+)(E\d+)?)(?=$|[)\s])", Number.Float
+        yield RE_SCHEME_NUMBER, Number
+        yield r"\.(?!\S)", Delimiter.Dot
+        yield r"#[tf]\b", Boolean
+        yield r"#\\([a-z]+|.)", Char
+        yield r'[^()"{}\s]+', cls.get_word_action()
+
     @lexicon
     def one_arg(cls):
         """Pick one thing and pop back."""
-        # temp
-        yield r'\d+', Number, -1
+        yield r"['`,]", Delimiter.Scheme.Quote
+        yield r"\(", Delimiter.OpenParen, -1, cls.list
+        yield r"#\(", Delimiter.Vector.Start, -1, cls.vector
         yield r'"', String, -1, cls.string
         yield r';', Comment, -1, cls.singleline_comment
         yield r'#!', Comment, -1, cls.multiline_comment
+        yield r"-?\d+/\d+(?=$|[)\s])", Number.Fraction, -1
+        yield r"-?((\d+(\.\d*)|\.\d+)(E\d+)?)(?=$|[)\s])", Number.Float, -1
+        yield RE_SCHEME_NUMBER, Number, -1
+        yield r"#[tf]\b", Boolean, -1
+        yield r"#\\([a-z]+|.)", Char, -1
+        yield r'[^()"{}\s]+', cls.get_word_action(), -1
+        
+    @lexicon
+    def list(cls):
+        yield r"\)", Delimiter.CloseParen, -1
+        yield from cls.common()
+        
+    @lexicon
+    def vector(cls):
+        yield r"\)", Delimiter.CloseVector, -1
+        yield from cls.common()
+        
+    @classmethod
+    def get_word_action(cls):
+        """Return a dynamic action that is chosen based on the text."""
+        def test(text):
+            from . import scheme_words
+            if text in scheme_words.keywords:
+                return 0
+            return 1
+        return bytext(test, Keyword, Name)
 
+        
     # -------------- String ---------------------
     @lexicon
     def string(cls):
