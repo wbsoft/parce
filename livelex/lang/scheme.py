@@ -23,12 +23,15 @@ import re
 
 from livelex import *
 
+RE_SCHEME_RIGHT_BOUND = r"(?=$|[)\s])"
+RE_SCHEME_FRACTION = r"-?\d+/\d+" + RE_SCHEME_RIGHT_BOUND
+RE_SCHEME_FLOAT = r"-?((\d+(\.\d*)|\.\d+)(E\d+)?)" + RE_SCHEME_RIGHT_BOUND
 RE_SCHEME_NUMBER = (
     r"("
     r"-?\d+|"
     r"#(b[0-1]+|o[0-7]+|x[0-9a-fA-F]+)|"
     r"[-+]inf.0|[-+]?nan.0"
-    r")(?=$|[)\s])"
+    r")" + RE_SCHEME_RIGHT_BOUND
 )
 
 class Scheme(Language):
@@ -44,8 +47,8 @@ class Scheme(Language):
         yield r'"', String, cls.string
         yield r';', Comment, cls.singleline_comment
         yield r'#!', Comment, cls.multiline_comment
-        yield r"-?\d+/\d+(?=$|[)\s])", Number.Fraction
-        yield r"-?((\d+(\.\d*)|\.\d+)(E\d+)?)(?=$|[)\s])", Number.Float
+        yield RE_SCHEME_FRACTION, Number.Fraction
+        yield RE_SCHEME_FLOAT, Number.Float
         yield RE_SCHEME_NUMBER, Number
         yield r"\.(?!\S)", Delimiter.Dot
         yield r"#[tf]\b", Boolean
@@ -61,8 +64,8 @@ class Scheme(Language):
         yield r'"', String, -1, cls.string
         yield r';', Comment, -1, cls.singleline_comment
         yield r'#!', Comment, -1, cls.multiline_comment
-        yield r"-?\d+/\d+(?=$|[)\s])", Number.Fraction, -1
-        yield r"-?((\d+(\.\d*)|\.\d+)(E\d+)?)(?=$|[)\s])", Number.Float, -1
+        yield RE_SCHEME_FRACTION, Number.Fraction, -1
+        yield RE_SCHEME_FLOAT, Number.Float, -1
         yield RE_SCHEME_NUMBER, Number, -1
         yield r"#[tf]\b", Boolean, -1
         yield r"#\\([a-z]+|.)", Char, -1
@@ -114,8 +117,4 @@ class Scheme(Language):
     @classmethod
     def comment_common(cls):
         yield default_action, Comment
-
-
-
-
 
