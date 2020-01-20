@@ -190,7 +190,7 @@ class Query:
                 if n.is_context:
                     yield n
         return Query(gen)
-        
+
     def lex(self, *lexicons):
         """Yield those contexts that have one of the specified lexicons."""
         def gen():
