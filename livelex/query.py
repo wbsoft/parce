@@ -24,7 +24,20 @@ An experimental query module.
 """
 
 
+import functools
+import re
 import sys
+
+
+def query(func):
+    @functools.wraps(func)
+    def wrapper(self, *args, **kwargs):
+        return Query(lambda: func(self, *args, **kwargs))
+    return wrapper
+
+
+def pquery(func):
+    return property(query(func))
 
 
 class Query:
@@ -34,6 +47,7 @@ class Query:
     def __iter__(self):
         return self.gen()
 
+    # end points
     def count(self):
         """Compute the length of the iterable. Don't use this other than for debugging."""
         return sum(1 for _ in self)
@@ -47,178 +61,209 @@ class Query:
         """Return the current selection as a list. Only for debugging."""
         return list(self)
 
-    @property
+    def pick(self, default=None):
+        """Pick the first value, or return the default."""
+        for n in self:
+            return n
+        return default
+
+    # navigators
+    @pquery
     def children(self):
         """All direct children of the current nodes."""
-        def gen():
-            for n in self:
-                if n.is_context:
-                    yield from n
-        return Query(gen)
+        for n in self:
+            if n.is_context:
+                yield from n
 
-    @property
+    @pquery
     def all(self):
         """All descendants, contexts and their nodes."""
-        def gen():
-            def innergen(node):
-                for n in node:
-                    yield n
-                    if n.is_context:
-                        yield from innergen(n)
-            return innergen(self)
-        return Query(gen)
+        def innergen(node):
+            for n in node:
+                yield n
+                if n.is_context:
+                    yield from innergen(n)
+        return innergen(self)
 
-    @property
+    @pquery
     def parent(self):
-        def gen():
-            for n in self:
-                if n.parent:
-                    yield n.parent
-        return Query(gen)
+        for n in self:
+            if n.parent:
+                yield n.parent
 
-    @property
+    @pquery
     def uniq(self):
         """Remove double occurrences. Can happen when you use the parent."""
         seen = set()
-        def gen():
-            for n in self:
-                i = id(n)
-                if i not in seen:
-                    seen.add(i)
-                    yield n
-        return Query(gen)
+        for n in self:
+            i = id(n)
+            if i not in seen:
+                seen.add(i)
+                yield n
 
-    @property
+    @pquery
     def next(self):
         """Return the next token, if any."""
-        def gen():
-            for n in self:
-                n = n.right_sibling()
-                if n:
-                    if n.is_context:
-                        yield n.first_token()
-                    else:
-                        yield n
-        return Query(gen)
+        for n in self:
+            n = n.right_sibling()
+            if n:
+                if n.is_context:
+                    yield n.first_token()
+                else:
+                    yield n
 
-    @property
+    @pquery
     def prev(self):
         """Return the previous token, if any."""
-        def gen():
-            for n in self:
-                n = n.left_sibling()
-                if n:
-                    if n.is_context:
-                        yield n.last_token()
-                    else:
-                        yield n
-        return Query(gen)
+        for n in self:
+            n = n.left_sibling()
+            if n:
+                if n.is_context:
+                    yield n.last_token()
+                else:
+                    yield n
 
-    @property
+    @pquery
     def right(self):
         """Return the right sibling, if any."""
-        def gen():
-            for n in self:
-                n = n.right_sibling()
-                if n:
-                    yield n
-        return Query(gen)
+        for n in self:
+            n = n.right_sibling()
+            if n:
+                yield n
 
-    @property
+    @pquery
     def left(self):
         """Return the left sibling, if any."""
-        def gen():
-            for n in self:
-                n = n.left_sibling()
-                if n:
-                    yield n
-        return Query(gen)
+        for n in self:
+            n = n.left_sibling()
+            if n:
+                yield n
 
     # selectors
+    @query
     def __call__(self, text, match=True):
         """('text') matches if token has that text, or not if match is False."""
         if not match:
-            def gen():
-                for t in _tokens(self):
-                    if t.is_token and t.text != text:
-                        yield t
+            for t in self:
+                if t.is_token and t.text != text:
+                    yield t
         else:
-            def gen():
-                for t in _tokens(self):
-                    if t.is_token and t.text == text:
-                        yield t
-        return Query(gen)
+            for t in self:
+                if t.is_token and t.text == text:
+                    yield t
 
+    @query
+    def startingwith(self, text):
+        for t in self:
+            if t.is_token and t.text.startswith(text):
+                yield t
+
+    @query
+    def not_startingwith(self, text):
+        for t in self:
+            if t.is_token and not t.text.startswith(text):
+                yield t
+
+    @query
+    def endingwith(self, text):
+        for t in self:
+            if t.is_token and t.text.endswith(text):
+                yield t
+
+    @query
+    def not_endingwith(self, text):
+        for t in self:
+            if t.is_token and not t.text.endswith(text):
+                yield t
+
+    @query
+    def containing(self, text):
+        """Yield tokens that contain the specified text."""
+        for t in self:
+            if t.is_token and text in t.text:
+                yield t
+
+    @query
+    def not_containing(self, text):
+        """Yield tokens that contain the specified text."""
+        for t in self:
+            if t.is_token and text not in t.text:
+                yield t
+
+    @query
     def __getitem__(self, key):
         """normal slicing, and you can test for one or more actions."""
         if isinstance(key, int):
-            def gen():
-                for n in self:
-                    if n.is_context and key < len(n):
-                        yield n[key]
-        elif isinstance(key, slice):
-            def gen():
-                for n in self:
-                    if n.is_context:
-                        yield from n[key]
-        elif isinstance(key, tuple):
-            def gen():
-                for t in self:
-                    if t.is_token and t.action in key:
-                        yield t
-        else:
-            def gen():
-                for t in self:
-                    if t.is_token and t.action is key:
-                        yield t
-        return Query(gen)
-
-    @property
-    def tokens(self):
-        """Get only the tokens."""
-        def gen():
             for n in self:
-                if n.is_token:
-                    yield n
-        return Query(gen)
-
-    @property
-    def contexts(self):
-        """Get only the contexts."""
-        def gen():
+                if n.is_context and key < len(n):
+                    yield n[key]
+        elif isinstance(key, slice):
             for n in self:
                 if n.is_context:
-                    yield n
-        return Query(gen)
+                    yield from n[key]
+        elif isinstance(key, tuple):
+            for t in self:
+                if t.is_token and t.action in key:
+                    yield t
+        else:
+            for t in self:
+                if t.is_token and t.action is key:
+                    yield t
 
+    @pquery
+    def tokens(self):
+        """Get only the tokens."""
+        for n in self:
+            if n.is_token:
+                yield n
+
+    @pquery
+    def contexts(self):
+        """Get only the contexts."""
+        for n in self:
+            if n.is_context:
+                yield n
+
+    @query
     def action_in(self, *actions):
         """Yield those tokens whose action is or inherits from one of the given actions."""
-        def gen():
-            for t in self:
-                if t.is_token and any(t.action in a for a in actions):
-                    yield t
-        return Query(gen)
+        for t in self:
+            if t.is_token and any(t.action in a for a in actions):
+                yield t
 
-    def lex(self, *lexicons):
+    @query
+    def lexicon_in(self, *lexicons):
         """Yield those contexts that have one of the specified lexicons."""
-        def gen():
-            for n in self:
-                if n.is_context and n.lexicon in lexicons:
-                    yield n
-        return Query(gen)
+        for n in self:
+            if n.is_context and n.lexicon in lexicons:
+                yield n
 
+    @query
     def range(self, start=0, end=None):
         """Yield a restricted set, tokens and/or contexts must fall in start→end"""
         if end is None:
             end = sys.maxsize
-        def gen():
-            it = iter(self)
+        it = iter(self)
+        for n in it:
+            if n.pos < start:
+                continue
             for n in it:
-                if n.pos < start:
-                    continue
-                for n in it:
-                    if n.end > end:
-                        return
-                    yield n
-        return Query(gen)
+                if n.end > end:
+                    return
+                yield n
+
+    @query
+    def matching(self, pattern, flags=0):
+        """Yield tokens matching the regular expression (using re.search)."""
+        for t in self:
+            if t.is_token and re.search(pattern, t.text, flags):
+                yield t
+
+    @query
+    def not_matching(self, pattern, flags=0):
+        """Yield tokens matching the regular expression (using re.search)."""
+        for t in self:
+            if t.is_token and not re.search(pattern, t.text, flags):
+                yield t
+
 

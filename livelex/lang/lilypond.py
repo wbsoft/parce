@@ -45,6 +45,7 @@ class LilyPond(Language):
         yield from cls.blocks()
         yield RE_LILYPOND_VARIABLE, Variable, cls.varname
         yield "=", Operator.Assignment
+        yield r"\\version\b", Keyword
 
     @classmethod
     def blocks(cls):
