@@ -156,16 +156,16 @@ class Query:
                 for n in self:
                     if n.is_context and key < len(n):
                         yield n[key]
-        elif isinstance(key, tuple):
-            def gen():
-                for t in self:
-                    if t.is_token and t.action in key:
-                        yield t
         elif isinstance(key, slice):
             def gen():
                 for n in self:
                     if n.is_context:
                         yield from n[key]
+        elif isinstance(key, tuple):
+            def gen():
+                for t in self:
+                    if t.is_token and t.action in key:
+                        yield t
         else:
             def gen():
                 for t in self:
