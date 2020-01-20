@@ -682,6 +682,28 @@ class Context(list, NodeMixin):
                 node = node[i]
             yield node  # == end_token
 
+    def find_tokens_by_action(self, action, start=0, end=None):
+        """Yield tokens that have specified action, optionally within range."""
+        for t in self.tokens_range(start, end):
+            if t.action == action:
+                yield t
+
+    def find_contexts_by_lexicon(self, lexicon, descend=False):
+        """Yield contexts that have specified lexicon.
+
+        If descend is False (the default), does not descend into contexts
+        that have the specified lexicon. If True, the parent context is
+        yielded first.
+
+        """
+        if self.lexicon == lexicon:
+            yield self
+            if not descend:
+                return
+        for n in self:
+            if n.is_context:
+                yield from n.find_contexts_by_lexicon(lexicon, descend)
+
 
 def tokens(nodes):
     """Helper to yield tokens from the iterable of nodes."""
