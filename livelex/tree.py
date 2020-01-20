@@ -52,6 +52,7 @@ import sys
 import itertools
 
 from livelex import util
+from livelex import query
 
 
 class NodeMixin:
@@ -726,6 +727,11 @@ class Context(list, NodeMixin):
             for n in self[i:]:
                 if n.is_context and n.pos < end:
                     yield from n.find_contexts_by_lexicon(lexicon, descend, start, end)
+
+    @property
+    def query(self):
+        """Query this node in different ways; see the query module."""
+        return query.Query(self.__iter__)
 
 
 def tokens(nodes):
