@@ -191,6 +191,14 @@ class Query:
                     yield n
         return Query(gen)
 
+    def action_in(self, *actions):
+        """Yield those tokens whose action is or inherits from one of the given actions."""
+        def gen():
+            for t in self:
+                if t.is_token and any(t.action in a for a in actions):
+                    yield t
+        return Query(gen)
+
     def lex(self, *lexicons):
         """Yield those contexts that have one of the specified lexicons."""
         def gen():
