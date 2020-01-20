@@ -136,16 +136,16 @@ class Query:
 
     # selectors
     def __call__(self, text, match=True):
-        """('text') matches if token matches text, or not if match is False."""
+        """('text') matches if token has that text, or not if match is False."""
         if not match:
             def gen():
                 for t in _tokens(self):
-                    if t.is_token and text not in t.text:
+                    if t.is_token and t.text != text:
                         yield t
         else:
             def gen():
                 for t in _tokens(self):
-                    if t.is_token and text in t.text:
+                    if t.is_token and t.text == text:
                         yield t
         return Query(gen)
 
