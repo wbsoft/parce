@@ -21,12 +21,159 @@
 """
 An experimental query module.
 
+
+Using this module you can query the token tree to find tokens and contexts,
+based on lexicons and/or actions and text contents. You can chain calls
+in a XPath-like fashion.
+
+This module supplements the various find_xxx methods of every Context object.
+After iterating the three with this query module, you will probably still
+use the other navigational possibilities of the tree structure. Also depending
+on the design of the Language structure.
+
+The basic query starts at the `query` property of a Context object, which
+selects all the nodes of that Context.
+
+Then you can narrow down the search using `tokens`, `contexts`, `('text')`
+or `(lexicon)`, `startingwith`, `endingwith`, `containing`, `matching`, `uniq`,
+`in_action`,  `in_lexicon`, and the corresponding `not_` counterparts, and
+__getitem__and `is_not`.
+
+You can navicate using `children`, `all`, `next`, `prev`, `right`, `left`, and
+`parent`.
+
+
+Examples:
+
+Find all tokens that are the first child of a Context with bla lexicon:
+
+    root.query.all(MyLang.bla)[0]
+
+
+Find (in Xml) all attributes with name 'name' that are in a <bla> tag:
+
+    root.query.all[Name.Tag]("bla").next('name')
+
+
+Find all tags containing "hi" in their text nodes:
+
+    root.query.all[Name.Tag].next.next[Text].containing('hi')
+
+
+A query is a generator, you can iterate over the results. For debugging
+purposes, there are also the list(), pick(), count() and dump() methods.
+
+    for attrs in q.all[Name.Tag]('origin').right:
+        for atts in attrs.query[Name.Attribute]:
+            print(atr)
+
+
+Summary of the query methods:
+
+For debugging:
+
+    count()
+        Just prints the number of results in the result set
+
+    dump()
+        dump()s the full result nodes to stdout
+
+    list()
+        aggregate the results in a list
+
+    pick()
+        just pick the first result, or a default if no results
+
+
+Selecting nodes:
+
+    all
+        select all descandant nodes, depth-first, in order. First it yields the
+        context, then its children.
+
+    children
+        select all the direct children of the current nodes
+
+    parent
+        select the parent of all current nodes. This can yield double
+        occurrences of nodes in the list. (Use uniq to fix that.)
+
+    next, prev
+        select the next or previous token, if any
+
+    right, left
+        select the right or left sibling, if any
+
+    (lexicon), __call__(lexicon)
+        select the Contexts with that lexicon
+
+    has_not(lexicon)
+        select the Contexts that have a different lexicon
+
+    ("text"), __call__("text")
+        select the Tokens with exact that text
+
+    has_not("text")
+        select the Tokens that have different text
+
+    startingwith("text"), not_startingwith("text")
+        select the Tokens that do start (or not) with the specified text
+
+    endingwith("text"), not_endingwith("text")
+        select the Tokens that do end (or not) with the specified text
+
+    containing("text"), not_containing("text")
+        select the Tokens that contain (or not) specified text
+
+    matching("regex"), not_matching("regex")
+        select the Tokens that match (or not) the specified regular epression
+        (using re.search, the expression can match anywhere unless you use
+        ^ or $ characters).
+
+    tokens
+        select only the tokens
+
+    contexts
+        select only the contexts
+
+    range(start=0, end=None)
+        select only the nodes that fully fit in the range
+
+    [int], __getitem__(int)
+        select the nth child (if available) of each Context node
+        (supports negative indices)
+
+    [slice]
+        select the specified slice of each Context node
+
+    [action], [action, action<, action> ...]
+        select the Tokens that have one of the specified actions
+
+    in_action(*actions)
+        select tokens if their action belongs in the realm of one of the
+        specified StandardActions
+
+    not_in_action(*actions)
+        select tokens whose action does not inherit of one of the specified
+        StandardActions
+
+    in_lexicon(*lexicons)
+        somewhat supplemental to (), yield the Context nodes if they
+        have one of the specified lexicons
+
+    not_in_lexicon(*lexicon)
+        select the Context nodes that do not have one of the specified
+        lexicons.
+
+
 """
 
 
 import functools
 import re
 import sys
+
+from .lexicon import BoundLexicon
 
 
 def query(func):
@@ -141,16 +288,28 @@ class Query:
 
     # selectors
     @query
-    def __call__(self, text, match=True):
-        """('text') matches if token has that text, or not if match is False."""
-        if not match:
-            for t in self:
-                if t.is_token and t.text != text:
-                    yield t
+    def __call__(self, what):
+        """Yield token if token has that text, or context if context has that lexicon."""
+        if isinstance(what, BoundLexicon):
+            for n in self:
+                if n.is_context and n.lexicon == what:
+                    yield n
         else:
-            for t in self:
-                if t.is_token and t.text == text:
-                    yield t
+            for n in self:
+                if n.is_token and n.text == what:
+                    yield n
+
+    @query
+    def has_not(self, what):
+        """Opposite of __call__()."""
+        if isinstance(what, BoundLexicon):
+            for n in self:
+                if n.is_context and n.lexicon != what:
+                    yield n
+        else:
+            for n in self:
+                if n.is_token and n.text != what:
+                    yield n
 
     @query
     def startingwith(self, text):
@@ -195,8 +354,11 @@ class Query:
         """normal slicing, and you can test for one or more actions."""
         if isinstance(key, int):
             for n in self:
-                if n.is_context and key < len(n):
-                    yield n[key]
+                if n.is_context:
+                    if key < 0:
+                        key += len(n)
+                    if 0 <= key < len(n):
+                        yield n[key]
         elif isinstance(key, slice):
             for n in self:
                 if n.is_context:
@@ -210,6 +372,13 @@ class Query:
                 if t.is_token and t.action is key:
                     yield t
 
+    @query
+    def is_not(self, *actions):
+        """The opposite of [action<, action, ...>]."""
+        for t in self:
+            if t.is_token and t.action not in actions:
+                yield d
+
     @pquery
     def tokens(self):
         """Get only the tokens."""
@@ -222,20 +391,6 @@ class Query:
         """Get only the contexts."""
         for n in self:
             if n.is_context:
-                yield n
-
-    @query
-    def action_in(self, *actions):
-        """Yield those tokens whose action is or inherits from one of the given actions."""
-        for t in self:
-            if t.is_token and any(t.action in a for a in actions):
-                yield t
-
-    @query
-    def lexicon_in(self, *lexicons):
-        """Yield those contexts that have one of the specified lexicons."""
-        for n in self:
-            if n.is_context and n.lexicon in lexicons:
                 yield n
 
     @query
@@ -265,5 +420,33 @@ class Query:
         for t in self:
             if t.is_token and not re.search(pattern, t.text, flags):
                 yield t
+
+    @query
+    def in_action(self, *actions):
+        """Yield those tokens whose action is or inherits from one of the given actions."""
+        for t in self:
+            if t.is_token and any(t.action in a for a in actions):
+                yield t
+
+    @query
+    def not_in_action(self, *actions):
+        """Yield those tokens whose action is not and does not inherit from one of the given actions."""
+        for t in self:
+            if t.is_token and not any(t.action in a for a in actions):
+                yield t
+
+    @query
+    def in_lexicon(self, *lexicons):
+        """Yield those contexts that have one of the specified lexicons."""
+        for n in self:
+            if n.is_context and n.lexicon in lexicons:
+                yield n
+
+    @query
+    def not_in_lexicon(self, *lexicons):
+        """Yield those contexts that have not any of the specified lexicons."""
+        for n in self:
+            if n.is_context and n.lexicon not in lexicons:
+                yield n
 
 
