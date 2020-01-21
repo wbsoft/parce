@@ -132,9 +132,6 @@ Selecting (filtering) nodes:
     These methods filter out current nodes without adding new nodes
     to the selection.
 
-    range(start=0, end=None)
-        select only the nodes that fully fit in the text range
-
     tokens
         select only the tokens
 
@@ -157,6 +154,11 @@ Selecting (filtering) nodes:
         inverts the meaning of the following query, e.g. is_not.startingwith()
 
     The following query methods are inverted by `is_not`:
+
+    in_range(start=0, end=None)
+        select only the nodes that fully fit in the text range. If preceded
+        by `is_not`, selects the nodes that are outside the specified text
+        range.
 
     (lexicon, [lexicon, ...])
         select the Contexts with that lexicon (or one of the lexicons)
@@ -350,7 +352,7 @@ class Query:
             if n.is_context:
                 yield n
 
-    # invertable selectors
+    # invertible selectors
     @query
     def in_range(self, start=0, end=None):
         """Yield a restricted set, tokens and/or contexts must fall in start→end"""
@@ -402,7 +404,7 @@ class Query:
     @query
     def __getitem__(self, key):
         """normal slicing, and you can test for one or more actions."""
-        # slicing or itemgetting with integers are not invertable selectors
+        # slicing or itemgetting with integers are not invertible selectors
         if isinstance(key, int):
             for n in self:
                 if n.is_context:
@@ -414,7 +416,7 @@ class Query:
             for n in self:
                 if n.is_context:
                     yield from n[key]
-        # handle matching actions, this is invertable by is_not
+        # handle matching actions, this is invertible by is_not
         elif isinstance(key, tuple):
             for t in self:
                 if t.is_token and self._inv ^ (t.action in key):
