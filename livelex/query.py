@@ -212,6 +212,8 @@ def pquery(func):
 
 
 class Query:
+    __slots__ = '_gen', '_inv'
+
     def __init__(self, gen, invert=False):
         self._gen = gen
         self._inv = invert
@@ -222,7 +224,7 @@ class Query:
     @property
     def is_not(self):
         """Invert the next query."""
-        return Query(self._gen, True)
+        return Query(self._gen, not self._inv)
 
     # end points
     def count(self):
