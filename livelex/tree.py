@@ -708,50 +708,6 @@ class Context(list, NodeMixin):
                 node = node[i]
             yield node  # == end_token
 
-    def find_tokens_by_action(self, action, start=0, end=None):
-        """Yield tokens that have specified action, optionally within range."""
-        for t in self.tokens_range(start, end):
-            if t.action == action:
-                yield t
-
-    def find_tokens_in_action(self, action, start=0, end=None):
-        """Yield tokens whose action is or inherits from action, optionally within range."""
-        for t in self.tokens_range(start, end):
-            if t.action in action:
-                yield t
-
-    def find_contexts_by_lexicon(self, lexicon, descend=False, start=0, end=None):
-        """Yield contexts that have specified lexicon.
-
-        If descend is False (the default), does not descend into contexts
-        that have the specified lexicon. If True, the parent context is
-        yielded first.
-
-        """
-        if end is None:
-            end = sys.maxsize
-        if start <= self.pos and end >= self.end:
-            if self.lexicon == lexicon:
-                yield self
-                if not descend:
-                    return
-        i = 0
-        if start:
-            hi = len(self)
-            while i < hi:
-                mid = (i + hi) // 2
-                n = self[mid]
-                if n.is_context:
-                    n = n.last_token()
-                if n.pos < start:
-                    i = mid + 1
-                else:
-                    hi = mid
-        if i < len(self):
-            for n in self[i:]:
-                if n.is_context and n.pos < end:
-                    yield from n.find_contexts_by_lexicon(lexicon, descend, start, end)
-
     def source(self):
         """Return the first Token, if any, when going to the left from this context.
 
