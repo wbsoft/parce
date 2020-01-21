@@ -2,8 +2,9 @@ ChangeLog of the Python livelex package
 =======================================
 
 
-2020-01-??: livelex-0.3.0
+2020-01-21: livelex-0.3.0
 
+- add query module
 - fixed util.merge_adjacent_tokens()
 - optimize: when there is only one rule in a lexicon and the pattern does not
   use regexp classes or qualifiers, and there are no dynamic actions or
