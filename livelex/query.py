@@ -378,10 +378,15 @@ class Query:
         """Remove nodes that have ancestors in the current node list."""
         ids = set(map(id, self))
         for n in self:
-            for p in n.ancestors():
-                if id(p) in ids:
-                    break
-            else:
+            if not any(id(p) in ids for p in n.ancestors()):
+                yield n
+
+    @pquery
+    def remove_ancestors(self):
+        """Remove nodes that have descendants in the current node list."""
+        ids = set(map(id, self)) & set(map(id, (p for n in self for p in n.ancestors())))
+        for n in self:
+            if id(n) not in ids:
                 yield n
 
     # invertible selectors
