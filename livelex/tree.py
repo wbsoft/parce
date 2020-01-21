@@ -732,7 +732,7 @@ class Context(list, NodeMixin):
     @property
     def query(self):
         """Query this node in different ways; see the query module."""
-        return query.Query(self.__iter__)
+        return query.Query(lambda: (self,))
 
 
 def tokens(nodes):
