@@ -126,6 +126,12 @@ Navigating nodes:
         yield the first resp. the last child of every Context node.
         Same as [0] or [-1].
 
+    target
+        yield the target context for a token, if any. See Token.target().
+
+    source
+        yield the source token for a context, if any. See Context.source().
+
 
 Selecting (filtering) nodes:
 
@@ -186,6 +192,14 @@ Selecting (filtering) nodes:
     in_action(*actions)
         select tokens if their action belongs in the realm of one of the
         specified StandardActions
+
+    remove_ancestors
+        remove Context nodes from the current node list that have descendants
+        in the list.
+
+    remove_descendants
+        remove nodes from the current list if any of their ancestors is also
+        in the list.
 
 
 """

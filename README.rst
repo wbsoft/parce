@@ -2,7 +2,12 @@ The livelex Python module
 =========================
 
 This module parses text into tokens, and is able to reparse only modified parts
-of the text, using the earlier generated tokens.
+of the text, using the earlier generated tokens. Tokenized text lives in a tree
+structure with powerful quering methods for finding tokens and contexts.
+
+The livelex module is designed to be fast, and can tokenize in a background
+thread, so that even when using very large documents, GUI applications that
+need to be responsive do not grind to a halt.
 
 Main use case: syntax highlighting in text editors, but also understanding the
 meaning of text to be able to provided context sensitive editing features.
@@ -59,6 +64,26 @@ previous lexicon, the previous context becomes the current one again.
 
 All tokens and contexts point to their parents, so it is possible to manipulate
 and query the tree structure in various ways.
+
+The structure of the tree is built by the TreeBuilder, see the `tree` and the
+`treebuilder` module. At the root is the Context carrying the root lexicon.
+The root context contains Tokens and/or other Contexts.
+
+The TreeBuilder is capable of tokenizing the text in a background thread and
+also to rebuild just a changed part of the text, smartly reusing earlier
+generated tokens if possible.
+
+
+Iterating and Querying
+----------------------
+
+Both Token and Context have many methods for iterating over the tree, for
+getting at the parent, child or sibling nodes. Context has various find()
+methods to quickly find a token or context at a certain position in the text.
+
+Using the Context.query property you can build XPath-like chains of filtering
+queries to quickly find tokens or contexts based on text, action or lexicon.
+This is described in the `query` module.
 
 
 Example
@@ -187,7 +212,7 @@ Here are some examples of how to create a Language class and then use it:
     and a % comment that TODO lasts until the end
     of the line.
 
-    >>> d.root()[3].dump()
+    >>> d.get_root()[3].dump()
     <Context MyLang.parenthesized at 10-34 (4 children)>
      ├╴<Token 'a' at 10 (word)>
      ├╴<Token '"' at 12 (string)>
