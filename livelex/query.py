@@ -24,25 +24,23 @@ An experimental query module.
 
 Using this module you can query the token tree to find tokens and contexts,
 based on lexicons and/or actions and text contents. You can chain calls
-in a XPath-like fashion.
+in an XPath-like fashion.
 
 This module supplements the various find_xxx methods of every Context object.
-After iterating the three with this query module, you will probably still
-use the other navigational possibilities of the tree structure. Also depending
-on the design of the Language structure.
-
 A query starts at the `query` property of a Context object, and yields all the
 nodes of that Context.
 
-Then you can narrow down the search using `tokens`, `contexts`, `('text')` or
+You can navigate using `children`, `all`, `[n]`, `[n:n]`, (`[n:n:n]`),
+`next`, `previous`, `right`, `left`, and `parent`. Use `uniq` to remove double
+occurrences of nodes, which can e.g. happen when navigating to the parent of
+all nodes.
+
+You can narrow down the search using `tokens`, `contexts`, `('text')` or
 `(lexicon)`, `has_not`, `[n]`, `[n:n]`, `[action]`, `[action, action]`,
 `startingwith()`, `endingwith()`, `containing()`, `matching()`, `uniq`,
 `in_action()`,  and the corresponding `not_` counterparts, and `__getitem__`
 and `is_not()`.
 
-You can navigate using `children`, `all`, `next`, `prev`, `right`, `left`, and
-`parent`. Use `uniq` to remove double occurrences of nodes, which can e.g.
-happen when navigating to the parent of all nodes.
 
 
 Examples:
@@ -111,7 +109,7 @@ Navigating nodes:
         yield the parent of all current nodes. This can yield double
         occurrences of nodes in the list. (Use uniq to fix that.)
 
-    next, prev
+    next, previous
         yield the next or previous Token from the current node, if any
 
     right, left
@@ -123,6 +121,10 @@ Navigating nodes:
 
     [slice]
         yield from the specified slice of each Context node
+
+    first, last
+        yield the first resp. the last child of every Context node.
+        Same as [0] or [-1].
 
 
 Selecting (filtering) nodes:
@@ -274,6 +276,20 @@ class Query:
                 yield n
 
     @pquery
+    def first(self):
+        """Yield the first node of every context node, same as [0]."""
+        for n in self:
+            if n and n.is_context:
+                yield n[0]
+
+    @pquery
+    def last(self):
+        """Yield the last node of every context node, same as [-1]."""
+        for n in self:
+            if n and n.is_context:
+                yield n[-1]
+
+    @pquery
     def next(self):
         """Yield the next token, if any."""
         for n in self:
@@ -282,7 +298,7 @@ class Query:
                 yield t
 
     @pquery
-    def prev(self):
+    def previous(self):
         """Yield the previous token, if any."""
         for n in self:
             t = n.previous_token()
