@@ -31,17 +31,18 @@ After iterating the three with this query module, you will probably still
 use the other navigational possibilities of the tree structure. Also depending
 on the design of the Language structure.
 
-The basic query starts at the `query` property of a Context object, which
-selects all the nodes of that Context.
+A query starts at the `query` property of a Context object, and yields all the
+nodes of that Context.
 
 Then you can narrow down the search using `tokens`, `contexts`, `('text')` or
 `(lexicon)`, `has_not`, `[n]`, `[n:n]`, `[action]`, `[action, action]`,
 `startingwith()`, `endingwith()`, `containing()`, `matching()`, `uniq`,
-`in_action()`,  `in_lexicon()`, and the corresponding `not_` counterparts, and
-`__getitem__` and `is_not()`.
+`in_action()`,  and the corresponding `not_` counterparts, and `__getitem__`
+and `is_not()`.
 
 You can navigate using `children`, `all`, `next`, `prev`, `right`, `left`, and
-`parent`.
+`parent`. Use `uniq` to remove double occurrences of nodes, which can e.g.
+happen when navigating to the parent of all nodes.
 
 
 Examples:
@@ -91,35 +92,54 @@ Endpoint methods, mainly for debugging:
         just pick the first result, or a default if no results
 
 
-Selecting nodes:
+Navigating nodes:
+
+    The query itself yields al children of the Context it was started from.
+    But using the following methods you can find your way through a tree
+    structure. Every method returns a new Query object, having the previous
+    one as source of nodes. Most methods are implemented as properties, so
+    you don't have to write parentheses.
 
     all
-        select all descandant nodes, depth-first, in order. First it yields the
+        yield all descendant nodes, depth-first, in order. First it yields the
         context, then its children.
 
     children
-        select all the direct children of the current nodes
+        yield all the direct children of the current nodes
 
     parent
-        select the parent of all current nodes. This can yield double
+        yield the parent of all current nodes. This can yield double
         occurrences of nodes in the list. (Use uniq to fix that.)
 
     next, prev
-        select the next or previous token, if any
+        yield the next or previous Token from the current node, if any
 
     right, left
-        select the right or left sibling, if any
+        yield the right or left sibling of every current node, if any
 
-    (lexicon), __call__(lexicon)
-        select the Contexts with that lexicon
+    [int], __getitem__(int)
+        yield the nth child (if available) of each Context node
+        (supports negative indices)
 
-    has_not(lexicon)
-        select the Contexts that have a different lexicon
+    [slice]
+        yield from the specified slice of each Context node
 
-    ("text"), __call__("text")
-        select the Tokens with exact that text
 
-    has_not("text")
+Selecting (filtering) nodes:
+
+    These methods filter out current nodes without adding new nodes
+    to the selection.
+
+    (lexicon, [lexicon, ...])
+        select the Contexts with that lexicon (or one of the lexicons)
+
+    has_not(lexicon, [lexicon, ...])
+        select the Contexts that have a different lexicon than the given
+
+    ("text"), ("text", ["text2", ...])
+        select the Tokens with exact that text (or one of the texts)
+
+    has_not("text", ["text2", ...])
         select the Tokens that have different text
 
     startingwith("text"), not_startingwith("text")
@@ -143,14 +163,7 @@ Selecting nodes:
         select only the contexts
 
     range(start=0, end=None)
-        select only the nodes that fully fit in the range
-
-    [int], __getitem__(int)
-        select the nth child (if available) of each Context node
-        (supports negative indices)
-
-    [slice]
-        select the specified slice of each Context node
+        select only the nodes that fully fit in the text range
 
     [action], [action, action<, action> ...]
         select the Tokens that have one of the specified actions
@@ -162,14 +175,6 @@ Selecting nodes:
     not_in_action(*actions)
         select tokens whose action does not inherit of one of the specified
         StandardActions
-
-    in_lexicon(*lexicons)
-        somewhat supplemental to (), yield the Context nodes if they
-        have one of the specified lexicons
-
-    not_in_lexicon(*lexicon)
-        select the Context nodes that do not have one of the specified
-        lexicons.
 
     uniq
         Removes double occurrences of Tokens or Contexts, which can happen
@@ -302,27 +307,27 @@ class Query:
 
     # selectors
     @query
-    def __call__(self, what):
+    def __call__(self, *what):
         """Yield token if token has that text, or context if context has that lexicon."""
-        if isinstance(what, BoundLexicon):
+        if isinstance(what[0], BoundLexicon):
             for n in self:
-                if n.is_context and n.lexicon == what:
+                if n.is_context and n.lexicon in what:
                     yield n
         else:
             for n in self:
-                if n.is_token and n.text == what:
+                if n.is_token and n.text in what:
                     yield n
 
     @query
-    def has_not(self, what):
+    def has_not(self, *what):
         """Opposite of __call__()."""
-        if isinstance(what, BoundLexicon):
+        if isinstance(what[0], BoundLexicon):
             for n in self:
-                if n.is_context and n.lexicon != what:
+                if n.is_context and n.lexicon not in what:
                     yield n
         else:
             for n in self:
-                if n.is_token and n.text != what:
+                if n.is_token and n.text not in what:
                     yield n
 
     @query
@@ -448,20 +453,6 @@ class Query:
         for t in self:
             if t.is_token and not any(t.action in a for a in actions):
                 yield t
-
-    @query
-    def in_lexicon(self, *lexicons):
-        """Yield those contexts that have one of the specified lexicons."""
-        for n in self:
-            if n.is_context and n.lexicon in lexicons:
-                yield n
-
-    @query
-    def not_in_lexicon(self, *lexicons):
-        """Yield those contexts that have not any of the specified lexicons."""
-        for n in self:
-            if n.is_context and n.lexicon not in lexicons:
-                yield n
 
     @query
     def filter(self, predicate):
