@@ -187,6 +187,7 @@ from .lexicon import BoundLexicon
 
 
 def query(func):
+    """Makes a method result (generator) into a new Query object."""
     @functools.wraps(func)
     def wrapper(self, *args, **kwargs):
         return Query(lambda: func(self, *args, **kwargs))
@@ -194,15 +195,16 @@ def query(func):
 
 
 def pquery(func):
+    """Makes a method result into a Query object, and the method a property."""
     return property(query(func))
 
 
 class Query:
     def __init__(self, gen):
-        self.gen = gen
+        self._gen = gen
 
     def __iter__(self):
-        return self.gen()
+        return self._gen()
 
     # end points
     def count(self):
