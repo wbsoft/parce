@@ -132,51 +132,14 @@ Selecting (filtering) nodes:
     These methods filter out current nodes without adding new nodes
     to the selection.
 
-    (lexicon, [lexicon, ...])
-        select the Contexts with that lexicon (or one of the lexicons)
-
-    has_not(lexicon, [lexicon, ...])
-        select the Contexts that have a different lexicon than the given
-
-    ("text"), ("text", ["text2", ...])
-        select the Tokens with exact that text (or one of the texts)
-
-    has_not("text", ["text2", ...])
-        select the Tokens that have different text
-
-    startingwith("text"), not_startingwith("text")
-        select the Tokens that do start (or not) with the specified text
-
-    endingwith("text"), not_endingwith("text")
-        select the Tokens that do end (or not) with the specified text
-
-    containing("text"), not_containing("text")
-        select the Tokens that contain (or not) specified text
-
-    matching("regex"), not_matching("regex")
-        select the Tokens that match (or not) the specified regular epression
-        (using re.search, the expression can match anywhere unless you use
-        ^ or $ characters).
+    range(start=0, end=None)
+        select only the nodes that fully fit in the text range
 
     tokens
         select only the tokens
 
     contexts
         select only the contexts
-
-    range(start=0, end=None)
-        select only the nodes that fully fit in the text range
-
-    [action], [action, action<, action> ...]
-        select the Tokens that have one of the specified actions
-
-    in_action(*actions)
-        select tokens if their action belongs in the realm of one of the
-        specified StandardActions
-
-    not_in_action(*actions)
-        select tokens whose action does not inherit of one of the specified
-        StandardActions
 
     uniq
         Removes double occurrences of Tokens or Contexts, which can happen
@@ -189,6 +152,38 @@ Selecting (filtering) nodes:
     map(function)
         call function on every node and yield its results, which should be
         nodes as well.
+
+    is_not
+        inverts the meaning of the following query, e.g. is_not.startingwith()
+
+    The following query methods are inverted by `is_not`:
+
+    (lexicon, [lexicon, ...])
+        select the Contexts with that lexicon (or one of the lexicons)
+
+    ("text"), ("text", ["text2", ...])
+        select the Tokens with exact that text (or one of the texts)
+
+    startingwith("text")
+        select the Tokens that start with the specified text
+
+    endingwith("text")
+        select the Tokens that end with the specified text
+
+    containing("text")
+        select the Tokens that contain specified text
+
+    matching("regex")
+        select the Tokens that match the specified regular epression
+        (using re.search, the expression can match anywhere unless you use
+        ^ or $ characters).
+
+    [action], [action, action<, action> ...]
+        select the Tokens that have one of the specified actions
+
+    in_action(*actions)
+        select tokens if their action belongs in the realm of one of the
+        specified StandardActions
 
 
 """
@@ -215,11 +210,17 @@ def pquery(func):
 
 
 class Query:
-    def __init__(self, gen):
+    def __init__(self, gen, invert=False):
         self._gen = gen
+        self._inv = invert
 
     def __iter__(self):
         return self._gen()
+
+    @property
+    def is_not(self):
+        """Invert the next query."""
+        return Query(self._gen, True)
 
     # end points
     def count(self):
@@ -321,102 +322,19 @@ class Query:
             if n:
                 yield n
 
+    @query
+    def map(self, function):
+        """Call the function on every node and yield its results, which should be zero or more nodes as well."""
+        for n in self:
+            yield from function(n)
+
     # selectors
     @query
-    def __call__(self, *what):
-        """Yield token if token has that text, or context if context has that lexicon."""
-        if isinstance(what[0], BoundLexicon):
-            for n in self:
-                if n.is_context and n.lexicon in what:
-                    yield n
-        else:
-            for n in self:
-                if n.is_token and n.text in what:
-                    yield n
-
-    @query
-    def has_not(self, *what):
-        """Opposite of __call__()."""
-        if isinstance(what[0], BoundLexicon):
-            for n in self:
-                if n.is_context and n.lexicon not in what:
-                    yield n
-        else:
-            for n in self:
-                if n.is_token and n.text not in what:
-                    yield n
-
-    @query
-    def startingwith(self, text):
-        """Yield tokens that start with text."""
-        for t in self:
-            if t.is_token and t.text.startswith(text):
-                yield t
-
-    @query
-    def not_startingwith(self, text):
-        """Yield tokens that don't start with text."""
-        for t in self:
-            if t.is_token and not t.text.startswith(text):
-                yield t
-
-    @query
-    def endingwith(self, text):
-        """Yield tokens that end with text."""
-        for t in self:
-            if t.is_token and t.text.endswith(text):
-                yield t
-
-    @query
-    def not_endingwith(self, text):
-        """Yield tokens that don't end with text."""
-        for t in self:
-            if t.is_token and not t.text.endswith(text):
-                yield t
-
-    @query
-    def containing(self, text):
-        """Yield tokens that contain the specified text."""
-        for t in self:
-            if t.is_token and text in t.text:
-                yield t
-
-    @query
-    def not_containing(self, text):
-        """Yield tokens that don't contain the specified text."""
-        for t in self:
-            if t.is_token and text not in t.text:
-                yield t
-
-    @query
-    def __getitem__(self, key):
-        """normal slicing, and you can test for one or more actions."""
-        if isinstance(key, int):
-            for n in self:
-                if n.is_context:
-                    if key < 0:
-                        key += len(n)
-                    if 0 <= key < len(n):
-                        yield n[key]
-        elif isinstance(key, slice):
-            for n in self:
-                if n.is_context:
-                    yield from n[key]
-        elif isinstance(key, tuple):
-            for t in self:
-                if t.is_token and t.action in key:
-                    yield t
-        else:
-            for t in self:
-                if t.is_token and t.action is key:
-                    yield t
-
-    @query
-    def is_not(self, *actions):
-        """The opposite of [action<, action, ...>]."""
-        for t in self:
-            if t.is_token and t.action not in actions:
-                yield t
+    def filter(self, predicate):
+        """Yield nodes for which the predicate returns a value that evaluates to True."""
+        for n in self:
+            if predicate(n):
+                yield n
 
     @pquery
     def tokens(self):
@@ -442,44 +360,76 @@ class Query:
             if n.pos >= start and n.end <= end:
                 yield n
 
+    # invertable selectors
+    @query
+    def __call__(self, *what):
+        """Yield token if token has that text, or context if context has that lexicon."""
+        if isinstance(what[0], BoundLexicon):
+            for n in self:
+                if n.is_context and self._inv ^ (n.lexicon in what):
+                    yield n
+        else:
+            for n in self:
+                if n.is_token and self._inv ^ (n.text in what):
+                    yield n
+
+    @query
+    def startingwith(self, text):
+        """Yield tokens that start with text."""
+        for t in self:
+            if t.is_token and self._inv ^ t.text.startswith(text):
+                yield t
+
+    @query
+    def endingwith(self, text):
+        """Yield tokens that end with text."""
+        for t in self:
+            if t.is_token and self._inv ^ t.text.endswith(text):
+                yield t
+
+    @query
+    def containing(self, text):
+        """Yield tokens that contain the specified text."""
+        for t in self:
+            if t.is_token and self._inv ^ (text in t.text):
+                yield t
+
+    @query
+    def __getitem__(self, key):
+        """normal slicing, and you can test for one or more actions."""
+        # slicing or itemgetting with integers are not invertable selectors
+        if isinstance(key, int):
+            for n in self:
+                if n.is_context:
+                    if key < 0:
+                        key += len(n)
+                    if 0 <= key < len(n):
+                        yield n[key]
+        elif isinstance(key, slice):
+            for n in self:
+                if n.is_context:
+                    yield from n[key]
+        # handle matching actions, this is invertable by is_not
+        elif isinstance(key, tuple):
+            for t in self:
+                if t.is_token and self._inv ^ (t.action in key):
+                    yield t
+        else:
+            for t in self:
+                if t.is_token and self._inv ^ (t.action is key):
+                    yield t
+
     @query
     def matching(self, pattern, flags=0):
         """Yield tokens matching the regular expression (using re.search)."""
         for t in self:
-            if t.is_token and re.search(pattern, t.text, flags):
-                yield t
-
-    @query
-    def not_matching(self, pattern, flags=0):
-        """Yield tokens matching the regular expression (using re.search)."""
-        for t in self:
-            if t.is_token and not re.search(pattern, t.text, flags):
+            if t.is_token and self._inv ^ bool(re.search(pattern, t.text, flags)):
                 yield t
 
     @query
     def in_action(self, *actions):
         """Yield those tokens whose action is or inherits from one of the given actions."""
         for t in self:
-            if t.is_token and any(t.action in a for a in actions):
+            if t.is_token and self._inv ^ any(t.action in a for a in actions):
                 yield t
-
-    @query
-    def not_in_action(self, *actions):
-        """Yield those tokens whose action is not and does not inherit from one of the given actions."""
-        for t in self:
-            if t.is_token and not any(t.action in a for a in actions):
-                yield t
-
-    @query
-    def filter(self, predicate):
-        """Yield nodes for which the predicate returns a value that evaluates to True."""
-        for n in self:
-            if predicate(n):
-                yield n
-
-    @query
-    def map(self, function):
-        """Call the function on every node and yield its results, which should be zero or more nodes as well."""
-        for n in self:
-            yield from function(n)
 
