@@ -187,7 +187,7 @@ from .lexicon import BoundLexicon
 
 
 def query(func):
-    """Makes a method result (generator) into a new Query object."""
+    """Make a method result (generator) into a new Query object."""
     @functools.wraps(func)
     def wrapper(self, *args, **kwargs):
         return Query(lambda: func(self, *args, **kwargs))
@@ -195,7 +195,7 @@ def query(func):
 
 
 def pquery(func):
-    """Makes a method result into a Query object, and the method a property."""
+    """Make a method result into a Query object, and the method a property."""
     return property(query(func))
 
 
@@ -262,29 +262,23 @@ class Query:
 
     @pquery
     def next(self):
-        """Return the next token, if any."""
+        """Yield the next token, if any."""
         for n in self:
-            n = n.right_sibling()
-            if n:
-                if n.is_context:
-                    yield n.first_token()
-                else:
-                    yield n
+            t = n.text_token()
+            if t:
+                yield t
 
     @pquery
     def prev(self):
-        """Return the previous token, if any."""
+        """Yield the previous token, if any."""
         for n in self:
-            n = n.left_sibling()
-            if n:
-                if n.is_context:
-                    yield n.last_token()
-                else:
-                    yield n
+            t = n.previous_token()
+            if t:
+                yield t
 
     @pquery
     def right(self):
-        """Return the right sibling, if any."""
+        """Yield the right sibling, if any."""
         for n in self:
             n = n.right_sibling()
             if n:
@@ -292,7 +286,7 @@ class Query:
 
     @pquery
     def left(self):
-        """Return the left sibling, if any."""
+        """Yield the left sibling, if any."""
         for n in self:
             n = n.left_sibling()
             if n:
@@ -325,24 +319,28 @@ class Query:
 
     @query
     def startingwith(self, text):
+        """Yield tokens that start with text."""
         for t in self:
             if t.is_token and t.text.startswith(text):
                 yield t
 
     @query
     def not_startingwith(self, text):
+        """Yield tokens that don't start with text."""
         for t in self:
             if t.is_token and not t.text.startswith(text):
                 yield t
 
     @query
     def endingwith(self, text):
+        """Yield tokens that end with text."""
         for t in self:
             if t.is_token and t.text.endswith(text):
                 yield t
 
     @query
     def not_endingwith(self, text):
+        """Yield tokens that don't end with text."""
         for t in self:
             if t.is_token and not t.text.endswith(text):
                 yield t
@@ -356,7 +354,7 @@ class Query:
 
     @query
     def not_containing(self, text):
-        """Yield tokens that contain the specified text."""
+        """Yield tokens that don't contain the specified text."""
         for t in self:
             if t.is_token and text not in t.text:
                 yield t
@@ -389,7 +387,7 @@ class Query:
         """The opposite of [action<, action, ...>]."""
         for t in self:
             if t.is_token and t.action not in actions:
-                yield d
+                yield t
 
     @pquery
     def tokens(self):
@@ -410,13 +408,9 @@ class Query:
         """Yield a restricted set, tokens and/or contexts must fall in start→end"""
         if end is None:
             end = sys.maxsize
-        it = iter(self)
-        for n in it:
-            if n.pos < start:
-                continue
-            for n in it:
-                if n.end > end:
-                    return
+        # don't assume the tokens are in source order
+        for n in self:
+            if n.pos >= start and n.end <= end:
                 yield n
 
     @query
