@@ -34,12 +34,13 @@ on the design of the Language structure.
 The basic query starts at the `query` property of a Context object, which
 selects all the nodes of that Context.
 
-Then you can narrow down the search using `tokens`, `contexts`, `('text')`
-or `(lexicon)`, `startingwith`, `endingwith`, `containing`, `matching`, `uniq`,
-`in_action`,  `in_lexicon`, and the corresponding `not_` counterparts, and
-__getitem__and `is_not`.
+Then you can narrow down the search using `tokens`, `contexts`, `('text')` or
+`(lexicon)`, `has_not`, `[n]`, `[n:n]`, `[action]`, `[action, action]`,
+`startingwith()`, `endingwith()`, `containing()`, `matching()`, `uniq`,
+`in_action()`,  `in_lexicon()`, and the corresponding `not_` counterparts, and
+`__getitem__` and `is_not()`.
 
-You can navicate using `children`, `all`, `next`, `prev`, `right`, `left`, and
+You can navigate using `children`, `all`, `next`, `prev`, `right`, `left`, and
 `parent`.
 
 
@@ -60,11 +61,16 @@ Find all tags containing "hi" in their text nodes:
     root.query.all[Name.Tag].next.next[Text].containing('hi')
 
 
+Find all comments that have TODO in it:
+
+    root.query.all[Comment].containing('TODO')
+
+
 A query is a generator, you can iterate over the results. For debugging
 purposes, there are also the list(), pick(), count() and dump() methods.
 
     for attrs in q.all[Name.Tag]('origin').right:
-        for atts in attrs.query[Name.Attribute]:
+        for atr in attrs.query[Name.Attribute]:
             print(atr)
 
 
@@ -164,6 +170,10 @@ Selecting nodes:
     not_in_lexicon(*lexicon)
         select the Context nodes that do not have one of the specified
         lexicons.
+
+    uniq
+        Removes double occurrences of Tokens or Contexts, which can happen
+        e.g. when selecting the parent of all nodes
 
 
 """
