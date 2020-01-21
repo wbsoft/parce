@@ -76,10 +76,10 @@ purposes, there are also the list(), pick(), count() and dump() methods.
 
 Summary of the query methods:
 
-For debugging:
+Endpoint methods, mainly for debugging:
 
     count()
-        Just prints the number of results in the result set
+        Just prints the number of nodes in the result set
 
     dump()
         dump()s the full result nodes to stdout
@@ -87,7 +87,7 @@ For debugging:
     list()
         aggregate the results in a list
 
-    pick()
+    pick(default=None)
         just pick the first result, or a default if no results
 
 
