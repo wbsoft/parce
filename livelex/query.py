@@ -455,4 +455,10 @@ class Query:
             if n.is_context and n.lexicon not in lexicons:
                 yield n
 
+    @query
+    def filter(self, predicate):
+        """Yield nodes for which the predicate returns a value that evaluates to True."""
+        for n in self:
+            if predicate(n):
+                yield n
 
