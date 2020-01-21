@@ -460,6 +460,30 @@ class Token(NodeMixin):
             return n, s_indices[s_i::-1], o_indices[::-1]
         return None, None, None
 
+    def target(self):
+        """Return the first context directly to the right of this Token.
+
+        The context should be the right sibling of the token, or of any of its
+        ancestors. If the token is part of a group, the context is found
+        immediately next to the last member of the group. The found context may
+        also be a child of the grand-parents of this token, in case the target
+        popped contexts first.
+
+        In all cases, the returned context is the one started by the target
+        in the lexicon rule that created this token.
+
+        """
+        node = self
+        if node.group:
+            node = node.group[-1]
+        while node.parent:
+            r = node.right_sibling()
+            if r:
+                if r.is_context:
+                    return r
+                return
+            node = node.parent
+
 
 class _GroupToken(Token):
     """A Token class that allows setting the `group` attribute."""
@@ -727,6 +751,27 @@ class Context(list, NodeMixin):
             for n in self[i:]:
                 if n.is_context and n.pos < end:
                     yield from n.find_contexts_by_lexicon(lexicon, descend, start, end)
+
+    def source(self):
+        """Return the first Token, if any, when going to the left from this context.
+
+        The returned token is the one that created us, that this context the
+        target is for. If the token is member of a group, the first group member
+        is returned.
+
+        """
+        node = self
+        for parent in node.ancestors():
+            n = node.left_sibling()
+            if n:
+                while n:
+                    if n.is_token:
+                        if n.group:
+                            n = n.group[0]
+                        return n
+                    n = n[-1]
+                return
+            node = parent
 
     @property
     def query(self):

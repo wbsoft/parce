@@ -326,6 +326,24 @@ class Query:
             if n:
                 yield n
 
+    @pquery
+    def target(self):
+        """Yield the target Context for every token, if available. See Token.target()."""
+        for t in self:
+            if t.is_token:
+                target = t.target()
+                if target:
+                    yield target
+
+    @pquery
+    def source(self):
+        """Yield the source Token for every context, if available. See Context.source()."""
+        for n in self:
+            if n.is_context:
+                source = n.source()
+                if source:
+                    yield source
+
     @query
     def map(self, function):
         """Call the function on every node and yield its results, which should be zero or more nodes as well."""
