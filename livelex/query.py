@@ -350,17 +350,22 @@ class Query:
             if n.is_context:
                 yield n
 
+    # invertable selectors
     @query
-    def range(self, start=0, end=None):
+    def in_range(self, start=0, end=None):
         """Yield a restricted set, tokens and/or contexts must fall in start→end"""
         if end is None:
             end = sys.maxsize
         # don't assume the tokens are in source order
-        for n in self:
-            if n.pos >= start and n.end <= end:
-                yield n
+        if self._inv:
+            for n in self:
+                if n.end <= start or n.pos >= end:
+                    yield n
+        else:
+            for n in self:
+                if n.pos >= start and n.end <= end:
+                    yield n
 
-    # invertable selectors
     @query
     def __call__(self, *what):
         """Yield token if token has that text, or context if context has that lexicon."""
