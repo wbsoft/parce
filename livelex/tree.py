@@ -201,6 +201,37 @@ class NodeMixin:
             i = self.parent_index()
             yield from self.parent[i+1:]
 
+    def next_token(self):
+        """Return the following Token, if any."""
+        for t in self.forward():
+            return t
+
+    def previous_token(self):
+        """Return the preceding Token, if any."""
+        for t in self.backward():
+            return t
+
+    def forward(self, upto=None):
+        """Yield all Tokens in forward direction.
+
+        Descends into child Contexts, and ascends into parent Contexts.
+        If upto is given, does not ascend above that context.
+
+        """
+        for parent, index in self.ancestors_with_index(upto):
+            yield from tokens(parent[index+1:])
+
+    def backward(self, upto=None):
+        """Yield all Tokens in backward direction.
+
+        Descends into child Contexts, and ascends into parent Contexts.
+        If upto is given, does not ascend above that context.
+
+        """
+        for parent, index in self.ancestors_with_index(upto):
+            if index:
+                yield from tokens_bw(parent[index-1::-1])
+
 
 class Token(NodeMixin):
     """A Token instance represents a lexed piece of text.
@@ -315,37 +346,6 @@ class Token(NodeMixin):
     @property
     def end(self):
         return self.pos + len(self.text)
-
-    def next_token(self):
-        """Return the following Token, if any."""
-        for t in self.forward():
-            return t
-
-    def previous_token(self):
-        """Return the preceding Token, if any."""
-        for t in self.backward():
-            return t
-
-    def forward(self, upto=None):
-        """Yield all Tokens in forward direction.
-
-        Descends into child Contexts, and ascends into parent Contexts.
-        If upto is given, does not ascend above that context.
-
-        """
-        for parent, index in self.ancestors_with_index(upto):
-            yield from tokens(parent[index+1:])
-
-    def backward(self, upto=None):
-        """Yield all Tokens in backward direction.
-
-        Descends into child Contexts, and ascends into parent Contexts.
-        If upto is given, does not ascend above that context.
-
-        """
-        for parent, index in self.ancestors_with_index(upto):
-            if index:
-                yield from tokens_bw(parent[index-1::-1])
 
     def forward_including(self, upto=None):
         """Yield all tokens in forward direction, including self."""
