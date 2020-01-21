@@ -175,6 +175,14 @@ Selecting nodes:
         Removes double occurrences of Tokens or Contexts, which can happen
         e.g. when selecting the parent of all nodes
 
+    filter(predicate)
+        select nodes for which the predicate function returns a value that
+        evaluates to True
+
+    map(function)
+        call function on every node and yield its results, which should be
+        nodes as well.
+
 
 """
 
@@ -461,4 +469,10 @@ class Query:
         for n in self:
             if predicate(n):
                 yield n
+
+    @query
+    def map(self, function):
+        """Call the function on every node and yield its results, which should be zero or more nodes as well."""
+        for n in self:
+            yield from function(n)
 
