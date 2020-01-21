@@ -266,19 +266,10 @@ class Query:
 
     @pquery
     def parent(self):
+        """The parent of every node."""
         for n in self:
             if n.parent:
                 yield n.parent
-
-    @pquery
-    def uniq(self):
-        """Remove double occurrences. Can happen when you use the parent."""
-        seen = set()
-        for n in self:
-            i = id(n)
-            if i not in seen:
-                seen.add(i)
-                yield n
 
     @pquery
     def first(self):
@@ -370,6 +361,27 @@ class Query:
         """Get only the contexts."""
         for n in self:
             if n.is_context:
+                yield n
+
+    @pquery
+    def uniq(self):
+        """Remove double occurrences. Can happen when you use the parent."""
+        seen = set()
+        for n in self:
+            i = id(n)
+            if i not in seen:
+                seen.add(i)
+                yield n
+
+    @pquery
+    def remove_descendants(self):
+        """Remove nodes that have ancestors in the current node list."""
+        ids = set(map(id, self))
+        for n in self:
+            for p in n.ancestors():
+                if id(p) in ids:
+                    break
+            else:
                 yield n
 
     # invertible selectors
