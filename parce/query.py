@@ -27,8 +27,8 @@ based on lexicons and/or actions and text contents. You can chain calls
 in an XPath-like fashion.
 
 This module supplements the various find_xxx methods of every Context object.
-A query starts at the `query` property of a Context object, and yields all the
-nodes of that Context.
+A query starts at the `query` property of a Context or Token object, and
+initially yields just that object.
 
 You can navigate using `children`, `all`, `[n]`, `[n:n]`, (`[n:n:n]`),
 `next`, `previous`, `right`, `left`, and `parent`. Use `uniq` to remove double
@@ -70,6 +70,11 @@ string after it:
 
     (t for t in root.query.children('\\version')
         if any(t.query.next.target.children.containing('2')))
+
+Which could also be written as:
+
+    root.query.children('\\version').filter(
+        lambda t: any(t.query.next.target.children.containing('2')))
 
 
 A query is a generator, you can iterate over the results. For debugging
@@ -122,6 +127,16 @@ Navigating nodes:
     right, left
         yield the right or left sibling of every current node, if any
 
+    right_siblings
+        yield the right siblings of every node in the current node list.
+        This can lead to long result sets with many occurrences of the same
+        nodes.
+
+    left_siblings
+        yield the left siblings of every node in the current node list, in
+        backward order. Only use right_ and left_siblings when you want to
+        find one node in the result set.
+
     [int], __getitem__(int)
         yield the nth child (if available) of each Context node
         (supports negative indices)
@@ -154,6 +169,19 @@ Selecting (filtering) nodes:
     uniq
         Removes double occurrences of Tokens or Contexts, which can happen
         e.g. when selecting the parent of all nodes
+
+    slice(stop)
+    slice(start, stop [, step])
+        Slice the full result set, using itertools.islice(). This can help
+        narrowing down the result set. For example:
+
+            root.query.all("blaat").slice(1).right_siblings.slice(3) ...
+
+        will continue the query with only the first occurrence of a token
+        "blaat", and then look for at most three right siblings. If the
+        slice(1) were not there, all the right siblings would become one large
+        result set because you wouldn't know how many tokens "blaat" were
+        matched.
 
     filter(predicate)
         select nodes for which the predicate function returns a value that
@@ -213,6 +241,7 @@ Selecting (filtering) nodes:
 
 
 import functools
+import itertools
 import re
 import sys
 
@@ -339,6 +368,18 @@ class Query:
                 yield n
 
     @pquery
+    def right_siblings(self):
+        """Yield the right siblings, if any."""
+        for n in self:
+            yield from n.right_siblings()
+
+    @pquery
+    def left_siblings(self):
+        """Yield the left siblings, if any."""
+        for n in self:
+            yield from n.left_siblings()
+
+    @pquery
     def target(self):
         """Yield the target Context for every token, if available. See Token.target()."""
         for t in self:
@@ -393,6 +434,11 @@ class Query:
             if i not in seen:
                 seen.add(i)
                 yield n
+
+    @query
+    def slice(self, *args):
+        """Slice the full result set. Arguments like for itertools.islice()."""
+        yield from itertools.islice(self, *args)
 
     @pquery
     def remove_descendants(self):
