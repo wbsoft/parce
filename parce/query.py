@@ -201,10 +201,10 @@ Selecting (filtering) nodes:
         by `is_not`, selects the nodes that are outside the specified text
         range.
 
-    (lexicon, [lexicon, ...])
+    (lexicon), (lexicon, lexicon2, ...)
         select the Contexts with that lexicon (or one of the lexicons)
 
-    ("text"), ("text", ["text2", ...])
+    ("text"), ("text", "text2", ...)
         select the Tokens with exact that text (or one of the texts)
 
     startingwith("text")
@@ -216,7 +216,7 @@ Selecting (filtering) nodes:
     containing("text")
         select the Tokens that contain specified text
 
-    matching("regex")
+    matching("regex"), matching(regex)
         select the Tokens that match the specified regular epression
         (using re.search, the expression can match anywhere unless you use
         ^ or $ characters).
