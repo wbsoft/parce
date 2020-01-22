@@ -26,7 +26,7 @@ from parce import *
 RE_CSS_ESCAPE = r"\\(?:[0-9A-Fa-f]{1,6} ?|\n|.)"
 RE_CSS_NUMBER = (
     r"[+-]?"            # sign
-    r"(?:\d*.)?\d+"     # mantisse
+    r"(?:\d*\.)?\d+"     # mantisse
     r"([Ee][+-]\d+)?")  # exponent
 
 
