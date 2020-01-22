@@ -19,8 +19,8 @@
 
 
 """
-An experimental query module.
-
+Querying the tree using the `query` property.
+---------------------------------------------
 
 Using this module you can query the token tree to find tokens and contexts,
 based on lexicons and/or actions and text contents. You can chain calls
@@ -30,17 +30,19 @@ This module supplements the various find_xxx methods of every Context object.
 A query starts at the `query` property of a Context or Token object, and
 initially yields just that object.
 
-You can navigate using `children`, `all`, `[n]`, `[n:n]`, (`[n:n:n]`),
-`next`, `previous`, `right`, `left`, and `parent`. Use `uniq` to remove double
-occurrences of nodes, which can e.g. happen when navigating to the parent of
-all nodes.
+You can navigate using `children`, `all`, `first`, `last`, `[n]`, `[n:n]`,
+`[n:n:n]`, `next`, `previous`, `right`, `left`, `right_siblings`,
+`left_siblings`, `map()`, and `parent`. Use `uniq` to remove double occurrences
+of nodes, which can e.g. happen when navigating to the parent of all nodes.
 
-You can narrow down the search using `tokens`, `contexts`, `('text')` or
-`(lexicon)`, `has_not`, `[n]`, `[n:n]`, `[action]`, `[action, action]`,
-`startingwith()`, `endingwith()`, `containing()`, `matching()`, `uniq`,
-`in_action()`,  and the corresponding `not_` counterparts, and `__getitem__`
-and `is_not()`.
+You can narrow down the search using `tokens`, `contexts`, `remove_ancestors`,
+`remove_descendants`, `slice()` and `filter()`.
 
+You can search for tokens using `('text')` or `(lexicon)`, `[action]`,
+`[action, action]`, `startingwith()`, `endingwith()`, `containing()`,
+`matching()`, or `in_action()`. The special prefix `is_not` inverts the query,
+so `query.is_not.containing("bla")` yields Tokens that do not contain the text
+"bla".
 
 
 Examples:
