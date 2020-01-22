@@ -1,7 +1,7 @@
-livelex
+parce
 =======
 
 .. toctree::
    :maxdepth: 4
 
-   livelex
+   parce

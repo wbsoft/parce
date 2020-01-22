@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# This file is part of the livelex Python package.
+# This file is part of the parce Python package.
 #
 # Copyright © 2019 by Wilbert Berendsen <info@wilbertberendsen.nl>
 #
@@ -29,7 +29,7 @@ method is then called to return the desired tuple of targets.
 """
 
 
-from livelex.lexicon import BoundLexicon
+from parce.lexicon import BoundLexicon
 
 
 class DynamicTarget:

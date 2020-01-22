@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# This file is part of the livelex Python package.
+# This file is part of the parce Python package.
 #
 # Copyright © 2019 by Wilbert Berendsen <info@wilbertberendsen.nl>
 #
@@ -29,7 +29,7 @@ try:
 except ImportError:
     from distutils.core import setup
 
-from livelex import pkginfo
+from parce import pkginfo
 
 
 def packagelist(directory):
@@ -40,7 +40,7 @@ def packagelist(directory):
         if '__init__.py' in files))
 
 scripts = []
-packages = packagelist('./livelex')
+packages = packagelist('./parce')
 py_modules = []
 
 with open('README.rst', encoding="utf-8") as f:

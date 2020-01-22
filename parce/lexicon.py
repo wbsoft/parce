@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# This file is part of the livelex Python package.
+# This file is part of the parce Python package.
 #
 # Copyright © 2019 by Wilbert Berendsen <info@wilbertberendsen.nl>
 #
@@ -38,9 +38,9 @@ some lexicons, the others keep working as in the base class.
 import re
 import threading
 
-import livelex.action
-import livelex.pattern
-import livelex.regex
+import parce.action
+import parce.pattern
+import parce.regex
 
 
 class Lexicon:
@@ -141,12 +141,12 @@ class BoundLexicon:
         default_target = None
         # make lists of pattern, action and possible targets
         for pattern, action, *target in self():
-            if pattern is livelex.default_action:
+            if pattern is parce.default_action:
                 default_action = action
-            elif pattern is livelex.default_target:
+            elif pattern is parce.default_target:
                 default_target = action, *target
             else:
-                if isinstance(pattern, livelex.pattern.Pattern):
+                if isinstance(pattern, parce.pattern.Pattern):
                     pattern = pattern.build()
                 patterns.append(pattern)
                 action_targets.append((action, *target))
@@ -167,10 +167,10 @@ class BoundLexicon:
         # if there is only one pattern, and no dynamic action or target,
         # see if the pattern is simple enough to just use str.find
         if (len(patterns) == 1
-            and not isinstance(action_targets[0][0], livelex.action.DynamicAction)
-            and not any(isinstance(target, livelex.target.DynamicTarget)
+            and not isinstance(action_targets[0][0], parce.action.DynamicAction)
+            and not any(isinstance(target, parce.target.DynamicTarget)
                             for target in action_targets[0][1:])):
-            needle = livelex.regex.to_string(patterns[0])
+            needle = parce.regex.to_string(patterns[0])
             if needle:
                 l= len(needle)
                 action_target = action_targets[0]

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# This file is part of the livelex Python package.
+# This file is part of the parce Python package.
 #
 # Copyright © 2019 by Wilbert Berendsen <info@wilbertberendsen.nl>
 #
@@ -19,7 +19,7 @@
 
 
 """
-Document and Cursor form the basis of handling of documents in the livelex
+Document and Cursor form the basis of handling of documents in the parce
 package.
 
 A Document contains a text string that is mutable via item and slice methods.
@@ -32,7 +32,7 @@ You can use a Cursor to keep track of positions in a document. The position
 (and selection) of a Cursor is adjusted when the text in the document is
 changed.
 
-For tokenized documents, livelex inherits from this base class.
+For tokenized documents, parce inherits from this base class.
 
 """
 

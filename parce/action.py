@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# This file is part of the livelex Python package.
+# This file is part of the parce Python package.
 #
 # Copyright © 2019 by Wilbert Berendsen <info@wilbertberendsen.nl>
 #
@@ -24,7 +24,7 @@ The action module defines two distinct base classes for actions.
 StandardAction is the base class for fixed standard actions, and DynamicAction
 is the base class for objects that yield actions based on the matched text.
 
-In a livelex rule, an action may be any object, e.g. a method, number or string
+In a parce rule, an action may be any object, e.g. a method, number or string
 literal. So it is not necessary that you use the provided standard actions. The
 dynamic actions can also be used with your own actions, and you can also
 inherit from DynamicAction if you want.

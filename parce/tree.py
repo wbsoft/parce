@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# This file is part of the livelex Python package.
+# This file is part of the parce Python package.
 #
 # Copyright © 2019 by Wilbert Berendsen <info@wilbertberendsen.nl>
 #
@@ -51,8 +51,8 @@ See also the documentation for Token and Context.
 import sys
 import itertools
 
-from livelex import util
-from livelex import query
+from parce import util
+from parce import query
 
 
 class NodeMixin:

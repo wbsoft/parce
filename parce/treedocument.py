@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# This file is part of the livelex Python package.
+# This file is part of the parce Python package.
 #
 # Copyright © 2019 by Wilbert Berendsen <info@wilbertberendsen.nl>
 #
@@ -25,7 +25,7 @@ When the text is modified, retokenizes only the modified part.
 """
 
 
-import livelex.treebuilder
+import parce.treebuilder
 
 
 class TreeDocumentMixin:

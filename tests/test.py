@@ -4,13 +4,13 @@
 
 import sys
 import re
-# pick the livelex module from the source tree
+# pick the parce module from the source tree
 sys.path.insert(0, '..')
 
 
-import livelex
+import parce
 
-from livelex import (
+from parce import (
     Language, lexicon,
     words, bygroup, bymatch, bytext,
     default_action,
@@ -65,14 +65,14 @@ of the line.
 
 
 if __name__ == "__main__":
-    import livelex.pkginfo
-    print("livelex version:", livelex.pkginfo.version_string)
+    import parce.pkginfo
+    print("parce version:", parce.pkginfo.version_string)
 
     print("Validate:")
-    from livelex.validate import validate_language
+    from parce.validate import validate_language
     validate_language(MyLang)
 
     print("Tree:")
-    from livelex import Document
+    from parce import Document
     Document(MyLang.root, s).get_root(True).dump()
 

@@ -1,9 +1,9 @@
-.. livelex documentation master file, created by
+.. parce documentation master file, created by
    sphinx-quickstart on Fri Dec 20 19:53:27 2019.
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to livelex's documentation!
+Welcome to parce's documentation!
 ===================================
 
 This module is designed to parse text using rules, which are regular-expression
@@ -38,7 +38,7 @@ matches the current text.
    :maxdepth: 2
    :caption: Contents:
 
-   livelex.rst
+   parce.rst
    modules.rst
 
 

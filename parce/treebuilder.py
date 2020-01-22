@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# This file is part of the livelex Python package.
+# This file is part of the parce Python package.
 #
 # Copyright © 2019 by Wilbert Berendsen <info@wilbertberendsen.nl>
 #
@@ -39,9 +39,9 @@ import contextlib
 import itertools
 import threading
 
-from livelex.action import DynamicAction
-from livelex.target import DynamicTarget
-from livelex.tree import Context, Token, _GroupToken
+from parce.action import DynamicAction
+from parce.target import DynamicTarget
+from parce.tree import Context, Token, _GroupToken
 
 
 class TreeBuilder:

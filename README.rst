@@ -1,21 +1,21 @@
-The livelex Python module
+The parce Python module
 =========================
 
 This module parses text into tokens, and is able to reparse only modified parts
 of the text, using the earlier generated tokens. Tokenized text lives in a tree
 structure with powerful quering methods for finding tokens and contexts.
 
-The livelex module is designed to be fast, and can tokenize in a background
+The parce module is designed to be fast, and can tokenize in a background
 thread, so that even when using very large documents, GUI applications that
 need to be responsive do not grind to a halt.
 
 Main use case: syntax highlighting in text editors, but also understanding the
 meaning of text to be able to provided context sensitive editing features.
 
-The livelex module is written and maintained by Wilbert Berendsen.
+The parce module is written and maintained by Wilbert Berendsen.
 
-Homepage: https://github.com/wbsoft/livelex
-Download: https://pypi.org/project/livelex/
+Homepage: https://github.com/wbsoft/parce
+Download: https://pypi.org/project/parce/
 
 The module is designed to parse text using rules, which are regular-expression
 based. Rules are grouped into lexicons, and lexicons are grouped into a
@@ -93,9 +93,9 @@ Here are some examples of how to create a Language class and then use it:
 
 .. code:: python
 
-    import livelex
+    import parce
 
-    from livelex import (
+    from parce import (
         Language, lexicon,
         words, bygroup, bymatch, bytext,
         default_action,
@@ -149,8 +149,8 @@ Here are some examples of how to create a Language class and then use it:
     """
 
 
-    >>> import livelex
-    >>> tree = livelex.root(MyLang.root, s)
+    >>> import parce
+    >>> tree = parce.root(MyLang.root, s)
     >>> tree.dump()
     <Context MyLang.root at 1-144 (20 children)>
      ├╴<Token 'This' at 1 (word)>
@@ -188,7 +188,7 @@ Here are some examples of how to create a Language class and then use it:
     >>> tree.find_token(50).parent
     <Context MyLang.string at 48-84 (4 children)>
 
-    >>> d = livelex.Document(MyLang.root, s)
+    >>> d = parce.Document(MyLang.root, s)
     >>> d
     <Document '\nThis is (an example) text w...'>
 

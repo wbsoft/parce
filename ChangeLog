@@ -1,5 +1,10 @@
-ChangeLog of the Python livelex package
+ChangeLog of the Python parce package
 =======================================
+
+
+2020-01-22: parce-0.3.0
+
+- Renamed to parce. Better, not a company name and sounds like 'parse'
 
 
 2020-01-21: livelex-0.3.0

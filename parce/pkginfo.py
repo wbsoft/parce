@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# This file is part of the livelex Python package.
+# This file is part of the parce Python package.
 #
 # Copyright © 2019 by Wilbert Berendsen <info@wilbertberendsen.nl>
 #
@@ -19,7 +19,7 @@
 
 
 """
-Meta-information about the livelex package.
+Meta-information about the parce package.
 
 This information is used by the install script, and can be queried
 from other applications.
@@ -32,7 +32,7 @@ Version = collections.namedtuple("Version", "major minor patch")
 
 
 #: name of the package
-name = "livelex"
+name = "parce"
 
 #: the current version
 version = Version(0, 3, 0)
@@ -40,7 +40,7 @@ version_suffix = ""
 version_string = "{}.{}.{}".format(*version) + version_suffix
 
 #: short description
-description = "The livelex lexer"
+description = "The parce lexer"
 
 #: long description
 long_description = \
@@ -53,7 +53,7 @@ maintainer = "Wilbert Berendsen"
 maintainer_email = "info@wilbertberendsen.nl"
 
 #: homepage
-url = "https://github.com/wbsoft/livelex"
+url = "https://github.com/wbsoft/parce"
 
 #: license
 license = "GPL"

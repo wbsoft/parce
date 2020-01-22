@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# This file is part of the livelex Python package.
+# This file is part of the parce Python package.
 #
 # Copyright © 2019 by Wilbert Berendsen <info@wilbertberendsen.nl>
 #
@@ -21,7 +21,7 @@
 import re
 
 
-from livelex import *
+from parce import *
 
 RE_SCHEME_RIGHT_BOUND = r"(?=$|[)\s])"
 RE_SCHEME_FRACTION = r"-?\d+/\d+" + RE_SCHEME_RIGHT_BOUND

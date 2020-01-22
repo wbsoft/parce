@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# This file is part of the livelex Python package.
+# This file is part of the parce Python package.
 #
 # Copyright © 2019 by Wilbert Berendsen <info@wilbertberendsen.nl>
 #
@@ -20,10 +20,10 @@
 
 import re
 
-import livelex
-from livelex.lexicon import Lexicon, BoundLexicon
-from livelex.pattern import Pattern
-from livelex.target import DynamicTarget
+import parce
+from parce.lexicon import Lexicon, BoundLexicon
+from parce.pattern import Pattern
+from parce.target import DynamicTarget
 
 
 def validate_language(lang):
@@ -45,12 +45,12 @@ def validate_lexicon(lexicon):
     default_act, default_tg = None, None
     msg = message(lexicon)
     for pattern, action, *target in lexicon():
-        if pattern is livelex.default_action:
+        if pattern is parce.default_action:
             if default_act:
                 msg("conflicting default actions")
             else:
                 default_act = action
-        elif pattern is livelex.default_target:
+        elif pattern is parce.default_target:
             if default_tg:
                 msg("conflicting default targets")
             else:
@@ -127,7 +127,7 @@ def check_default_target(lexicon, target):
             msg("circular default target: {}".format(" -> ".join(map(str, state))))
             return
         for pattern, *target in lexicon():
-            if pattern is livelex.default_target:
+            if pattern is parce.default_target:
                 break
         else:
             break

@@ -1,53 +1,53 @@
-livelex package
+parce package
 ===============
 
 Submodules
 ----------
 
-livelex\.action module
+parce\.action module
 ----------------------
 
-.. automodule:: livelex.action
+.. automodule:: parce.action
     :members:
     :undoc-members:
     :show-inheritance:
 
-livelex\.language module
+parce\.language module
 ------------------------
 
-.. automodule:: livelex.language
+.. automodule:: parce.language
     :members:
     :undoc-members:
     :show-inheritance:
 
-livelex\.lex module
+parce\.lex module
 -------------------
 
-.. automodule:: livelex.lex
+.. automodule:: parce.lex
     :members:
     :undoc-members:
     :show-inheritance:
 
-livelex\.lexicon module
+parce\.lexicon module
 -----------------------
 
-.. automodule:: livelex.lexicon
+.. automodule:: parce.lexicon
     :members:
     :undoc-members:
     :show-inheritance:
 
-livelex\.pkginfo module
+parce\.pkginfo module
 -----------------------
 
-.. automodule:: livelex.pkginfo
+.. automodule:: parce.pkginfo
     :members:
     :undoc-members:
     :show-inheritance:
 
-livelex\.regex module
+parce\.regex module
 ---------------------
 
-.. automodule:: livelex.regex
+.. automodule:: parce.regex
     :members:
     :undoc-members:
     :show-inheritance:
@@ -56,7 +56,7 @@ livelex\.regex module
 Module contents
 ---------------
 
-.. automodule:: livelex
+.. automodule:: parce
     :members:
     :undoc-members:
     :show-inheritance:
