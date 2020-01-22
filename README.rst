@@ -14,8 +14,9 @@ meaning of text to be able to provided context sensitive editing features.
 
 The parce module is written and maintained by Wilbert Berendsen.
 
-| Homepage: https://github.com/wbsoft/parce
-| Download: https://pypi.org/project/parce/
+    Homepage: https://github.com/wbsoft/parce
+
+    Download: https://pypi.org/project/parce/
 
 Why the name? It's short, not already taken and sounds like 'parse' :-)
 
@@ -25,20 +26,20 @@ Overview
 
 The module is designed to parse text using rules, which are regular-expression
 based. Rules are grouped into lexicons, and lexicons are grouped into a
-Language object. Every lexicon has its own set of rules that describe the text
-that is expected in that context.
+``Language`` object. Every lexicon has its own set of rules that describe the
+text that is expected in that context.
 
 A rule consists of three parts: a pattern, an action and a target.
 
 * The pattern is a either a regular expression string, or an object that
-  inherits Pattern. In that case its build() method is called to get the
-  pattern. If the pattern matches, a match object is created. If not,
-  the next rule is tried.
+  inherits ``Pattern``. In that case its ``build()`` method is called to get the
+  pattern. If the pattern matches, a match object is created. If not, the next
+  rule is tried.
 
 * The action can be any object, and is streamed together with the matched part
   of the text. It can be seen as a token. If the action is an instance of
-  DynamicAction, its filter_actions() method is called, which can yield zero or
-  more tokens.  The special `skip` action skips the matching text.
+  ``DynamicAction``, its ``filter_actions()`` method is called, which can yield
+  zero or more tokens.
 
 * The target is a list of objects, which can be integer numbers or references
   to a different lexicon. A positive number pushes the same lexicon on the
@@ -46,8 +47,8 @@ A rule consists of three parts: a pattern, an action and a target.
   that lexing the text continues with a previous lexicon. It is also possible
   to pop a lexicon and push a different one.
 
-  Instead of a list of objects, a DynamicTarget object can also be used, which
-  can change the target based on the match object.
+  Instead of a list of objects, a ``DynamicTarget`` object can also be used,
+  which can change the target based on the match object.
 
 Using a special rule, a lexicon may specify a default action, which is
 streamed with text that is not recognized by any other rule in the lexicon.
@@ -60,22 +61,22 @@ Parsing
 
 Parsing (better: lexing) text always starts in a lexicon, which is called the
 root lexicon. The rules in that lexicon are tried one by one. As soon as there
-is a match, a Token is generated with the matching text, the position of the
+is a match, a ``Token`` is generated with the matching text, the position of the
 text and the action that was specified in the rule. And if a target was
 specified, parsing continues in a different lexicon.
 
-The tokens are put in a tree structure. Every active lexicon creates a Context
-list that holds the tokens and child contexts. If a target pops back to a
-previous lexicon, the previous context becomes the current one again.
+The tokens are put in a tree structure. Every active lexicon creates a
+``Context`` list that holds the tokens and child contexts. If a target pops
+back to a previous lexicon, the previous context becomes the current one again.
 
 All tokens and contexts point to their parents, so it is possible to manipulate
 and query the tree structure in various ways.
 
-The structure of the tree is built by the TreeBuilder, see the `tree` and the
-`treebuilder` module. At the root is the Context carrying the root lexicon.
-The root context contains Tokens and/or other Contexts.
+The structure of the tree is built by the ``TreeBuilder``, see the ``tree`` and
+the ``treebuilder`` module. At the root is the Context carrying the root
+lexicon. The root context contains ``Token``\s and/or other ``Context``\s.
 
-The TreeBuilder is capable of tokenizing the text in a background thread and
+The ``TreeBuilder`` is capable of tokenizing the text in a background thread and
 also to rebuild just a changed part of the text, smartly reusing earlier
 generated tokens if possible.
 
@@ -83,13 +84,14 @@ generated tokens if possible.
 Iterating and Querying
 ----------------------
 
-Both Token and Context have many methods for iterating over the tree, for
-getting at the parent, child or sibling nodes. Context has various find()
-methods to quickly find a token or context at a certain position in the text.
+Both ``Token`` and ``Context`` have many methods for iterating over the tree,
+for getting at the parent, child or sibling nodes. Context has various
+``find...()`` methods to quickly find a token or context at a certain position
+in the text.
 
-Using the Context.query property you can build XPath-like chains of filtering
-queries to quickly find tokens or contexts based on text, action or lexicon.
-This is described in the `query` module.
+Using the ``query`` property of ``Token`` or ``Context`` you can build
+XPath-like chains of filtering queries to quickly find tokens or contexts
+based on text, action or lexicon. This is described in the ``query`` module.
 
 
 Example
