@@ -170,6 +170,14 @@ Selecting (filtering) nodes:
         Removes double occurrences of Tokens or Contexts, which can happen
         e.g. when selecting the parent of all nodes
 
+    remove_ancestors
+        remove Context nodes from the current node list that have descendants
+        in the list.
+
+    remove_descendants
+        remove nodes from the current list if any of their ancestors is also
+        in the list.
+
     slice(stop)
     slice(start, stop [, step])
         Slice the full result set, using itertools.islice(). This can help
@@ -227,14 +235,6 @@ Selecting (filtering) nodes:
     in_action(*actions)
         select tokens if their action belongs in the realm of one of the
         specified StandardActions
-
-    remove_ancestors
-        remove Context nodes from the current node list that have descendants
-        in the list.
-
-    remove_descendants
-        remove nodes from the current list if any of their ancestors is also
-        in the list.
 
 
 """
