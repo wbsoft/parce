@@ -14,9 +14,8 @@ meaning of text to be able to provided context sensitive editing features.
 
 The parce module is written and maintained by Wilbert Berendsen.
 
-    Homepage: https://github.com/wbsoft/parce
-
-    Download: https://pypi.org/project/parce/
+Homepage: https://github.com/wbsoft/parce
+Download: https://pypi.org/project/parce/
 
 Why the name? It's short, not already taken and sounds like 'parse' :-)
 
