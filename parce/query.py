@@ -303,7 +303,7 @@ class Query:
     def next(self):
         """Yield the next token, if any."""
         for n in self:
-            t = n.text_token()
+            t = n.next_token()
             if t:
                 yield t
 
