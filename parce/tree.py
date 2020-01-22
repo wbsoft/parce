@@ -232,6 +232,13 @@ class NodeMixin:
             if index:
                 yield from tokens_bw(parent[index-1::-1])
 
+    @property
+    def query(self):
+        """Query this node in different ways; see the query module."""
+        def gen():
+            yield self
+        return query.Query(gen)
+
 
 class Token(NodeMixin):
     """A Token instance represents a lexed piece of text.
@@ -728,13 +735,6 @@ class Context(list, NodeMixin):
                     n = n[-1]
                 return
             node = parent
-
-    @property
-    def query(self):
-        """Query this node in different ways; see the query module."""
-        def gen():
-            yield self
-        return query.Query(gen)
 
 
 def tokens(nodes):

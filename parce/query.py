@@ -65,6 +65,13 @@ Find all comments that have TODO in it:
     root.query.all[Comment].containing('TODO')
 
 
+Find all "\\version" tokens in the root context, that have a "2" in the version
+string after it:
+
+    (t for t in root.query.children('\\version')
+        if any(t.query.next.target.children.containing('2')))
+
+
 A query is a generator, you can iterate over the results. For debugging
 purposes, there are also the list(), pick(), count() and dump() methods.
 
