@@ -41,7 +41,7 @@ underscore) creates that attribute as a new instance, with the current instance
 as _parent.
 
 This way a new action type can be created that shares its parent with other
-types, a concept borrowed from pygments. An example:
+types, a concept borrowed from pygments. An example::
 
     >>> Comment = StandardAction("Comment")
     >>> Literal = StandardAction("Literal")
@@ -52,7 +52,7 @@ types, a concept borrowed from pygments. An example:
     Literal.String.SingleQuotedString
 
 StandardAction instances support iteration and membership methods.
-Iteration yields the instance ifself and then the parents:
+Iteration yields the instance ifself and then the parents::
 
     >>> for i in String.DoubleQuoted:
     ...     print(i)
@@ -62,7 +62,7 @@ Iteration yields the instance ifself and then the parents:
     Literal
 
 And the `in` operator returns True when a standard action belongs to another
-one, i.e. the other one is one of the ancestors of the current action:
+one, i.e. the other one is one of the ancestors of the current action::
 
     >>> String.DoubleQuotedString in String
     True
@@ -71,7 +71,7 @@ one, i.e. the other one is one of the ancestors of the current action:
 
 Finally, the `&` operator returns the common ancestor, if any.
 
-This module defines the following pre-defined standard actions:
+This module defines the following pre-defined standard actions::
 
     Whitespace = action.StandardAction("Whitespace")
     Text = action.StandardAction("Text")
@@ -117,12 +117,12 @@ A SubgroupAction looks at subgroups in the regular expression match and
 returns the same amount of tokens as there are subgroups, using the specified
 action for every subgroup.
 
-For example, the rule:
+For example, the rule::
 
     "(0x)([0-9a-f]+)", SubgroupAction(Number.Prefix, Number.Hexadecimal)
 
-    yields two tokens in case of a match, one for "0x" and the other for the
-    other group of the match.
+yields two tokens in case of a match, one for "0x" and the other for the
+other group of the match.
 
 TextAction and MatchAction
 --------------------------
