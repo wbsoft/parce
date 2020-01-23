@@ -1,5 +1,5 @@
-parce\.target module
----------------------
+The target module
+=================
 
 .. automodule:: parce.target
     :members:

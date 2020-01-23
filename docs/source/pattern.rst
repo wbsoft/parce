@@ -1,5 +1,5 @@
-parce\.pattern module
------------------------
+The pattern module
+==================
 
 .. automodule:: parce.pattern
     :members:

@@ -1,5 +1,5 @@
-parce\.lexicon module
------------------------
+The lexicon module
+==================
 
 .. automodule:: parce.lexicon
     :noindex:

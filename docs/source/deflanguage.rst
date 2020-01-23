@@ -55,10 +55,10 @@ There are convenient functions for creating some types of Pattern instances:
   matching any of the words contained in the ``long_list_of_words``.
 
 * ``char(string)`` creates an optimized regular expression matching any one
-  of the characters contained in the string. To make an expression *not*
-  matching any of the characters in the string, use ``char(string, False)``.
+  of the characters contained in the string. To make an expression matching
+  any character that is *not* in the string, use ``char(string, False)``.
 
-See for more information the documentation of the pattern module.
+See for more information the documentation of the :doc:`pattern <pattern>` module.
 
 The action
 ----------
@@ -108,7 +108,11 @@ able to translate actions using a mapping before parsing, and not each time
 when parsing a document. So the actions are not hardwired even if they appear
 verbatim in the lexicon's rules.)
 
-See for more information the documentation of the action module.
+There also exists a special DynamicAction in the ``skip`` object, it's an
+instance of ``SkipAction`` and it yields no actions, so in effect creating no
+Tokens. Use it if you want to match text, but do not need the tokens.
+
+See for more information the documentation of the :doc:`action <action>` module.
 
 
 The target
@@ -141,13 +145,13 @@ convenience function: ``tomatch(predicate, Targetlist1, TargetList2, ..)``
 that works in the same was as the dynamic action objects. A "``Targetlist``"
 may also be a single target such as ``-1`` or ``cls.something``.
 
-A target is always executed after adding the token(s) that were generated
-tokens to the current context. The newly created context can be seen as
-the "target" of the token that switched to it. If the match object did
-not contain actual text, no Token is generated, but the target *is* handled
-of course.
+A target is always executed after adding the token(s) that were generated to
+the current context. The newly created context can be seen as the "target" of
+the token that switched to it. If the match object did not contain actual
+text, no Token is generated, but the target *is* handled of course.
 
-See for more information the documentation of the target module.
+See for more information the documentation of the :doc:`target <target>`
+module.
 
 
 Special rules
@@ -176,4 +180,6 @@ argument is supported:
 *  ``re_flags``, to set the regular expression flags for the pattern
      the lexicon will create.
 
+See for more information the documentation of the :doc:`lexicon <lexicon>`
+module.
 
