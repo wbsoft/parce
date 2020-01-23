@@ -56,6 +56,7 @@ class Css(Language):
         yield r"/\*", Comment, cls.comment
         yield r"\{", Delimiter, cls.block
         yield RE_CSS_NUMBER, Number
+        yield r"(url)(\()", bygroup(Name, Delimiter), cls.url_function
         yield r"@", Keyword, cls.atrule
         # an ident-token is found using a lookahead pattern, the whole ident-
         # token is in the identifier context
@@ -66,7 +67,7 @@ class Css(Language):
         """Contents between { and }."""
         yield r"\}", Delimiter, -1
         yield from cls.style()
-    
+
     @lexicon
     def style(cls):
         """CSS that would be in a block, but also in a HTML style attribute."""
@@ -82,7 +83,23 @@ class Css(Language):
         """An ident-token is always just a context, it contains all parts."""
         yield RE_CSS_ESCAPE, Escape
         yield r"[\w-]+", Name
+        yield r"\(", Delimiter, -1, cls.function
         yield default_target, -1
+
+    @lexicon
+    def function(cls):
+        yield r"\)", Delimiter, -1
+        yield from cls.common()
+
+    @lexicon
+    def url_function(cls):
+        """url(....)"""
+        yield r"\)", Delimiter, -1
+        yield r'"', String, cls.dqstring
+        yield r"'", String, cls.sqstring
+        yield r"/\*", Comment, cls.comment
+        yield RE_CSS_ESCAPE, Escape
+        yield default_action, Literal.Url
 
     @lexicon
     def dqstring(cls):
