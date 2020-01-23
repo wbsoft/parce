@@ -20,7 +20,8 @@
 
 """A CSS parser.
 
-https://www.w3.org/TR/css-syntax-3/
+CSS3 Syntax: https://www.w3.org/TR/css-syntax-3/
+Selector syntax: https://www.w3.org/TR/selectors-4/
 
 We want also to use this parser inside parce, to be able to store default
 highlighting formats in css files.
@@ -34,49 +35,131 @@ from parce import *
 
 RE_CSS_ESCAPE = r"\\(?:[0-9A-Fa-f]{1,6} ?|.)"
 RE_CSS_NUMBER = (
-    r"[+-]?"             # sign
-    r"(?:\d*\.)?\d+"     # mantisse
-    r"([Ee][+-]\d+)?")   # exponent
+    r"[+-]?"               # sign
+    r"(?:\d*\.)?\d+"       # mantisse
+    r"(?:[Ee][+-]\d+)?")   # exponent
 RE_CSS_IDENTIFIER_LA = r"(?=-?(?:[^\W\d]|\\[0-9A-Fa-f])|--)" # lookahead
 RE_CSS_IDENTIFIER = (
     r"(?:-?(?:[^\W\d]+|" + RE_CSS_ESCAPE + r")|--)"
     r"(?:[\w-]+|" + RE_CSS_ESCAPE + r")*")
 RE_CSS_AT_KEYWORD = r"@" + RE_CSS_IDENTIFIER
-
+RE_HEX_COLOR = r"#[0-9a-fA-F]+"
 
 class Css(Language):
     @lexicon
     def root(cls):
+        yield from cls.toplevel()
+
+    @classmethod
+    def toplevel(cls):
+        yield r"@", Keyword, cls.atrule
+        yield from cls.selectors()
+        yield from cls.common()
+
+    @classmethod
+    def selectors(cls):
+        yield r"\*", Keyword    # "any" element
+        yield r"\|", Keyword    # css selector namespace prefix separator
+        yield r"#", Keyword, cls.id_selector
+        yield r"\.(?!\d)", Keyword, cls.class_selector
+        yield r"::", Keyword, cls.pseudo_element
+        yield r":", Keyword, cls.pseudo_class
+        yield r"\[", Keyword, cls.attribute_selector
+        yield r"[>+~]|\|\|", Operator   # combinators
+
+    @lexicon
+    def selector_list(cls):
+        """The list of selectors in :is(bla bla), etc."""
+        yield r"\)", Delimiter, -1
+        yield from cls.selectors()
         yield from cls.common()
 
     @classmethod
     def common(cls):
+        """Stuff that can be everywhere."""
         yield r'"', String, cls.dqstring
         yield r"'", String, cls.sqstring
         yield r"/\*", Comment, cls.comment
-        yield r"\{", Delimiter, cls.block
+        yield r"\{", Delimiter, cls.rule
         yield RE_CSS_NUMBER, Number
+        yield RE_HEX_COLOR, Literal.Color
         yield r"(url)(\()", bygroup(Name, Delimiter), cls.url_function
-        yield r"@", Keyword, cls.atrule
         # an ident-token is found using a lookahead pattern, the whole ident-
         # token is in the identifier context
         yield RE_CSS_IDENTIFIER_LA, Name, cls.identifier
+        yield r"[:,;@%!]", Delimiter
 
     @lexicon
-    def block(cls):
-        """Contents between { and }."""
+    def rule(cls):
+        """Declarations of a qualified rule between { and }."""
         yield r"\}", Delimiter, -1
         yield from cls.style()
 
     @lexicon
     def style(cls):
-        """CSS that would be in a block, but also in a HTML style attribute."""
+        """CSS that would be in a rule block, but also in a HTML style attribute."""
+        yield r"@", Keyword, cls.atrule
+        yield RE_CSS_IDENTIFIER_LA, Name, cls.declaration, cls.identifier
         yield from cls.common()
+
+    @lexicon
+    def declaration(cls):
+        """A property: value;  declaration."""
+        yield r":", Delimiter
+        yield r";", Delimiter, -1
+        yield r"!", Delimiter, -1, cls.identifier   # important normally follows
+        yield from cls.common()
+        yield r"\s+", skip  # stay here on whitespace only
+        yield default_target, -1
+
+    @lexicon
+    def id_selector(cls):
+        """#id"""
+        yield RE_CSS_ESCAPE, Escape
+        yield r"[\w-]+", Name
+        yield default_target, -1
+
+    @lexicon
+    def class_selector(cls):
+        """.classname"""
+        yield RE_CSS_ESCAPE, Escape
+        yield r"[\w-]+", Name
+        yield default_target, -1
+
+    @lexicon
+    def attribute_selector(cls):
+        """Stuff between [ and ]."""
+        yield r"\]", Keyword, -1
+        yield r"[~|^*&]=", Operator
+        yield from cls.common()
+
+    @lexicon
+    def pseudo_class(cls):
+        """Things like :first-child etc."""
+        yield RE_CSS_ESCAPE, Escape
+        yield r"[\w-]+", Name
+        yield r"\(", Delimiter, -1, cls.selector_list
+        yield default_target, -1
+
+    @lexicon
+    def pseudo_element(cls):
+        """Things like ::first-letter etc."""
+        yield RE_CSS_ESCAPE, Escape
+        yield r"[\w-]+", Name
+        yield default_target, -1
 
     @lexicon
     def atrule(cls):
         """Contents following '@'."""
-        yield from cls.identifier()
+        yield r";", Delimiter, -1
+        yield r"\{", Delimiter, cls.block
+        yield from cls.toplevel()
+
+    @lexicon
+    def block(cls):
+        """a { } block from an @-rule."""
+        yield r"\}", Delimiter, -2  # immediately leave the atrule context
+        yield from cls.toplevel()
 
     @lexicon
     def identifier(cls):
