@@ -37,7 +37,7 @@ The ``@lexicon`` decorated methods behave like classmethods, i.e. when you
 call the method through the class definition, it yields the rules, and the
 code yielding the rules knows the current Language class via the ``cls``
 argument. So the rules are able to in their target point to other lexicons of
-the same class. This makes inheriting and re-implementing just one of a few
+the same class. This makes inheriting and re-implementing just one or a few
 lexicons very easy.
 
 The pattern
@@ -81,7 +81,7 @@ There are, however, two action types provided by ``parce``:
 
    Language definitions included in ``parce`` use these standard actions.
 
-2. the DynamicAction class. These actions are created dynamically when
+2. the ``DynamicAction`` class. These actions are created dynamically when
    a rule's pattern has matched, and they can create zero or more Token
    instances with action based on the match object or text.
 
@@ -141,6 +141,39 @@ convenience function: ``tomatch(predicate, Targetlist1, TargetList2, ..)``
 that works in the same was as the dynamic action objects. A "``Targetlist``"
 may also be a single target such as ``-1`` or ``cls.something``.
 
+A target is always executed after adding the token(s) that were generated
+tokens to the current context. The newly created context can be seen as
+the "target" of the token that switched to it. If the match object did
+not contain actual text, no Token is generated, but the target *is* handled
+of course.
+
 See for more information the documentation of the target module.
+
+
+Special rules
+-------------
+
+There are currently two special rules, i.e. that do not provide a pattern
+to match, but induce other behaviour:
+
+1.  The ``default_action`` rule, which causes a token to be generated using
+    the specified action for text that would otherwise not be matched by
+    any of the lexicon's rules. It can be seen in action in the above
+    example.
+
+2.  The ``default_target`` rule, which defines the target to choose when
+    none of the normal rules match. This can be seen as a "fallthrough"
+    possibility to check for some text, but just go one somewhere else
+    in case the text is not there.
+
+
+Lexicon parameters
+------------------
+
+The ``@lexicon`` decorator optionally accepts arguments. Currently one
+argument is supported:
+
+*  ``re_flags``, to set the regular expression flags for the pattern
+     the lexicon will create.
 
 
