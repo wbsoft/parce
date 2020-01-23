@@ -103,10 +103,10 @@ class Css(Language):
     def rule(cls):
         """Declarations of a qualified rule between { and }."""
         yield r"\}", Delimiter, -1
-        yield from cls.style()
+        yield from cls.inline()
 
     @lexicon
-    def style(cls):
+    def inline(cls):
         """CSS that would be in a rule block, but also in a HTML style attribute."""
         yield r"@", Keyword, cls.atrule
         yield RE_CSS_IDENTIFIER_LA, Name, cls.declaration, cls.property
