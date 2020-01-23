@@ -162,7 +162,7 @@ class Css(Language):
     def attribute_selector(cls):
         """Stuff between [ and ]."""
         yield r"\]", Keyword, -1
-        yield r"[~|^*&]=", Operator
+        yield r"[~|^*&]?=", Operator
         yield from cls.common()
 
     @lexicon
