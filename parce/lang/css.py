@@ -88,6 +88,7 @@ class Css(Language):
 
     @lexicon
     def function(cls):
+        """Contents between identifier( ... )."""
         yield r"\)", Delimiter, -1
         yield from cls.common()
 
@@ -128,5 +129,14 @@ class Css(Language):
         yield default_action, Comment
 
 
+
+def unescape(text):
+    """Return the unescaped character, text is the contents of an Escape token."""
+    value = text[1:]
+    try:
+        codepoint = int(value, 16)
+    except ValueError:
+        return value
+    return chr(codepoint)
 
 
