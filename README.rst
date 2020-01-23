@@ -14,6 +14,9 @@ meaning of text to be able to provided context sensitive editing features.
 
 The parce module is written and maintained by Wilbert Berendsen.
 
+Supports Python 3.5 and higher.
+Testing is done by running ``pytest-3`` in the root directory.
+
 Homepage: https://github.com/wbsoft/parce
 Download: https://pypi.org/project/parce/
 

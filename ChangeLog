@@ -2,6 +2,13 @@ ChangeLog of the Python parce package
 =======================================
 
 
+current master:
+
+- Added testing using pytest
+- Added CSS parser
+- Improved LilyPond and Scheme parser
+
+
 2020-01-22: parce-0.3.0
 
 - Renamed to parce. Better, not a company name and sounds like 'parse'
