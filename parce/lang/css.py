@@ -45,6 +45,15 @@ RE_CSS_IDENTIFIER = (
 RE_CSS_AT_KEYWORD = r"@" + RE_CSS_IDENTIFIER
 RE_HEX_COLOR = r"#[0-9a-fA-F]+"
 
+
+# used names
+Name.Tag
+Name.Attribute
+Name.Class
+Name.Identifier
+Name.Property
+
+
 class Css(Language):
     @lexicon
     def root(cls):
@@ -52,7 +61,7 @@ class Css(Language):
 
     @classmethod
     def toplevel(cls):
-        yield r"@", Keyword, cls.atrule
+        yield r"@", Keyword, cls.atrule, cls.atrule_keyword
         yield from cls.selectors()
         yield from cls.common()
 
@@ -64,8 +73,9 @@ class Css(Language):
         yield r"\.(?!\d)", Keyword, cls.class_selector
         yield r"::", Keyword, cls.pseudo_element
         yield r":", Keyword, cls.pseudo_class
-        yield r"\[", Keyword, cls.attribute_selector
+        yield r"\[", Keyword, cls.attribute_selector, cls.attribute
         yield r"[>+~]|\|\|", Operator   # combinators
+        yield RE_CSS_IDENTIFIER_LA, Name, cls.selector
 
     @lexicon
     def selector_list(cls):
@@ -99,7 +109,7 @@ class Css(Language):
     def style(cls):
         """CSS that would be in a rule block, but also in a HTML style attribute."""
         yield r"@", Keyword, cls.atrule
-        yield RE_CSS_IDENTIFIER_LA, Name, cls.declaration, cls.identifier
+        yield RE_CSS_IDENTIFIER_LA, Name, cls.declaration, cls.property
         yield from cls.common()
 
     @lexicon
@@ -107,24 +117,46 @@ class Css(Language):
         """A property: value;  declaration."""
         yield r":", Delimiter
         yield r";", Delimiter, -1
-        yield r"!", Delimiter, -1, cls.identifier   # important normally follows
+        yield r"!important\b", Keyword, -1
         yield from cls.common()
         yield r"\s+", skip  # stay here on whitespace only
         yield default_target, -1
 
+    # ------------ selectors for identifiers in different roles --------------
+    @classmethod
+    def identifier_common(cls):
+        yield RE_CSS_ESCAPE, Escape
+        yield default_target, -1
+
+    @lexicon
+    def selector(cls):
+        """A tag name used as selector."""
+        yield r"[\w-]+", Name.Tag
+        yield from cls.identifier_common()
+
+    @lexicon
+    def property(cls):
+        """A CSS property."""
+        yield r"[\w-]+", Name.Property
+        yield from cls.identifier_common()
+
+    @lexicon
+    def attribute(cls):
+        """An attribute name."""
+        yield r"[\w-]+", Name.Attribute
+        yield from cls.identifier_common()
+
     @lexicon
     def id_selector(cls):
         """#id"""
-        yield RE_CSS_ESCAPE, Escape
-        yield r"[\w-]+", Name
-        yield default_target, -1
+        yield r"[\w-]+", Name.Identifier
+        yield from cls.identifier_common()
 
     @lexicon
     def class_selector(cls):
         """.classname"""
-        yield RE_CSS_ESCAPE, Escape
-        yield r"[\w-]+", Name
-        yield default_target, -1
+        yield r"[\w-]+", Name.Class
+        yield from cls.identifier_common()
 
     @lexicon
     def attribute_selector(cls):
@@ -153,7 +185,13 @@ class Css(Language):
         """Contents following '@'."""
         yield r";", Delimiter, -1
         yield r"\{", Delimiter, cls.block
-        yield from cls.toplevel()
+        yield from cls.common()
+
+    @lexicon
+    def atrule_keyword(cls):
+        """The first identifier word in an @-rule."""
+        yield r"[\w-]+", Keyword
+        yield from cls.identifier_common()
 
     @lexicon
     def block(cls):
