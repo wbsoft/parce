@@ -25,6 +25,8 @@ Why the name? It's short, not already taken and sounds like 'parse' :-)
    :caption: Contents:
 
    gettingstarted.rst
+   deflanguage.rst
+
    parce.rst
    action.rst
    document.rst
