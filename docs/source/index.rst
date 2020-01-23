@@ -26,6 +26,7 @@ Why the name? It's short, not already taken and sounds like 'parse' :-)
 
    gettingstarted.rst
    deflanguage.rst
+   treestructure.rst
 
    parce.rst
    action.rst
