@@ -18,6 +18,15 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 
+"""A CSS parser.
+
+https://www.w3.org/TR/css-syntax-3/
+
+We want also to use this parser inside parce, to be able to store default
+highlighting formats in css files.
+
+"""
+
 import re
 
 from parce import *
@@ -28,6 +37,7 @@ RE_CSS_NUMBER = (
     r"[+-]?"             # sign
     r"(?:\d*\.)?\d+"     # mantisse
     r"([Ee][+-]\d+)?")   # exponent
+RE_CSS_IDENTIFIER_LA = r"(?=-?(?:[^\W\d]|\\[0-9A-Fa-f])|--)" # lookahead
 RE_CSS_IDENTIFIER = (
     r"(?:-?(?:[^\W\d]+|" + RE_CSS_ESCAPE + r")|--)"
     r"(?:[\w-]+|" + RE_CSS_ESCAPE + r")*")
@@ -44,20 +54,51 @@ class Css(Language):
         yield r'"', String, cls.dqstring
         yield r"'", String, cls.sqstring
         yield r"/\*", Comment, cls.comment
+        yield r"\{", Delimiter, cls.block
         yield RE_CSS_NUMBER, Number
+        yield r"@", Keyword, cls.atrule
+        # an ident-token is found using a lookahead pattern, the whole ident-
+        # token is in the identifier context
+        yield RE_CSS_IDENTIFIER_LA, Name, cls.identifier
+
+    @lexicon
+    def block(cls):
+        """Contents between { and }."""
+        yield r"\}", Delimiter, -1
+        yield from cls.style()
+    
+    @lexicon
+    def style(cls):
+        """CSS that would be in a block, but also in a HTML style attribute."""
+        yield from cls.common()
+
+    @lexicon
+    def atrule(cls):
+        """Contents following '@'."""
+        yield from cls.identifier()
+
+    @lexicon
+    def identifier(cls):
+        """An ident-token is always just a context, it contains all parts."""
+        yield RE_CSS_ESCAPE, Escape
+        yield r"[\w-]+", Name
+        yield default_target, -1
 
     @lexicon
     def dqstring(cls):
+        """A double-quoted string."""
         yield r'"', String, -1
         yield from cls.string()
 
     @lexicon
     def sqstring(cls):
+        """A single-quoted string."""
         yield r"'", String, -1
         yield from cls.string()
 
     @classmethod
     def string(cls):
+        """Common rules for string."""
         yield default_action, String
         yield RE_CSS_ESCAPE, String.Escape
         yield r"\\\n", String.Escape
@@ -65,6 +106,7 @@ class Css(Language):
 
     @lexicon
     def comment(cls):
+        """A comment."""
         yield r"\*/", Comment, -1
         yield default_action, Comment
 
