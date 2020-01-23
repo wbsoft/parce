@@ -216,6 +216,8 @@ class Css(Language):
 def unescape(text):
     """Return the unescaped character, text is the contents of an Escape token."""
     value = text[1:]
+    if value == '\n':
+        return ''
     try:
         codepoint = int(value, 16)
     except ValueError:
