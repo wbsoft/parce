@@ -9,8 +9,15 @@ Earlier we saw the simple function::
 to get the tree with all tokens read from the text using the specified root
 lexicon. This work is done by a :py:mod:`TreeBuilder <parce.treebuilder>`.
 
-The TreeBuilder is also capable of rebuilding a tree partly when there are
-(smaller or larger) text changes. To build a tree from new text::
+There are many ways to use TreeBuilder, but first we will look at using it
+directly.
+
+Using TreeBuilder
+-----------------
+
+The TreeBuilder builds a tree by parsing text and is also capable of rebuilding
+a tree partly when there are (smaller or larger) text changes. To build a tree
+from new text::
 
     import parce.treebuilder
     builder = parce.treebuilder.TreeBuilder(lexicon)
@@ -29,7 +36,7 @@ using the Nonsense.root lexicon from the Getting started section::
     >>> builder.lexicons
     [Nonsense.string]
 
-If we add a double quote:
+If we add a double quote, we see that there are no lexicons left open anymore::
 
     >>> tree=builder.tree(r'an "unfinished string"')
     >>> builder.lexicons
@@ -39,17 +46,17 @@ The TreeBuilder also stores the region that was tokenized in its ``start``
 and ``end`` attribute::
 
     >>> builder.start, builder.end
-    (0, 21)
+    (0, 22)
 
 Now comes the interesting part. Instead of building the tree again,
 we can just tell the builder about the changes to the text, and only retokenize
-as less as possible. We need to keep the TreeBuilder for this to work::
+as few text as possible. We need to keep the TreeBuilder for this to work::
 
-    >>> builder=treebuilder.TreeBuilder(Nonsense.root)
+    >>> builder=parce.treebuilder.TreeBuilder(Nonsense.root)
     >>> builder.root.dump()
     <Context Nonsense.root at ?-? (0 children)>
 
-We did not give any text, so the root context is still empty.
+We did not give it any text, so the root context is still empty.
 Now we feed it the unfinished string::
 
     >>> builder.build(r'an "unfinished string')
@@ -67,8 +74,6 @@ Now we feed it the unfinished string::
 Now we instruct the TreeBuilder that we want to append 1 character at position
 21, a double quotation mark, so we finish the string::
 
-    >>> len(r'an "unfinished string')
-    21
     >>> builder.rebuild(r'an "unfinished string"', 21, 0, 1)
     >>> builder.root.dump()
     <Context Nonsense.root at 0-22 (3 children)>
@@ -100,6 +105,67 @@ have exactly the same anchestry. Typing a character that opens a new context of
 course changes the meaning of the following text, and also that is handled
 correctly.
 
+If you manually change the root lexicon, you need to call ``build()`` in order
+to rebuild the tree with the new root lexicon.
+
+
+Using BackgroundTreeBuilder
+---------------------------
+
+The :py:class:`BackgroundTreeBuilder <parce.treebuilder.BackgroundTreeBuilder>`
+builds upon the TreeBuilder, adding functionality to perform the tokenization
+of text in a background thread, which can be important when using parce in
+GUI applications.
+
+A BackgroundTreeBuilder is instantiated the same as a TreeBuilder, preferably
+with a root lexicon, but updates are managed differently.
+
+Instead of calling ``build()`` or ``rebuild()`` directly, you send the
+TreeBuilder a change request that it handles in the background::
+
+    >>> builder = parce.treebuilder.BackgroundTreeBuilder(Nonsense.root)
+    >>> text = r'This is my "new" text with 1 or 2 numbers and a % comment'
+    >>> with builder.change() as c:
+    ...     c.change_contents(text)
+
+To change the root lexicon, use :py:meth:`c.change_root_lexicon(lexicon)
+<parce.treebuilder.Changes.change_root_lexicon>`. The changes are processed in
+the background. You can even apply new changes while the old are still being
+processed, the tokenizer is cleanly interrupted and adjusts itself to the new
+changes. To apply changes to existing text, use
+:py:meth:`c.change_contents(text, position, removed, added)
+<parce.treebuilder.Changes.change_contents>`, like with the ``rebuild()`` method
+of TreeBuilder.
+
+The :py:meth:`get_root() <parce.treebuilder.BackgroundTreeBuilder.get_root>`
+method is used to be notified when parsing is ready. It can be used for three
+things:
+
+* just knowing parsing is ready: ``get_root()`` returns None when parsing is
+  not yet finished.
+
+* get called back when parsing is done: ``get_root(callback=func)`` calls ``func``
+  when parsing is finished
+
+* just hang on waiting...: ``get_root(True)`` awaits the process and returns the
+  finished tree.
+
+You can also add callbacks that get called with the modified range using::
+
+    builder.add_build_updated_callback(func)
+
+The supplied ``func`` will then be called with two arguments ``start`` and
+``end`` that denote the range that was re-tokenized.
+
+Finally you can also inherit from BackgroundTreeBuilder and reimplement
+the ``build_updated()`` method to do anything you like.
+
+Of course you can also access the tree directly via the root element, but it is
+not recommended to do so while parsing is busy, because you won't get reliable
+results.
+
+For more information, study the documentation and source code of the
+:py:mod:`treebuilder module <parce.treebuilder>`.
 
 
 
