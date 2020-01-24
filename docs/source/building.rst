@@ -141,14 +141,14 @@ The :py:meth:`get_root() <parce.treebuilder.BackgroundTreeBuilder.get_root>`
 method is used to be notified when parsing is ready. It can be used for three
 things:
 
-* just knowing parsing is ready: ``get_root()`` returns None when parsing is
-  not yet finished.
+* just knowing parsing is ready: when ``get_root()`` returns None you know
+  parsing is not yet finished. Otherwise the tree is returned.
 
 * get called back when parsing is done: ``get_root(callback=func)`` calls ``func``
   when parsing is finished
 
-* just hang on waiting...: ``get_root(True)`` awaits the process and returns the
-  finished tree.
+* just hang on waiting...: ``get_root(True)`` awaits the process if needed and
+  returns the finished tree.
 
 You can also add callbacks that get called with the modified range using::
 
