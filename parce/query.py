@@ -38,11 +38,10 @@ of nodes, which can e.g. happen when navigating to the parent of all nodes.
 You can narrow down the search using `tokens`, `contexts`, `remove_ancestors`,
 `remove_descendants`, `slice()` and `filter()`.
 
-You can search for tokens using `('text')` or `(lexicon)`, `[action]`,
-`[action, action]`, `startingwith()`, `endingwith()`, `containing()`,
-`matching()`, or `in_action()`. The special prefix `is_not` inverts the query,
-so `query.is_not.containing("bla")` yields Tokens that do not contain the text
-"bla".
+You can search for tokens using `('text')` or `(lexicon)`, `startingwith()`,
+`endingwith()`, `containing()`, `matching()`, `action()` or `in_action()`. The
+special prefix `is_not` inverts the query, so `query.is_not.containing("bla")`
+yields Tokens that do not contain the text "bla".
 
 
 Examples:
@@ -54,17 +53,17 @@ Find all tokens that are the first child of a Context with bla lexicon::
 
 Find (in Xml) all attributes with name 'name' that are in a <bla> tag::
 
-    root.query.all[Name.Tag]("bla").next('name')
+    root.query.all.action(Name.Tag)("bla").next('name')
 
 
 Find all tags containing "hi" in their text nodes::
 
-    root.query.all[Name.Tag].next.next[Text].containing('hi')
+    root.query.all.action(Name.Tag).next.next.action(Text).containing('hi')
 
 
 Find all comments that have TODO in it::
 
-    root.query.all[Comment].containing('TODO')
+    root.query.all.action(Comment).containing('TODO')
 
 
 Find all "\\version" tokens in the root context, that have a "2" in the version
@@ -82,8 +81,8 @@ Which could also be written as::
 A query is a generator, you can iterate over the results. For debugging
 purposes, there are also the list(), pick(), count() and dump() methods.::
 
-    for attrs in q.all[Name.Tag]('origin').right:
-        for atr in attrs.query[Name.Attribute]:
+    for attrs in q.all.action(Name.Tag)('origin').right:
+        for atr in attrs.query.action(Name.Attribute):
             print(atr)
 
 
@@ -234,7 +233,7 @@ matching("regex"), matching(regex)
     (using re.search, the expression can match anywhere unless you use
     ^ or $ characters).
 
-[action], [action, action<, action> ...]
+action(*actions)
     select the Tokens that have one of the specified actions
 
 in_action(*actions)
@@ -514,26 +513,17 @@ class Query:
     def __getitem__(self, key):
         """normal slicing, and you can test for one or more actions."""
         # slicing or itemgetting with integers are not invertible selectors
-        if isinstance(key, int):
+        if isinstance(key, slice):
+            for n in self:
+                if n.is_context:
+                    yield from n[key]
+        else:
             for n in self:
                 if n.is_context:
                     if key < 0:
                         key += len(n)
                     if 0 <= key < len(n):
                         yield n[key]
-        elif isinstance(key, slice):
-            for n in self:
-                if n.is_context:
-                    yield from n[key]
-        # handle matching actions, this is invertible by is_not
-        elif isinstance(key, tuple):
-            for t in self:
-                if t.is_token and self._inv ^ (t.action in key):
-                    yield t
-        else:
-            for t in self:
-                if t.is_token and self._inv ^ (t.action is key):
-                    yield t
 
     @query
     def matching(self, pattern, flags=0):
@@ -543,8 +533,15 @@ class Query:
                 yield t
 
     @query
+    def action(self, *actions):
+        """Yield those tokens whose action *is* one of the given actions."""
+        for t in self:
+            if t.is_token and self._inv ^ (t.action in actions):
+                yield t
+
+    @query
     def in_action(self, *actions):
-        """Yield those tokens whose action is or inherits from one of the given actions."""
+        """Yield those tokens whose action *is or inherits from* one of the given actions."""
         for t in self:
             if t.is_token and self._inv ^ any(t.action in a for a in actions):
                 yield t
