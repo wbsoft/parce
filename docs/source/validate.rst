@@ -1,5 +1,5 @@
-parce\.validate module
----------------------
+The validate module
+===================
 
 .. automodule:: parce.validate
     :members:

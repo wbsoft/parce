@@ -8,7 +8,12 @@ Welcome to parce's documentation!
 
 This module can be used for parsing text into tokens using one of the supplied
 language definitions in the ``lang`` directory, or building your own language
-definitions and parse text using them
+definitions and parse text using them.
+
+A powerful feature of parce is that you can retokenize only modified parts
+of a text if you already have tokenized it. This makes parce suitable for
+text editor etc. that need to keep a tokenized structure of the text up-to-date
+e.g. to support syntax highlighting as you type.
 
 The module is written and maintained by Wilbert Berendsen.
 Python 3.5 and higher is supported.
@@ -28,22 +33,7 @@ Why the name? It's short, not already taken and sounds like 'parse' :-)
    deflanguage.rst
    treestructure.rst
 
-   parce.rst
-   action.rst
-   document.rst
-   language.rst
-   lexicon.rst
-   pattern.rst
-   pkginfo.rst
-   query.rst
-   regex.rst
-   target.rst
-   tree.rst
-   treebuilder.rst
-   treedocument.rst
-   validate.rst
-
-
+   modoverview.rst
 
 Indices and tables
 ==================

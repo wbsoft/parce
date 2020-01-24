@@ -1,5 +1,5 @@
-parce\.treedocument module
----------------------
+The treedocument module
+=======================
 
 .. automodule:: parce.treedocument
     :members:

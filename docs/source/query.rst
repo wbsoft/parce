@@ -1,5 +1,5 @@
-parce\.query module
------------------------
+The query module
+================
 
 .. automodule:: parce.query
     :members:

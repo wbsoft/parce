@@ -1,5 +1,5 @@
-parce\.treebuilder module
----------------------
+The treebuilder module
+======================
 
 .. automodule:: parce.treebuilder
     :members:

@@ -1,5 +1,5 @@
-parce\.regex module
----------------------
+The regex module
+================
 
 .. automodule:: parce.regex
     :members:

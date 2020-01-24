@@ -123,9 +123,9 @@ Context have a ``query`` property that unleashes these powers::
 
     >>> tree.query.all("and").list()
     [<Token 'and' at 26:29 (Text)>, <Token 'and' at 69:72 (Text)>]
-    >>> tree.query.all[Comment].list()
+    >>> tree.query.all.action(Comment).list()
     [<Token '%' at 75:76 (Comment)>, <Token ' comment that' at 76:89 (Comment)>]
-    >>> tree.query.all[Number].count()
+    >>> tree.query.all.action(Number).count()
     3
     >>> tree.query.all(Nonsense.string).dump()
     <Context Nonsense.string at 33-67 (2 children)>

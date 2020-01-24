@@ -1,6 +1,5 @@
-
-parce\.language module
-------------------------
+The language module
+===================
 
 .. automodule:: parce.language
     :members:

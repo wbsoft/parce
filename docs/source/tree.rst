@@ -1,5 +1,5 @@
-parce\.tree module
----------------------
+The tree module
+===============
 
 .. automodule:: parce.tree
     :members:

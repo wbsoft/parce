@@ -1,5 +1,5 @@
-parce\.pkginfo module
------------------------
+The pkginfo module
+==================
 
 .. automodule:: parce.pkginfo
     :members:

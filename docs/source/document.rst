@@ -1,6 +1,5 @@
-
-parce\.document module
-----------------------
+The document module
+===================
 
 .. automodule:: parce.document
     :members:
