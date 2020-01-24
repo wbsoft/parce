@@ -132,7 +132,7 @@ Context have a ``query`` property that unleashes these powers::
      ├╴<Token 'string inside\nover multiple '... at 33:66 (Literal.String)>
      ╰╴<Token '"' at 66:67 (Literal.String)>
 
-Note that anything you do not look in your lexicon for is simply ignored.
+Note that anything you do not look for in your lexicon is simply ignored.
 But the special rule with ``default_action`` matches everything not captured
 by another rule.
 

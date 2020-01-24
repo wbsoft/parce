@@ -28,7 +28,7 @@ for us. After building, the ``lexicons`` attribute of the ``builder`` lists the
 lexicons that were left open (if any) when the end of the document was reached.
 
 This can be useful if we want to know that the source text was somehow
-"complete" and all nested construction were finished. For example, when
+"complete" and all nested constructions were finished. For example, when
 using the Nonsense.root lexicon from the Getting started section::
 
     >>> builder=parce.treebuilder.TreeBuilder(Nonsense.root)
