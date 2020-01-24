@@ -401,6 +401,10 @@ And this is an overview of the queries that narrow down the result set:
         ``slice(1)`` were not there, all the right siblings would become one large
         result set because you wouldn't know how many tokens "blaat" were
         matched.
+    ``remove_ancestors``
+        Remove nodes that have descendants in the current node list.
+    ``remove_descendants``
+        Remove nodes that have ancestors in the current node list.
     ``filter(predicate)``
         select nodes for which the predicate function returns a value that
         evaluates to True
@@ -440,7 +444,7 @@ For convenience, there are four "endpoint" methods for a query that make
 it easier in some cases to process the results:
 
     ``dump()``
-        for debugging, ``dump()``s all resulting nodes to standard output
+        for debugging, dumps all resulting nodes to standard output
     ``list()``
         aggregates the result set in a list.
     ``count()``
@@ -448,4 +452,7 @@ it easier in some cases to process the results:
     ``pick(default=None)``
         picks the first result, or returns the default if the result set was
         empty.
+
+Additional information can be found in the :doc:`query module's
+documentation <query>`.
 
