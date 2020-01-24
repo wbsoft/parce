@@ -728,18 +728,10 @@ class Context(list, NodeMixin):
         is returned.
 
         """
-        node = self
-        for parent in node.ancestors():
-            n = node.left_sibling()
-            if n:
-                while n:
-                    if n.is_token:
-                        if n.group:
-                            n = n.group[0]
-                        return n
-                    n = n[-1]
-                return
-            node = parent
+        for token in self.backward():
+            if token.group:
+                token = token.group[0]
+            return token
 
 
 def tokens(nodes):
