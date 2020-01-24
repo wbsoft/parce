@@ -73,17 +73,60 @@ Node — traversing the tree structure
 Both Token and Context have a ``parent`` atribute that points to its parent
 Context. Only for the root context, ``parent`` is ``None``.
 
-Token and Context both inherit from ``NodeMixin``, which defines a lot of
-useful methods to traverse tree structure.
+:py:class:`Token <parce.tree.Token>` and :py:class:`Context
+<parce.tree.Context>` both inherit from :py:class:`NodeMixin
+<parce.tree.NodeMixin>`, which defines a lot of useful methods to traverse
+tree structure.
+
+These methods are available both in Context and Token instances:
+
+.. autoclass:: parce.tree.NodeMixin
+   :noindex:
+   :members:
+
+
+Methods of Token instances
+--------------------------
+
+.. autoclass:: parce.tree.Token
+   :noindex:
+   :members:
+
+
+Methods of Context instances
+----------------------------
+
+.. autoclass:: parce.tree.Context
+   :noindex:
+   :members:
 
 
 
-Finding Tokens based on position
---------------------------------
+Iterating over Tokens and Contexts
+----------------------------------
+
+Often, when dealing with the tree structure, you want to know whether we have
+a Token or a Context. Instead of calling::
+
+    if isinstance(node, parce.tree.Token):
+        do_something()
+
+two readonly attributes are available, `is_token` and `is_context`. The first
+is only and always true in Token instances, the other in Context instances::
+
+    if node.is_token:
+        do_something()
 
 
 
 Querying the tree structure
 ---------------------------
 
+Besides the various `find` methods, there is another powerful way to search
+for Tokens and Contexts in the tree, the `query` property of every Token or
+Context.
+
+.. automodule:: parce.query
+   :noindex:
+   :members:
 

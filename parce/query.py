@@ -47,40 +47,40 @@ so `query.is_not.containing("bla")` yields Tokens that do not contain the text
 
 Examples:
 
-Find all tokens that are the first child of a Context with bla lexicon:
+Find all tokens that are the first child of a Context with bla lexicon::
 
     root.query.all(MyLang.bla)[0]
 
 
-Find (in Xml) all attributes with name 'name' that are in a <bla> tag:
+Find (in Xml) all attributes with name 'name' that are in a <bla> tag::
 
     root.query.all[Name.Tag]("bla").next('name')
 
 
-Find all tags containing "hi" in their text nodes:
+Find all tags containing "hi" in their text nodes::
 
     root.query.all[Name.Tag].next.next[Text].containing('hi')
 
 
-Find all comments that have TODO in it:
+Find all comments that have TODO in it::
 
     root.query.all[Comment].containing('TODO')
 
 
 Find all "\\version" tokens in the root context, that have a "2" in the version
-string after it:
+string after it::
 
     (t for t in root.query.children('\\version')
         if any(t.query.next.target.children.containing('2')))
 
-Which could also be written as:
+Which could also be written as::
 
     root.query.children('\\version').filter(
         lambda t: any(t.query.next.target.children.containing('2')))
 
 
 A query is a generator, you can iterate over the results. For debugging
-purposes, there are also the list(), pick(), count() and dump() methods.
+purposes, there are also the list(), pick(), count() and dump() methods.::
 
     for attrs in q.all[Name.Tag]('origin').right:
         for atr in attrs.query[Name.Attribute]:
@@ -88,155 +88,158 @@ purposes, there are also the list(), pick(), count() and dump() methods.
 
 
 Summary of the query methods:
+-----------------------------
 
 Endpoint methods, mainly for debugging:
 
-    count()
-        Just prints the number of nodes in the result set
+count()
+    Just prints the number of nodes in the result set
 
-    dump()
-        dump()s the full result nodes to stdout
+dump()
+    dump()s the full result nodes to stdout
 
-    list()
-        aggregate the results in a list
+list()
+    aggregate the results in a list
 
-    pick(default=None)
-        just pick the first result, or a default if no results
+pick(default=None)
+    just pick the first result, or a default if no results
 
 
 Navigating nodes:
+^^^^^^^^^^^^^^^^^
 
-    The query itself yields al children of the Context it was started from.
-    But using the following methods you can find your way through a tree
-    structure. Every method returns a new Query object, having the previous
-    one as source of nodes. Most methods are implemented as properties, so
-    you don't have to write parentheses.
+The query itself yields al children of the Context it was started from.
+But using the following methods you can find your way through a tree
+structure. Every method returns a new Query object, having the previous
+one as source of nodes. Most methods are implemented as properties, so
+you don't have to write parentheses.
 
-    all
-        yield all descendant nodes, depth-first, in order. First it yields the
-        context, then its children.
+all
+    yield all descendant nodes, depth-first, in order. First it yields the
+    context, then its children.
 
-    children
-        yield all the direct children of the current nodes
+children
+    yield all the direct children of the current nodes
 
-    parent
-        yield the parent of all current nodes. This can yield double
-        occurrences of nodes in the list. (Use uniq to fix that.)
+parent
+    yield the parent of all current nodes. This can yield double
+    occurrences of nodes in the list. (Use uniq to fix that.)
 
-    next, previous
-        yield the next or previous Token from the current node, if any
+next, previous
+    yield the next or previous Token from the current node, if any
 
-    right, left
-        yield the right or left sibling of every current node, if any
+right, left
+    yield the right or left sibling of every current node, if any
 
-    right_siblings
-        yield the right siblings of every node in the current node list.
-        This can lead to long result sets with many occurrences of the same
-        nodes.
+right_siblings
+    yield the right siblings of every node in the current node list.
+    This can lead to long result sets with many occurrences of the same
+    nodes.
 
-    left_siblings
-        yield the left siblings of every node in the current node list, in
-        backward order. Only use right_ and left_siblings when you want to
-        find one node in the result set.
+left_siblings
+    yield the left siblings of every node in the current node list, in
+    backward order. Only use right_ and left_siblings when you want to
+    find one node in the result set.
 
-    [int], __getitem__(int)
-        yield the nth child (if available) of each Context node
-        (supports negative indices)
+[int], __getitem__(int)
+    yield the nth child (if available) of each Context node
+    (supports negative indices)
 
-    [slice]
-        yield from the specified slice of each Context node
+[slice]
+    yield from the specified slice of each Context node
 
-    first, last
-        yield the first resp. the last child of every Context node.
-        Same as [0] or [-1].
+first, last
+    yield the first resp. the last child of every Context node.
+    Same as [0] or [-1].
 
-    target
-        yield the target context for a token, if any. See Token.target().
+target
+    yield the target context for a token, if any. See Token.target().
 
-    source
-        yield the source token for a context, if any. See Context.source().
+source
+    yield the source token for a context, if any. See Context.source().
 
 
 Selecting (filtering) nodes:
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-    These methods filter out current nodes without adding new nodes
-    to the selection.
+These methods filter out current nodes without adding new nodes
+to the selection.
 
-    tokens
-        select only the tokens
+tokens
+    select only the tokens
 
-    contexts
-        select only the contexts
+contexts
+    select only the contexts
 
-    uniq
-        Removes double occurrences of Tokens or Contexts, which can happen
-        e.g. when selecting the parent of all nodes
+uniq
+    Removes double occurrences of Tokens or Contexts, which can happen
+    e.g. when selecting the parent of all nodes
 
-    remove_ancestors
-        remove Context nodes from the current node list that have descendants
-        in the list.
+remove_ancestors
+    remove Context nodes from the current node list that have descendants
+    in the list.
 
-    remove_descendants
-        remove nodes from the current list if any of their ancestors is also
-        in the list.
+remove_descendants
+    remove nodes from the current list if any of their ancestors is also
+    in the list.
 
-    slice(stop)
-    slice(start, stop [, step])
-        Slice the full result set, using itertools.islice(). This can help
-        narrowing down the result set. For example:
+slice(stop)
+slice(start, stop [, step])
+    Slice the full result set, using itertools.islice(). This can help
+    narrowing down the result set. For example:
 
-            root.query.all("blaat").slice(1).right_siblings.slice(3) ...
+        root.query.all("blaat").slice(1).right_siblings.slice(3) ...
 
-        will continue the query with only the first occurrence of a token
-        "blaat", and then look for at most three right siblings. If the
-        slice(1) were not there, all the right siblings would become one large
-        result set because you wouldn't know how many tokens "blaat" were
-        matched.
+    will continue the query with only the first occurrence of a token
+    "blaat", and then look for at most three right siblings. If the
+    slice(1) were not there, all the right siblings would become one large
+    result set because you wouldn't know how many tokens "blaat" were
+    matched.
 
-    filter(predicate)
-        select nodes for which the predicate function returns a value that
-        evaluates to True
+filter(predicate)
+    select nodes for which the predicate function returns a value that
+    evaluates to True
 
-    map(function)
-        call function on every node and yield its results, which should be
-        nodes as well.
+map(function)
+    call function on every node and yield its results, which should be
+    nodes as well.
 
-    is_not
-        inverts the meaning of the following query, e.g. is_not.startingwith()
+is_not
+    inverts the meaning of the following query, e.g. is_not.startingwith()
 
-    The following query methods are inverted by `is_not`:
+The following query methods are inverted by `is_not`:
 
-    in_range(start=0, end=None)
-        select only the nodes that fully fit in the text range. If preceded
-        by `is_not`, selects the nodes that are outside the specified text
-        range.
+in_range(start=0, end=None)
+    select only the nodes that fully fit in the text range. If preceded
+    by `is_not`, selects the nodes that are outside the specified text
+    range.
 
-    (lexicon), (lexicon, lexicon2, ...)
-        select the Contexts with that lexicon (or one of the lexicons)
+(lexicon), (lexicon, lexicon2, ...)
+    select the Contexts with that lexicon (or one of the lexicons)
 
-    ("text"), ("text", "text2", ...)
-        select the Tokens with exact that text (or one of the texts)
+("text"), ("text", "text2", ...)
+    select the Tokens with exact that text (or one of the texts)
 
-    startingwith("text")
-        select the Tokens that start with the specified text
+startingwith("text")
+    select the Tokens that start with the specified text
 
-    endingwith("text")
-        select the Tokens that end with the specified text
+endingwith("text")
+    select the Tokens that end with the specified text
 
-    containing("text")
-        select the Tokens that contain specified text
+containing("text")
+    select the Tokens that contain specified text
 
-    matching("regex"), matching(regex)
-        select the Tokens that match the specified regular epression
-        (using re.search, the expression can match anywhere unless you use
-        ^ or $ characters).
+matching("regex"), matching(regex)
+    select the Tokens that match the specified regular epression
+    (using re.search, the expression can match anywhere unless you use
+    ^ or $ characters).
 
-    [action], [action, action<, action> ...]
-        select the Tokens that have one of the specified actions
+[action], [action, action<, action> ...]
+    select the Tokens that have one of the specified actions
 
-    in_action(*actions)
-        select tokens if their action belongs in the realm of one of the
-        specified StandardActions
+in_action(*actions)
+    select tokens if their action belongs in the realm of one of the
+    specified StandardActions
 
 
 """

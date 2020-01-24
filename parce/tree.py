@@ -245,11 +245,16 @@ class Token(NodeMixin):
 
     A token has the following attributes:
 
-    `parent`: the Context node to which the token was added
-    `pos`:    the position of the token in the original text
-    `end`:    the end position of the token in the original text
-    `text`:   the text of the token
-    `action`: the action specified by the lexicon rule that created the token
+    `parent`:
+        the Context node to which the token was added
+    `pos`:
+        the position of the token in the original text
+    `end`:
+        the end position of the token in the original text
+    `text`:
+        the text of the token
+    `action`:
+        the action specified by the lexicon rule that created the token
 
     When a pattern rule in a lexicon matches the text, a Token is created.
     When that rule would create more than one Token from a single regular
@@ -296,7 +301,7 @@ class Token(NodeMixin):
 
     You can call `len()` on a token, which returns the length of the token's
     text attribute, and you can use the string format method to embed the
-    token's text in another string:
+    token's text in another string::
 
         s = "blabla {}".format(token)
 
