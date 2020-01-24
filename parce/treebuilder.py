@@ -165,38 +165,37 @@ class TreeBuilder:
                         # could be made. In very particular cases a longer token
                         # could be found. (That's why we tried to go back to a
                         # newline.)
-                        gen = start_token.backward()
-                        for start_token in itertools.islice(gen, 9):
+                        for start_token in itertools.islice(start_token.backward(), 9):
                             pass
-                        start_token = next(gen, None)
                 if start_token:
-                    # don't start in the middle of a group, as they originate from
-                    # one single regexp match
                     if start_token.group:
+                        # don't start in the middle of a group, as they originate
+                        # from one single regexp match
                         start_token = start_token.group[0]
 
                     # make a short list of tokens from the start_token to the place
                     # we want to parse. We copy them because some might get moved to
-                    # the tail self.root. If they were not changed, we can adjust the
+                    # the tail tree. If they were not changed, we can adjust the
                     # modified region.
-                    start_tokens = [start_token.copy()]
-                    for t in start_token.forward():
+                    start_tokens = []
+                    start_token_index = 0
+                    for t in start_token.forward_including():
                         start_tokens.append(t.copy())
                         if t.end > start:
                             break
-                    start_token_index = 0
-                else:
-                    head = False
 
-            if head:
-                # remove the start token and all tokens to the right
-                pos = start = start_token.pos
+            # if there are no tokens before our start token, we'll just
+            # start from the beginning
+            if head and start_token and start_token.previous_token():
+                start = pos = start_token.pos
                 context = start_token.parent
                 start_token.cut()
             else:
-                pos = start = lowest_start = 0
+                start = pos = 0
                 context = self.root
                 context.clear()
+                if not head or not start_token:
+                    lowest_start = 0
 
             # start parsing
             done = False
