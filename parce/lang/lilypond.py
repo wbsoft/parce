@@ -110,7 +110,7 @@ class LilyPond(Language):
         """bla.bla.bla syntax."""
         yield r'\s*(\.)\s*(' + RE_LILYPOND_VARIABLE + ')', bygroup(Delimiter.Dot, Variable)
         yield default_target, -1
-        
+
     # -------------------- markup --------------------
     @lexicon
     def markup(cls):
@@ -165,12 +165,12 @@ class LilyPond(Language):
         from .scheme import SchemeLily
         yield from SchemeLily.one_arg()
         yield default_target, -1
-        
+
     @lexicon
     def schemelily(cls):
         """LilyPond from scheme.SchemeLily #{ #}."""
         yield r"#}", Delimiter.LilyPond, -1
-        yield from cls.root
+        yield from cls.root()
 
     # -------------- String ---------------------
     @lexicon
