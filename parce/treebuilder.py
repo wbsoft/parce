@@ -164,8 +164,8 @@ class TreeBuilder:
                     if start_token.group:
                         start_token = start_token.group[0]
 
-                    # we'll start parsing to see whether we can still use the
-                    # old tokens from start_token till last_token
+                    # while parsing we'll see whether we can still use the
+                    # old tokens from start_token till last_token.
                     # make a temporary copy-context for the new tokens
                     context = c = Context(start_token.parent.lexicon, None)
                     for p in start_token.parent.ancestors():
@@ -206,6 +206,7 @@ class TreeBuilder:
                             elif old_tokens_index == 0:
                                 # the first tokens already don't match with the
                                 # old ones. Go back some more tokens if possible
+                                # (this will probably never happen)
                                 if not old_tokens[0].previous_token():
                                     start = 0
                                     head = False
@@ -219,7 +220,8 @@ class TreeBuilder:
                                 else:
                                     start = start_token.pos
                                 context = start_token.parent
-                                start_token.cut()
+                                start_token.cut() # throw away old tree from here
+                                # give the new tokens the real context as parent
                                 for t in tokens:
                                     t.parent = context
                                 head = False    # stop looking further
