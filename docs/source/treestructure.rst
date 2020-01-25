@@ -96,6 +96,9 @@ These are the methods Token and Context both provide:
 
     ``dump()``
         Display a graphical representation of the node
+    ``parent_index()``
+        Return the index of this node in its parent
+        (faster than ``parent.index(node)``, because we use a binary search)
     ``right_sibling()``, ``left_sibling()``
         Return the left or right sibling, respectively (``None`` if not available)
     ``right_siblings()``
