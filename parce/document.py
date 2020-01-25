@@ -50,21 +50,21 @@ class AbstractDocument:
 
     To make a Document work, you should at least implement:
 
-        text()
-        _update_contents()
+     *   ``text()``
+     *   ``_update_contents()``
 
     The method text() should simply return the entire text string.
 
-    The method _update_contents() should read the (start, end, text) tuples
+    The method `_update_contents()` should read the (start, end, text) tuples
     from the list in self._changes, which is already sorted. These changes
     will never overlap. All start/end positions refer to the original state
     of the text.
 
     For efficiency reasons, you might want to reimplement:
 
-        set_text()
-        __len__()
-        _get_contents() (called by __getitem__)
+     *  ``set_text()``
+     *  ``__len__()``
+     *  ``_get_contents()`` (called by ``__getitem__``)
 
     """
     def __init__(self):
@@ -86,12 +86,15 @@ class AbstractDocument:
         return "<{} {}>".format(type(self).__name__, text)
 
     def __str__(self):
+        """Return the text."""
         return self.text()
 
     def __format__(self, formatstr):
+        """Format our text."""
         return format(self.text(), formatstr)
 
     def __len__(self):
+        """Return the length of the text."""
         return len(self.text())
 
     def __enter__(self):
@@ -120,9 +123,11 @@ class AbstractDocument:
                 self._apply_changes()
 
     def __delitem__(self, key):
+        """Delete the slice of text."""
         self[key] = ""
 
     def __getitem__(self, key):
+        """Get a character or a slice of text."""
         start, end = self._parse_key(key)
         if start == end:
             return ""

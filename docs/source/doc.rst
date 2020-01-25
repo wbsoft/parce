@@ -67,7 +67,7 @@ But you can also modify the text, using the slice syntax::
 
 Note that we requested the tree again (and awaited it being tokenized) using
 ``get_root(True)``, but the tree returned will always be the same object, for
-the lifetime of the Document (or to be mode precise, of the TreeBuilder the
+the lifetime of the Document (or to be more precise, of the TreeBuilder the
 document internally uses).
 
 Using ``Document.modified_range()`` we get information about the part that
@@ -118,3 +118,11 @@ of tokens is updated::
 This incantation replaces all XML tag names with the same name in upper case
 and with ``"yo:"`` prepended.
 
+
+More goodies
+------------
+
+Because a Document is basically a mutable string, we added some more nice
+methods to perform certain actions like search, replace, and substitution using
+regular expressions. And even undo/redo! See the :doc:`document module's
+documentation <document>`.
