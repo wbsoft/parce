@@ -27,113 +27,128 @@ from parce.target import DynamicTarget
 
 
 def validate_language(lang):
-    """Perform checks to the specified language class.
+    """Validate all lexicons in this language.
 
-    Detects circular default targets, invalid regular expressions, etc.
+    Errors and warnings are printed to stdout. If there are errors,
+    this function returns False, otherwise True.
 
     """
+
     lexicons = []
     for key, value in lang.__dict__.items():
         if isinstance(value, Lexicon):
             lexicons.append(getattr(lang, key))
 
+    correct = True
     for lexicon in lexicons:
-        validate_lexicon(lexicon)
+        correct &= LexiconValidator(lexicon).validate()
+    return correct
 
 
-def validate_lexicon(lexicon):
-    default_act, default_tg = None, None
-    msg = message(lexicon)
-    for pattern, action, *target in lexicon():
-        if pattern is parce.default_action:
-            if default_act:
-                msg("conflicting default actions")
-            else:
-                default_act = action
-        elif pattern is parce.default_target:
-            if default_tg:
-                msg("conflicting default targets")
-            else:
-                default_tg = action, *target
-                check_default_target(lexicon, default_tg)
-        else:
-            validate_pattern(msg, pattern)
-            validate_target(msg, target)
+class LexiconValidator:
 
-    if default_act and default_tg:
-        msg("can't have both default_action and default_target")
+    def __init__(self, lexicon):
+        self.lexicon = lexicon
+        self.errors = False
 
+    def error(self, msg, lexicon=None):
+        """Print message to stdout with lexicon name prepended. Sets error flag."""
+        self.errors = True
+        print("{}: error: {}".format(lexicon or self.lexicon, msg))
 
-def validate_pattern(msg, pattern):
-    """Validate a regular expression pattern."""
-    if isinstance(pattern, Pattern):
-        pattern = pattern.build()
-    try:
-        rx = re.compile(pattern)
-    except re.error as e:
-        msg("regular expression {} error:\n  {}".format(repr(pattern), e))
-    else:
-        if rx.match(''):
-            msg("warning: pattern {} matches the empty string".format(repr(pattern)))
+    def warning(self, msg, lexicon=None):
+        """Print message to stdout with lexicon name prepended. Sets error flag."""
+        print("{}: warning: {}".format(lexicon or self.lexicon, msg))
 
+    def validate(self):
+        """Validate a lexicon and return True if no errors, False otherwise."""
+        self.errors = False
+        print("Validating lexicon {}".format(self.lexicon))
 
-def validate_target(msg, target):
-    """Validate a target."""
-    def targets():
-        if len(target) == 1 and isinstance(target[0], DynamicTarget):
-            for t in target[0].targets:
-                yield from t
-        else:
-            yield from target
-    for t in targets():
-        if isinstance(t, DynamicTarget):
-            msg("a DynamicTarget must be the only one: {}".format(target))
-        elif not isinstance(t, (int, BoundLexicon)):
-            msg("invalid target {} in targets {}".format(t, target))
-            break
-
-
-def check_default_target(lexicon, target):
-    """Check whether this default target could lead to circular references.
-
-    This could hang the parser, and we wouldn't like to have that :-)
-
-    """
-    state = [lexicon]
-    circular = set()
-    while True:
-        msg = message(lexicon)
-        circular.add(lexicon)
-        depth = len(state)
-        for t in target:
-            if isinstance(t, int):
-                if t < 0:
-                    if len(state) + t < 1:
-                        return
-                    del state[t:]
+        default_act, default_tg = None, None
+        for pattern, action, *target in self.lexicon():
+            if pattern is parce.default_action:
+                if default_act:
+                    self.error("conflicting default actions")
                 else:
-                    state += [lexicon] * t
-            elif not isinstance(t, BoundLexicon):
-                msg("in default target only integer or lexicon allowed")
-                return
+                    default_act = action
+            elif pattern is parce.default_target:
+                if default_tg:
+                    self.error("conflicting default targets")
+                else:
+                    default_tg = action, *target
+                    self.check_default_target(default_tg)
             else:
-                state.append(t)
-        if len(state) == depth:
-            msg("invalid default target")
-            return
-        lexicon = state[-1]
-        if lexicon in circular:
-            state.extend(l for l in circular if l not in state)
-            msg("circular default target: {}".format(" -> ".join(map(str, state))))
-            return
-        for pattern, *target in lexicon():
-            if pattern is parce.default_target:
-                break
+                self.validate_pattern(pattern)
+                self.validate_target(target)
+
+        if default_act and default_tg:
+            self.error("can't have both default_action and default_target")
+        return not self.errors
+
+    def validate_pattern(self, pattern):
+        """Validate a regular expression pattern."""
+        if isinstance(pattern, Pattern):
+            pattern = pattern.build()
+        try:
+            rx = re.compile(pattern, self.lexicon.re_flags)
+        except re.error as e:
+            self.error("regular expression {} error:\n  {}".format(repr(pattern), e))
         else:
-            break
+            if rx.match(''):
+                self.warning("pattern {} matches the empty string".format(repr(pattern)))
 
+    def validate_target(self, target):
+        """Validate a target."""
+        def targets():
+            if len(target) == 1 and isinstance(target[0], DynamicTarget):
+                for t in target[0].targets:
+                    yield from t
+            else:
+                yield from target
+        for t in targets():
+            if isinstance(t, DynamicTarget):
+                self.error("a DynamicTarget must be the only one: {}".format(target))
+            elif not isinstance(t, (int, BoundLexicon)):
+                self.error("invalid target {} in targets {}".format(t, target))
+                break
 
-def message(lexicon):
-    """Return a callable that prints a message with the lexicon name prepended."""
-    return lambda s: print("{}: ".format(lexicon) + s)
+    def check_default_target(self, target):
+        """Check whether this default target could lead to circular references.
+
+        This could hang the parser, and we wouldn't like to have that :-)
+
+        """
+        lexicon = self.lexicon
+        state = [lexicon]
+        circular = set()
+        while True:
+            circular.add(lexicon)
+            depth = len(state)
+            for t in target:
+                if isinstance(t, int):
+                    if t < 0:
+                        if len(state) + t < 1:
+                            return
+                        del state[t:]
+                    else:
+                        state += [lexicon] * t
+                elif not isinstance(t, BoundLexicon):
+                    self.error("in default target only integer or lexicon allowed", lexicon)
+                    return
+                else:
+                    state.append(t)
+            if len(state) == depth:
+                self.error("invalid default target", lexicon)
+                return
+            lexicon = state[-1]
+            if lexicon in circular:
+                state.extend(l for l in circular if l not in state)
+                self.error("circular default target: {}".format(" -> ".join(map(str, state))), lexicon)
+                return
+            for pattern, *target in lexicon():
+                if pattern is parce.default_target:
+                    break
+            else:
+                break
 
