@@ -122,6 +122,19 @@ and with ``"yo:"`` prepended.
 More goodies
 ------------
 
+The ``parce.Document`` class is in fact built from two base classes:
+``AbstractDocument``/``Document`` from the :py:mod:`document <parce.document>` module and
+``TreeDocumentMixin`` from the :py:mod:`treedocument <parce.treedocument>` module.
+
+Using both base classes, it is not difficult to design a class that wraps an
+objext representing a text document in a GUI editor. You need only to provide
+two methods in your wrapper: ``text()`` to get all text, and
+``_update_contents()`` to change the text programmatically. When the text is
+changed, AbstractDocument calls ``contents_changed``, which in
+``TreeDocumentMixin`` is implemented to inform the TreeBuilder about a part of
+text that needs to be retokenized. Also your wrapper class should call
+``contents_changed`` whenever the user has typed in the editor.
+
 Because a Document is basically a mutable string, we added some more nice
 methods to perform certain actions like search, replace, and substitution using
 regular expressions. And even undo/redo! See the :doc:`document module's

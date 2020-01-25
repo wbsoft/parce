@@ -31,7 +31,8 @@ import parce.treebuilder
 class TreeDocumentMixin:
     """Encapsulates a full tokenized text string.
 
-    Combine this class with a subclass of AbstractDocument (see document.py).
+    Combine this class with a subclass of AbstractDocument (see the
+    :py:mod:`document <parce.document>` module).
 
     Everytime the text is modified, only the modified part is retokenized. If
     that changes the lexicon in which the last part (after the modified part)
