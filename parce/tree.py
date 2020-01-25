@@ -320,14 +320,6 @@ class Token(NodeMixin):
         self.text = text
         self.action = action
 
-    def copy(self):
-        """Return a shallow copy.
-
-        The parent still points to the parent of the original.
-
-        """
-        return type(self)(self.parent, self.pos, self.text, self.action)
-
     def equals(self, other):
         """Return True if other has same pos, text and action and state."""
         return (self.pos == other.pos
@@ -544,19 +536,6 @@ class Context(list, NodeMixin):
     def __init__(self, lexicon, parent):
         self.lexicon = lexicon
         self.parent = parent
-
-    def copy(self):
-        """Return a copy of this Context node, with copies of all the children.
-
-        The parent of the copy is None.
-
-        """
-        copy = type(self)(self.lexicon, None)
-        for n in self:
-            c = n.copy()
-            c.parent = copy
-            copy.append(c)
-        return copy
 
     def __repr__(self):
         pos, end = self.pos, self.end
