@@ -33,7 +33,7 @@ Why the name? It's short, not already taken and sounds like 'parse' :-)
    deflanguage.rst
    treestructure.rst
    building.rst
-
+   doc.rst
 
    modoverview.rst
 
