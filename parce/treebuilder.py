@@ -154,63 +154,74 @@ class TreeBuilder:
 
             # find the last token before the modified part, we will start parsing
             # before that token. If there are no tokens, we just start at 0.
-            # At least go back to just before a newline, if possible.
             if head:
-                i = text.rfind('\n', 0, start)
-                start_token = self.root.find_token_before(i) if i > -1 else None
-                if not start_token:
-                    start_token = self.root.find_token_before(start)
-                    if start_token:
-                        # go back some more tokens, you never know a longer match
-                        # could be made. In very particular cases a longer token
-                        # could be found. (That's why we tried to go back to a
-                        # newline.)
-                        for start_token in itertools.islice(start_token.backward(), 9):
-                            pass
-                if start_token:
+                last_token = start_token = self.root.find_token_before(start)
+                if last_token:
+                    # go back some more tokens, you never know a longer match
+                    # could be made.
+                    for start_token in itertools.islice(last_token.backward(), 10):
+                        pass
                     if start_token.group:
-                        # don't start in the middle of a group, as they originate
-                        # from one single regexp match
                         start_token = start_token.group[0]
 
-                    # make a short list of tokens from the start_token to the place
-                    # we want to parse. We copy them because some might get moved to
-                    # the tail tree. If they were not changed, we can adjust the
-                    # modified region.
-                    start_tokens = []
-                    start_token_index = 0
+                    # we'll start parsing to see whether we can still use the
+                    # old tokens from start_token till last_token
+                    # make a temporary copy-context for the new tokens
+                    context = c = Context(start_token.parent.lexicon, None)
+                    for p in start_token.parent.ancestors():
+                        new = Context(p.lexicon, None)
+                        new.append(c)
+                        c.parent = c = new
+                    if start_token.previous_token():
+                        start = start_token.pos
+                    else:
+                        start = 0
+                    old_tokens = []
                     for t in start_token.forward_including():
-                        start_tokens.append(t.copy())
-                        if t.end > start:
+                        old_tokens.append(t)
+                        if t is last_token:
                             break
-
-            # if there are no tokens before our start token, we'll just
-            # start from the beginning
-            if head and start_token and start_token.previous_token():
-                start = pos = start_token.pos
-                context = start_token.parent
-                start_token.cut()
-            else:
-                start = pos = 0
+                    old_tokens_index = 0
+                else:
+                    lowest_start = 0
+                    head = False
+            if not head:
+                start = 0
                 context = self.root
                 context.clear()
-                if not head or not start_token:
-                    lowest_start = 0
 
             # start parsing
+            pos = start
             done = False
             while not done:
                 for pos, tokens, target in self.parse_context(context, text, pos):
                     if tokens:
                         if head:
                             # move start if the tokens before start didn't change
-                            if (start_token_index + len(tokens) <= len(start_tokens) and
+                            if (old_tokens_index + len(tokens) <= len(old_tokens) - 1 and
                                 all(new.equals(old)
-                                    for old, new in zip(start_tokens[start_token_index:], tokens))):
+                                    for old, new in zip(old_tokens[old_tokens_index:], tokens))):
                                 start = pos
-                                start_token_index += len(tokens)
+                                old_tokens_index += len(tokens)
+                            elif old_tokens_index == 0:
+                                # the first tokens already don't match with the
+                                # old ones. Go back some more tokens if possible
+                                if not old_tokens[0].previous_token():
+                                    start = 0
+                                    head = False
+                                restart = done = True
+                                break
                             else:
-                                start = tokens[0].pos
+                                # from here we will really use the new tokens
+                                start_token = old_tokens[old_tokens_index]
+                                if start_token.equals(tokens[0]):
+                                    start = start_token.end
+                                else:
+                                    start = start_token.pos
+                                context = start_token.parent
+                                start_token.cut()
+                                for t in tokens:
+                                    t.parent = context
                                 head = False    # stop looking further
                         if tail:
                             if tokens[0].pos > tail_pos:
