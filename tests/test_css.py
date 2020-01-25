@@ -42,7 +42,7 @@ tree = root(Css.root, css)
 
 assert len(tree) == 7
 assert tree[2][0][0].action is Name.Attribute
-assert tree.query.all[Number].pick().pos == 40
+assert tree.query.all.action(Number).pick().pos == 40
 assert tree.query.all(Css.declaration)[0][0].list() == [
     'width', 'height', 'color', 'background','text-decoration']
-assert tree.query.all[Name.Property]("color").next.next.pick() == "white"
+assert tree.query.all.action(Name.Property)("color").next.next.pick() == "white"
