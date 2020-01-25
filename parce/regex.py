@@ -19,17 +19,29 @@
 
 
 """
-This module contains some smart functions to build regular expressions:
+This module contains some smart functions to build or manipulate regular
+expressions:
 
-* words2regexp() builds an optimized regular expression from a list of words.
+    ``words2regexp()``
+        builds an optimized regular expression from a list of words.
 
-The following helper functions are available:
+    ``common_suffix()``
+        returns the common suffix of the words, if any.
 
-* common_suffix() returns the common suffix of the words, if any.
-* make_trie() makes a dict-based radix tree structure from a list of words.
-* trie_to_regexp_tuple() converts a trie structure to a regexp tuple.
-* build_regexp() converts a tuple to a real regular expression.
-* make_charclass() turns a list of characters into a sensible [a-z] expression.
+    ``make_trie()``
+        makes a dict-based radix tree structure from a list of words.
+
+    ``trie_to_regexp_tuple()``
+        converts a trie structure to a regexp tuple.
+
+    ``build_regexp()``
+        converts a tuple to a real regular expression.
+
+    ``make_charclass()``
+        turns a list of characters into a sensible [a-z] expression.
+
+    ``to_string()``
+        to convert a regexp to a normal search string if possible.
 
 """
 
@@ -316,7 +328,7 @@ def to_string(expr):
     # handle all escapes, there may be fails, in that case we can't use the expr as string
     pat = (r'\\(?:'
         r'x([0-9a-fA-F]{2})'    # 1 hex
-        r'|([afnrtv])'         # 2 normal escaped character like \n
+        r'|([afnrtv])'          # 2 normal escaped character like \n
         r'|(\d{1,3})'           # 3 octal , or fail if back ref
         r'|u([0-9a-fA-F]{4})'   # 4 \uxxxx
         r'|U([0-9a-fA-F]{8})'   # 5 \Uxxxxxxxx
