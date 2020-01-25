@@ -172,6 +172,7 @@ class TreeBuilder:
                         new = Context(p.lexicon, None)
                         new.append(c)
                         c.parent = c = new
+                    # if there are no tokens before start_token, start at 0
                     if start_token.previous_token():
                         start = start_token.pos
                     else:
