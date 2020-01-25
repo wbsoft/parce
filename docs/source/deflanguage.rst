@@ -38,7 +38,8 @@ call the method through the class definition, it yields the rules, and the
 code yielding the rules knows the current Language class via the ``cls``
 argument. So the rules are able to in their target point to other lexicons of
 the same class. This makes inheriting and re-implementing just one or a few
-lexicons very easy.
+lexicons very easy. Of course a target may also point to a lexicon from a
+*different* language class, when you need to switch languages.
 
 The pattern
 -----------
