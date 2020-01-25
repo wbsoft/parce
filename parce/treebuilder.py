@@ -47,16 +47,16 @@ from parce.tree import Context, Token, _GroupToken
 class TreeBuilder:
     """Build a tree directly from parsing the text.
 
-    The root node of the tree is in the `root` instance attribute.
+    The root node of the tree is in the ``root`` instance attribute.
 
-    After calling build() or rebuild(), three instance variables are set:
+    After calling ``build()`` or ``rebuild()``, three instance variables are set:
 
-        start, end:
+        ``start``, ``end``:
             indicate the region the tokens were changed. After build(), start
             is always 0 and end = len(text), but after rebuild(), these values
             indicate the range that was actually re-tokenized.
 
-        lexicons:
+        ``lexicons``:
             the list of open lexicons (excluding the root lexicon) at the end
             of the document. This way you can see in which lexicon parsing
             ended.
@@ -353,21 +353,22 @@ class BackgroundTreeBuilder(TreeBuilder):
 
     BackgroundTreeBuilder supports tokenizing in a background thread. You
     must specify changes to the document using the Changes object returned by
-    the change() context manager method:
+    the ``change()`` context manager method::
 
         with builder.change() as c:
             c.change_text("new text", position, removed, added)
 
     Tokenizing then starts in the background. During tokenizing it is still
-    possible to add new changes using change(). You can add callbacks to the
-    `updated_callbacks` attribute (using add_build_updated_callback()) that are
-    called everytime the whole document is tokenized.
+    possible to add new changes using ``change()``. You can add callbacks to
+    the ``updated_callbacks`` attribute (using
+    ``add_build_updated_callback()``) that are called everytime the whole
+    document is tokenized.
 
-    You can also add callbacks to the `finished_callbacks` attribute, using
-    add_finished_callback(); those are called once when all pending changes are
-    processed and then forgotten again.
+    You can also add callbacks to the ``finished_callbacks`` attribute, using
+    ``add_finished_callback()``; those are called once when all pending changes
+    are processed and then forgotten again.
 
-    To be sure you get a complete tree, call get_root().
+    To be sure you get a complete tree, call ``get_root()``.
 
     """
     def __init__(self, root_lexicon=None):
@@ -534,10 +535,10 @@ class BackgroundTreeBuilder(TreeBuilder):
 class Changes:
     """Store changes that have to be made to a tree.
 
-    This object is used through TreeBuilder.change().
-    Calling change_contents() merges new changes with the existing changes.
-    Calling change_root_lexicon() stores a root lexicon change.
-    On init and clear() the changes are reset.
+    This object is used through ``TreeBuilder.change()``.
+    Calling ``change_contents()`` merges new changes with the existing changes.
+    Calling ``change_root_lexicon()`` stores a root lexicon change.
+    On init and ``clear()`` the changes are reset.
 
     """
     __slots__ = "root_lexicon", "text", "position", "added", "removed"
