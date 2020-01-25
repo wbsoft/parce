@@ -17,5 +17,6 @@ Overview of all modules
    tree.rst
    treebuilder.rst
    treedocument.rst
+   util.rst
    validate.rst
 
