@@ -44,7 +44,7 @@ description = "The parce lexer"
 
 #: long description
 long_description = \
-    "A Python library to lex text."
+    "A Python library to parse text."
 
 #: maintainer name
 maintainer = "Wilbert Berendsen"

@@ -1,14 +1,16 @@
 .. parce documentation master file, created by
    sphinx-quickstart on Fri Dec 20 19:53:27 2019.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
 
-Welcome to parce's documentation!
-===================================
+The parce module
+================
 
-This module can be used for parsing text into tokens using one of the supplied
-language definitions in the ``lang`` directory, or building your own language
-definitions and parse text using them.
+::
+
+   import parce
+
+This Python package, `parce`, can be used for parsing text into tokens using
+one of the supplied language definitions in the ``lang`` directory, or
+building your own language definitions and parse text using them.
 
 A powerful feature of parce is that you can retokenize only modified parts
 of a text if you already have tokenized it. This makes parce suitable for

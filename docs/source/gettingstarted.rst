@@ -10,7 +10,8 @@ or::
 
     from parce import *
 
-The latter way of importing is easier to use when defining your own language.
+The first way is recommended;
+the latter way of importing is easier to use when defining your own language.
 
 Defining your own language
 --------------------------

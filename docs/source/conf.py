@@ -98,6 +98,10 @@ html_theme = 'alabaster'
 #
 html_theme_options = {
     'fixed_sidebar': 'true',
+    'github_user': 'wbsoft',
+    'github_repo': 'parce',
+    'show_related': 'true',
+    'description': parce.pkginfo.description,
 }
 
 # Add any paths that contain custom static files (such as style sheets) here,
