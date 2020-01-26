@@ -7,6 +7,8 @@ current master:
 - Added testing using pytest
 - Added CSS parser
 - Improved LilyPond and Scheme parser
+- Documentation added and improved
+- Running `pytest-3` now also validates all languages
 
 
 2020-01-22: parce-0.3.0
