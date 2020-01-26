@@ -199,7 +199,7 @@ class TreeBuilder:
                     if tokens:
                         if head:
                             # move start if the tokens before start didn't change
-                            if (old_tokens_index + len(tokens) <= len(old_tokens) - 1 and
+                            if (old_tokens_index + len(tokens) < len(old_tokens) and
                                 all(new.equals(old)
                                     for old, new in zip(old_tokens[old_tokens_index:], tokens))):
                                 start = pos
@@ -225,7 +225,9 @@ class TreeBuilder:
                                 # give the new tokens the real context as parent
                                 for t in tokens:
                                     t.parent = context
+                                context.extend(tokens)
                                 head = False    # stop looking further
+                                break # continue with new context
                         if tail:
                             if tokens[0].pos > tail_pos:
                                 for tail_token, tail_pos in tail_gen:
