@@ -173,10 +173,7 @@ class TreeBuilder:
                         new.append(c)
                         c.parent = c = new
                     # if there are no tokens before start_token, start at 0
-                    if start_token.previous_token():
-                        start = start_token.pos
-                    else:
-                        start = 0
+                    start = start_token.pos if start_token.previous_token() else 0
                     old_tokens = []
                     for t in start_token.forward_including():
                         old_tokens.append(t)
@@ -215,20 +212,17 @@ class TreeBuilder:
                                 break
                             else:
                                 # from here we will really use the new tokens
-                                start_token = old_tokens[old_tokens_index]
-                                if start_token.equals(tokens[0]):
-                                    start = start_token.end
-                                else:
-                                    start = start_token.pos
-                                context = start_token.parent
-                                start_token.cut() # throw away old tree from here
+                                t = old_tokens[old_tokens_index]
+                                start = t.end if t.equals(tokens[0]) else t.pos
+                                context = t.parent
+                                t.cut() # throw away old tree from here
                                 # give the new tokens the real context as parent
                                 for t in tokens:
                                     t.parent = context
                                 context.extend(tokens)
-                                head = False    # stop looking further
                                 if target:
                                     context = self.update_context(context, target)
+                                head = False    # stop looking further
                                 break # continue with new context anyway
                         if tail:
                             if tokens[0].pos > tail_pos:
