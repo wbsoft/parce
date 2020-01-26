@@ -224,7 +224,7 @@ class TreeBuilder:
                                     context = self.update_context(context, target)
                                 head = False    # stop looking further
                                 break # continue with new context anyway
-                        if tail:
+                        elif tail:
                             if tokens[0].pos > tail_pos:
                                 for tail_token, tail_pos in tail_gen:
                                     if tail_pos >= tokens[0].pos:
