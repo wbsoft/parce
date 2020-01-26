@@ -31,6 +31,9 @@ as you type. And because the token tree stucture has very powerful search and
 query features, you can quickly provide the user with much feedback about the
 type of the text that is entered/edited.
 
+There is already a package `parceqt <https://github.com/wbsoft/parceqt>`__
+that does this for applications based on the Qt5 library (using PyQt5).
+
 A difference with a beautiful package like `pygments` is that emphasis in
 `parce` lies on live updating and interactive usage of the token tree, which
 means that parsing is always sequential. For example, it is not supported
