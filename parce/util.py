@@ -30,19 +30,19 @@ def abbreviate_repr(s, length=30):
 
 
 def merge_adjacent_actions(tokens):
-    """Yield three-tuples (pos, end, action).
+    """Yield four-tuples (pos, end, action, language).
 
     Adjacent actions that are the same are merged into
     one range.
 
     """
-    stream = ((t.pos, t.end, t.action) for t in tokens)
-    for pos, end, action in stream:
-        for npos, nend, naction in stream:
-            if naction != action or npos > end:
-                yield pos, end, action
-                pos, action = npos, naction
+    stream = ((t.pos, t.end, t.action, t.parent.lexicon.language) for t in tokens)
+    for pos, end, action, lang in stream:
+        for npos, nend, naction, nlang in stream:
+            if naction != action or npos > end or nlang != lang:
+                yield pos, end, action, lang
+                pos, action, lang = npos, naction, nlang
             end = nend
-        yield pos, end, action
+        yield pos, end, action, lang
 
 
