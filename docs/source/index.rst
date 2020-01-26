@@ -32,6 +32,7 @@ Why the name? It's short, not already taken and sounds like 'parse' :-)
    :maxdepth: 2
    :caption: Contents:
 
+   overview.rst
    gettingstarted.rst
    deflanguage.rst
    treestructure.rst
