@@ -2,7 +2,7 @@
 #
 # This file is part of the parce Python package.
 #
-# Copyright © 2019 by Wilbert Berendsen <info@wilbertberendsen.nl>
+# Copyright © 2019-2020 by Wilbert Berendsen <info@wilbertberendsen.nl>
 #
 # This module is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -57,4 +57,7 @@ url = "https://github.com/wbsoft/parce"
 
 #: license
 license = "GPL"
+
+#: copyright year
+copyright_year = "2019-2020"
 

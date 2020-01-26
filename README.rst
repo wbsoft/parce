@@ -1,6 +1,10 @@
 The parce Python module
 =========================
 
+::
+
+    import parce
+
 This module parses text into tokens, and is able to reparse only modified parts
 of the text, using the earlier generated tokens. Tokenized text lives in a tree
 structure with powerful quering methods for finding tokens and contexts.

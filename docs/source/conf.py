@@ -53,7 +53,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = parce.pkginfo.name
-copyright = '2019, ' + parce.pkginfo.maintainer
+copyright = parce.pkginfo.copyright_year + ', ' + parce.pkginfo.maintainer
 author = parce.pkginfo.maintainer
 
 # The version info for the project you're documenting, acts as replacement for
