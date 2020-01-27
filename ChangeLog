@@ -2,7 +2,7 @@ ChangeLog of the Python parce package
 =======================================
 
 
-current master:
+2020-01-27: parce-0.4.0
 
 - Added testing using pytest
 - Added CSS parser
