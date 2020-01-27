@@ -4,7 +4,7 @@ Overview
 The `parce` module consists of a parser that can build a tree structure of
 `tokens` from a text, using regular expression patterns. Parsing happens by a
 `lexicon`, which is a set of rules with patterns to look for. Tokens can be
-give a meaning (`action`) and a rule can, if its pattern matches, also
+given a meaning (`action`) and a rule can, if its pattern matches, also
 move parsing to another lexicon, "opening a new context", so to say.
 
 Lexicons are grouped together defining a language. Some language definitions
