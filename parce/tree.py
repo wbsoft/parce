@@ -361,6 +361,28 @@ class Token(NodeMixin):
         yield self
         yield from self.backward(upto)
 
+    def forward_until(self, other):
+        """Yield all tokens between us and the other."""
+        if other.pos > self.pos:
+            context, trail_start, trail_end = self.common_ancestor_with_trail(other)
+            if context:
+                p = self.parent
+                for i in trail_start[:0:-1]:
+                    yield from tokens(p[i+1:])
+                    p = p.parent
+                yield from tokens(context[trail_start[0]+1:trail_end[0]])
+                node = context[trail_end[0]]
+                for i in trail_end[1:]:
+                    yield from tokens(node[:i])
+                    node = node[i]
+
+    def forward_until_including(self, other):
+        """Like forward_until, but including self and other."""
+        yield self
+        if other.pos > self.pos:
+            yield from self.forward_until(other)
+            yield other
+
     def cut(self):
         """Remove this token and all tokens to the right from the tree."""
         for parent, index in self.ancestors_with_index():
@@ -677,27 +699,7 @@ class Context(list, NodeMixin):
             yield start_token
             return
         end_token = self.find_token_left(end)
-        if end_token is start_token:
-            yield start_token
-            return
-        if end_token.pos > start_token.pos:
-            # all this is just to avoid a pos comparison on *each* token
-            # which is faster for large ranges of tokens
-            context, trail_start, trail_end = start_token.common_ancestor_with_trail(end_token)
-            # yield start token and then climb down the tree
-            yield start_token
-            p = start_token.parent
-            for i in trail_start[:0:-1]:
-                yield from tokens(p[i+1:])
-                p = p.parent
-            # yield intermediate tokens
-            yield from tokens(context[trail_start[0]+1:trail_end[0]])
-            # then climb up the tree for the end token
-            node = context[trail_end[0]]
-            for i in trail_end[1:]:
-                yield from tokens(node[:i])
-                node = node[i]
-            yield node  # == end_token
+        yield from start_token.forward_until_including(end_token)
 
     def source(self):
         """Return the first Token, if any, when going to the left from this context.
