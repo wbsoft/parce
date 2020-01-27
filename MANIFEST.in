@@ -1,2 +1,5 @@
-include README.rst ChangeLog
 global-exclude *~
+include README.rst ChangeLog
+graft docs
+prune docs/build
+recursive-include tests *.py
