@@ -18,10 +18,10 @@ meaning of text to be able to provided context sensitive editing features.
 
 The parce module is written and maintained by Wilbert Berendsen.
 
-| Homepage: http://parce.info
+| Homepage: https://parce.info
 | Development: https://github.com/wbsoft/parce
 | Download: https://pypi.org/project/parce/
-| Documentation: https://python-parce.readthedocs.io/en/latest/
+| Documentation: https://parce.info
 
 Why the name? It's short, not already taken and sounds like 'parse' :-)
 
