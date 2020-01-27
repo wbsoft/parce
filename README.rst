@@ -18,7 +18,8 @@ meaning of text to be able to provided context sensitive editing features.
 
 The parce module is written and maintained by Wilbert Berendsen.
 
-| Homepage: https://github.com/wbsoft/parce
+| Homepage: http://parce.info
+| Development: https://github.com/wbsoft/parce
 | Download: https://pypi.org/project/parce/
 | Documentation: https://python-parce.readthedocs.io/en/latest/
 
