@@ -174,11 +174,7 @@ class TreeBuilder:
                         c.parent = c = new
                     # if there are no tokens before start_token, start at 0
                     start = start_token.pos if start_token.previous_token() else 0
-                    old_tokens = []
-                    for t in start_token.forward_including():
-                        old_tokens.append(t)
-                        if t is last_token:
-                            break
+                    old_tokens = list(start_token.forward_until_including(last_token))
                     old_tokens_index = 0
                 else:
                     lowest_start = 0
