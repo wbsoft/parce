@@ -150,6 +150,11 @@ Token has the following additional methods and attributes for node traversal:
         Yield all tokens from here in backward direction, including self
     ``forward_including(upto=None)``
         Yield all tokens from here in forward direction, including self.
+    ``forward_until(other)``
+        Yield all tokens between ourself and the other.
+    ``forward_until_including(other)``
+        Yield all tokens between ourself and the other, including ourself
+        and the other.
     ``target()``
         Return the Context that was started from the rule that this token
         originated from. Normally this is the right sibling, but it can also
