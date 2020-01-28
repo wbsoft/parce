@@ -26,7 +26,8 @@ Testing is done by running ``pytest-3`` in the root directory.
 | Download: https://pypi.org/project/parce/
 | Documentation: https://parce.info
 
-Why the name? It's short, it was available and sounds like 'parse' :-)
+Why the name? It's short, sounds like 'parse', and has the meaning of
+"friend", "buddy", "bro." :-)
 
 
 .. toctree::

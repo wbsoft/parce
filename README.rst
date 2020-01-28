@@ -23,7 +23,8 @@ The parce module is written and maintained by Wilbert Berendsen.
 | Download: https://pypi.org/project/parce/
 | Documentation: https://parce.info
 
-Why the name? It's short, not already taken and sounds like 'parse' :-)
+Why the name? It's short, sounds like 'parse', and has the meaning of
+"friend", "buddy", "bro." :-)
 
 The parce package requires Python 3.5+ and is released under the General Public
 License version 3. Testing is done using ``pytest-3`` in the base directory.
