@@ -1,0 +1,159 @@
+/*
+ * Default CSS theme for parce.
+ *
+ * Name "default"
+ * Also serves as template for other themes.
+ */
+
+/*
+ * inheriting from Name
+ */
+
+.parce
+.attribute {
+
+}
+
+.parce
+.builtin {
+
+}
+
+.parce
+.class {
+
+}
+
+.parce
+.constant {
+
+}
+
+.parce
+.element {
+
+}
+
+.parce
+.function {
+
+}
+
+.parce
+.identifier {
+
+}
+
+.parce
+.property {
+
+}
+
+.parce
+.tag {
+
+}
+
+.parce
+.variable {
+
+}
+
+/*
+ * inheriting from Delimiter
+ */
+
+.parce
+.operator {
+
+}
+
+/*
+ * inheriting from Literal
+ */
+
+.parce
+.boolean {
+
+}
+
+.parce
+.char {
+
+}
+
+.parce
+.number {
+
+}
+
+.parce
+.string {
+
+}
+
+.parce
+.verbatim {
+
+}
+
+
+/*
+ * Base style classes
+ */
+
+.parce
+.whitespace {
+
+}
+
+.parce
+.text {
+
+}
+
+.parce
+.escape {
+
+}
+
+.parce
+.keyword {
+    font-weight: bold;
+    color: black;
+}
+
+.parce
+.name {
+    color: darkblue;
+}
+
+.parce
+.literal {
+
+}
+
+.parce
+.delimiter {
+    font-weight: 600;   /* almost bold */
+}
+
+.parce
+.comment {
+    font-style: italic;
+    color: #666;
+}
+
+.parce
+.error {
+    text-decoration: underline;
+    text-decoration-color: red;
+}
+
+/*
+ * Defaults for a parce DIV/window etc.
+ */
+.parce {
+    background: white;
+    color: black;
+}
