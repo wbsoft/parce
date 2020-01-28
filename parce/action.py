@@ -84,10 +84,14 @@ This module defines the following pre-defined standard actions::
     Comment = action.StandardAction("Comment")
     Error = action.StandardAction("Error")
 
-    Verbatim= Literal.Verbatim
+    Verbatim = Literal.Verbatim
     String = Literal.String
     Number = Literal.Number
+    Boolean = Literal.Boolean
+    Char = Literal.Char
+    Operator = Delimiter.Operator
     Builtin = Name.Builtin
+    Function = Name.Function
     Variable = Name.Variable
 
 (This list may be out of date, see __init__.py for the exact list.)
