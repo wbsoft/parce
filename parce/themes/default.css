@@ -36,7 +36,8 @@
 
 .parce
 .function {
-
+    font-weight: bold;
+    color: #0000c0;
 }
 
 .parce
@@ -56,7 +57,7 @@
 
 .parce
 .variable {
-
+    color: #00f;
 }
 
 /*
@@ -84,12 +85,12 @@
 
 .parce
 .number {
-
+    color: #808000;
 }
 
 .parce
 .string {
-
+    color: #c00000;
 }
 
 .parce
@@ -114,7 +115,8 @@
 
 .parce
 .escape {
-
+    color: #008080;
+    font-weight: 600;   /* almost bold */
 }
 
 .parce
@@ -146,6 +148,7 @@
 
 .parce
 .error {
+    color: red;
     text-decoration: underline;
     text-decoration-color: red;
 }
