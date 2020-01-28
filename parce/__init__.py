@@ -20,7 +20,6 @@
 
 """
 The parce Python module.
-
 """
 
 from . import pattern, action, target
@@ -28,37 +27,6 @@ from . import lexicon as lexicon_, treebuilder, document, treedocument
 from .document import Cursor
 from .language import Language
 from .pkginfo import version, version_string
-
-
-# these can be used in rules where a pattern is expected
-default_action = object()   # denotes a default action for unmatched text
-default_target = object()   # denotes a default target when no text matches
-
-
-# used to suppress a token
-skip = action.SkipAction()
-
-# predefined standard actions
-Whitespace = action.StandardAction("Whitespace")
-Text = action.StandardAction("Text")
-
-Escape = action.StandardAction("Escape")
-Keyword = action.StandardAction("Keyword")
-Name = action.StandardAction("Name")
-Literal = action.StandardAction("Literal")
-Delimiter = action.StandardAction("Delimiter")
-Comment = action.StandardAction("Comment")
-Error = action.StandardAction("Error")
-
-Verbatim= Literal.Verbatim
-String = Literal.String
-Number = Literal.Number
-Boolean = Literal.Boolean
-Char = Literal.Char
-Operator = Delimiter.Operator
-Builtin = Name.Builtin
-Function = Name.Function
-Variable = Name.Variable
 
 
 class Document(treedocument.TreeDocumentMixin, document.Document):
@@ -70,6 +38,16 @@ class Document(treedocument.TreeDocumentMixin, document.Document):
         if text:
             with builder.change() as c:
                 c.change_contents(text)
+
+
+def root(root_lexicon, text):
+    """Return the root context of the tree structure of all tokens from text."""
+    return treebuilder.TreeBuilder(root_lexicon).tree(text)
+
+
+def tokens(root_lexicon, text):
+    """Convenience function that yields all the tokens from the text."""
+    return root(root_lexicon, text).tokens()
 
 
 def words(words):
@@ -177,13 +155,35 @@ def lexicon(rules_func=None, **kwargs):
     return lexicon
 
 
-def root(root_lexicon, text):
-    """Return the root context of the tree structure of all tokens from text."""
-    return treebuilder.TreeBuilder(root_lexicon).tree(text)
+# these can be used in rules where a pattern is expected
+default_action = object()   #: denotes a default action for unmatched text
+default_target = object()   #: denotes a default target when no text matches
 
 
-def tokens(root_lexicon, text):
-    """Convenience function that yields all the tokens from the text."""
-    return root(root_lexicon, text).tokens()
+#: used to suppress generating a token
+skip = action.SkipAction()
+
+# predefined standard actions
+Whitespace = action.StandardAction("Whitespace")    #:
+Text = action.StandardAction("Text")                #:
+
+Escape = action.StandardAction("Escape")            #:
+Keyword = action.StandardAction("Keyword")          #:
+Name = action.StandardAction("Name")                #:
+Literal = action.StandardAction("Literal")          #:
+Delimiter = action.StandardAction("Delimiter")      #:
+Comment = action.StandardAction("Comment")          #:
+Error = action.StandardAction("Error")              #:
+
+Verbatim= Literal.Verbatim                          #:
+String = Literal.String                             #:
+Number = Literal.Number                             #:
+Boolean = Literal.Boolean                           #:
+Char = Literal.Char                                 #:
+Operator = Delimiter.Operator                       #:
+Builtin = Name.Builtin                              #:
+Function = Name.Function                            #:
+Variable = Name.Variable                            #:
+
 
 
