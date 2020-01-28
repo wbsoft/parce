@@ -175,7 +175,7 @@ Delimiter = action.StandardAction("Delimiter")      #:
 Comment = action.StandardAction("Comment")          #:
 Error = action.StandardAction("Error")              #:
 
-Verbatim= Literal.Verbatim                          #:
+Verbatim = Literal.Verbatim                         #:
 String = Literal.String                             #:
 Number = Literal.Number                             #:
 Boolean = Literal.Boolean                           #:

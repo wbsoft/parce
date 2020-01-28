@@ -141,6 +141,13 @@ to silently ignore the matched text.
 """
 
 
+import threading
+
+# we use a global lock for standardaction creation, it seems overkill
+# to me to equip every instance with one.
+_lock = threading.Lock()
+
+
 class StandardAction:
     """Factory for standard action singletons."""
     _parent = None
@@ -150,10 +157,15 @@ class StandardAction:
     def __getattr__(self, name):
         if name.startswith('_'):
             raise AttributeError("{} has no attribute {}".format(self, repr(name)))
-        new = type(self)(name)
-        new._parent = self
-        setattr(self, name, new)
-        return new
+        with _lock:
+            try:
+                return object.__getattribute__(self, name)
+            except AttributeError:
+                pass
+            new = type(self)(name)
+            new._parent = self
+            setattr(self, name, new)
+            return new
 
     def __repr__(self):
         return ".".join(reversed([n._name for n in self]))
