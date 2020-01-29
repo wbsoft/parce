@@ -135,3 +135,20 @@ def calculate_specificity(selectors):
     return (ids, clss, elts)
 
 
+def sort_rules(rules):
+    """Stable-sorts the rules with least specific first and then reverses.
+
+    So the most specific is first. When a rule sets a property it should
+    not be overridden by another one, unless it has its !important flag set.
+
+    The rules argument may be a generator or iterable aggregating rules from
+    multiple sources. A single rule is a two-tuple(selectors, properties) as
+    returned by get_rules().
+
+    """
+    rules = list(rules)
+    rules.sort(key=lambda rule: calculate_specificity(rule[0]))
+    rules.reverse()
+    return rules
+
+
