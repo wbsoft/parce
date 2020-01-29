@@ -132,39 +132,35 @@ class Css(Language):
 
     # ------------ selectors for identifiers in different roles --------------
     @classmethod
-    def identifier_common(cls):
+    def identifier_common(cls, action):
         yield RE_CSS_ESCAPE, Escape
+        yield r"[\w-]+", action
         yield default_target, -1
 
     @lexicon
     def element_selector(cls):
         """A tag name used as selector."""
-        yield r"[\w-]+", Name.Tag
-        yield from cls.identifier_common()
+        yield from cls.identifier_common(Name.Tag)
 
     @lexicon
     def property(cls):
         """A CSS property."""
-        yield r"[\w-]+", Name.Property
-        yield from cls.identifier_common()
+        yield from cls.identifier_common(Name.Property)
 
     @lexicon
     def attribute(cls):
         """An attribute name."""
-        yield r"[\w-]+", Name.Attribute
-        yield from cls.identifier_common()
+        yield from cls.identifier_common(Name.Attribute)
 
     @lexicon
     def id_selector(cls):
         """#id"""
-        yield r"[\w-]+", Name.Identifier
-        yield from cls.identifier_common()
+        yield from cls.identifier_common(Name.Identifier)
 
     @lexicon
     def class_selector(cls):
         """.classname"""
-        yield r"[\w-]+", Name.Class
-        yield from cls.identifier_common()
+        yield from cls.identifier_common(Name.Class)
 
     @lexicon
     def attribute_selector(cls):
@@ -176,17 +172,13 @@ class Css(Language):
     @lexicon
     def pseudo_class(cls):
         """Things like :first-child etc."""
-        yield RE_CSS_ESCAPE, Escape
-        yield r"[\w-]+", Name
         yield r"\(", Delimiter, -1, cls.selector_list
-        yield default_target, -1
+        yield from cls.identifier_common(Name.Pseudo.Class)
 
     @lexicon
     def pseudo_element(cls):
         """Things like ::first-letter etc."""
-        yield RE_CSS_ESCAPE, Escape
-        yield r"[\w-]+", Name
-        yield default_target, -1
+        yield from cls.identifier_common(Name.Pseudo.Tag)
 
     # --------------------- @-rule ------------------------
     @lexicon
@@ -205,8 +197,7 @@ class Css(Language):
     def atrule_keyword(cls):
         """The first identifier word in an @-rule."""
         yield r"(media|supports|document)\b", Keyword, -1, cls.atrule_nested
-        yield r"[\w-]+", Keyword
-        yield from cls.identifier_common()
+        yield from cls.identifier_common(Keyword)
 
     @lexicon
     def atrule_block(cls):
@@ -230,10 +221,8 @@ class Css(Language):
     @lexicon
     def identifier(cls):
         """An ident-token is always just a context, it contains all parts."""
-        yield RE_CSS_ESCAPE, Escape
-        yield r"[\w-]+", Name
         yield r"\(", Delimiter, -1, cls.function
-        yield default_target, -1
+        yield from cls.identifier_common(Name)
 
     @lexicon
     def function(cls):
