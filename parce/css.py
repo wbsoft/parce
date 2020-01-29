@@ -19,10 +19,10 @@
 
 
 """
-This module supports highlighting styles using Cascading Style Sheets (CSS).
-
-Also contains some utility functions to further digest a tree structure
+This module contains utility functions to further digest a tree structure
 originating from the Css parser in the parce.lang.css module.
+
+The module will be used by the theme module.
 
 """
 
