@@ -263,3 +263,24 @@ def unescape(text):
     return chr(codepoint)
 
 
+def get_ident_token(context):
+    """Return the ident-token represented by the context.
+
+    The context can be a selector, property, attribute, id_selector or
+    class_selector, containing Name and/or Escape tokens.
+
+    """
+    def gen():
+        for t in context:
+            yield unescape(t.text) if t.action is Escape else t.text
+    return ''.join(gen())
+
+
+def get_string(context):
+    """Get the string contexts represented by context (dqstring or sqstring)."""
+    def gen():
+        for t in context[:-1]:  # closing quote is not needed
+            yield unescape(t.text) if t.action is String.Escape else t.text
+    return ''.join(gen())
+
+
