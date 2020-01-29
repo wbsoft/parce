@@ -46,14 +46,6 @@ RE_CSS_AT_KEYWORD = r"@" + RE_CSS_IDENTIFIER
 RE_HEX_COLOR = r"#[0-9a-fA-F]+"
 
 
-# used names
-Name.Tag
-Name.Attribute
-Name.Class
-Name.Identifier
-Name.Property
-
-
 class Css(Language):
     @lexicon
     def root(cls):
@@ -248,53 +240,5 @@ class Css(Language):
         """A comment."""
         yield r"\*/", Comment, -1
         yield default_action, Comment
-
-
-
-def unescape(text):
-    """Return the unescaped character, text is the contents of an Escape token."""
-    value = text[1:]
-    if value == '\n':
-        return ''
-    try:
-        codepoint = int(value, 16)
-    except ValueError:
-        return value
-    return chr(codepoint)
-
-
-def get_ident_token(context):
-    """Return the ident-token represented by the context.
-
-    The context can be a selector, property, attribute, id_selector or
-    class_selector, containing Name and/or Escape tokens.
-
-    """
-    def gen():
-        for t in context:
-            yield unescape(t.text) if t.action is Escape else t.text
-    return ''.join(gen())
-
-
-def get_string(context):
-    """Get the string contexts represented by context (dqstring or sqstring)."""
-    def gen():
-        for t in context[:-1]:  # closing quote is not needed
-            yield unescape(t.text) if t.action is String.Escape else t.text
-    return ''.join(gen())
-
-
-def get_url(context):
-    """Get the url from the context, which is an url_function context."""
-    def gen():
-        for n in context[:-1]:
-            if n.is_token:
-                if t.action is Escape:
-                    yield unescape(t.text)
-                elif action is Literal.Url:
-                    yield t.text
-                elif action is String:
-                    yield get_string(n.right_sibling())
-    return ''.join(gen())
 
 
