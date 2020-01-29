@@ -54,11 +54,24 @@ class Css(Language):
     @classmethod
     def toplevel(cls):
         yield r"@", Keyword, cls.atrule, cls.atrule_keyword
-        yield from cls.selectors()
-        yield from cls.common()
+        yield r"/\*", Comment, cls.comment
+        yield r"\s+", skip  # skip whitespace
+        yield default_target, cls.prelude
 
-    @classmethod
-    def selectors(cls):
+    @lexicon
+    def prelude(cls):
+        yield r"\s+", skip              # skip whitespace
+        yield r"[>+~]|\|\|", Operator   # combinators
+        yield r",", Delimiter           # comma
+        yield r"\{", Delimiter, -1, cls.rule
+        yield r"/\*", Comment, cls.comment
+        yield r'"', String, cls.dqstring
+        yield r"'", String, cls.sqstring
+        yield r'(?=[#*|.:\[])', None, cls.selector
+        yield RE_CSS_IDENTIFIER_LA, None, cls.selector
+
+    @lexicon
+    def selector(cls):
         yield r"\*", Keyword    # "any" element
         yield r"\|", Keyword    # css selector namespace prefix separator
         yield r"#", Keyword, cls.id_selector
@@ -66,16 +79,40 @@ class Css(Language):
         yield r"::", Keyword, cls.pseudo_element
         yield r":", Keyword, cls.pseudo_class
         yield r"\[", Keyword, cls.attribute_selector, cls.attribute
-        yield r"\s*([>+~]|\|\|)\s*", bygroup(Operator)   # combinators
-        yield r"\s+", Operator  # whitespace: descendant combinator
-        yield RE_CSS_IDENTIFIER_LA, Name, cls.selector
+        yield RE_CSS_IDENTIFIER_LA, None, cls.element_selector
+        yield default_target, -1
 
     @lexicon
     def selector_list(cls):
-        """The list of selectors in :is(bla bla), etc."""
+        """The list of selectors in :is(bla, bla), etc."""
         yield r"\)", Delimiter, -1
-        yield from cls.selectors()
+        # yield all from prelude, except for {
+        for rule in cls.prelude():
+            if rule[0] != r"\{":
+                yield rule
+
+    @lexicon
+    def rule(cls):
+        """Declarations of a qualified rule between { and }."""
+        yield r"\}", Delimiter, -1
+        yield from cls.inline()
+
+    @lexicon
+    def inline(cls):
+        """CSS that would be in a rule block, but also in a HTML style attribute."""
+        yield r"@", Keyword, cls.atrule
+        yield RE_CSS_IDENTIFIER_LA, None, cls.declaration, cls.property
         yield from cls.common()
+
+    @lexicon
+    def declaration(cls):
+        """A property: value;  declaration."""
+        yield r":", Delimiter
+        yield r";", Delimiter, -1
+        yield r"!important\b", Keyword, -1
+        yield from cls.common()
+        yield r"\s+", skip  # stay here on whitespace only
+        yield default_target, -1
 
     @classmethod
     def common(cls):
@@ -89,31 +126,8 @@ class Css(Language):
         yield r"(url)(\()", bygroup(Name, Delimiter), cls.url_function
         # an ident-token is found using a lookahead pattern, the whole ident-
         # token is in the identifier context
-        yield RE_CSS_IDENTIFIER_LA, Name, cls.identifier
+        yield RE_CSS_IDENTIFIER_LA, None, cls.identifier
         yield r"[:,;@%!]", Delimiter
-
-    @lexicon
-    def rule(cls):
-        """Declarations of a qualified rule between { and }."""
-        yield r"\}", Delimiter, -1
-        yield from cls.inline()
-
-    @lexicon
-    def inline(cls):
-        """CSS that would be in a rule block, but also in a HTML style attribute."""
-        yield r"@", Keyword, cls.atrule
-        yield RE_CSS_IDENTIFIER_LA, Name, cls.declaration, cls.property
-        yield from cls.common()
-
-    @lexicon
-    def declaration(cls):
-        """A property: value;  declaration."""
-        yield r":", Delimiter
-        yield r";", Delimiter, -1
-        yield r"!important\b", Keyword, -1
-        yield from cls.common()
-        yield r"\s+", skip  # stay here on whitespace only
-        yield default_target, -1
 
     # ------------ selectors for identifiers in different roles --------------
     @classmethod
@@ -122,7 +136,7 @@ class Css(Language):
         yield default_target, -1
 
     @lexicon
-    def selector(cls):
+    def element_selector(cls):
         """A tag name used as selector."""
         yield r"[\w-]+", Name.Tag
         yield from cls.identifier_common()
@@ -177,20 +191,34 @@ class Css(Language):
     def atrule(cls):
         """Contents following '@'."""
         yield r";", Delimiter, -1
-        yield r"\{", Delimiter, cls.block
+        yield r"\{", Delimiter, cls.atrule_block
         yield from cls.common()
 
     @lexicon
     def atrule_keyword(cls):
         """The first identifier word in an @-rule."""
+        yield r"(media|supports|document)\b", Keyword, -1, cls.atrule_nested
         yield r"[\w-]+", Keyword
         yield from cls.identifier_common()
 
     @lexicon
-    def block(cls):
+    def atrule_nested(cls):
+        """An atrule that has nested toplevel contents (@media, etc.)"""
+        yield r";", Delimiter, -1
+        yield r"\{", Delimiter, cls.atrule_nested_block
+        yield from cls.common()
+
+    @lexicon
+    def atrule_nested_block(cls):
+        """a { } block from @media, @document or @supports."""
+        yield r"\}", Delimiter, -2  # immediately leave the atrule_nested context
+        yield from cls.toplevel()
+
+    @lexicon
+    def atrule_block(cls):
         """a { } block from an @-rule."""
         yield r"\}", Delimiter, -2  # immediately leave the atrule context
-        yield from cls.toplevel()
+        yield from cls.inline()
 
     @lexicon
     def identifier(cls):
