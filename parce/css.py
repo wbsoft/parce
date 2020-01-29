@@ -111,19 +111,9 @@ def get_rules(tree):
     """
     for rule in tree.query.all(Css.rule):
         if len(rule) > 1:
-            # get the selectors:
-            selectors = []
-            for node in rule.source().left_siblings():
-                if node.is_context:
-                    if node.lexicon is Css.rule:
-                        break
-                    elif node.lexicon is Css.comment:
-                        continue
-                elif node.action is Comment:
-                    continue
-                selectors.append(node)
+            # get the selectors (without ending { )
+            selectors = list(remove_comments(rule.left_sibling()[:-1]))
             if selectors:
-                selectors.reverse()
                 # get the property declarations:
                 properties = {}
                 for declaration in rule.query.children(Css.declaration):
