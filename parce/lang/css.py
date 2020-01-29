@@ -284,3 +284,17 @@ def get_string(context):
     return ''.join(gen())
 
 
+def get_url(context):
+    """Get the url from the context, which is an url_function context."""
+    def gen():
+        for n in context[:-1]:
+            if n.is_token:
+                if t.action is Escape:
+                    yield unescape(t.text)
+                elif action is Literal.Url:
+                    yield t.text
+                elif action is String:
+                    yield get_string(n.right_sibling())
+    return ''.join(gen())
+
+
