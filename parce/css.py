@@ -27,9 +27,15 @@ originating from the Css parser in the parce.lang.css module.
 """
 
 
+import collections
+
 from . import *
 from .lang.css import *
 from .query import Query
+
+
+
+Rule = collections.namedtuple("Rule", "selectors properties")
 
 
 def css_classes(action):
@@ -114,7 +120,7 @@ def get_rules(tree):
                 propname = get_ident_token(declaration[0])
                 value = declaration[2:] if declaration[1] == ":" else declaration[1:]
                 properties[propname] = value
-            yield (selectors, properties)
+            yield Rule(selectors, properties)
 
 
 def calculate_specificity(selectors):
@@ -147,13 +153,13 @@ def sort_rules(rules):
 
     """
     rules = list(rules)
-    rules.sort(key=lambda rule: calculate_specificity(rule[0]))
+    rules.sort(key=lambda rule: calculate_specificity(rule.selectors))
     rules.reverse()
     return rules
 
 
-def combine_properties(propdicts):
-    """Combine the properties of the supplied iterable of properties dicts.
+def combine_properties(rules):
+    """Combine the properties of the supplied iterable of rules.
 
     Returns a dictionary with the properties. Closing delimiters and
     "!important" flags are removed from the property values.
@@ -162,8 +168,8 @@ def combine_properties(propdicts):
 
     """
     result = {}
-    for d in propdicts:
-        for key, value in d.items():
+    for rule in rules:
+        for key, value in rule.properties.items():
             if key not in result or (
                  "!important" in value and "!important" not in result[key]):
                 result[key] = value
@@ -173,3 +179,7 @@ def combine_properties(propdicts):
     return result
 
 
+def select_class(rules, *classes):
+    """Selects the rules from the list that match at least one of the class names."""
+    for rule in rules:
+        pass
