@@ -102,7 +102,6 @@ class Css(Language):
     @lexicon
     def inline(cls):
         """CSS that would be in a rule block, but also in a HTML style attribute."""
-        yield r"@", Keyword, cls.atrule
         yield RE_CSS_IDENTIFIER_LA, None, cls.declaration, cls.property
         yield from cls.common()
 
@@ -189,12 +188,18 @@ class Css(Language):
         yield r"[\w-]+", Name
         yield default_target, -1
 
+    # --------------------- @-rule ------------------------
     @lexicon
     def atrule(cls):
         """Contents following '@'."""
-        yield r";", Delimiter, -1
         yield r"\{", Delimiter, cls.atrule_block
-        yield from cls.common()
+        yield from cls.atrule_common()
+
+    @lexicon
+    def atrule_nested(cls):
+        """An atrule that has nested toplevel contents (@media, etc.)"""
+        yield r"\{", Delimiter, cls.atrule_nested_block
+        yield from cls.atrule_common()
 
     @lexicon
     def atrule_keyword(cls):
@@ -204,11 +209,10 @@ class Css(Language):
         yield from cls.identifier_common()
 
     @lexicon
-    def atrule_nested(cls):
-        """An atrule that has nested toplevel contents (@media, etc.)"""
-        yield r";", Delimiter, -1
-        yield r"\{", Delimiter, cls.atrule_nested_block
-        yield from cls.common()
+    def atrule_block(cls):
+        """a { } block from an @-rule."""
+        yield r"\}", Delimiter, -2  # immediately leave the atrule context
+        yield from cls.inline()
 
     @lexicon
     def atrule_nested_block(cls):
@@ -216,11 +220,12 @@ class Css(Language):
         yield r"\}", Delimiter, -2  # immediately leave the atrule_nested context
         yield from cls.toplevel()
 
-    @lexicon
-    def atrule_block(cls):
-        """a { } block from an @-rule."""
-        yield r"\}", Delimiter, -2  # immediately leave the atrule context
-        yield from cls.inline()
+    @classmethod
+    def atrule_common(cls):
+        """Common stuff inside @-rules."""
+        yield r";", Delimiter, -1
+        yield r":", Keyword, cls.pseudo_class
+        yield from cls.common()
 
     @lexicon
     def identifier(cls):
