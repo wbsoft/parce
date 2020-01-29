@@ -44,8 +44,12 @@ def css_classes(action):
 
 
 def remove_comments(nodes):
-    """Return a list of the nodes with comments removed."""
-    #TODO
+    """Yield the nodes with comments removed."""
+    for n in node:
+        if (n.is_token and n.action is Comment) or (
+            n.is_context and n.lexicon is Css.comment):
+            continue
+        yield n
 
 
 def unescape(text):
@@ -166,7 +170,7 @@ def sort_rules(rules):
 def combine_properties(rules):
     """Combine the properties of the supplied iterable of rules.
 
-    Returns a dictionary with the properties. Closing delimiters and
+    Returns a dictionary with the properties. Comments, closing delimiters and
     "!important" flags are removed from the property values.
 
     The most specific property dicts are assumed to be first.
@@ -177,7 +181,7 @@ def combine_properties(rules):
         for key, value in rule.properties.items():
             if key not in result or (
                  "!important" in value and "!important" not in result[key]):
-                result[key] = value
+                result[key] = list(remove_comments(value))
     for value in result.values():
         while value and value[-1] in (";", "!important"):
             del value[-1]
