@@ -305,6 +305,12 @@ class Query:
             return n
         return default
 
+    def pick_last(self, default=None):
+        """Pick the last value, or return the default."""
+        for default in self:
+            pass
+        return default
+
     # navigators
     @pquery
     def children(self):
