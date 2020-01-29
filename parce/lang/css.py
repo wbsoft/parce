@@ -60,10 +60,15 @@ class Css(Language):
 
     @lexicon
     def prelude(cls):
+        yield r"\{", Delimiter, -1, cls.rule
+        yield from cls.selectors()
+
+    @classmethod
+    def selectors(cls):
+        """Yield selectors, used in prelude and selector_list."""
         yield r"\s+", skip              # skip whitespace
         yield r"[>+~]|\|\|", Operator   # combinators
         yield r",", Delimiter           # comma
-        yield r"\{", Delimiter, -1, cls.rule
         yield r"/\*", Comment, cls.comment
         yield r'"', String, cls.dqstring
         yield r"'", String, cls.sqstring
@@ -86,10 +91,7 @@ class Css(Language):
     def selector_list(cls):
         """The list of selectors in :is(bla, bla), etc."""
         yield r"\)", Delimiter, -1
-        # yield all from prelude, except for {
-        for rule in cls.prelude():
-            if rule[0] != r"\{":
-                yield rule
+        yield from cls.selectors()
 
     @lexicon
     def rule(cls):
