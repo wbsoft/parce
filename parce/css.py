@@ -45,7 +45,7 @@ def css_classes(action):
 
 def remove_comments(nodes):
     """Yield the nodes with comments removed."""
-    for n in node:
+    for n in nodes:
         if (n.is_token and n.action is Comment) or (
             n.is_context and n.lexicon is Css.comment):
             continue
