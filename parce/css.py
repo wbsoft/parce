@@ -43,6 +43,11 @@ def css_classes(action):
     return tuple(a._name.lower() for a in action)
 
 
+def remove_comments(nodes):
+    """Return a list of the nodes with comments removed."""
+    #TODO
+
+
 def unescape(text):
     """Return the unescaped character, text is the contents of an Escape token."""
     value = text[1:]
@@ -180,6 +185,15 @@ def combine_properties(rules):
 
 
 def select_class(rules, *classes):
-    """Selects the rules from the list that match at least one of the class names."""
+    """Selects the rules from the list that match at least one of the class names.
+
+    Just looks at class names, does not use combinators.
+    (Enough for internal styling :-).
+
+    """
     for rule in rules:
-        pass
+        for c in Query.from_nodes(rule.selectors).all(Css.class_selector):
+            if get_ident_token(c) in classes:
+                yield rule
+                break
+
