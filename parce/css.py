@@ -143,6 +143,13 @@ def calculate_specificity(selectors):
     would not be difficult to implement.
 
     """
+    # selector list?
+    try:
+        i = selectors.index(",")
+    except ValueError:
+        pass
+    else:
+        return max(calculate_specificity(selectors[:i]), calculate_specificity(selectors[i+1:]))
     q = Query.from_nodes(selectors)
     ids = q.all(Css.id_selector).count()
     clss = q.all(Css.attribute_selector, Css.class_selector, Css.pseudo_class).count()
