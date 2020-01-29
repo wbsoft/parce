@@ -199,13 +199,13 @@ def combine_properties(rules):
 def select_class(rules, *classes):
     """Selects the rules from the list that match at least one of the class names.
 
-    Just looks at class names, does not use combinators.
+    Just looks at the last class name in a selector, does not use combinators.
     (Enough for internal styling :-).
 
     """
     for rule in rules:
-        for c in Query.from_nodes(rule.selectors).all(Css.class_selector):
-            if get_ident_token(c) in classes:
-                yield rule
-                break
+        c = Query.from_nodes(rule.selectors).all(Css.class_selector).pick_last()
+        if c and get_ident_token(c) in classes:
+            yield rule
+            break
 

@@ -66,7 +66,8 @@ class Css(Language):
         yield r"::", Keyword, cls.pseudo_element
         yield r":", Keyword, cls.pseudo_class
         yield r"\[", Keyword, cls.attribute_selector, cls.attribute
-        yield r"[>+~]|\|\|", Operator   # combinators
+        yield r"\s*([>+~]|\|\|)\s*", bygroup(Operator)   # combinators
+        yield r"\s+", Operator  # whitespace: descendant combinator
         yield RE_CSS_IDENTIFIER_LA, Name, cls.selector
 
     @lexicon
