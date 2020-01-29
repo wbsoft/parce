@@ -152,3 +152,24 @@ def sort_rules(rules):
     return rules
 
 
+def combine_properties(propdicts):
+    """Combine the properties of the supplied iterable of properties dicts.
+
+    Returns a dictionary with the properties. Closing delimiters and
+    "!important" flags are removed from the property values.
+
+    The most specific property dicts are assumed to be first.
+
+    """
+    result = {}
+    for d in propdicts:
+        for key, value in d.items():
+            if key not in result or (
+                 "!important" in value and "!important" not in result[key]):
+                result[key] = value
+    for value in result.values():
+        while value and value[-1] in (";", "!important"):
+            del value[-1]
+    return result
+
+
