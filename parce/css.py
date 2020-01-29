@@ -122,14 +122,15 @@ def get_rules(tree):
                 elif node.action is Comment:
                     continue
                 selectors.append(node)
-            selectors.reverse()
-            # get the property declarations:
-            properties = {}
-            for declaration in rule.query.children(Css.declaration):
-                propname = get_ident_token(declaration[0])
-                value = declaration[2:] if declaration[1] == ":" else declaration[1:]
-                properties[propname] = value
-            yield Rule(selectors, properties)
+            if selectors:
+                selectors.reverse()
+                # get the property declarations:
+                properties = {}
+                for declaration in rule.query.children(Css.declaration):
+                    propname = get_ident_token(declaration[0])
+                    value = declaration[2:] if declaration[1] == ":" else declaration[1:]
+                    properties[propname] = value
+                yield Rule(selectors, properties)
 
 
 def calculate_specificity(selectors):
@@ -150,10 +151,10 @@ def calculate_specificity(selectors):
         pass
     else:
         return max(calculate_specificity(selectors[:i]), calculate_specificity(selectors[i+1:]))
-    q = Query.from_nodes(selectors)
-    ids = q.all(Css.id_selector).count()
-    clss = q.all(Css.attribute_selector, Css.class_selector, Css.pseudo_class).count()
-    elts = q.all(Css.selector, Css.pseudo_element).count()
+    q = Query.from_nodes(selectors).all
+    ids = q(Css.id_selector).count()
+    clss = q(Css.attribute_selector, Css.class_selector, Css.pseudo_class).count()
+    elts = q(Css.selector, Css.pseudo_element).count()
     return (ids, clss, elts)
 
 
