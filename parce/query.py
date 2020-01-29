@@ -275,6 +275,11 @@ class Query:
     def __iter__(self):
         return self._gen()
 
+    @classmethod
+    def from_nodes(cls, nodes):
+        """Create a Query object querying a list of nodes in one go."""
+        return cls(lambda: iter(nodes))
+
     @property
     def is_not(self):
         """Invert the next query."""
