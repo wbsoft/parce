@@ -207,5 +207,4 @@ def select_class(rules, *classes):
         c = Query.from_nodes(rule.selectors).all(Css.class_selector).pick_last()
         if c and get_ident_token(c) in classes:
             yield rule
-            break
 
