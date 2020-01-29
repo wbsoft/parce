@@ -6,6 +6,7 @@ Overview of all modules
 
    parce.rst
    action.rst
+   css.rst
    document.rst
    language.rst
    lexicon.rst
