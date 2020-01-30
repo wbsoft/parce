@@ -239,7 +239,7 @@ endingwith("text")
 containing("text")
     select the Tokens that contain specified text
 
-matching("regex"), matching(regex)
+matching("regex" [, flags=0]), matching(regex [, flags=0])
     select the Tokens that match the specified regular epression
     (using re.search, the expression can match anywhere unless you use
     ^ or $ characters).
@@ -298,7 +298,7 @@ class Query:
 
     # end points
     def count(self):
-        """Compute the length of the iterable. Don't use this other than for debugging."""
+        """Compute the length of the iterable."""
         return sum(1 for _ in self)
 
     def dump(self):
@@ -307,7 +307,7 @@ class Query:
             n.dump()
 
     def list(self):
-        """Return the current selection as a list. Only for debugging."""
+        """Return the current selection as a list. Mainly for debugging."""
         return list(self)
 
     def pick(self, default=None):
