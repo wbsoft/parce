@@ -294,7 +294,7 @@ class Query:
     @property
     def is_not(self):
         """Invert the next query."""
-        return Query(self._gen, not self._inv)
+        return type(self)(self._gen, not self._inv)
 
     # end points
     def count(self):
