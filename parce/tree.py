@@ -122,6 +122,13 @@ class NodeMixin:
         """
         return self.parent[0] is self
 
+    def is_ancestor_of(self, node):
+        """Return True if this Node is an ancestor of the other Node."""
+        for n in node.ancestors():
+            if n is self:
+                return True
+        return False
+
     def ancestors(self, upto=None):
         """Climb the tree up over the parents.
 

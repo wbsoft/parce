@@ -124,6 +124,8 @@ These are the methods Token and Context both provide:
         of the node in its parent.
     ``common_ancestor(other)``
         Return the nearest common ancestor with the other Context or Token.
+    ``is_ancestor_of(other)``
+        Return True if this Node is an ancestor of the other Node.
     ``is_first()``, ``is_last()``
         Return True if the node is the first resp. the last in its Context.
     ``is_root()``
