@@ -40,8 +40,8 @@ h1[attribute="value"] + p {
 
 tree = root(Css.root, css)
 
-assert len(tree) == 7
-assert tree[2][0][0].action is Name.Attribute
+assert len(tree) == 3
+assert tree[0][0][2][0][0].action is Name.Attribute
 assert tree.query.all.action(Number).pick().pos == 40
 assert tree.query.all(Css.declaration)[0][0].list() == [
     'width', 'height', 'color', 'background','text-decoration']
