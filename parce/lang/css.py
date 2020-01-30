@@ -72,8 +72,7 @@ class Css(Language):
         yield r"/\*", Comment, cls.comment
         yield r'"', String, cls.dqstring
         yield r"'", String, cls.sqstring
-        yield r'(?=[#*|.:\[])', None, cls.selector
-        yield RE_CSS_IDENTIFIER_LA, None, cls.selector
+        yield default_target, cls.selector
 
     @lexicon
     def selector(cls):

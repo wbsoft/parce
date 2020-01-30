@@ -147,6 +147,7 @@ class TreeBuilder:
             else:
                 tail = False
 
+        circular = set()
         lowest_start = sys.maxsize
         restart = True
         while restart:
@@ -185,8 +186,9 @@ class TreeBuilder:
                 context.clear()
 
             # start parsing
-            pos = start
+            pos = tpos = start
             done = False
+            circular.clear()
             while not done:
                 for pos, tokens, target in self.parse_context(context, text, pos):
                     if tokens:
@@ -272,9 +274,28 @@ class TreeBuilder:
                                                 tail = False
                                 restart = done = True
                                 break # restart at new start position
-                    if target:
+                        if target:
+                            context = self.update_context(context, target)
+                            break # continue with new context
+                    elif target:
+                        # this place is reached if there is a target but no tokens
+                        # beware of circular targets....
+                        circular.add(id(context))
                         context = self.update_context(context, target)
-                        break # continue with new context
+                        if pos == tpos:
+                            if id(context) in circular:
+                                # circular target found, just advance 1
+                                # the current context will always be the one that
+                                # already existed (same id, so the ancestor)
+                                circular.clear()
+                                if pos < len(text):
+                                    pos += 1
+                                else:
+                                    done = True # quit if at end anyway
+                        else:
+                            tpos = pos
+                            circular.clear()
+                        break   # continue with new context
                 else:
                     end = len(text)
                     self.unwind(context)
