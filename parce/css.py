@@ -144,7 +144,7 @@ def calculate_specificity(selectors):
     q = Query.from_nodes(selectors).all
     ids = q(Css.id_selector).count()
     clss = q(Css.attribute_selector, Css.class_selector, Css.pseudo_class).count()
-    elts = q(Css.selector, Css.pseudo_element).count()
+    elts = q(Css.element_selector, Css.pseudo_element).count()
     return (ids, clss, elts)
 
 
