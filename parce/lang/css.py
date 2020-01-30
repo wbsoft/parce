@@ -83,7 +83,7 @@ class Css(Language):
         yield r"\.(?!\d)", Keyword, cls.class_selector
         yield r"::", Keyword, cls.pseudo_element
         yield r":", Keyword, cls.pseudo_class
-        yield r"\[", Keyword, cls.attribute_selector, cls.attribute
+        yield r"\[", Delimiter, cls.attribute_selector, cls.attribute
         yield RE_CSS_IDENTIFIER_LA, None, cls.element_selector
         yield default_target, -1
 
@@ -133,6 +133,7 @@ class Css(Language):
     # ------------ selectors for identifiers in different roles --------------
     @classmethod
     def identifier_common(cls, action):
+        """Yield an ident-token and give it the specified action."""
         yield RE_CSS_ESCAPE, Escape
         yield r"[\w-]+", action
         yield default_target, -1
@@ -165,7 +166,7 @@ class Css(Language):
     @lexicon
     def attribute_selector(cls):
         """Stuff between [ and ]."""
-        yield r"\]", Keyword, -1
+        yield r"\]", Delimiter, -1
         yield r"[~|^*&]?=", Operator
         yield from cls.common()
 
