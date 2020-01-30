@@ -86,6 +86,13 @@ purposes, there are also the list(), pick(), count() and dump() methods.::
             print(atr)
 
 
+You can also directly instantiate a Query object for a list of nodes, if you
+want to query those in one go::
+
+    q = Query.from_nodes(nodes)
+
+
+
 Summary of the query methods:
 -----------------------------
 
@@ -101,7 +108,11 @@ list()
     aggregate the results in a list
 
 pick(default=None)
-    just pick the first result, or a default if no results
+    just pick the first result, or the default if there are no results
+
+pick_last(default=None)
+    exhaust the query generator and return the last result, or the default
+    if there are no results
 
 
 Navigating nodes:
