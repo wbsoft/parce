@@ -284,7 +284,7 @@ class TreeBuilder:
                         context = self.update_context(context, target)
                         if pos == tpos:
                             if id(context) in circular:
-                                # circular target found, just advance 1
+                                # circular target found, just advance 1.
                                 # the current context will always be the one that
                                 # already existed (same id, so the ancestor)
                                 circular.clear()

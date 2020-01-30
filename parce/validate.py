@@ -18,6 +18,7 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 
+import collections
 import re
 
 import parce
@@ -119,11 +120,20 @@ class LexiconValidator:
         This could hang the parser, and we wouldn't like to have that :-)
 
         """
+        # a unique object for every entered context, mimicking tree builder behaviour
+        class Context:
+            def __init__(self, lexicon):
+                self.lexicon = lexicon
+
         lexicon = self.lexicon
-        state = [lexicon]
-        circular = set()
+        lexicons = collections.Counter()    # count them to find the circular culprits
+        state = [Context(lexicon)]
+        circular = set()                    # track circular (existing) contexts
+        warn = False
+        context = state[-1]
         while True:
-            circular.add(lexicon)
+            circular.add(context)
+            lexicons.update((lexicon,))     # count
             depth = len(state)
             for t in target:
                 if isinstance(t, int):
@@ -132,19 +142,31 @@ class LexiconValidator:
                             return
                         del state[t:]
                     else:
-                        state += [lexicon] * t
+                        for _ in range(t):
+                            state.append(Context(lexicon))
                 elif not isinstance(t, BoundLexicon):
                     self.error("in default target only integer or lexicon allowed", lexicon)
                     return
                 else:
-                    state.append(t)
-            if len(state) == depth:
+                    state.append(Context(t))
+            newcontext = state[-1]
+            lexicon = newcontext.lexicon
+            if newcontext is context:
                 self.error("invalid default target", lexicon)
                 return
-            lexicon = state[-1]
-            if lexicon in circular:
-                state.extend(l for l in circular if l not in state)
-                self.error("circular default target: {}".format(" -> ".join(map(str, state))), lexicon)
+            context = newcontext
+            if newcontext in circular:
+                # a circular default state that lands in an existing context
+                # is handled gracefully by the tree builder
+                warn = True
+            if len(circular) > 100:
+                lexicons = " <-> ".join(str(l) for l, n in lexicons.items() if n > 1)
+                if warn:
+                    # this type of circular default state is handled
+                    self.warning("handled circular default target: {}".format(lexicons), lexicon)
+                else:
+                    # run away default states creating new contexts all the time
+                    self.error("circular default target: {}".format(lexicons), lexicon)
                 return
             for pattern, *target in lexicon():
                 if pattern is parce.default_target:
