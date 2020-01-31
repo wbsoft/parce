@@ -26,18 +26,13 @@ The module will be used by the theme module.
 
 Workflow:
 
-    1. load a mixed list of Rule or Condition instances from a file, using
-       ``load_rules()``, or create one from a tree using ``get_rules()``
+    1. Instantiate a StyleSheet from a file or other source. If needed,
+       combine multiple StyleSheets using the + operator.
 
-       You can chain multiple lists from different sources.
+    2. (not yet implemented) Filter conditions out, like media, supports
+       or document.
 
-    2. filter out the Condition instances, either using or ignoring the rules
-       in the conditions. Currently filter_rules lets everything through; but
-       filters to implement @media, @document, @supports queries could be
-       written.
-
-    3. Use ``sort_rules()`` to sort the rules on specificity. You can store
-       the resulting list of rules to use it multiple times.
+    3. Get a Style object through the ``style`` property of the StyleSheet.
 
     4. Use a ``select`` method (currently only ``select_class``, but more
        can be implemented) to select rules based on their selectors.
@@ -48,11 +43,10 @@ Workflow:
 Example::
 
     >>> from parce.css import *
-    >>> rules = sort_rules(filter_rules(load_rules("parce/themes/default.css")))
-    >>> combine_properties(select_class(rules, 'comment'))
+    >>> style = StyleSheet.from_file("parce/themes/default.css").style
+    >>> style.select_class("comment").combine_properties()
     {'font-style': [<Context Css.identifier at 1037-1043 (1 children)>],
-     'color': [<Token '#666' at 1056:1060 (Literal.Color)>]}
-
+    'color': [<Token '#666' at 1056:1060 (Literal.Color)>]}
 
 """
 
@@ -66,7 +60,156 @@ from .query import Query
 
 
 Rule = collections.namedtuple("Rule", "selectors properties")
-Condition = collections.namedtuple("Condition", "condition rules")
+Condition = collections.namedtuple("Condition", "condition style")
+
+
+class StyleSheet:
+    """Represents a list of style rules and conditions.
+
+    Normall CSS rules are translated into a Rule tuple, and nested rules
+    such as @media, @document and @supports are translated into Condition
+    tuples.
+
+    A Rule consists of ``selectors`` and ``properties``. The ``selectors``
+    are the tokens in a rule before the {. The ``properties`` is a dict
+    mapping css property names to the list of tokens representing their
+    value.
+
+    A Condition consists of ``condition`` and ``style``; the ``condition``
+    is a list of tokens representing all text between the @ and the opening {.
+    The ``style`` is another StyleSheet object representing the nested
+    style sheet.
+
+    You can combine stylesheets from different files or sources using the +
+    operator.
+
+    The ``style`` property returns the Style object representing all combined
+    rules, and allowing further queries.
+
+    """
+    def __init__(self, rules=None):
+        """Initialize a StyleSheet, empty of with the supplied rules/conditions."""
+        self.rules = rules or []
+
+    @classmethod
+    def from_file(cls, filename, path=None, allow_import=True):
+        """Return a new StyleSheet adding Rules and Conditions from a local filename.
+
+        The ``path`` argument is currently unused.
+
+        """
+        text = open(filename).read()  # TODO: handle encoding, currently UTF-8
+        return cls.from_text(text, filename, path, allow_import)
+
+    @classmethod
+    def from_text(cls, text, filename, path=None, allow_import=True):
+        """Return a new StyleSheet adding Rules and Conditions from a string.
+
+        The ``filename`` argument is used to handle ``@import`` rules
+        correctly. The ``path`` argument is currently unused.
+
+        """
+        tree = root(Css.root, text)
+        return cls.from_tree(tree, filename, path, allow_import)
+
+    @classmethod
+    def from_tree(cls, tree, filename, path=None, allow_import=True):
+        """Return a new StyleSheet adding Rules and Conditions from a parsed tree.
+
+        The ``filename`` argument is used to handle ``@import`` rules
+        correctly. The ``path`` argument is currently unused.
+
+        """
+        rules = []
+        for node in tree.query.children(Css.atrule, Css.prelude):
+            if node.lexicon is Css.atrule:
+                # handle @-rules
+                keyword = node[0][0]
+                if keyword == "import":
+                    if allow_import:
+                        for s in node.query.children(Css.dqstring, Css.sqstring):
+                            fname = get_string(s)
+                            fname = os.path.join(os.path.dirname(filename), fname)
+                            rules.extend(cls.from_file(fname, path, True).rules)
+                            break
+                elif node[-1].lexicon is Css.atrule_nested:
+                    s = cls.from_tree(node[-1][-1], filename, path, allow_import)
+                    rules.append(Condition(node, s))
+            elif len(node) > 1:   # Css.prelude
+                # get the selectors (without ending { )
+                selectors = list(remove_comments(node[:-1]))
+                if selectors:
+                    for rule in node.query.right:
+                        # get the property declarations:
+                        properties = {}
+                        for declaration in rule.query.children(Css.declaration):
+                            propname = get_ident_token(declaration[0])
+                            value = declaration[2:] if declaration[1] == ":" else declaration[1:]
+                            properties[propname] = value
+                        rules.append(Rule(selectors, properties))
+                        break
+        return cls(rules)
+
+    def __add__(self, other):
+        return type(self)(self.rules + other.rules)
+
+    @property
+    def style(self):
+        """Return a Style object with the remaining rules.
+
+        All rules that still are behind a condition, are let through.
+        The rules are sorted on specificity.
+
+        """
+        def gen():
+            for r in self.rules:
+                if isinstance(r, Condition):
+                    yield from r.style.rules
+                else:
+                    yield r
+        rules = sorted(gen(), key=lambda rule: calculate_specificity(rule.selectors))
+        rules.reverse()
+        return Style(rules)
+
+
+class Style:
+    """Represents the list of styles created by the StyleSheet object."""
+    def __init__(self, rules):
+        self.rules = rules
+
+    def select_class(self, *classes):
+        """Selects the rules that match at least one of the class names.
+
+        Just looks at the last class name in a selector, does not use combinators.
+        (Enough for internal styling :-).
+
+        """
+        def gen():
+            for rule in self.rules:
+                c = Query.from_nodes(rule.selectors).all(Css.class_selector).pick_last()
+                if c and get_ident_token(c) in classes:
+                    yield rule
+        return type(self)(list(gen()))
+
+    def combine_properties(self):
+        """Combine the properties of the current set of rules. (Endpoint.)
+
+        Returns a dictionary with the properties. Comments, closing delimiters and
+        "!important" flags are removed from the property values.
+
+        The most specific property dicts are assumed to be first.
+
+        """
+        result = {}
+        for rule in self.rules:
+            for key, value in rule.properties.items():
+                if key not in result or (
+                     "!important" in value and "!important" not in result[key]):
+                    result[key] = list(remove_comments(value))
+        for value in result.values():
+            while value and value[-1] in (";", "!important"):
+                del value[-1]
+        return result
 
 
 def css_classes(action):
@@ -154,118 +297,4 @@ def calculate_specificity(selectors):
     elts = q(Css.element_selector, Css.pseudo_element).count()
     return (ids, clss, elts)
 
-
-def sort_rules(rules):
-    """Stable-sorts the rules with least specific first and then reverses.
-
-    So the most specific is first. When a rule sets a property it should
-    not be overridden by another one, unless it has its !important flag set.
-
-    The rules argument may be a generator or iterable aggregating rules from
-    multiple sources. A single rule is a two-tuple(selectors, properties) as
-    returned by get_rules().
-
-    """
-    rules = list(rules)
-    rules.sort(key=lambda rule: calculate_specificity(rule.selectors))
-    rules.reverse()
-    return rules
-
-
-def combine_properties(rules):
-    """Combine the properties of the supplied iterable of rules.
-
-    Returns a dictionary with the properties. Comments, closing delimiters and
-    "!important" flags are removed from the property values.
-
-    The most specific property dicts are assumed to be first.
-
-    """
-    result = {}
-    for rule in rules:
-        for key, value in rule.properties.items():
-            if key not in result or (
-                 "!important" in value and "!important" not in result[key]):
-                result[key] = list(remove_comments(value))
-    for value in result.values():
-        while value and value[-1] in (";", "!important"):
-            del value[-1]
-    return result
-
-
-def select_class(rules, *classes):
-    """Selects the rules from the list that match at least one of the class names.
-
-    Just looks at the last class name in a selector, does not use combinators.
-    (Enough for internal styling :-).
-
-    """
-    for rule in rules:
-        c = Query.from_nodes(rule.selectors).all(Css.class_selector).pick_last()
-        if c and get_ident_token(c) in classes:
-            yield rule
-
-
-def get_rules(tree, filename=None, path=None):
-    """Evaluate a parsed CSS file and return a list of Rules or Condition instances.
-
-    A Rule represents one CSS rule with its selectors and its properties.
-    A Condition represent an @-rule condition and its nested Rules
-
-    Loads @import files from the local file system.
-
-    """
-    rules = []
-    for node in tree.query.children(Css.atrule, Css.prelude):
-        if node.lexicon is Css.atrule:
-            # handle @-rules
-            keyword = node[0][0]
-            if keyword == "import":
-                for s in node.query.children(Css.dqstring, Css.sqstring):
-                    fname = get_string(s)
-                    fname = os.path.join(os.path.dirname(filename), fname)
-                    rules.extend(load_rules(fname, path))
-                    break
-            elif node[-1].lexicon is Css.atrule_nested:
-                rules.append(Condition(node, get_rules(node[-1][-1], filename, path)))
-        elif len(node) > 1:   # Css.prelude
-            # get the selectors (without ending { )
-            selectors = list(remove_comments(node[:-1]))
-            if selectors:
-                for rule in node.query.right:
-                    # get the property declarations:
-                    properties = {}
-                    for declaration in rule.query.children(Css.declaration):
-                        propname = get_ident_token(declaration[0])
-                        value = declaration[2:] if declaration[1] == ":" else declaration[1:]
-                        properties[propname] = value
-                    rules.append(Rule(selectors, properties))
-                    break
-    return rules
-
-
-def load_rules(filename, path=None):
-    """Load a CSS file and return a list of Rules or Condition instances.
-
-    A Rule represents one CSS rule with its selectors and its properties.
-    A Condition represent an @-rule condition and its nested Rules.
-
-    Only loads from the local file system.
-
-    """
-    return get_rules(root(Css.root, open(filename).read()), filename, path)
-
-
-def filter_rules(rules, media=None, supports=None, document=None):
-    """Filter out Conditions from the iterable of rules.
-
-    Currently just lets through all nested rules. The media, supports, and
-    document arguments are currently unused.
-
-    """
-    for r in rules:
-        if isinstance(r, Condition):
-            yield from filter_rules(r.rules, media, supports, document)
-        else:
-            yield r
 
