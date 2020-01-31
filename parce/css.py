@@ -113,7 +113,7 @@ class StyleSheet:
         """Return a new StyleSheet adding Rules and Conditions from a local filename.
 
         The ``path`` argument is currently unused. If ``allow_import`` is
-        False, the ``@import` atrule is ignored.
+        False, the @import atrule is ignored.
 
         """
         text = open(filename).read()  # TODO: handle encoding, currently UTF-8
@@ -123,9 +123,9 @@ class StyleSheet:
     def from_text(cls, text, filename, path=None, allow_import=True):
         """Return a new StyleSheet adding Rules and Conditions from a string.
 
-        The ``filename`` argument is used to handle ``@import`` rules
+        The ``filename`` argument is used to handle @import rules
         correctly. The ``path`` argument is currently unused. If
-        ``allow_import`` is False, the ``@import` atrule is ignored.
+        ``allow_import`` is False, the @import atrule is ignored.
 
         """
         tree = root(Css.root, text)
@@ -135,9 +135,9 @@ class StyleSheet:
     def from_tree(cls, tree, filename, path=None, allow_import=True):
         """Return a new StyleSheet adding Rules and Conditions from a parsed tree.
 
-        The ``filename`` argument is used to handle ``@import`` rules
+        The ``filename`` argument is used to handle @import rules
         correctly. The ``path`` argument is currently unused. If
-        ``allow_import`` is False, the ``@import` atrule is ignored.
+        ``allow_import`` is False, the @import atrule is ignored.
 
         """
         rules = []
