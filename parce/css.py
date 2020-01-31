@@ -47,10 +47,9 @@ Workflow:
 
 Example::
 
-    >>> import parce.css
-    >>> rules = parce.css.load_rules("parce/themes/default.css")
-    >>> rules = parce.css.filter_rules(rules)
-    >>> combine_properties(select_class(sort_rules(rules), 'comment'))
+    >>> from parce.css import *
+    >>> rules = sort_rules(filter_rules(load_rules("parce/themes/default.css")))
+    >>> combine_properties(select_class(rules, 'comment'))
     {'font-style': [<Context Css.identifier at 1037-1043 (1 children)>],
      'color': [<Token '#666' at 1056:1060 (Literal.Color)>]}
 
