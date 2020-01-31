@@ -51,6 +51,7 @@ class LexiconValidator:
     def __init__(self, lexicon):
         self.lexicon = lexicon
         self.errors = False
+        self.warnings = False
 
     def error(self, msg, lexicon=None):
         """Print message to stdout with lexicon name prepended. Sets error flag."""
@@ -59,12 +60,12 @@ class LexiconValidator:
 
     def warning(self, msg, lexicon=None):
         """Print message to stdout with lexicon name prepended. Sets error flag."""
+        self.warnings = True
         print("{}: warning: {}".format(lexicon or self.lexicon, msg))
 
     def validate(self):
         """Validate a lexicon and return True if no errors, False otherwise."""
         self.errors = False
-        print("Validating lexicon {}".format(self.lexicon))
 
         default_act, default_tg = None, None
         for pattern, action, *target in self.lexicon():
