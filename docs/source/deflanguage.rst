@@ -190,3 +190,64 @@ argument is supported:
 See for more information the documentation of the :doc:`lexicon <lexicon>`
 module.
 
+
+Validating a Language
+---------------------
+
+If you are writing you own language definition, the `validate` module
+provides a tool to check whether the definition should work correctly.
+By calling::
+
+    from parce.validate import validate_language
+    validate_language(MyLang)
+
+it checks all the lexicons in the language. The following checks are
+performed:
+
+* A lexicon may only have one special rule, i.e. ``default_action`` or
+  ``default_target``, not both or more than one of them
+
+* The regular expression pattern should be valid and compilable
+
+* Targets should be valid, either integers or lexicons; and when
+  a DynamicTarget is used, there should not be other target items
+
+* Circular default targets are detected.
+
+  If the parser follows a default target multiple times without advancing the
+  current position in the text, and then comes back in a lexicon we were
+  before, there is a circular default target. (Circular targets can also
+  happen with patterns that have an empty match).
+
+  When the parser comes back in a lexicon context that already exists, the
+  circular target is handled gracefully, and the parser just advances to the
+  next position in the text::
+
+    class MyLang(Language):
+        @lexicon
+        def lexicon1(cls):
+            ...
+            yield default_target, cls.lexicon2
+
+        @lexicon
+        def lexicon2(cls):
+            ...
+            yield default_target, -1    # pops back to lexicon1
+
+  But the parser would run away when each target would create a *new* lexicon
+  context, e.g. in the case of::
+
+    # invalid circular default target example
+    class MyLang(Language):
+        @lexicon
+        def lexicon1(cls):
+            ...
+            yield default_target, cls.lexicon2
+
+        @lexicon
+        def lexicon2(cls):
+            ...
+            yield default_target, cls.lexicon1 # creates a new context
+
+  The validator recognizes this case and marks the error, so you can fix it.
+
