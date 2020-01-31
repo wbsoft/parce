@@ -19,10 +19,18 @@
 
 
 """
-This module contains utility functions to further digest a tree structure
-originating from the Css parser in the parce.lang.css module.
+This modules provides StyleSheet, Style and a bunch of utility functions
+that help reading from a tree structure parsed by the parce.lang.css module.
 
-The module will be used by the theme module.
+StyleSheet represents a list of rules and conditions (nested @-rules) from a
+CSS file or string source.
+
+Style represents a resulting list of rules, sorted on specificity, so that
+by selecting rules the properties that apply in a certain situation can be
+determined and read.
+
+This module will be used by the theme module to provide syntax highlighting
+themes based on CSS files.
 
 Workflow:
 
