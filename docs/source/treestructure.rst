@@ -458,10 +458,13 @@ it easier in some cases to process the results:
     ``list()``
         aggregates the result set in a list.
     ``count()``
-        just returns the number of nodes in the result set.
+        returns the number of nodes in the result set.
     ``pick(default=None)``
         picks the first result, or returns the default if the result set was
         empty.
+    ``pick_last(default=None)``
+        exhausts the query generator and returns the last result, or the
+        default if there are no results.
 
 Additional information can be found in the :doc:`query module's
 documentation <query>`.
