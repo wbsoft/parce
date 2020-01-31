@@ -29,6 +29,8 @@ Workflow:
     1. load a mixed list of Rule or Condition instances from a file, using
         ``load_rules()``, or create one from a tree using ``get_rules()``
 
+       You can chain multiple lists from different sources.
+
     2. filter out the Condition instances, either using or ignoring the rules
        in the conditions. Currently filter_rules lets everything through; but
        filter to implement @media, @document, @supports queries could be
@@ -61,7 +63,6 @@ import os
 from . import *
 from .lang.css import Css
 from .query import Query
-
 
 
 Rule = collections.namedtuple("Rule", "selectors properties")
