@@ -52,12 +52,12 @@ manually writing a regular expression is too tedious.
 
 There are convenient functions for creating some types of Pattern instances:
 
- * ``words(long_list_of_words)`` creates an optimized regular expression
-   matching any of the words contained in the ``long_list_of_words``.
+``words(long_list_of_words)`` creates an optimized regular expression
+  matching any of the words contained in the ``long_list_of_words``.
 
- * ``char(string)`` creates an optimized regular expression matching any one
-   of the characters contained in the string. To make an expression matching
-   any character that is *not* in the string, use ``char(string, False)``.
+``char(string)`` creates an optimized regular expression matching any one
+  of the characters contained in the string. To make an expression matching
+  any character that is *not* in the string, use ``char(string, False)``.
 
 See for more information about regular expressions the documentation
 of the :doc:`Python re module <python:library/re>`.
@@ -92,20 +92,20 @@ There are, however, two action types provided by ``parce``:
 
    There are a few convenient functions to create dynamic actions:
 
-   * ``bygroup(Act1, Act2, ...)`` uses capturing subgroups in the regular
+   ``bygroup(Act1, Act2, ...)`` uses capturing subgroups in the regular
        expression pattern and creates a Token for every subgroup, with that
        action. You should provide the same number of actions as there are
        capturing subgroups in the pattern. Use non-capturing subgroups for
        the parts you're not interested in, or the special ``skip`` action
        (see below).
 
-   * ``bymatch(predicate, Act1, Act2, ...)`` calls the predicate function
+   ``bymatch(predicate, Act1, Act2, ...)`` calls the predicate function
        with the match object as argument. The function should return the
        index of the action to choose. If you provide two possible actions,
        the predicate function may also return ``True`` or ``False``, in which
        case ``True`` chooses the second action and ``False`` the first.
 
-   * ``bytext(predicate, Act1, Act2, ...)`` calls the predicate function
+   ``bytext(predicate, Act1, Act2, ...)`` calls the predicate function
        with the matched text as argument.  The function should return the
        index of the action to choose, in the same way as with ``bymatch()``.
 
@@ -184,8 +184,8 @@ Lexicon parameters
 The ``@lexicon`` decorator optionally accepts arguments. Currently one
 argument is supported:
 
-*  ``re_flags``, to set the regular expression flags for the pattern
-     the lexicon will create.
+``re_flags``, to set the regular expression flags for the pattern
+    the lexicon will create.
 
 See for more information the documentation of the :doc:`lexicon <lexicon>`
 module.
