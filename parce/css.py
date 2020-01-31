@@ -27,16 +27,17 @@ The module will be used by the theme module.
 Workflow:
 
     1. load a mixed list of Rule or Condition instances from a file, using
-        ``load_rules()``, or create one from a tree using ``get_rules()``
+       ``load_rules()``, or create one from a tree using ``get_rules()``
 
        You can chain multiple lists from different sources.
 
     2. filter out the Condition instances, either using or ignoring the rules
        in the conditions. Currently filter_rules lets everything through; but
-       filter to implement @media, @document, @supports queries could be
+       filters to implement @media, @document, @supports queries could be
        written.
 
-    3. Use ``sort_rules()`` to sort the rules on specificity.
+    3. Use ``sort_rules()`` to sort the rules on specificity. You can store
+       the resulting list of rules to use it multiple times.
 
     4. Use a ``select`` method (currently only ``select_class``, but more
        can be implemented) to select rules based on their selectors.
