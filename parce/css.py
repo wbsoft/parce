@@ -37,7 +37,7 @@ Workflow:
     4. Use a ``select`` method (currently only ``select_class``, but more
        can be implemented) to select rules based on their selectors.
 
-    5. Use ``combine_properties()`` to combine the properties of the selected
+    5. Use ``properties()`` to combine the properties of the selected
        rules to get a dictionary of the CSS properties that apply.
 
 Example::
@@ -52,6 +52,7 @@ Example::
 
 
 import collections
+import functools
 import os
 
 from . import *
@@ -61,6 +62,14 @@ from .query import Query
 
 Rule = collections.namedtuple("Rule", "selectors properties")
 Condition = collections.namedtuple("Condition", "condition style")
+
+
+def style_query(func):
+    """Make a method result (generator) into a new Style object."""
+    @functools.wraps(func)
+    def wrapper(self, *args, **kwargs):
+        return type(self)(list(func(self, *args, **kwargs)))
+    return wrapper
 
 
 class StyleSheet:
@@ -95,7 +104,8 @@ class StyleSheet:
     def from_file(cls, filename, path=None, allow_import=True):
         """Return a new StyleSheet adding Rules and Conditions from a local filename.
 
-        The ``path`` argument is currently unused.
+        The ``path`` argument is currently unused. If ``allow_import`` is
+        False, the ``@import` atrule is ignored.
 
         """
         text = open(filename).read()  # TODO: handle encoding, currently UTF-8
@@ -106,7 +116,8 @@ class StyleSheet:
         """Return a new StyleSheet adding Rules and Conditions from a string.
 
         The ``filename`` argument is used to handle ``@import`` rules
-        correctly. The ``path`` argument is currently unused.
+        correctly. The ``path`` argument is currently unused. If
+        ``allow_import`` is False, the ``@import` atrule is ignored.
 
         """
         tree = root(Css.root, text)
@@ -117,14 +128,15 @@ class StyleSheet:
         """Return a new StyleSheet adding Rules and Conditions from a parsed tree.
 
         The ``filename`` argument is used to handle ``@import`` rules
-        correctly. The ``path`` argument is currently unused.
+        correctly. The ``path`` argument is currently unused. If
+        ``allow_import`` is False, the ``@import` atrule is ignored.
 
         """
         rules = []
         for node in tree.query.children(Css.atrule, Css.prelude):
             if node.lexicon is Css.atrule:
                 # handle @-rules
-                keyword = node[0][0]
+                keyword = node.first_token()
                 if keyword == "import":
                     if allow_import:
                         for s in node.query.children(Css.dqstring, Css.sqstring):
@@ -173,31 +185,36 @@ class StyleSheet:
 
 
 class Style:
-    """Represents the list of styles created by the StyleSheet object."""
+    """Represents the list of rules created by the StyleSheet object.
+
+    All ``select``-methods/properties return a new Style object with the
+    narrowed-down selection of rules.
+
+    Use ``properties()`` to get the dictionary of combined properties that
+    apply to the selected rules.
+
+    """
     def __init__(self, rules):
         self.rules = rules
 
+    @style_query
     def select_class(self, *classes):
-        """Selects the rules that match at least one of the class names.
+        """Select the rules that match at least one of the class names.
 
         Just looks at the last class name in a selector, does not use combinators.
         (Enough for internal styling :-).
 
         """
-        def gen():
-            for rule in self.rules:
-                c = Query.from_nodes(rule.selectors).all(Css.class_selector).pick_last()
-                if c and get_ident_token(c) in classes:
-                    yield rule
-        return type(self)(list(gen()))
+        for rule in self.rules:
+            c = Query.from_nodes(rule.selectors).all(Css.class_selector).pick_last()
+            if c and get_ident_token(c) in classes:
+                yield rule
 
-    def combine_properties(self):
-        """Combine the properties of the current set of rules. (Endpoint.)
+    def properties(self):
+        """Return the combined properties of the current set of rules. (Endpoint.)
 
         Returns a dictionary with the properties. Comments, closing delimiters and
         "!important" flags are removed from the property values.
-
-        The most specific property dicts are assumed to be first.
 
         """
         result = {}
