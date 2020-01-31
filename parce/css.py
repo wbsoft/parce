@@ -24,18 +24,48 @@ originating from the Css parser in the parce.lang.css module.
 
 The module will be used by the theme module.
 
+Workflow:
+
+    1. load a mixed list of Rule or Condition instances from a file, using
+        ``load_rules()``, or create one from a tree using ``get_rules()``
+
+    2. filter out the Condition instances, either using or ignoring the rules
+       in the conditions. Currently filter_rules lets everything through; but
+       filter to implement @media, @document, @supports queries could be
+       written.
+
+    3. Use ``sort_rules()`` to sort the rules on specificity.
+
+    4. Use a ``select`` method (currently only ``select_class``, but more
+       can be implemented) to select rules based on their selectors.
+
+    5. Use ``combine_properties()`` to combine the properties of the selected
+       rules to get a dictionary of the CSS properties that apply.
+
+Example::
+
+    >>> import parce.css
+    >>> rules = parce.css.load_rules("parce/themes/default.css")
+    >>> rules = parce.css.filter_rules(rules)
+    >>> combine_properties(select_class(sort_rules(rules), 'comment'))
+    {'font-style': [<Context Css.identifier at 1037-1043 (1 children)>],
+     'color': [<Token '#666' at 1056:1060 (Literal.Color)>]}
+
+
 """
 
 
 import collections
+import os
 
 from . import *
-from .lang.css import *
+from .lang.css import Css
 from .query import Query
 
 
 
 Rule = collections.namedtuple("Rule", "selectors properties")
+Condition = collections.namedtuple("Condition", "condition rules")
 
 
 def css_classes(action):
@@ -97,30 +127,6 @@ def get_url(context):
                 elif action is String:
                     yield get_string(n.right_sibling())
     return ''.join(gen())
-
-
-def get_rules(tree):
-    """Get all the CSS rules from the tree.
-
-    Every rule is a two-tuple(selectors, declarations), where selectors
-    is a list of nodes containing all the selectors, and declarations a dictionary
-    mapping property name to a list of nodes representing the value.
-
-    Empty rules, i.e. rules with no declarations between the { } are skipped.
-
-    """
-    for rule in tree.query.all(Css.rule):
-        if len(rule) > 1:
-            # get the selectors (without ending { )
-            selectors = list(remove_comments(rule.left_sibling()[:-1]))
-            if selectors:
-                # get the property declarations:
-                properties = {}
-                for declaration in rule.query.children(Css.declaration):
-                    propname = get_ident_token(declaration[0])
-                    value = declaration[2:] if declaration[1] == ":" else declaration[1:]
-                    properties[propname] = value
-                yield Rule(selectors, properties)
 
 
 def calculate_specificity(selectors):
@@ -197,4 +203,68 @@ def select_class(rules, *classes):
         c = Query.from_nodes(rule.selectors).all(Css.class_selector).pick_last()
         if c and get_ident_token(c) in classes:
             yield rule
+
+
+def get_rules(tree, filename=None, path=None):
+    """Evaluate a parsed CSS file and return a list of Rules or Condition instances.
+
+    A Rule represents one CSS rule with its selectors and its properties.
+    A Condition represent an @-rule condition and its nested Rules
+
+    Loads @import files from the local file system.
+
+    """
+    rules = []
+    for node in tree.query.children(Css.atrule, Css.prelude):
+        if node.lexicon is Css.atrule:
+            # handle @-rules
+            keyword = node[0][0]
+            if keyword == "import":
+                for s in node.query.children(Css.dqstring, Css.sqstring):
+                    fname = get_string(s)
+                    fname = os.path.join(os.path.dirname(filename), fname)
+                    rules.extend(load_rules(fname, path))
+                    break
+            elif node[-1].lexicon is Css.atrule_nested:
+                rules.append(Condition(node, get_rules(node[-1][-1], filename, path)))
+        elif len(node) > 1:   # Css.prelude
+            # get the selectors (without ending { )
+            selectors = list(remove_comments(node[:-1]))
+            if selectors:
+                for rule in node.query.right:
+                    # get the property declarations:
+                    properties = {}
+                    for declaration in rule.query.children(Css.declaration):
+                        propname = get_ident_token(declaration[0])
+                        value = declaration[2:] if declaration[1] == ":" else declaration[1:]
+                        properties[propname] = value
+                    rules.append(Rule(selectors, properties))
+                    break
+    return rules
+
+
+def load_rules(filename, path=None):
+    """Load a CSS file and return a list of Rules or Condition instances.
+
+    A Rule represents one CSS rule with its selectors and its properties.
+    A Condition represent an @-rule condition and its nested Rules.
+
+    Only loads from the local file system.
+
+    """
+    return get_rules(root(Css.root, open(filename).read()), filename, path)
+
+
+def filter_rules(rules, media=None, supports=None, document=None):
+    """Filter out Conditions from the iterable of rules.
+
+    Currently just lets through all nested rules. The media, supports, and
+    document arguments are currently unused.
+
+    """
+    for r in rules:
+        if isinstance(r, Condition):
+            yield from filter_rules(r.rules, media, supports, document)
+        else:
+            yield r
 
