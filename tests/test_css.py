@@ -40,7 +40,7 @@ h1[attribute="value"] + p {
 
 tree = root(Css.root, css)
 
-assert len(tree) == 3
+assert len(tree) == 2   # prelude and rule
 assert tree[0][0][2][0][0].action is Name.Attribute
 assert tree.query.all.action(Number).pick().pos == 40
 assert tree.query.all(Css.declaration)[0][0].list() == [
