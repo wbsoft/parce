@@ -68,8 +68,9 @@ from .lang.css import Css
 from .query import Query
 
 
-Rule = collections.namedtuple("Rule", "selectors properties")
+Atrule = collections.namedtuple("Atrule", "keyword nodes")
 Condition = collections.namedtuple("Condition", "condition style")
+Rule = collections.namedtuple("Rule", "selectors properties")
 
 
 def style_query(func):
@@ -120,7 +121,7 @@ class StyleSheet:
         return cls.from_text(text, filename, path, allow_import)
 
     @classmethod
-    def from_text(cls, text, filename, path=None, allow_import=True):
+    def from_text(cls, text, filename='', path=None, allow_import=True):
         """Return a new StyleSheet adding Rules and Conditions from a string.
 
         The ``filename`` argument is used to handle @import rules
@@ -132,7 +133,7 @@ class StyleSheet:
         return cls.from_tree(tree, filename, path, allow_import)
 
     @classmethod
-    def from_tree(cls, tree, filename, path=None, allow_import=True):
+    def from_tree(cls, tree, filename='', path=None, allow_import=True):
         """Return a new StyleSheet adding Rules and Conditions from a parsed tree.
 
         The ``filename`` argument is used to handle @import rules
@@ -144,17 +145,21 @@ class StyleSheet:
         for node in tree.query.children(Css.atrule, Css.prelude):
             if node.lexicon is Css.atrule:
                 # handle @-rules
-                keyword = node.first_token()
-                if keyword == "import":
-                    if allow_import:
-                        for s in node.query.children(Css.dqstring, Css.sqstring):
-                            fname = get_string(s)
-                            fname = os.path.join(os.path.dirname(filename), fname)
-                            rules.extend(cls.from_file(fname, path, True).rules)
-                            break
-                elif node[-1].lexicon is Css.atrule_nested:
-                    s = cls.from_tree(node[-1][-1], filename, path, allow_import)
-                    rules.append(Condition(node, s))
+                if node and node[0].is_context and node[0].lexicon is Css.atrule_keyword:
+                    keyword = get_ident_token(node[0])
+                    if keyword == "import":
+                        if allow_import:
+                            for s in node.query.children(Css.dqstring, Css.sqstring):
+                                fname = get_string(s)
+                                fname = os.path.join(os.path.dirname(filename), fname)
+                                rules.extend(cls.from_file(fname, path, True).rules)
+                                break
+                    elif node[-1].lexicon is Css.atrule_nested:
+                        s = cls.from_tree(node[-1][-1], filename, path, allow_import)
+                        rules.append(Condition(node, s))
+                    else:
+                        # other @-rule
+                        rules.append(Atrule(keyword, node[1:]))
             elif len(node) > 1:   # Css.prelude
                 # get the selectors (without ending { )
                 selectors = list(remove_comments(node[:-1]))
@@ -181,15 +186,31 @@ class StyleSheet:
         The rules are sorted on specificity.
 
         """
-        def gen():
-            for r in self.rules:
+        def get_rules(rules):
+            for r in rules:
                 if isinstance(r, Condition):
-                    yield from r.style.rules
-                else:
+                    yield from get_rules(r.style.rules)
+                elif isinstance(r, Rule):
                     yield r
-        rules = sorted(gen(), key=lambda rule: calculate_specificity(rule.selectors))
+        rules = sorted(get_rules(self.rules),
+            key=lambda rule: calculate_specificity(rule.selectors))
         rules.reverse()
         return Style(rules)
+
+    @property
+    def at(self):
+        """Return an Atrules object containing the remaining at-rules.
+
+        All rules that still are behind a condition, are let through.
+
+        """
+        def get_rules(rules):
+            for r in rules:
+                if isinstance(r, Condition):
+                    yield from get_rules(r.style.rules)
+                elif isinstance(r, Atrule):
+                    yield r
+        return Atrules(list(get_rules(self.rules)))
 
 
 class Style:
@@ -235,6 +256,18 @@ class Style:
             while value and value[-1] in (";", "!important"):
                 del value[-1]
         return result
+
+
+class Atrules:
+    """Represents the @rules that are not nested, e.g. @page etc."""
+    def __init__(self, rules):
+        self.rules = rules
+
+    @style_query
+    def select(self, *keywords):
+        for r in self.rules:
+            if r.keyword in keywords:
+                yield r
 
 
 def css_classes(action):
