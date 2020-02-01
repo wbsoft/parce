@@ -482,6 +482,8 @@ class AbstractElement:
 
     def match(self, selectors):
         """Match with a compound selector expression (``selectors`` part of Rule)."""
+        if not selectors:
+            return True
         # selector list?
         try:
             i = selectors.index(",")
@@ -489,8 +491,6 @@ class AbstractElement:
             pass
         else:
             return self.match(selectors[:i]) or self.match(selectors[i+1:])
-        if not selectors:
-            return True
         selectors = iter(reversed(selectors))
         sel = next(selectors)
         if not sel.is_context or not self.match_selector(sel):
