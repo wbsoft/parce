@@ -352,7 +352,7 @@ class CssElement:
                 if attrname not in self.attrs:
                     return False
                 value = self.attrs[attrname]
-                operator = c.query.children(Delimiter.Operator).pick()
+                operator = c.query.children.action(Delimiter.Operator).pick()
                 if operator:
                     v = operator.right_sibling()
                     if v:
@@ -362,6 +362,11 @@ class CssElement:
                             v = get_string(v.right_sibling())
                         else:
                             v = v.text
+                        if len(c) > 4 and c[-2].is_context and \
+                                get_ident_token(c[-2]).lower() == "i":
+                            # case insensitive
+                            v = v.lower()
+                            value = value.lower()
                         if operator == "=":
                             if v != value:
                                 return False
@@ -380,9 +385,6 @@ class CssElement:
                         elif operator == "*=":
                             if v not in value:
                                 return False
-                        else:
-                            pass # should not come here
-                        # TODO: implement s and i flags
         # pseudo_class?
         for c in q(Css.pseudo_class):
             if get_ident_token(c) not in self.pseudo_classes:
