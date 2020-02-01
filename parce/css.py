@@ -307,6 +307,136 @@ class Atrules:
                 yield r
 
 
+class AbstractElement:
+    """Base implementation for an Element object that Style uses for matching.
+
+    You may reimplement this to wrap any tree structure you want to use with
+    the css module.
+
+    """
+    def get_name(self):
+        """Implement to return the element's name."""
+
+    def get_parent(self):
+        """Implement to return None if there is no parent, otherwise an Element."""
+
+    def get_attributes(self):
+        """Implement to return a dictionary of attributes, keys and values are str."""
+
+    def get_classes(self):
+        """Return a tuple of classes, by default from the 'class' attribute.
+
+        The returned tuple may be empty, when there are no class names.
+
+        """
+        d = self.get_attributes()
+        if d:
+            return d.get("class", "").split()
+        return ()
+
+    def get_id(self):
+        """Return the id or None, by default read from the 'id' attribute."""
+        d = self.get_attributes()
+        if d:
+            return d.get("id")
+
+    def next_siblings(self):
+        """Implement to yield following siblings elements."""
+
+    def previous_siblings(self):
+        """Implement to yield predecing siblings (in backward order)."""
+
+    def next_sibling(self):
+        """Return the next sibling."""
+        for e in self.next_siblings():
+            return e
+
+    def previous_sibling(self):
+        """Return the previous sibling."""
+        for e in self.previous_siblings():
+            return e
+
+    def get_pseudo_classes(self):
+        """Implement to return a list of pseudo classes."""
+
+    def get_pseudo_elements(self):
+        """Implement to return a list of pseudo elements."""
+
+    def match(self, selector):
+        """Match with a single CSS selector (Css.selector Context).
+
+        Returns True if the element matches with the selector.
+
+        """
+        q = selector.query.children
+        # class?
+        classes = self.get_classes()
+        for c in q(Css.class_selector):
+            if get_ident_token(c) not in classes:
+                return False
+        # element name?
+        c = q(Css.element_selector).pick()
+        if c and get_ident_token(c) != self.get_name():
+            return False
+        # id?
+        c = q(Css.id_selector).pick()
+        if c and get_ident_token(c) != self.get_id():
+            return False
+        # attrs?
+        attributes = self.get_attributes()
+        for c in q(Css.attribute_selector):
+            if c and c[0].lexicon is Css.attribute:
+                attrname = get_ident_token(c[0])
+                try:
+                    value = attributes[attrname]
+                except KeyError:
+                    return False
+                operator = c.query.children.action(Delimiter.Operator).pick()
+                if operator:
+                    v = operator.right_sibling()
+                    if v:
+                        if v.is_context:
+                            v = get_ident_token(v)
+                        elif v in ("'", '"') and v.right_sibling():
+                            v = get_string(v.right_sibling())
+                        else:
+                            v = v.text
+                        if len(c) > 4 and c[-2].is_context and \
+                                get_ident_token(c[-2]).lower() == "i":
+                            # case insensitive
+                            v = v.lower()
+                            value = value.lower()
+                        if operator == "=":
+                            if v != value:
+                                return False
+                        elif operator == "~=":
+                            if v not in value.split():
+                                return False
+                        elif operator == "|=":
+                            if v != value and not value.startswith(v + "-"):
+                                return False
+                        elif operator == "^=":
+                            if not value.startswith(v):
+                                return False
+                        elif operator == "$=":
+                            if not value.endswith(v):
+                                return False
+                        elif operator == "*=":
+                            if v not in value:
+                                return False
+        # pseudo_class?
+        pseudo_classes = self.get_pseudo_classes()
+        for c in q(Css.pseudo_class):
+            if get_ident_token(c) not in pseudo_classes:
+                return False
+        # pseudo_element?
+        pseudo_elements = self.get_pseudo_elements()
+        for c in q(Css.pseudo_element):
+            if get_ident_token(c) not in pseudo_elements:
+                return False
+        return True
+
+
 class CssElement(list):
     """Mimic an element CSS selector rules are matched with.
 
