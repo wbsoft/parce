@@ -37,8 +37,8 @@ Workflow:
     1. Instantiate a StyleSheet from a file or other source. If needed,
        combine multiple StyleSheets using the + operator.
 
-    2. (not yet implemented) Filter conditions out, like media, supports
-       or document.
+    2. Filter conditions out using ``filter_conditions()``, like media,
+       supports or document.
 
     3. Get a Style object through the ``style`` property of the StyleSheet.
 
@@ -68,8 +68,8 @@ from .lang.css import Css
 from .query import Query
 
 
-Atrule = collections.namedtuple("Atrule", "keyword nodes")
-Condition = collections.namedtuple("Condition", "condition style")
+Atrule = collections.namedtuple("Atrule", "keyword node")
+Condition = collections.namedtuple("Condition", "keyword node style")
 Rule = collections.namedtuple("Rule", "selectors properties")
 
 
@@ -156,10 +156,10 @@ class StyleSheet:
                                 break
                     elif node[-1].lexicon is Css.atrule_nested:
                         s = cls.from_tree(node[-1][-1], filename, path, allow_import)
-                        rules.append(Condition(node, s))
+                        rules.append(Condition(keyword, node, s))
                     else:
                         # other @-rule
-                        rules.append(Atrule(keyword, node[1:]))
+                        rules.append(Atrule(keyword, node))
             elif len(node) > 1:   # Css.prelude
                 # get the selectors (without ending { )
                 selectors = list(remove_comments(node[:-1]))
@@ -177,6 +177,34 @@ class StyleSheet:
 
     def __add__(self, other):
         return type(self)(self.rules + other.rules)
+
+    @style_query
+    def filter_conditions(self, keyword, predicate):
+        """Return a new StyleSheet object where conditions are filtered out.
+
+        For Condition instances with the specified keyword, the predicate is
+        called with the contents of the ``node`` (the full Css.atrule node) of
+        each Condition, and if the return value doesn't evaluate to True, the
+        Condition is removed from the resulting set. Conditions with other
+        keywords are kept.
+
+        Currently (CSS3), Conditions have the "media", "supports" or "document"
+        keyword.
+
+        For example, this is a crude way to only get the @media rules for
+        "screen"::
+
+            filter_conditions("media", lambda node: any(node.query.all("screen")))
+
+        Of course, a better parser for @media expressions could be written :-)
+
+        """
+        for r in self.rules:
+            if isinstance(r, Condition) and r.keyword == keyword:
+                if predicate(r.node):
+                    yield r
+            else:
+                yield r
 
     @property
     def style(self):
