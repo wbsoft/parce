@@ -22,6 +22,9 @@
 Various utility functions.
 """
 
+import codecs
+
+
 def abbreviate_repr(s, length=30):
     """Elegantly abbreviate repr text."""
     if len(s) > length:
@@ -45,4 +48,24 @@ def merge_adjacent_actions(tokens):
             end = nend
         yield pos, end, action, lang
 
+
+def get_bom(data):
+    """Get the BOM (Byte Order Mark) of data, if any.
+
+    A two-tuple is returned (encoding, data). If the data starts with a BOM
+    mark, its encoding is determined and the BOM mark is stripped off.
+    Otherwise, the returned encoding is None and the data is returned
+    unchanged.
+
+    """
+    for bom, encoding in (
+        (codecs.BOM_UTF8, 'utf-8'),
+        (codecs.BOM_UTF16_LE, 'utf_16_le'),
+        (codecs.BOM_UTF16_BE, 'utf_16_be'),
+        (codecs.BOM_UTF32_LE, 'utf_32_le'),
+        (codecs.BOM_UTF32_BE, 'utf_32_be'),
+            ):
+        if data.startswith(bom):
+            return encoding, data[len(bom):]
+    return None, data
 
