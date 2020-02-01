@@ -281,18 +281,19 @@ class Style:
         (Enough for internal styling :-).
 
         """
+        def selgroups(selectors):
+            try:
+                i = selectors.index(",")
+            except ValueError:
+                yield selectors
+            else:
+                yield selectors[:i]
+                yield from selgroups(selectors[i+1:])
         for rule in self.rules:
-            i, o = 1, 0
-            while i:
-                try:
-                    i = rule.selectors.index(",", o)
-                except ValueError:
-                    i = None
-                c = Query.from_nodes(rule.selectors[o:i]).all(Css.class_selector).pick_last()
+            for selectors in selgroups(rule.selectors):
+                c = Query.from_nodes(selectors).all(Css.class_selector).pick_last()
                 if c and get_ident_token(c) in classes:
                     yield rule
-                if i is not None:
-                    o = i + 1
 
     @style_query
     def select_element(self, element):
