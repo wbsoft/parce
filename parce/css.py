@@ -81,7 +81,7 @@ Rule = collections.namedtuple("Rule", "selectors properties")
 
 
 def style_query(func):
-    """Make a method result (generator) into a new Style object."""
+    """Make a generator method return a new Style/StyleSheet/Atrules object."""
     @functools.wraps(func)
     def wrapper(self, *args, **kwargs):
         return type(self)(list(func(self, *args, **kwargs)))
@@ -91,7 +91,7 @@ def style_query(func):
 class StyleSheet:
     """Represents a list of style rules and conditions.
 
-    Normall CSS rules are translated into a Rule tuple, and nested rules
+    Normal CSS rules are translated into a Rule tuple, and nested rules
     such as @media, @document and @supports are translated into Condition
     tuples.
 
