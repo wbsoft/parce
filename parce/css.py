@@ -326,8 +326,42 @@ class CssElement:
             attrs["class"] = attrs["class_"]
         self.class_ = attrs.get("class", "").split()
 
-    def match(self, selector):
-        """Match with a CSS selector (Css.selector Context).
+    def match(self, selectors):
+        """Match with a compound selector expression (``selectors`` part of Rule)."""
+        # selector list?
+        try:
+            i = selectors.index(",")
+        except ValueError:
+            pass
+        else:
+            return self.match(selectors[:i]) or self.match(selectors[i+1:])
+        if not selectors:
+            return True
+        selectors = iter(reversed(selectors))
+        sel = next(selectors)
+        if not sel.is_context or not self.match_selector(sel):
+            return False
+        operator = next(selectors, None)
+        if operator:
+            if operator.is_context:
+                sel = operator
+                operator = " "
+            else:
+                sel = next(selectors, None)
+            # handle operator
+            if operator == ">":
+                pass # parent should match
+            elif operator == " ":
+                pass # an ancestor should match
+            elif operator == "+":
+                pass # immediate sibling should match
+            else: # operator == "~":
+                pass # a sibling should match
+        else:
+            return False
+
+    def match_selector(self, selector):
+        """Match with a single CSS selector (Css.selector Context).
 
         Returns True if the element matches with the selector.
 
