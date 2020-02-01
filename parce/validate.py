@@ -40,33 +40,46 @@ def validate_language(lang):
         if isinstance(value, Lexicon):
             lexicons.append(getattr(lang, key))
 
-    correct = True
+    errors = set()
+    warnings = set()
     for lexicon in lexicons:
-        correct &= LexiconValidator(lexicon).validate()
-    return correct
+        v = LexiconValidator(lexicon)
+        v.validate()
+        errors.update(v.errors)
+        warnings.update(v.warnings)
+    for warning in warnings:
+        print(warning)
+    for error in errors:
+        print(error)
+    return not errors
 
 
 class LexiconValidator:
 
     def __init__(self, lexicon):
         self.lexicon = lexicon
-        self.errors = False
-        self.warnings = False
+        self.errors = set()
+        self.warnings = set()
 
     def error(self, msg, lexicon=None):
-        """Print message to stdout with lexicon name prepended. Sets error flag."""
-        self.errors = True
-        print("{}: error: {}".format(lexicon or self.lexicon, msg))
+        """Add message to errors."""
+        msg = "{}: error: {}".format(lexicon or self.lexicon, msg)
+        self.errors.add(msg)
 
     def warning(self, msg, lexicon=None):
-        """Print message to stdout with lexicon name prepended. Sets error flag."""
-        self.warnings = True
-        print("{}: warning: {}".format(lexicon or self.lexicon, msg))
+        """Add message to warnings."""
+        msg = "{}: warning: {}".format(lexicon or self.lexicon, msg)
+        self.warnings.add(msg)
 
     def validate(self):
-        """Validate a lexicon and return True if no errors, False otherwise."""
-        self.errors = False
+        """Validate a lexicon.
 
+        Errors and warnings are left in the ``errors`` and ``warnings``
+        attributes, respectively.
+
+        """
+        self.errors.clear()
+        self.warnings.clear()
         default_act, default_tg = None, None
         for pattern, action, *target in self.lexicon():
             if pattern is parce.default_action:
