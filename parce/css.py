@@ -341,24 +341,32 @@ class CssElement:
         sel = next(selectors)
         if not sel.is_context or not self.match_selector(sel):
             return False
+        parent = self.parent
+        element = self
         operator = next(selectors, None)
-        if operator:
+        while operator:
             if operator.is_context:
                 sel = operator
                 operator = " "
             else:
                 sel = next(selectors, None)
+                if not sel:
+                    return False
             # handle operator
             if operator == ">":
-                pass # parent should match
+                # parent should match
+                if not parent or not parent.match_selector(sel):
+                    return False
+                parent = parent.parent
+                element = parent
             elif operator == " ":
                 pass # an ancestor should match
             elif operator == "+":
                 pass # immediate sibling should match
             else: # operator == "~":
                 pass # a sibling should match
-        else:
-            return False
+            operator = next(selectors, None)
+        return True
 
     def match_selector(self, selector):
         """Match with a single CSS selector (Css.selector Context).
