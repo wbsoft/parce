@@ -49,7 +49,7 @@ def merge_adjacent_actions(tokens):
         yield pos, end, action, lang
 
 
-def get_bom(data):
+def get_bom_encoding(data):
     """Get the BOM (Byte Order Mark) of data, if any.
 
     A two-tuple is returned (encoding, data). If the data starts with a BOM

@@ -119,7 +119,7 @@ class StyleSheet:
         False, the @import atrule is ignored.
 
         """
-        encoding, data = util.get_bom(open(filename, 'rb').read())
+        encoding, data = util.get_bom_encoding(open(filename, 'rb').read())
         if not encoding:
             m = re.match(rb'^@charset\s*"(.*?)"', data)
             encoding = m.group(1).decode('latin1') if m else "utf-8"
