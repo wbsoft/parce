@@ -62,8 +62,10 @@ Example::
 import collections
 import functools
 import os
+import re
 
 from . import *
+from . import util
 from .lang.css import Css
 from .query import Query
 
@@ -117,7 +119,14 @@ class StyleSheet:
         False, the @import atrule is ignored.
 
         """
-        text = open(filename).read()  # TODO: handle encoding, currently UTF-8
+        encoding, data = util.get_bom(open(filename, 'rb').read())
+        if not encoding:
+            m = re.match(rb'^@charset\s*"(.*?)"', data)
+            encoding = m.group(1).decode('latin1') if m else "utf-8"
+        try:
+            text = data.decode(encoding)
+        except (LookupError, UnicodeError):
+            text = data.decode('utf-8', 'replace')
         return cls.from_text(text, filename, path, allow_import)
 
     @classmethod
