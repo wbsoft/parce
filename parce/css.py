@@ -91,25 +91,30 @@ def style_query(func):
 class StyleSheet:
     """Represents a list of style rules and conditions.
 
-    Normal CSS rules are translated into a Rule tuple, and nested rules
+    Normal CSS rules are translated into a Rule tuple, nested rules
     such as @media, @document and @supports are translated into Condition
-    tuples.
+    tuples, and other @-rules are put in Atrule tuples.
 
     A Rule consists of ``selectors`` and ``properties``. The ``selectors``
     are the tokens in a rule before the {. The ``properties`` is a dict
     mapping css property names to the list of tokens representing their
     value.
 
-    A Condition consists of ``condition`` and ``style``; the ``condition``
-    is a list of tokens representing all text between the @ and the opening {.
+    A Condition consists of ``keyword``, ``node`` and ``style``; the ``node``
+    is Css.atrule context containing all text from the @ upto the opening {.
     The ``style`` is another StyleSheet object representing the nested
     style sheet.
+
+    An Atrule tuple consists of ``keyword`` and ``node``, where the node is the
+    Css.atrule context.
 
     You can combine stylesheets from different files or sources using the +
     operator.
 
     The ``style`` property returns the Style object representing all combined
-    rules, and allowing further queries.
+    rules, and allowing further queries.  The ``at`` property returns an
+    Atrules instance containing the atrules that do not belong to the nested
+    at-rules.
 
     """
     def __init__(self, rules=None):
