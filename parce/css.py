@@ -307,6 +307,93 @@ class Atrules:
                 yield r
 
 
+class CssElement:
+    """Mimic an element CSS selector rules are matched with.
+
+    Use "class_" when specifying the class with a keyword argument.
+    You can also manipulate the attributes after instantiating.
+
+    """
+    def __init__(self, name="", parent=None, pseudo_classes=None, pseudo_elements=None, **attrs):
+        self.name = name
+        self.parent = parent
+        self.siblings = []
+        self.pseudo_classes = pseudo_classes
+        self.pseudo_elements = pseudo_elements
+        self.attrs = attrs
+        self.id = attrs.get("id")
+        if "class" not in attrs and "class_" in attrs:
+            attrs["class"] = attrs["class_"]
+        self.class_ = attrs.get("class", "").split()
+
+    def match(self, selector):
+        """Match with a CSS selector (Css.selector Context).
+
+        Returns True if the element matches with the selector.
+
+        """
+        q = selector.query.children
+        # class?
+        for c in q(Css.class_selector):
+            if get_ident_token(c) not in self.class_:
+                return False
+        # element name?
+        c = q(Css.element_selector).pick()
+        if c and get_ident_token(c) != self.name:
+            return False
+        # id?
+        c = q(Css.id_selector).pick()
+        if c and get_ident_token(c) != self.id:
+            return False
+        # attrs?
+        for c in q(Css.attribute_selector):
+            if c and c[0].lexicon is Css.attribute:
+                attrname = get_ident_token(c[0])
+                if attrname not in self.attrs:
+                    return False
+                value = self.attrs[attrname]
+                operator = c.query.children(Delimiter.Operator).pick()
+                if operator:
+                    v = operator.right_sibling()
+                    if v:
+                        if v.is_context:
+                            v = get_ident_token(v)
+                        elif v in ("'", '"') and v.right_sibling():
+                            v = get_string(v.right_sibling())
+                        else:
+                            v = v.text
+                        if operator == "=":
+                            if v != value:
+                                return False
+                        elif operator == "~=":
+                            if v not in value.split():
+                                return False
+                        elif operator == "|=":
+                            if v != value and not value.startswith(v + "-"):
+                                return False
+                        elif operator == "^=":
+                            if not value.startswith(v):
+                                return False
+                        elif operator == "$=":
+                            if not value.endswith(v):
+                                return False
+                        elif operator == "*=":
+                            if v not in value:
+                                return False
+                        else:
+                            pass # should not come here
+                        # TODO: implement s and i flags
+        # pseudo_class?
+        for c in q(Css.pseudo_class):
+            if get_ident_token(c) not in self.pseudo_classes:
+                return False
+        # pseudo_element?
+        for c in q(Css.pseudo_element):
+            if get_ident_token(c) not in self.pseudo_elements:
+                return False
+        return True
+
+
 def css_classes(action):
     """Return a tuple of lower-case CSS class names for the specified standard action."""
     return tuple(a._name.lower() for a in action)
