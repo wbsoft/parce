@@ -292,6 +292,7 @@ class TreeBuilder:
                                     pos += 1
                                 else:
                                     done = True # quit if at end anyway
+                                    self.unwind(context)
                         else:
                             tpos = pos
                             circular.clear()
