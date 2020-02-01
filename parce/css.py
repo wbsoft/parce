@@ -307,7 +307,7 @@ class Atrules:
                 yield r
 
 
-class CssElement:
+class CssElement(list):
     """Mimic an element CSS selector rules are matched with.
 
     Use "class_" when specifying the class with a keyword argument.
@@ -315,9 +315,9 @@ class CssElement:
 
     """
     def __init__(self, name="", parent=None, pseudo_classes=None, pseudo_elements=None, **attrs):
+        super().__init__()
         self.name = name
         self.parent = parent
-        self.siblings = []
         self.pseudo_classes = pseudo_classes
         self.pseudo_elements = pseudo_elements
         self.attrs = attrs
@@ -325,6 +325,17 @@ class CssElement:
         if "class" not in attrs and "class_" in attrs:
             attrs["class"] = attrs["class_"]
         self.class_ = attrs.get("class", "").split()
+
+    def previous_siblings(self):
+        """Yield our previous siblings in backward order."""
+        i = self.parent.index(self)
+        if i:
+            yield from self.parent[i-1::-1]
+
+    def next_siblings(self):
+        """Yield our next siblings in forward order."""
+        i = self.parent.index(self)
+        yield from self.parent[i+1:]
 
     def match(self, selectors):
         """Match with a compound selector expression (``selectors`` part of Rule)."""
@@ -341,7 +352,6 @@ class CssElement:
         sel = next(selectors)
         if not sel.is_context or not self.match_selector(sel):
             return False
-        parent = self.parent
         element = self
         operator = next(selectors, None)
         while operator:
@@ -355,16 +365,32 @@ class CssElement:
             # handle operator
             if operator == ">":
                 # parent should match
-                if not parent or not parent.match_selector(sel):
+                if element.parent is None or not element.parent.match_selector(sel):
                     return False
-                parent = parent.parent
-                element = parent
+                element = element.parent
             elif operator == " ":
-                pass # an ancestor should match
+                # an ancestor should match
+                while element.parent is not None:
+                    element = element.parent
+                    if element.match_selector(sel):
+                        break
+                else:
+                    return False
             elif operator == "+":
-                pass # immediate sibling should match
+                # immediate sibling should match
+                for element in element.previous_siblings():
+                    if element.match_selector(sel):
+                        break
+                    return False
+                else:
+                    return False
             else: # operator == "~":
-                pass # a sibling should match
+                # a sibling should match
+                for element in element.previous_siblings():
+                    if element.match_selector(sel):
+                        break
+                else:
+                    return False
             operator = next(selectors, None)
         return True
 
