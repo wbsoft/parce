@@ -19,8 +19,9 @@
 
 
 """
-This modules provides StyleSheet, Style and a bunch of utility functions
-that help reading from a tree structure parsed by the parce.lang.css module.
+This modules provides StyleSheet, Style, Element and a bunch of utility
+functions that help reading from a tree structure parsed by the
+parce.lang.css module.
 
 StyleSheet represents a list of rules and conditions (nested @-rules) from a
 CSS file or string source.
@@ -28,6 +29,11 @@ CSS file or string source.
 Style represents a resulting list of rules, sorted on specificity, so that
 by selecting rules the properties that apply in a certain situation can be
 determined and read.
+
+Element and AbstractElement describe elements in a HTML or XML document, and
+can be used to select matching rules in a stylesheet. Element provides a
+list-based helper, and AbstractElement can be inherited from to wrap any tree
+structure to use with stylesheet rule selectors.
 
 This module will be used by the theme module to provide syntax highlighting
 themes based on CSS files.
@@ -42,8 +48,7 @@ Workflow:
 
     3. Get a Style object through the ``style`` property of the StyleSheet.
 
-    4. Use a ``select`` method (currently only ``select_class``, but more
-       can be implemented) to select rules based on their selectors.
+    4. Use a ``select`` method to select rules based on their selectors.
 
     5. Use ``properties()`` to combine the properties of the selected
        rules to get a dictionary of the CSS properties that apply.
@@ -276,6 +281,13 @@ class Style:
             if c and get_ident_token(c) in classes:
                 yield rule
 
+    @style_query
+    def select_element(self, element):
+        """Select the rules that match with Element."""
+        for rule in self.rules:
+            if element.match(rule.selectors):
+                yield rule
+
     def properties(self):
         """Return the combined properties of the current set of rules. (Endpoint.)
 
@@ -311,17 +323,56 @@ class AbstractElement:
     """Base implementation for an Element object that Style uses for matching.
 
     You may reimplement this to wrap any tree structure you want to use with
-    the css module.
+    the css module. You should then implement:
+
+     * ``__init__()``
+     * ``get_name()``
+     * ``get_parent()``
+     * ``get_children()``
+     * ``get_attributes()``
+     * ``get_pseudo_classes()`` (if needed)
+     * ``get_pseudo_elements()`` (if needed)
+     * ``previous_siblings()``
+     * ``next_siblings()``
 
     """
+    def __repr__(self):
+        attrs = util.abbreviate_repr(repr(self.get_attributes()))
+        count = len(self.get_children())
+        return "<Element {} {} ({} children)>".format(self.get_name(),
+            attrs, count)
+
     def get_name(self):
         """Implement to return the element's name."""
+        return ""
 
     def get_parent(self):
-        """Implement to return None if there is no parent, otherwise an Element."""
+        """Implement to return the parent Element or None."""
+        return None
+
+    def get_children(self):
+        """Implement to return the list of child Elements."""
+        return []
 
     def get_attributes(self):
         """Implement to return a dictionary of attributes, keys and values are str."""
+        return {}
+
+    def get_pseudo_classes(self):
+        """Implement to return a list of pseudo classes."""
+        return []
+
+    def get_pseudo_elements(self):
+        """Implement to return a list of pseudo elements."""
+        return []
+
+    def next_siblings(self):
+        """Implement to yield following siblings elements."""
+        yield from ()
+
+    def previous_siblings(self):
+        """Implement to yield predecing siblings (in backward order)."""
+        yield from ()
 
     def get_classes(self):
         """Return a tuple of classes, by default from the 'class' attribute.
@@ -340,12 +391,6 @@ class AbstractElement:
         if d:
             return d.get("id")
 
-    def next_siblings(self):
-        """Implement to yield following siblings elements."""
-
-    def previous_siblings(self):
-        """Implement to yield predecing siblings (in backward order)."""
-
     def next_sibling(self):
         """Return the next sibling."""
         for e in self.next_siblings():
@@ -356,13 +401,7 @@ class AbstractElement:
         for e in self.previous_siblings():
             return e
 
-    def get_pseudo_classes(self):
-        """Implement to return a list of pseudo classes."""
-
-    def get_pseudo_elements(self):
-        """Implement to return a list of pseudo elements."""
-
-    def match(self, selector):
+    def match_selector(self, selector):
         """Match with a single CSS selector (Css.selector Context).
 
         Returns True if the element matches with the selector.
@@ -436,37 +475,6 @@ class AbstractElement:
                 return False
         return True
 
-
-class CssElement(list):
-    """Mimic an element CSS selector rules are matched with.
-
-    Use "class_" when specifying the class with a keyword argument.
-    You can also manipulate the attributes after instantiating.
-
-    """
-    def __init__(self, name="", parent=None, pseudo_classes=None, pseudo_elements=None, **attrs):
-        super().__init__()
-        self.name = name
-        self.parent = parent
-        self.pseudo_classes = pseudo_classes
-        self.pseudo_elements = pseudo_elements
-        self.attrs = attrs
-        self.id = attrs.get("id")
-        if "class" not in attrs and "class_" in attrs:
-            attrs["class"] = attrs["class_"]
-        self.class_ = attrs.get("class", "").split()
-
-    def previous_siblings(self):
-        """Yield our previous siblings in backward order."""
-        i = self.parent.index(self)
-        if i:
-            yield from self.parent[i-1::-1]
-
-    def next_siblings(self):
-        """Yield our next siblings in forward order."""
-        i = self.parent.index(self)
-        yield from self.parent[i+1:]
-
     def match(self, selectors):
         """Match with a compound selector expression (``selectors`` part of Rule)."""
         # selector list?
@@ -495,15 +503,16 @@ class CssElement(list):
             # handle operator
             if operator == ">":
                 # parent should match
-                if element.parent is None or not element.parent.match_selector(sel):
+                element = element.get_parent()
+                if element is None or not element.match_selector(sel):
                     return False
-                element = element.parent
             elif operator == " ":
                 # an ancestor should match
-                while element.parent is not None:
-                    element = element.parent
+                element = element.get_parent()
+                while element is not None:
                     if element.match_selector(sel):
                         break
+                    element = element.get_parent()
                 else:
                     return False
             elif operator == "+":
@@ -524,74 +533,59 @@ class CssElement(list):
             operator = next(selectors, None)
         return True
 
-    def match_selector(self, selector):
-        """Match with a single CSS selector (Css.selector Context).
 
-        Returns True if the element matches with the selector.
+class Element(AbstractElement, list):
+    """Mimic an Element CSS selector rules are matched with.
 
-        """
-        q = selector.query.children
-        # class?
-        for c in q(Css.class_selector):
-            if get_ident_token(c) not in self.class_:
-                return False
-        # element name?
-        c = q(Css.element_selector).pick()
-        if c and get_ident_token(c) != self.name:
-            return False
-        # id?
-        c = q(Css.id_selector).pick()
-        if c and get_ident_token(c) != self.id:
-            return False
-        # attrs?
-        for c in q(Css.attribute_selector):
-            if c and c[0].lexicon is Css.attribute:
-                attrname = get_ident_token(c[0])
-                if attrname not in self.attrs:
-                    return False
-                value = self.attrs[attrname]
-                operator = c.query.children.action(Delimiter.Operator).pick()
-                if operator:
-                    v = operator.right_sibling()
-                    if v:
-                        if v.is_context:
-                            v = get_ident_token(v)
-                        elif v in ("'", '"') and v.right_sibling():
-                            v = get_string(v.right_sibling())
-                        else:
-                            v = v.text
-                        if len(c) > 4 and c[-2].is_context and \
-                                get_ident_token(c[-2]).lower() == "i":
-                            # case insensitive
-                            v = v.lower()
-                            value = value.lower()
-                        if operator == "=":
-                            if v != value:
-                                return False
-                        elif operator == "~=":
-                            if v not in value.split():
-                                return False
-                        elif operator == "|=":
-                            if v != value and not value.startswith(v + "-"):
-                                return False
-                        elif operator == "^=":
-                            if not value.startswith(v):
-                                return False
-                        elif operator == "$=":
-                            if not value.endswith(v):
-                                return False
-                        elif operator == "*=":
-                            if v not in value:
-                                return False
-        # pseudo_class?
-        for c in q(Css.pseudo_class):
-            if get_ident_token(c) not in self.pseudo_classes:
-                return False
-        # pseudo_element?
-        for c in q(Css.pseudo_element):
-            if get_ident_token(c) not in self.pseudo_elements:
-                return False
-        return True
+    Use "class_" when specifying the class with a keyword argument.
+    You can also manipulate the attributes after instantiating.
+
+    """
+    def __init__(self, name="", parent=None, pseudo_classes=None, pseudo_elements=None, **attrs):
+        super().__init__()
+        self.name = name
+        self.parent = parent
+        self.pseudo_classes = pseudo_classes
+        self.pseudo_elements = pseudo_elements
+        self.attrs = attrs
+        if "class" not in attrs and "class_" in attrs:
+            attrs["class"] = attrs["class_"]
+            del attrs["class_"]
+
+    def get_name(self):
+        """Implemented to return the element's name."""
+        return self.name
+
+    def get_parent(self):
+        """Implemented to return the parent Element or None."""
+        return self.parent
+
+    def get_children(self):
+        """Implemented to return the list of child Elements."""
+        return self[:]
+
+    def get_attributes(self):
+        """Implemented to return a dictionary of attributes."""
+        return self.attrs
+
+    def get_pseudo_classes(self):
+        """Implemented to return a list of pseudo classes."""
+        return self.pseudo_classes
+
+    def get_pseudo_elements(self):
+        """Implemented to return a list of pseudo elements."""
+        return self.pseudo_elements
+
+    def previous_siblings(self):
+        """Yield our previous siblings in backward order."""
+        i = self.parent.index(self)
+        if i:
+            yield from self.parent[i-1::-1]
+
+    def next_siblings(self):
+        """Yield our next siblings in forward order."""
+        i = self.parent.index(self)
+        yield from self.parent[i+1:]
 
 
 def css_classes(action):
