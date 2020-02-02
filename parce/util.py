@@ -69,3 +69,19 @@ def get_bom_encoding(data):
             return encoding, data[len(bom):]
     return None, data
 
+
+def split_list(l, separator):
+    """Split list on items that compare equal to separator.
+
+    Yields result lists that may be empty.
+
+    """
+    try:
+        i = l.index(separator)
+    except ValueError:
+        yield l
+    else:
+        yield l[:i]
+        yield from split_list(l[i+1:], separator)
+
+
