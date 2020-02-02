@@ -384,6 +384,9 @@ class AbstractElement:
      * ``get_attributes()``
      * ``get_pseudo_classes()`` (if needed)
      * ``get_pseudo_elements()`` (if needed)
+
+    For performance reasons, you may want to reimplement:
+
      * ``previous_siblings()``
      * ``next_siblings()``
 
@@ -393,6 +396,12 @@ class AbstractElement:
         count = len(self.get_children())
         return "<Element {} {} ({} children)>".format(self.get_name(),
             attrs, count)
+
+    def __eq__(self, other):
+        return self is other
+
+    def __ne__(self, other):
+        return self is not other
 
     def get_name(self):
         """Implement to return the element's name."""
@@ -418,14 +427,6 @@ class AbstractElement:
         """Implement to return a list of pseudo elements."""
         return []
 
-    def next_siblings(self):
-        """Implement to yield following siblings elements."""
-        yield from ()
-
-    def previous_siblings(self):
-        """Implement to yield predecing siblings (in backward order)."""
-        yield from ()
-
     def get_classes(self):
         """Return a tuple of classes, by default from the 'class' attribute.
 
@@ -442,6 +443,23 @@ class AbstractElement:
         d = self.get_attributes()
         if d:
             return d.get("id")
+
+    def previous_siblings(self):
+        """Yield our previous siblings in backward order."""
+        parent = self.get_parent()
+        if parent is not None:
+            siblings = parent.get_children()
+            i = siblings.index(self)
+            if i:
+                yield from siblings[i-1::-1]
+
+    def next_siblings(self):
+        """Yield our next siblings in forward order."""
+        parent = self.get_parent()
+        if parent is not None:
+            siblings = parent.get_children()
+            i = siblings.index(self)
+            yield from siblings[i+1:]
 
     def next_sibling(self):
         """Return the next sibling."""
@@ -627,17 +645,6 @@ class Element(AbstractElement, list):
     def get_pseudo_elements(self):
         """Implemented to return a list of pseudo elements."""
         return self.pseudo_elements
-
-    def previous_siblings(self):
-        """Yield our previous siblings in backward order."""
-        i = self.parent.index(self)
-        if i:
-            yield from self.parent[i-1::-1]
-
-    def next_siblings(self):
-        """Yield our next siblings in forward order."""
-        i = self.parent.index(self)
-        yield from self.parent[i+1:]
 
 
 def css_classes(action):
