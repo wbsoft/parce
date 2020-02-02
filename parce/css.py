@@ -390,6 +390,10 @@ class AbstractElement:
      * ``previous_siblings()``
      * ``next_siblings()``
 
+    If you wrap other objects, be sure to reimplement __eq__ and __ne__, to
+    compare those objects and not the wrappers, which may be recreated each
+    time.
+
     """
     def __repr__(self):
         attrs = util.abbreviate_repr(repr(self.get_attributes()))
