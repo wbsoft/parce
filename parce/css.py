@@ -372,13 +372,9 @@ class AbstractElement:
      * ``__init__()``
      * ``get_name()``
      * ``get_parent()``
-     * ``get_children()``
      * ``get_attributes()``
      * ``get_pseudo_classes()`` (if needed)
      * ``get_pseudo_elements()`` (if needed)
-
-    For performance reasons, you may want to reimplement:
-
      * ``previous_siblings()``
      * ``next_siblings()``
 
@@ -393,12 +389,6 @@ class AbstractElement:
         return "<Element {} {} ({} children)>".format(self.get_name(),
             attrs, count)
 
-    def __eq__(self, other):
-        return self is other
-
-    def __ne__(self, other):
-        return self is not other
-
     def get_name(self):
         """Implement to return the element's name."""
         return ""
@@ -406,10 +396,6 @@ class AbstractElement:
     def get_parent(self):
         """Implement to return the parent Element or None."""
         return None
-
-    def get_children(self):
-        """Implement to return the list of child Elements."""
-        return []
 
     def get_attributes(self):
         """Implement to return a dictionary of attributes, keys and values are str."""
@@ -422,6 +408,14 @@ class AbstractElement:
     def get_pseudo_elements(self):
         """Implement to return a list of pseudo elements."""
         return []
+
+    def previous_siblings(self):
+        """Implement to yield our previous siblings in backward order."""
+        yield from ()
+
+    def next_siblings(self):
+        """Implement to yield our next siblings in forward order."""
+        yield from ()
 
     def get_classes(self):
         """Return a tuple of classes, by default from the 'class' attribute.
@@ -439,23 +433,6 @@ class AbstractElement:
         d = self.get_attributes()
         if d:
             return d.get("id")
-
-    def previous_siblings(self):
-        """Yield our previous siblings in backward order."""
-        parent = self.get_parent()
-        if parent is not None:
-            siblings = parent.get_children()
-            i = siblings.index(self)
-            if i:
-                yield from siblings[i-1::-1]
-
-    def next_siblings(self):
-        """Yield our next siblings in forward order."""
-        parent = self.get_parent()
-        if parent is not None:
-            siblings = parent.get_children()
-            i = siblings.index(self)
-            yield from siblings[i+1:]
 
     def next_sibling(self):
         """Return the next sibling."""
@@ -618,6 +595,12 @@ class Element(AbstractElement, list):
             attrs["class"] = attrs["class_"]
             del attrs["class_"]
 
+    def __eq__(self, other):
+        return self is other
+
+    def __ne__(self, other):
+        return self is not other
+
     def get_name(self):
         """Implemented to return the element's name."""
         return self.name
@@ -625,10 +608,6 @@ class Element(AbstractElement, list):
     def get_parent(self):
         """Implemented to return the parent Element or None."""
         return self.parent
-
-    def get_children(self):
-        """Implemented to return the list of child Elements."""
-        return self[:]
 
     def get_attributes(self):
         """Implemented to return a dictionary of attributes."""
@@ -641,6 +620,19 @@ class Element(AbstractElement, list):
     def get_pseudo_elements(self):
         """Implemented to return a list of pseudo elements."""
         return self.pseudo_elements
+
+    def previous_siblings(self):
+        """Yield our previous siblings in backward order."""
+        if self.parent is not None:
+            i = self.parent.index(self)
+            if i:
+                yield from self.parent[i-1::-1]
+
+    def next_siblings(self):
+        """Yield our next siblings in forward order."""
+        if self.parent is not None:
+            i = self.parent.index(self)
+            yield from self.parent[i+1:]
 
 
 def css_classes(action):
