@@ -341,12 +341,12 @@ class Token(NodeMixin):
     def __eq__(self, other):
         if isinstance(other, str):
             return other == self.text
-        return super().__eq__(other)
+        return other is self
 
     def __ne__(self, other):
         if isinstance(other, str):
             return other != self.text
-        return super().__ne__(other)
+        return other is not self
 
     def __format__(self, formatstr):
         return self.text.__format__(formatstr)
@@ -573,6 +573,12 @@ class Context(list, NodeMixin):
         name = self.lexicon and self.lexicon.name()
         return "<Context {} at {}-{} ({} children)>".format(
             name, pos, end, len(self))
+
+    def __eq__(self, other):
+        return self is other
+
+    def __ne__(self, other):
+        return self is not other
 
     def dump(self, depth=0):
         """Prints a nice graphical representation, for debugging purposes."""
