@@ -117,9 +117,35 @@ class StyleSheet:
     at-rules.
 
     """
-    def __init__(self, rules=None):
+    filename = ""   #: our filename, if we were loaded from a file
+
+    def __init__(self, rules=None, filename=""):
         """Initialize a StyleSheet, empty of with the supplied rules/conditions."""
         self.rules = rules or []
+        self.filename = filename
+
+    @classmethod
+    def load_from_data(cls, data):
+        """Return a Css.root tree from data, handling the encoding."""
+        encoding, data = util.get_bom_encoding(data)
+        if not encoding:
+            m = re.match(rb'^@charset\s*"(.*?)"', data)
+            encoding = m.group(1).decode('latin1') if m else "utf-8"
+        try:
+            text = data.decode(encoding)
+        except (LookupError, UnicodeError):
+            text = data.decode('utf-8', 'replace')
+        return cls.load_from_text(text)
+
+    @staticmethod
+    def load_from_text(text):
+        """Return a Css.root tree from text."""
+        return root(Css.root, text)
+
+    @classmethod
+    def load_from_file(cls, filename):
+        """Return a Css.root tree from filename, handling the encoding."""
+        return cls.load_from_data(open(filename, 'rb').read())
 
     @classmethod
     def from_file(cls, filename, path=None, allow_import=True):
@@ -129,15 +155,8 @@ class StyleSheet:
         False, the @import atrule is ignored.
 
         """
-        encoding, data = util.get_bom_encoding(open(filename, 'rb').read())
-        if not encoding:
-            m = re.match(rb'^@charset\s*"(.*?)"', data)
-            encoding = m.group(1).decode('latin1') if m else "utf-8"
-        try:
-            text = data.decode(encoding)
-        except (LookupError, UnicodeError):
-            text = data.decode('utf-8', 'replace')
-        return cls.from_text(text, filename, path, allow_import)
+        tree = cls.load_from_file(filename)
+        return cls.from_tree(tree, filename, path, allow_import)
 
     @classmethod
     def from_text(cls, text, filename='', path=None, allow_import=True):
@@ -148,7 +167,19 @@ class StyleSheet:
         ``allow_import`` is False, the @import atrule is ignored.
 
         """
-        tree = root(Css.root, text)
+        tree = cls.load_from_text(text)
+        return cls.from_tree(tree, filename, path, allow_import)
+
+    @classmethod
+    def from_data(cls, data, filename='', path=None, allow_import=True):
+        """Return a new StyleSheet adding Rules and Conditions from a bytes string.
+
+        The ``filename`` argument is used to handle @import rules
+        correctly. The ``path`` argument is currently unused. If
+        ``allow_import`` is False, the @import atrule is ignored.
+
+        """
+        tree = cls.load_from_data(data)
         return cls.from_tree(tree, filename, path, allow_import)
 
     @classmethod
@@ -160,39 +191,46 @@ class StyleSheet:
         ``allow_import`` is False, the @import atrule is ignored.
 
         """
-        rules = []
-        for node in tree.query.children(Css.atrule, Css.prelude):
-            if node.lexicon is Css.atrule:
-                # handle @-rules
-                if node and node[0].is_context and node[0].lexicon is Css.atrule_keyword:
-                    keyword = get_ident_token(node[0])
-                    if keyword == "import":
-                        if allow_import:
-                            for s in node.query.children(Css.dqstring, Css.sqstring):
-                                fname = get_string(s)
-                                fname = os.path.join(os.path.dirname(filename), fname)
-                                rules.extend(cls.from_file(fname, path, True).rules)
-                                break
-                    elif node[-1].lexicon is Css.atrule_nested:
-                        s = cls.from_tree(node[-1][-1], filename, path, allow_import)
-                        rules.append(Condition(keyword, node, s))
-                    else:
-                        # other @-rule
-                        rules.append(Atrule(keyword, node))
-            elif len(node) > 1:   # Css.prelude
-                # get the selectors (without ending { )
-                selectors = list(remove_comments(node[:-1]))
-                if selectors:
-                    for rule in node.query.right:
-                        # get the property declarations:
-                        properties = {}
-                        for declaration in rule.query.children(Css.declaration):
-                            propname = get_ident_token(declaration[0])
-                            value = declaration[2:] if declaration[1] == ":" else declaration[1:]
-                            properties[propname] = value
-                        rules.append(Rule(selectors, properties))
-                        break
-        return cls(rules)
+        filenames = {filename}
+
+        def get_rules(tree):
+            rules = []
+            for node in tree.query.children(Css.atrule, Css.prelude):
+                if node.lexicon is Css.atrule:
+                    # handle @-rules
+                    if node and node[0].is_context and node[0].lexicon is Css.atrule_keyword:
+                        keyword = get_ident_token(node[0])
+                        if keyword == "import":
+                            if allow_import:
+                                for s in node.query.children(Css.dqstring, Css.sqstring):
+                                    fname = get_string(s)
+                                    fname = os.path.join(os.path.dirname(filename), fname)
+                                    # avoid circular @import references
+                                    if fname not in filenames:
+                                        filenames.add(fname)
+                                        rules.extend(get_rules(cls.load_from_file(fname)))
+                                    break
+                        elif node[-1].lexicon is Css.atrule_nested:
+                            s = cls.from_tree(node[-1][-1], filename, path, allow_import)
+                            rules.append(Condition(keyword, node, s))
+                        else:
+                            # other @-rule
+                            rules.append(Atrule(keyword, node))
+                elif len(node) > 1:   # Css.prelude
+                    # get the selectors (without ending { )
+                    selectors = list(remove_comments(node[:-1]))
+                    if selectors:
+                        for rule in node.query.right:
+                            # get the property declarations:
+                            properties = {}
+                            for declaration in rule.query.children(Css.declaration):
+                                propname = get_ident_token(declaration[0])
+                                value = declaration[2:] if declaration[1] == ":" else declaration[1:]
+                                properties[propname] = value
+                            rules.append(Rule(selectors, properties))
+                            break
+            return rules
+        return cls(get_rules(tree), filename)
 
     def __add__(self, other):
         return type(self)(self.rules + other.rules)
