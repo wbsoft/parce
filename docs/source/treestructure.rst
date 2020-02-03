@@ -436,6 +436,9 @@ And this is an overview of the queries that narrow down the result set:
 
     The following query methods are inverted by ``is_not``:
 
+    ``len(length)``, ``len(min_length, max_length)``
+        select only contexts with the speficied ``length``, or a length between
+        ``min_length`` and ``max_length``.
     ``in_range(start=0, end=None)``
         select only the nodes that fully fit in the text range. If preceded
         by ``is_not``, selects the nodes that are outside the specified text

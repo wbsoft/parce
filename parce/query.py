@@ -116,7 +116,8 @@ pick_last(default=None)
 
 delete()
     delete all selected nodes from their parents. If a node would become
-    empty, it is deleted too.
+    empty, it is deleted instead of its children. Returns the number of
+    actually deleted nodes.
 
 
 Navigating nodes:
@@ -221,6 +222,10 @@ is_not
     inverts the meaning of the following query, e.g. is_not.startingwith()
 
 The following query methods are inverted by `is_not`:
+
+len(length), len(min_length, max_length)
+    select only contexts with the speficied length, or a length between
+    min_length and max_length.
 
 in_range(start=0, end=None)
     select only the nodes that fully fit in the text range. If preceded
@@ -535,6 +540,18 @@ class Query:
                 yield n
 
     # invertible selectors
+    @query
+    def len(self, min_length, max_length=None):
+        """Only yield contexts, with min_length, or with length between min and max."""
+        if max_length is None:
+            for n in self:
+                if n.is_context and self._inv ^ (len(n) == min_length):
+                    yield n
+        else:
+            for n in self:
+                if n.is_context and self._inv ^ (min_length <= len(n) <= max_length):
+                    yield n
+
     @query
     def in_range(self, start=0, end=None):
         """Yield a restricted set, tokens and/or contexts must fall in start→end"""
