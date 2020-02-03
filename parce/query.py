@@ -500,15 +500,20 @@ class Query:
 
     @query
     def __call__(self, *what):
-        """Yield token if token has that text, or context if context has that lexicon."""
-        if isinstance(what[0], Lexicon):
-            for n in self:
-                if n.is_context and self._inv ^ (n.lexicon in what):
-                    yield n
-        else:
-            for n in self:
-                if n.is_token and self._inv ^ (n.text in what):
-                    yield n
+        """Yield token if token has that text, or context if context has that lexicon.
+
+        You can even mix the types if you'd need to::
+
+            for n in tree.query.all("%", Lang.comment):
+                # do something
+
+        yields tokens that are a percent sign and contexts that have the
+        Lang.comment lexicon.
+
+        """
+        for n in self:
+            if self._inv ^ (n in what):
+                yield n
 
     @query
     def startingwith(self, text):

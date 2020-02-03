@@ -67,6 +67,14 @@ Besides that, Context has a ``pos`` and ``end`` attribute, which
 refer to the ``pos`` value of the first Token in the context, and the ``end``
 value of the last Token in the context (or a sub-context).
 
+Just like is is possible with Token to compare with a string, a Context can be
+compared to a Lexicon object. So it is possible to write::
+
+    >>> tree[8] == Nonsense.string
+    True
+    >>> Nonsense.comment in tree
+    True
+
 Traversing the tree structure
 ------------------------------------
 

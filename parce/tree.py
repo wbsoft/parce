@@ -53,6 +53,7 @@ import itertools
 
 from parce import util
 from parce import query
+from parce.lexicon import Lexicon
 
 
 class NodeMixin:
@@ -575,10 +576,14 @@ class Context(list, NodeMixin):
             name, pos, end, len(self))
 
     def __eq__(self, other):
-        return self is other
+        if isinstance(other, Lexicon):
+            return other is self.lexicon
+        return other is self
 
     def __ne__(self, other):
-        return self is not other
+        if isinstance(other, Lexicon):
+            return other is self.lexicon
+        return other is not self
 
     def dump(self, depth=0):
         """Prints a nice graphical representation, for debugging purposes."""
