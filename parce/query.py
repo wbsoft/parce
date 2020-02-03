@@ -96,7 +96,7 @@ want to query those in one go::
 Summary of the query methods:
 -----------------------------
 
-Endpoint methods, mainly for debugging:
+Endpoint methods (some are mainly for debugging):
 
 count()
     Just prints the number of nodes in the result set
@@ -113,6 +113,10 @@ pick(default=None)
 pick_last(default=None)
     exhaust the query generator and return the last result, or the default
     if there are no results
+
+delete()
+    delete all selected nodes from their parents. If a node would become
+    empty, it is deleted too.
 
 
 Navigating nodes:
@@ -255,6 +259,7 @@ in_action(*actions)
 """
 
 
+import collections
 import functools
 import itertools
 import re
@@ -321,6 +326,48 @@ class Query:
         for default in self:
             pass
         return default
+
+    def delete(self):
+        """Delete all selected nodes from their parents.
+
+        Internally calls ``uniq`` and ``remove_descendants``. If a context
+        would become empty, that context itself is deleted instead of all its
+        children (except for the root of course). Returns the number of nodes
+        that were deleted.
+
+        """
+        d = collections.defaultdict(list)
+        for n in self.uniq.remove_descendants:
+            d[n.parent].append(n)
+        # if a parent looses all children, remove themselves too
+        while True:
+            remove = [parent
+                for parent, nodes in d.items()
+                    if len(nodes) == len(parent) and parent.parent is not None]
+            if not remove:
+                break
+            for n in remove:
+                del d[n]
+                d[n.parent].append(n)
+        # be sure nodes to delete are sorted on pos
+        count = 0
+        for l in d.values():
+            l.sort(key=lambda n: n.pos)
+            count += len(l)
+        for parent, nodes in d.items():
+            n = nodes[0]
+            i = 0 if n is parent[0] else n.parent_index()
+            slices = [[i, i+1]]
+            for n in nodes[1:]:
+                if n is parent[i+1]:
+                    i += 1
+                    slices[-1][1] += 1
+                else:
+                    i = n.parent_index()
+                    slices.append([i, i+1])
+            for i, j in reversed(slices):
+                del parent[i:j]
+        return count
 
     # navigators
     @pquery

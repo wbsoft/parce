@@ -476,6 +476,13 @@ it easier in some cases to process the results:
         exhausts the query generator and returns the last result, or the
         default if there are no results.
 
+Finally, there is one method that actually changes the tree:
+
+    ``delete()``
+        deletes all selected nodes from their parents. If a context would
+        become empty, it is deleted as well, instead of its children.
+
+
 Additional information can be found in the :doc:`query module's
 documentation <query>`.
 
