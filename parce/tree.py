@@ -56,7 +56,7 @@ from parce import query
 from parce.lexicon import Lexicon
 
 
-class NodeMixin:
+class Node:
     """Methods that are shared by Token and Context."""
     __slots__ = ()
 
@@ -247,8 +247,12 @@ class NodeMixin:
             yield self
         return query.Query(gen)
 
+    def delete(self):
+        """Remove this node from its parent."""
+        del self.parent[self.parent_index()]
 
-class Token(NodeMixin):
+
+class Token(Node):
     """A Token instance represents a lexed piece of text.
 
     A token has the following attributes:
@@ -524,7 +528,7 @@ class _GroupToken(Token):
     __slots__ = "group"
 
 
-class Context(list, NodeMixin):
+class Context(list, Node):
     """A Context represents a list of tokens and contexts.
 
     The lexicon that created the tokens is in the `lexicon` attribute.

@@ -82,9 +82,8 @@ Both Token and Context have a ``parent`` atribute that points to its parent
 Context. Only for the root context, ``parent`` is ``None``.
 
 :py:class:`Token <parce.tree.Token>` and :py:class:`Context
-<parce.tree.Context>` both inherit from :py:class:`NodeMixin
-<parce.tree.NodeMixin>`, which defines a lot of useful methods to traverse
-tree structure.
+<parce.tree.Context>` both inherit from :py:class:`Node <parce.tree.Node>`,
+which defines a lot of useful methods to traverse the tree structure.
 
 Members shared by Token and Context
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -140,6 +139,9 @@ These are the methods Token and Context both provide:
         Return True if the node is the root node, i.e. its ``parent`` is ``None``.
     ``query``
         Powerful property to find nodes in the tree structure. See below.
+    ``delete()``
+        Remove this node from its parent.
+
 
 Members of Token
 ^^^^^^^^^^^^^^^^
@@ -222,7 +224,7 @@ for node traversal:
         None, all tokens from start are yielded.
 
 
-Token, Context and NodeMixin have some more methods, but those have to do with
+Token, Context and Node have some more methods, but those have to do with
 tree structure modification while (re)parsing text. See the :doc:`tree module's
 documentation <tree>` if you are interested in those.
 
