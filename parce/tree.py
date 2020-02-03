@@ -248,8 +248,15 @@ class Node:
         return query.Query(gen)
 
     def delete(self):
-        """Remove this node from its parent."""
-        del self.parent[self.parent_index()]
+        """Remove this node from its parent.
+
+        If the parent would become empty, it is removed too.
+
+        """
+        for parent, index in self.ancestors_with_index():
+            if parent.parent is None or len(parent) > 1:
+                del parent[index]
+                return
 
 
 class Token(Node):
