@@ -18,7 +18,7 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 
-"""
+r"""
 Querying the tree using the `query` property.
 ---------------------------------------------
 
@@ -152,7 +152,7 @@ right_siblings
 
 left_siblings
     yield the left siblings of every node in the current node list, in
-    backward order. Only use right_ and left_siblings when you want to
+    backward order. Only use right\_ and left_siblings when you want to
     find one node in the result set.
 
 [int], __getitem__(int)
@@ -197,8 +197,7 @@ remove_descendants
     remove nodes from the current list if any of their ancestors is also
     in the list.
 
-slice(stop)
-slice(start, stop [, step])
+slice(stop), slice(start, stop [, step])
     Slice the full result set, using itertools.islice(). This can help
     narrowing down the result set. For example:
 
@@ -248,10 +247,10 @@ matching("regex" [, flags=0]), matching(regex [, flags=0])
     (using re.search, the expression can match anywhere unless you use
     ^ or $ characters).
 
-action(*actions)
+action(\*actions)
     select the Tokens that have one of the specified actions
 
-in_action(*actions)
+in_action(\*actions)
     select tokens if their action belongs in the realm of one of the
     specified StandardActions
 
