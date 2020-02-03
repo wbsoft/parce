@@ -156,11 +156,11 @@ left_siblings
     backward order. Only use right\_ and left_siblings when you want to
     find one node in the result set.
 
-[int], __getitem__(int)
+[n]
     yield the nth child (if available) of each Context node
     (supports negative indices)
 
-[slice]
+[n:m]
     yield from the specified slice of each Context node
 
 first, last
@@ -380,6 +380,22 @@ class Query:
         return count
 
     # navigators
+    @query
+    def __getitem__(self, key):
+        """normal slicing, and you can test for one or more actions."""
+        # slicing or itemgetting with integers are not invertible selectors
+        if isinstance(key, slice):
+            for n in self:
+                if n.is_context:
+                    yield from n[key]
+        else:
+            for n in self:
+                if n.is_context:
+                    if key < 0:
+                        key += len(n)
+                    if 0 <= key < len(n):
+                        yield n[key]
+
     @pquery
     def children(self):
         """All direct children of the current nodes."""
@@ -604,22 +620,6 @@ class Query:
         for t in self:
             if t.is_token and self._inv ^ (text in t.text):
                 yield t
-
-    @query
-    def __getitem__(self, key):
-        """normal slicing, and you can test for one or more actions."""
-        # slicing or itemgetting with integers are not invertible selectors
-        if isinstance(key, slice):
-            for n in self:
-                if n.is_context:
-                    yield from n[key]
-        else:
-            for n in self:
-                if n.is_context:
-                    if key < 0:
-                        key += len(n)
-                    if 0 <= key < len(n):
-                        yield n[key]
 
     @query
     def matching(self, pattern, flags=0):
