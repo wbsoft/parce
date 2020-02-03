@@ -579,6 +579,9 @@ class Context(list, Node):
         return "<Context {} at {}-{} ({} children)>".format(
             name, pos, end, len(self))
 
+    def __hash__(self):
+        return Node.__hash__(self)
+
     def __eq__(self, other):
         if isinstance(other, Lexicon):
             return other is self.lexicon
