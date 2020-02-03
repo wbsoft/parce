@@ -123,18 +123,17 @@ delete()
 Navigating nodes:
 ^^^^^^^^^^^^^^^^^
 
-The query itself yields al children of the Context it was started from.
-But using the following methods you can find your way through a tree
-structure. Every method returns a new Query object, having the previous
-one as source of nodes. Most methods are implemented as properties, so
-you don't have to write parentheses.
+The query itself yields just yields the node it was started from. But using the
+following methods you can find your way through a tree structure. Every method
+returns a new Query object, having the previous one as source of nodes. Most
+methods are implemented as properties, so you don't have to write parentheses.
 
 all
     yield all descendant nodes, depth-first, in order. First it yields the
     context, then its children.
 
 children
-    yield all the direct children of the current nodes
+    yield all the direct children of the current node(s)
 
 parent
     yield the parent of all current nodes. This can yield double
@@ -334,10 +333,10 @@ class Query:
     def delete(self):
         """Delete all selected nodes from their parents.
 
-        Internally calls ``uniq`` and ``remove_descendants``. If a context
-        would become empty, that context itself is deleted instead of all its
-        children (except for the root of course). Returns the number of nodes
-        that were deleted.
+        Internally calls ``uniq`` and ``remove_descendants``, so that no
+        unnessary deletes are done. If a context would become empty, that
+        context itself is deleted instead of all its children (except for the
+        root of course). Returns the number of nodes that were deleted.
 
         """
         d = collections.defaultdict(list)
@@ -351,7 +350,7 @@ class Query:
                 count += len(root)
                 root.clear()
             del d[None]
-        # if a parent looses all children, remove themselves too
+        # if a parent looses all children, remove itself too
         while True:
             remove = [parent
                 for parent, nodes in d.items()
@@ -383,7 +382,12 @@ class Query:
     # navigators
     @query
     def __getitem__(self, key):
-        """normal slicing, and you can test for one or more actions."""
+        """Get the specified item or items of every context node.
+
+        Note that the result nodes always form a flat iterable. No IndexError
+        will be raised if an index would be out of range for any nore.
+
+        """
         # slicing or itemgetting with integers are not invertible selectors
         if isinstance(key, slice):
             for n in self:
