@@ -77,7 +77,9 @@ call the ``root()`` function of ``parce``::
 
 The root lexicon in this case is ``Nonsense.root``, although the name of the
 lexicon does not matter at all. But naming the root lexicon ``root`` is
-probably a good convention. Let's ``dump()`` the tree to look what's inside!::
+probably a good convention. Let's ``dump()`` the tree to look what's inside!
+
+::
 
     >>> tree.dump()
     <Context Nonsense.root at 1-108 (19 children)>
