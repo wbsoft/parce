@@ -338,6 +338,12 @@ class Query:
         d = collections.defaultdict(list)
         for n in self.uniq.remove_descendants:
             d[n.parent].append(n)
+        # deleting the root context makes no sense, clear it in that case
+        root = d.get(None)
+        if root:
+            count = len(root[0])
+            root[0].clear()
+            return count
         # if a parent looses all children, remove themselves too
         while True:
             remove = [parent
