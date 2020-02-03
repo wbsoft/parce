@@ -408,9 +408,7 @@ And this is an overview of the queries that narrow down the result set:
     ``remove_descendants``
         remove nodes from the current list if any of their ancestors is also
         in the list.
-    ``slice(stop)``
-
-    ``slice(start, stop [, step])``
+    ``slice(stop)``, ``slice(start, stop [, step])``
         Slice the full result set, using itertools.islice(). This can help
         narrowing down the result set. For example::
 
