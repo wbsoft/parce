@@ -48,7 +48,7 @@ but may get some behaviour in the future. ``Text``, ``Number``, ``String``, and
 of the matched text. Standard actions have no behaviour and are essentially
 singleton objects using virtually no memory.
 
-The ``lexicon`` decorator makes a function into a ``BoundLexicon`` object, which
+The ``lexicon`` decorator makes a function into a ``Lexicon`` object, which
 encapsulates the parsing of text using the rules supplied in the function.
 
 When parsing starts for the first time, the function is called to get the

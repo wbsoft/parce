@@ -260,7 +260,7 @@ import itertools
 import re
 import sys
 
-from .lexicon import BoundLexicon
+from .lexicon import Lexicon
 
 
 def query(func):
@@ -501,7 +501,7 @@ class Query:
     @query
     def __call__(self, *what):
         """Yield token if token has that text, or context if context has that lexicon."""
-        if isinstance(what[0], BoundLexicon):
+        if isinstance(what[0], Lexicon):
             for n in self:
                 if n.is_context and self._inv ^ (n.lexicon in what):
                     yield n

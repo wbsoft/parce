@@ -22,7 +22,7 @@ import collections
 import re
 
 import parce
-from parce.lexicon import Lexicon, BoundLexicon
+from parce.lexicon import LexiconDescriptor, Lexicon
 from parce.pattern import Pattern
 from parce.target import DynamicTarget
 
@@ -37,7 +37,7 @@ def validate_language(lang):
 
     lexicons = []
     for key, value in lang.__dict__.items():
-        if isinstance(value, Lexicon):
+        if isinstance(value, LexiconDescriptor):
             lexicons.append(getattr(lang, key))
 
     errors = set()
@@ -124,7 +124,7 @@ class LexiconValidator:
         for t in targets():
             if isinstance(t, DynamicTarget):
                 self.error("a DynamicTarget must be the only one: {}".format(target))
-            elif not isinstance(t, (int, BoundLexicon)):
+            elif not isinstance(t, (int, Lexicon)):
                 self.error("invalid target {} in targets {}".format(t, target))
                 break
 
@@ -158,7 +158,7 @@ class LexiconValidator:
                     else:
                         for _ in range(t):
                             state.append(Context(lexicon))
-                elif not isinstance(t, BoundLexicon):
+                elif not isinstance(t, Lexicon):
                     self.error("in default target only integer or lexicon allowed", lexicon)
                     return
                 else:

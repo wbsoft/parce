@@ -21,12 +21,12 @@
 """
 A Lexicon groups rules to match.
 
-A Lexicon is created by decorating a function yielding rules with the
-`@lexicon` decorator. A Lexicon acts as a descriptor; when accessed for
-the first time via a Language class, a BoundLexicon for that class is
+A LexiconDescriptor is created by decorating a function yielding rules with the
+`@lexicon` decorator. When a LexiconDescriptor is accessed for
+the first time via a Language subclass, a Lexicon for that class is
 created and cached, and returned each time that attribute is accessed.
 
-The BoundLexicon can parse text according to the rules. When parsing for the
+The Lexicon can parse text according to the rules. When parsing for the
 first time, the rules-function is run with the language class as argument, and
 the rules it creates are cached.
 
@@ -43,8 +43,8 @@ import parce.pattern
 import parce.regex
 
 
-class Lexicon:
-    """A Lexicon consists of a set of pattern rules a text is scanned for."""
+class LexiconDescriptor:
+    """The LexiconDescriptor creates a Lexicon when called via a class."""
     __slots__ = ('rules_func', 'lexicons', '_lock', 're_flags')
 
     def __init__(self, rules_func,
@@ -68,22 +68,22 @@ class Lexicon:
         try:
             return self.lexicons[owner]
         except KeyError:
-            # prevent instantiating the same BoundLexicon multiple times
+            # prevent instantiating the same Lexicon multiple times
             with self._lock:
                 try:
                     lexicon = self.lexicons[owner]
                 except KeyError:
-                    lexicon = self.lexicons[owner] = BoundLexicon(self, owner)
+                    lexicon = self.lexicons[owner] = Lexicon(self, owner)
                 return lexicon
 
 
-class BoundLexicon:
-    """A Bound Lexicon is tied to a particular class.
+class Lexicon:
+    """A Lexicon is tied to a particular class.
 
     This makes it possible to inherit from a Language class and change
     only some Lexicons.
 
-    Call BoundLexicon.parse(text, pos) to do the actual parsing work.
+    Call Lexicon.parse(text, pos) to do the actual parsing work.
     This function is created as soon as it is called for the first time.
 
     """

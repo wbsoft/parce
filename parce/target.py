@@ -29,7 +29,7 @@ method is then called to return the desired tuple of targets.
 """
 
 
-from parce.lexicon import BoundLexicon
+from parce.lexicon import Lexicon
 
 
 class DynamicTarget:
@@ -43,7 +43,7 @@ class DynamicTarget:
 
     """
     def __init__(self, *targets):
-        self.targets = tuple([t] if isinstance(t, (int, BoundLexicon)) else t
+        self.targets = tuple([t] if isinstance(t, (int, Lexicon)) else t
             for t in targets)
 
     def index(self, match):
