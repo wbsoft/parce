@@ -2,7 +2,7 @@ Accessing the Tree Structure
 ============================
 
 When you have parsed text, the result is a tree structure of Tokens,
-nested in Contexts, which may be nested in other Contexts.
+contained by Contexts, which may be nested in other Contexts.
 
 Let's look at the generated token tree of the simple example of the Getting
 started section::
@@ -32,6 +32,7 @@ started section::
      ├╴<Token 'newline' at 100:107 (Text)>
      ╰╴<Token '.' at 107:108 (Delimiter)>
 
+
 Token
 -----
 
@@ -51,6 +52,7 @@ Also, you can check if some text is in some Context::
 
     if 'and' in tree:
         # do some_thing if 'and' is in the root context.
+
 
 Context
 -------
@@ -75,8 +77,13 @@ compared to a Lexicon object. So it is possible to write::
     >>> Nonsense.comment in tree
     True
 
+A Context is never empty: if the parser switches to a new lexicon, but the
+lexicon does not generate any Token, the empty Context is discarded. Only the
+root context can be empty.
+
+
 Traversing the tree structure
-------------------------------------
+-----------------------------
 
 Both Token and Context have a ``parent`` atribute that points to its parent
 Context. Only for the root context, ``parent`` is ``None``.
@@ -84,6 +91,7 @@ Context. Only for the root context, ``parent`` is ``None``.
 :py:class:`Token <parce.tree.Token>` and :py:class:`Context
 <parce.tree.Context>` both inherit from :py:class:`Node <parce.tree.Node>`,
 which defines a lot of useful methods to traverse the tree structure.
+
 
 Members shared by Token and Context
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -102,7 +110,7 @@ These are the attributes Token and Context both provide:
 These are the methods Token and Context both provide:
 
     ``dump()``
-        Display a graphical representation of the node
+        Display a graphical representation of the node and its contents
     ``parent_index()``
         Return the index of this node in its parent
         (faster than ``parent.index(node)``, because we use a binary search)
@@ -140,7 +148,8 @@ These are the methods Token and Context both provide:
     ``query``
         Powerful property to find nodes in the tree structure. See below.
     ``delete()``
-        Remove this node from its parent.
+        Remove this node from its parent. If the parent becomes empty, it is
+        removed as well.
 
 
 Members of Token
@@ -182,6 +191,7 @@ Token has the following additional methods and attributes for node traversal:
         If there is no common ancestor, all three are ``None``. But normally,
         all nodes share the root context, so that will normally be the upmost
         common ancestor.
+
 
 Members of Context
 ^^^^^^^^^^^^^^^^^^

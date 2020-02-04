@@ -148,8 +148,8 @@ as follows:
 
 Instead of a target list, one DynamicTarget may be specified. This computes
 the target list based on the regular expression's match object. There is one
-convenience function: ``tomatch(predicate, Targetlist1, TargetList2, ..)``
-that works in the same was as the dynamic action objects. A "``Targetlist``"
+convenience function: ``tomatch(predicate, targetlist1, targetlist2, ..)``
+that works in the same was as the dynamic action objects. A "``targetlist``"
 may also be a single target such as ``-1`` or ``cls.something``.
 
 A target is always executed after adding the token(s) that were generated to

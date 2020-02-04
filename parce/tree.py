@@ -553,9 +553,14 @@ class Context(list, Node):
     whether the node child is a context, which is easier than to call
     `isinstance(node, Context)` each time.
 
-    You can quickly find tokens in a context::
+    You can quickly find tokens in a context, based on text::
 
         if "bla" in context:
+            # etc
+
+    Or child contexts, based on lexicon::
+
+        if MyLanguage.lexicon in context:
             # etc
 
     And if you want to know which token is on a certain position in the text,
