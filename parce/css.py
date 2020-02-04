@@ -799,14 +799,14 @@ def get_string(context):
 def get_url(context):
     """Get the url from the context, which is an url_function context."""
     def gen():
-        for n in context[:-1]:
-            if n.is_token:
+        for t in context[:-1]:
+            if t.is_token:
                 if t.action is Escape:
                     yield unescape(t.text)
-                elif action is Literal.Url:
+                elif t.action is Literal.Url:
                     yield t.text
-                elif action is String:
-                    yield get_string(n.right_sibling())
+                elif t.action is String:
+                    yield get_string(t.right_sibling())
     return ''.join(gen())
 
 
