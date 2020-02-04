@@ -234,7 +234,9 @@ class Css(Language):
     def function(cls):
         """Contents between identifier( ... )."""
         yield r"\)", Delimiter, -1
+        yield r"\(", Delimiter, 1
         yield from cls.common()
+        yield r"[*/+-]", Operator
 
     @lexicon
     def url_function(cls):
