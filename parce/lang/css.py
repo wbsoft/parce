@@ -121,13 +121,19 @@ class Css(Language):
         yield r"'", String, cls.sqstring
         yield r"/\*", Comment, cls.comment
         yield r"\{", Delimiter, cls.rule
-        yield RE_CSS_NUMBER, Number
+        yield RE_CSS_NUMBER, Number, cls.unit
         yield RE_HEX_COLOR, Literal.Color
         yield r"(url)(\()", bygroup(Name, Delimiter), cls.url_function
         # an ident-token is found using a lookahead pattern, the whole ident-
         # token is in the identifier context
         yield RE_CSS_IDENTIFIER_LA, None, cls.identifier
         yield r"[:,;@%!]", Delimiter
+
+    @lexicon
+    def unit(cls):
+        """Unit directly after a nunber, e.g. 100px, also %."""
+        yield "%", Operator.Percent
+        yield from cls.identifier_common(Name.Unit)
 
     # ------------ selectors for identifiers in different roles --------------
     @classmethod
