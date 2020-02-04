@@ -380,6 +380,8 @@ class AbstractElement:
      * ``get_attributes()``
      * ``get_pseudo_classes()`` (if needed)
      * ``get_pseudo_elements()`` (if needed)
+     * ``children()``
+     * ``get_child_count()``
      * ``previous_siblings()``
      * ``next_siblings()``
 
@@ -388,9 +390,13 @@ class AbstractElement:
     time.
 
     """
+    def __bool__(self):
+        """Always return True."""
+        return True
+
     def __repr__(self):
         attrs = util.abbreviate_repr(repr(self.get_attributes()))
-        count = len(self.get_children())
+        count = self.get_child_count()
         return "<Element {} {} ({} children)>".format(self.get_name(),
             attrs, count)
 
@@ -413,6 +419,14 @@ class AbstractElement:
     def get_pseudo_elements(self):
         """Implement to return a list of pseudo elements."""
         return []
+
+    def children(self):
+        """Implement to yield our children."""
+        yield from ()
+
+    def get_child_count():
+        """Implement to return the number of children."""
+        return 0
 
     def previous_siblings(self):
         """Implement to yield our previous siblings in backward order."""
@@ -513,8 +527,21 @@ class AbstractElement:
                                 return False
         # pseudo_class?
         pseudo_classes = self.get_pseudo_classes()
+        switch = {
+            "first-child": self.is_first_child,
+            "last-child": self.is_last_child,
+            "only-child": self.is_only_child,
+            "first-of-type": self.is_first_of_type,
+            "last-of-type": self.is_last_of_type,
+            "empty": self.is_empty,
+        }
         for c in q(Css.pseudo_class):
-            if get_ident_token(c) not in pseudo_classes:
+            v = get_ident_token(c)
+            method = switch.get(v)
+            if method:
+                if not method():
+                    return False
+            elif v not in pseudo_classes:
                 return False
         # pseudo_element?
         pseudo_elements = self.get_pseudo_elements()
@@ -522,6 +549,32 @@ class AbstractElement:
             if get_ident_token(c) not in pseudo_elements:
                 return False
         return True
+
+    def is_first_child(self):
+        """Return True if we are the first child."""
+        return not self.previous_sibling()
+
+    def is_last_child(self):
+        """Return True if we are the last child."""
+        return not self.next_sibling()
+
+    def is_only_child(self):
+        """Return True if we are the only child."""
+        return not self.next_sibling() and not self.previous_sibling()
+
+    def is_first_of_type(self):
+        """Return True if we are the first of our type."""
+        name = self.get_name()
+        return not any(e.get_name() == name for e in self.previous_siblings())
+
+    def is_last_of_type(self):
+        """Return True if we are the last of our type."""
+        name = self.get_name()
+        return not any(e.get_name() == name for e in self.next_siblings())
+
+    def is_empty(self):
+        """Return True if we have no child elements."""
+        return not self.get_child_count()
 
     def match(self, selectors):
         """Match with a compound selector expression (``selectors`` part of Rule)."""
@@ -593,12 +646,14 @@ class Element(AbstractElement, list):
         super().__init__()
         self.name = name
         self.parent = parent
-        self.pseudo_classes = pseudo_classes
-        self.pseudo_elements = pseudo_elements
+        self.pseudo_classes = pseudo_classes or []
+        self.pseudo_elements = pseudo_elements or []
         self.attrs = attrs
         if "class" not in attrs and "class_" in attrs:
             attrs["class"] = attrs["class_"]
             del attrs["class_"]
+        if parent:
+            parent.append(self)
 
     def __eq__(self, other):
         return self is other
@@ -625,6 +680,14 @@ class Element(AbstractElement, list):
     def get_pseudo_elements(self):
         """Implemented to return a list of pseudo elements."""
         return self.pseudo_elements
+
+    def children(self):
+        """Implemented to yield our children."""
+        yield from self
+
+    def get_child_count(self):
+        """Implemented to return the number of children."""
+        return len(self)
 
     def previous_siblings(self):
         """Yield our previous siblings in backward order."""
@@ -664,6 +727,15 @@ class LxmlElement(AbstractElement):
     def get_pseudo_elements(self):
         """Implement to return a list of pseudo elements."""
         return []
+
+    def children(self):
+        """Implemented to yield our children."""
+        for n in self.e:
+            yield type(self)(n)
+
+    def get_child_count(self):
+        """Implemented to return the number of children."""
+        return len(self.e)
 
     def previous_siblings(self):
         """Implement to yield our previous siblings in backward order."""
