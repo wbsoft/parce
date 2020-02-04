@@ -254,8 +254,8 @@ class Node:
 
         """
         for parent, index in self.ancestors_with_index():
-            if parent.parent is None or len(parent) > 1:
-                del parent[index]
+            del parent[index]
+            if len(parent):
                 return
 
 
