@@ -44,8 +44,8 @@ incorporate its rules in your own lexicon. You can also use lookahead
 patterns to switch lexicon before generating tokens if it is really needed.
 
 A parser does not keep any state information, and that's why `parce` can so
-easily update only a small part of a large token tree: it can start anywhere
-parsing, the context the current token resides in is all the information that
+easily update only a small part of a large token tree: it can start parsing
+anywhere, the context the current token resides in is all the information that
 is available.
 
 TODO
