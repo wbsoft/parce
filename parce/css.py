@@ -755,17 +755,18 @@ class Value:
             unit = None,
             url = None,
             color = None,
-            name = None,
+            funcname = None,
             operator = None
+            arguments = ()
             ):
         self.text = text
         self.number = number
         self.unit = unit
         self.url = url
         self.color = color
-        self.name = name
+        self.funcname = funcname
         self.operator = operator
-        self.arguments = []
+        self.arguments = list(arguments)
 
     def __repr__(self):
         def gen():
@@ -787,9 +788,7 @@ class Value:
                     # inside a function we can find parentheses
                     n = next(nodes, None)
                     if n == Css.function:
-                        v = cls(operator='(')
-                        v.arguments.extend(cls.read(n))
-                        yield v
+                        yield cls(operator='(', arguments=cls.read(n))
                 elif n.action is String:
                     val = get_string(next(nodes))
                     yield cls(text=val)
@@ -816,13 +815,10 @@ class Value:
             elif n == Css.identifier:
                 t = get_ident_token(n)
                 if t.endswith('('):
-                    v = cls(name=t[:-1])
                     n = next(nodes, None)
-                    if n == Css.function:
-                        v.arguments.extend(cls.read(n))
+                    yield cls(funcname=t[:-1], arguments=cls.read(n) if n == Css.function else ())
                 else:
-                    v = cls(text=t)
-                yield v
+                    yield cls(text=t)
             n = next(nodes, None)
 
 
