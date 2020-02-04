@@ -861,17 +861,21 @@ class Value:
                 b = c // 256 & 255
                 a = c & 255
         elif self.text:
-            import parce.lang.css_words
-            try:
-                r, g, b = parce.lang.css_words.CSS3_NAMED_COLORS[self.text]
-            except KeyError:
-                pass
+            if self.text == "transparent":
+                r, g, b, a = 0, 0, 0, 0
+            else:
+                import parce.lang.css_words
+                try:
+                    r, g, b = parce.lang.css_words.CSS3_NAMED_COLORS[self.text]
+                except KeyError:
+                    pass
         elif self.funcname in ("rgb", "rgba"):
             if len(self.arguments) > 3:
                 a = self.arguments[-1].get_num_color_value(1.0)
             r = self.arguments[0].get_num_color_value()
             g = self.arguments[1].get_num_color_value()
             b = self.arguments[2].get_num_color_value()
+        # TODO: implement hsl/hsla (using colorsys)
         c = Color(r, g, b, a)
         if -1 not in c:
             return c
