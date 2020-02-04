@@ -43,7 +43,7 @@ RE_CSS_IDENTIFIER = (
     r"(?:-?(?:[^\W\d]+|" + RE_CSS_ESCAPE + r")|--)"
     r"(?:[\w-]+|" + RE_CSS_ESCAPE + r")*")
 RE_CSS_AT_KEYWORD = r"@" + RE_CSS_IDENTIFIER
-RE_HEX_COLOR = r"#[0-9a-fA-F]+"
+RE_HEX_COLOR = r"#(?:[0-9a-fA-F]{3}){1,2}"
 
 
 class Css(Language):
