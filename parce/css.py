@@ -748,6 +748,84 @@ class LxmlElement(AbstractElement):
             yield type(self)(n)
 
 
+class Value:
+    """A value read from a property."""
+    def __init__(self,
+            text = None,
+            number = None,
+            unit = None,
+            url = None,
+            color = None,
+            name = None,
+            operator = None
+            ):
+        self.text = text
+        self.number = number
+        self.unit = unit
+        self.url = url
+        self.color = color
+        self.name = name
+        self.operator = operator
+        self.arguments = []
+
+    def __repr__(self):
+        def gen():
+            for name, value in self.__dict__.items():
+                if value not in (None, []):
+                    yield '{}={}'.format(name, repr(value))
+        return '<Value {}>'.format(', '.join(gen()))
+
+    @classmethod
+    def read(cls, nodes):
+        """Read zero or more properties from the specified nodes."""
+        nodes = iter(nodes)
+        n = next(nodes, None)
+        while n:
+            if n.is_token:
+                if n == ')':
+                    return
+                elif n == '(':
+                    # inside a function we can find parentheses
+                    n = next(nodes, None)
+                    if n == Css.function:
+                        v = cls(name='(')
+                        v.arguments.extend(cls.read(n))
+                        yield v
+                elif n.action is String:
+                    val = get_string(next(nodes))
+                    yield cls(text=val)
+                elif n.action is Number:
+                    val = float(n.text)
+                    if val.is_integer():
+                        val = int(val)
+                    n = next(nodes, None)
+                    if n == Css.unit:
+                        unit = get_ident_token(n)
+                        yield cls(number=val, unit=unit)
+                    else:
+                        yield cls(number=val)
+                        continue
+                elif n == "url":
+                    if next(nodes, None): # (
+                        target = next(nodes, None)
+                        if target:
+                            yield cls(url=get_url(target))
+                elif n.action is Literal.Color:
+                    yield cls(color=n.text)
+                elif n.action is Delimiter.Operator:
+                    yield cls(operator=n.text)
+            elif n == Css.identifier:
+                t = get_ident_token(n)
+                if t.endswith('('):
+                    v = cls(name=t[:-1])
+                    n = next(nodes, None)
+                    if n == Css.function:
+                        v.arguments.extend(cls.read(n))
+                else:
+                    v = cls(text=t)
+                yield v
+            n = next(nodes, None)
+
 
 def css_classes(action):
     """Return a tuple of lower-case CSS class names for the specified standard action."""
