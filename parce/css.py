@@ -756,8 +756,8 @@ class Value:
             url = None,
             color = None,
             funcname = None,
-            operator = None
-            arguments = ()
+            operator = None,
+            arguments = (),
             ):
         self.text = text
         self.number = number
