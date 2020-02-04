@@ -340,8 +340,8 @@ class Style:
     def properties(self):
         """Return the combined properties of the current set of rules. (Endpoint.)
 
-        Returns a dictionary with the properties. Comments, closing delimiters and
-        "!important" flags are removed from the property values.
+        Returns a dictionary with the properties. The value of each property
+        is a list of Value instances.
 
         """
         result = {}
@@ -349,10 +349,9 @@ class Style:
             for key, value in rule.properties.items():
                 if key not in result or (
                      "!important" in value and "!important" not in result[key]):
-                    result[key] = list(remove_comments(value))
+                    result[key] = value
         for value in result.values():
-            while value and value[-1] in (";", "!important"):
-                del value[-1]
+            value[:] = Value.read(value)
         return result
 
 
