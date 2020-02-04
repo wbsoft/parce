@@ -836,6 +836,7 @@ class Value:
         """Return a named four-tuple Color(r, g, b, a) describing color and alpha.
 
         All values are in the range 0-255, alpha 255 is fully opaque.
+        None is returned if the color was not valid.
 
         """
         r, g, b, a = -1, -1, -1, 255
