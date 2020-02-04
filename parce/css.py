@@ -78,6 +78,7 @@ from .query import Query
 Atrule = collections.namedtuple("Atrule", "keyword node")
 Condition = collections.namedtuple("Condition", "keyword node style")
 Rule = collections.namedtuple("Rule", "selectors properties")
+Color = collections.namedtuple("Color", "r g b a")
 
 
 def style_query(func):
@@ -820,6 +821,60 @@ class Value:
                 else:
                     yield cls(text=t)
             n = next(nodes, None)
+
+    def get_num_color_value(self, max_value=255):
+        """Return our color num value 0-255 or percentage value. -1 on failure."""
+        if self.number is not None:
+            num = self.number
+            if self.unit == "%":
+                num = num * max_value // 100
+            if 0 <= num <= max_value:
+                return num
+        return -1
+
+    def get_color(self):
+        """Return a named four-tuple Color(r, g, b, a) describing color and alpha.
+
+        All values are in the range 0-255, alpha 255 is fully opaque.
+
+        """
+        r, g, b, a = -1, -1, -1, 255
+        if self.color:
+            l = len(self.color) - 1
+            c = int(self.color[1:], 16)
+            if l == 3:
+                r = (c // 256 & 15) * 17
+                g = (c // 16 & 15) * 17
+                b = (c & 15) * 17
+            elif l == 4:
+                r = (c // 4096 & 15) * 17
+                g = (c // 256 & 15) * 17
+                b = (c // 16 & 15) * 17
+                a = (c & 15) * 17
+            elif l == 6:
+                r = c // 65536 & 255
+                g = c // 256 & 255
+                b = c & 255
+            else: # l == 8:
+                r = c // 16777216 & 255
+                g = c // 65536 & 255
+                b = c // 256 & 255
+                a = c & 255
+        elif self.text:
+            import parce.lang.css_words
+            try:
+                r, g, b = parce.lang.css_words.CSS3_NAMED_COLORS[self.text]
+            except KeyError:
+                pass
+        elif self.funcname in ("rgb", "rgba"):
+            if len(self.arguments) > 3:
+                a = self.arguments[-1].get_num_color_value(1.0)
+            r = self.arguments[0].get_num_color_value()
+            g = self.arguments[1].get_num_color_value()
+            b = self.arguments[2].get_num_color_value()
+        c = Color(r, g, b, a)
+        if -1 not in c:
+            return c
 
 
 def css_classes(action):
