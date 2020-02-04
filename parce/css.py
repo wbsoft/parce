@@ -788,7 +788,7 @@ class Value:
                     # inside a function we can find parentheses
                     n = next(nodes, None)
                     if n == Css.function:
-                        v = cls(name='(')
+                        v = cls(operator='(')
                         v.arguments.extend(cls.read(n))
                         yield v
                 elif n.action is String:
