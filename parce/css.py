@@ -332,6 +332,11 @@ class Style:
             if element.match(rule.selectors):
                 yield rule
 
+    @style_query
+    def select_lxml_element(self, element):
+        """Select the rules that match with lxml.etree.Element."""
+        return self.select_element(LxmlElement(element))
+
     def properties(self):
         """Return the combined properties of the current set of rules. (Endpoint.)
 
@@ -633,6 +638,43 @@ class Element(AbstractElement, list):
         if self.parent is not None:
             i = self.parent.index(self)
             yield from self.parent[i+1:]
+
+
+class LxmlElement(AbstractElement):
+    """An Element wrapping an element from a lxml.etree tree."""
+    def __init__(self, e):
+        self.element = e
+
+    def get_name(self):
+        """Implement to return the element's name."""
+        return self.e.tag
+
+    def get_parent(self):
+        """Implement to return the parent Element or None."""
+        return type(self)(self.e.getparent())
+
+    def get_attributes(self):
+        """Implement to return a dictionary of attributes, keys and values are str."""
+        return self.e.attrib
+
+    def get_pseudo_classes(self):
+        """Implement to return a list of pseudo classes."""
+        return []
+
+    def get_pseudo_elements(self):
+        """Implement to return a list of pseudo elements."""
+        return []
+
+    def previous_siblings(self):
+        """Implement to yield our previous siblings in backward order."""
+        for n in self.e.itersiblings(preceding=True):
+            yield type(self)(n)
+
+    def next_siblings(self):
+        """Implement to yield our next siblings in forward order."""
+        for n in self.e.itersiblings():
+            yield type(self)(n)
+
 
 
 def css_classes(action):
