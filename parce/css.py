@@ -57,9 +57,8 @@ Example::
 
     >>> from parce.css import *
     >>> style = StyleSheet.from_file("parce/themes/default.css").style
-    >>> style.select_class("comment").combine_properties()
-    {'font-style': [<Context Css.identifier at 1037-1043 (1 children)>],
-    'color': [<Token '#666' at 1056:1060 (Literal.Color)>]}
+    >>> style.select_class("comment").properties()
+    {'font-style': [<Value text='italic'>], 'color': [<Value color='#666'>]}
 
 """
 
@@ -203,8 +202,8 @@ class StyleSheet:
                         keyword = get_ident_token(node[0])
                         if keyword == "import":
                             if allow_import:
-                                for s in node.query.children(Css.dqstring, Css.sqstring):
-                                    fname = get_string(s)
+                                for s in node.query.children(Css.dqstring, Css.sqstring, Css.url_function):
+                                    fname = get_url(s) if s == Css.url_function else get_string(s)
                                     fname = os.path.join(os.path.dirname(filename), fname)
                                     # avoid circular @import references
                                     if fname not in filenames:
