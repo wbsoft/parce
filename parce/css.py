@@ -785,7 +785,25 @@ class LxmlElement(AbstractElement):
 
 
 class Value:
-    """A value read from a property."""
+    """A value read from a property.
+
+    A Value can represent a:
+
+        * ``text``  (an ident-token or a quoted string)
+        * a ``number`` with an optional unit (like 210px)
+        * a ``url``
+        * a color  (named, hex or function; use ``get_color()`` to get it)
+        * a function (``funcname`` has the name, ``arguments`` the arg Value instances)
+        * an ``operator`` (``'+'``, ``'-'`` * or ``'/'``, only as function arguments.
+          Or ``'('``, in which case the arguments have the values that were
+          between the parentheses.)
+
+    Most value types can be directly read from the corresponding attribute.
+    When the value should represent a color, call ``get_color()``
+
+    ``calc()`` or ``var()`` evaluation is not yet implemented.
+
+    """
     def __init__(self,
             text = None,
             number = None,
@@ -877,27 +895,33 @@ class Value:
         """
         r, g, b, a = -1, -1, -1, 255
         if self.color:
+            # hexadecimal color like "#FA0042"
             l = len(self.color) - 1
             c = int(self.color[1:], 16)
             if l == 3:
+                # 17F -> 1177FF
                 r = (c // 256 & 15) * 17
                 g = (c // 16 & 15) * 17
                 b = (c & 15) * 17
             elif l == 4:
+                # fourth digit is alpha value
                 r = (c // 4096 & 15) * 17
                 g = (c // 256 & 15) * 17
                 b = (c // 16 & 15) * 17
                 a = (c & 15) * 17
             elif l == 6:
+                # six digits
                 r = c // 65536 & 255
                 g = c // 256 & 255
                 b = c & 255
             else: # l == 8:
+                # eight digits: last two is alpha value
                 r = c // 16777216 & 255
                 g = c // 65536 & 255
                 b = c // 256 & 255
                 a = c & 255
         elif self.text:
+            # named color like "dodgerblue"
             if self.text == "transparent":
                 r, g, b, a = 0, 0, 0, 0
             else:
@@ -907,6 +931,7 @@ class Value:
                 except KeyError:
                     pass
         elif self.funcname in ("rgb", "rgba"):
+            # rgb() or rgba()
             if len(self.arguments) > 3:
                 a = self.arguments[-1].get_num_color_value(1.0)
             r = self.arguments[0].get_num_color_value()
