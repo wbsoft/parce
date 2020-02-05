@@ -381,14 +381,14 @@ class Style:
 
         """
         result = {}
-        important = set()
+        important_properties = set()
         for rule in self.rules:
             for key, (important, value) in rule.properties.items():
                 if key not in result:
                     result[key] = value
-                elif important and key not in important:
+                elif important and key not in important_properties:
                     result[key] = value
-                    important.add(key)
+                    important_properties.add(key)
         return result
 
 
