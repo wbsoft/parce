@@ -789,7 +789,7 @@ class Value:
 
     A Value can represent a:
 
-        * ``text``  (an ident-token or a quoted string)
+        * ``text``  (an ident-token or a quoted string (``quoted`` is True then))
         * a ``number`` with an optional unit (like 210px)
         * a ``url``
         * a color  (named, hex or function; use ``get_color()`` to get it)
@@ -812,6 +812,7 @@ class Value:
             color = None,
             funcname = None,
             operator = None,
+            quoted = None,
             arguments = (),
             ):
         self.text = text
@@ -821,6 +822,7 @@ class Value:
         self.color = color
         self.funcname = funcname
         self.operator = operator
+        self.quoted = quoted
         self.arguments = list(arguments)
 
     def __repr__(self):
@@ -846,7 +848,7 @@ class Value:
                         yield cls(operator='(', arguments=cls.read(n))
                 elif n.action is String:
                     val = get_string(next(nodes))
-                    yield cls(text=val)
+                    yield cls(text=val, quoted=True)
                 elif n.action is Number:
                     val = float(n.text)
                     if val.is_integer():
