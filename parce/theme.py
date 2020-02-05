@@ -31,6 +31,46 @@ other storage backends could be devised.
 Theme provides CSS properties for standard actions, and MetaTheme does
 the same, but can have a sub-Theme for every Language.
 
+In the ``themes/`` directory are bundled CSS themes that can be used.
+Instantiate a bundled theme with::
+
+    >>> from parce.theme import Theme
+    >>> th = Theme.byname("default")
+
+To use a custom CSS theme file, load it using::
+
+    >>> th = Theme('/path/to/my/custom/css')
+
+Get the CSS properties for an action, use e.g.::
+
+    >>> props = th.properties(String)
+    >>> props
+    {'color': [<Value color='#c00000'>]}
+
+A property value is a list of Value instances. As CSS colors can be specified
+in many different ways, you can call get_color() to get the color values
+in (r, g, b, a) format.
+
+
+Mapping actions to CSS classes
+------------------------------
+
+Standard actions are mapped to a tuple of classes: the action itself and
+the actions it descends from. All CSS rules are combined, the one with
+the most matches comes first.
+
+For example, Comment maps to the "comment" css class, and Number maps
+to ("literal", "number") because Number is a descendant action of Literal.
+
+Some actions might have the same name, e.g. Escape and String.Escape.
+Both match CSS rules with the ``.escape`` class selector, but a rule
+with ``.string.escape`` will have higher precedence.
+
+The order of the action names does not matter. E.g. an action Text.Comment
+will match exactly the same CSS rules as an action Comment.Text. So you
+should take some care when designing you action hierachy and not add too much
+base action types.
+
 """
 
 
@@ -48,9 +88,9 @@ class Theme:
         self.style = css.StyleSheet.from_file(filename).style
 
     @classmethod
-    def byname(cls, name):
+    def byname(cls, name="default"):
         """Create Theme by name, that should reside in the themes/ directory."""
-        return cls(os.path.join(themes.__path__[0], name + '.css'))
+        return cls(themes.filename(name))
 
     @functools.lru_cache()
     def properties(self, action):

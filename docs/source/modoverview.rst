@@ -15,6 +15,8 @@ Overview of all modules
    query.rst
    regex.rst
    target.rst
+   theme.rst
+   themes.rst
    tree.rst
    treebuilder.rst
    treedocument.rst
