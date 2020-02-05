@@ -233,8 +233,11 @@ class StyleSheet:
                                 propname = get_ident_token(declaration[0])
                                 value = declaration[2:] if declaration[1] == ":" else declaration[1:]
                                 important = "!important" in value
-                                properties[propname] = (important, list(Value.read(value)))
-                            rules.append(Rule(selectors, properties))
+                                value = list(Value.read(value))
+                                if value:
+                                    properties[propname] = (important, value)
+                            if properties:
+                                rules.append(Rule(selectors, properties))
                             break
             return rules
         return cls(get_rules(tree), filename)
