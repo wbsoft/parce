@@ -943,11 +943,6 @@ class Value:
             return c
 
 
-def css_classes(action):
-    """Return a tuple of lower-case CSS class names for the specified standard action."""
-    return tuple(a._name.lower() for a in action)
-
-
 def remove_comments(nodes):
     """Yield the nodes with comments removed."""
     for n in nodes:
