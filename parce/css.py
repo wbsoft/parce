@@ -208,7 +208,13 @@ class StyleSheet:
                                     # avoid circular @import references
                                     if fname not in filenames:
                                         filenames.add(fname)
-                                        rules.extend(get_rules(cls.load_from_file(fname)))
+                                        itree = cls.load_from_file(fname)
+                                        if any(n !=';' for n in remove_comments(s.next_siblings())):
+                                            # there is probably a media query after the filename
+                                            s = cls.from_tree(itree, fname, path, allow_import)
+                                            rules.append(Condition(keyword, node, s))
+                                        else:
+                                            rules.extend(get_rules(itree))
                                     break
                         elif node[-1].lexicon is Css.atrule_nested:
                             s = cls.from_tree(node[-1][-1], filename, path, allow_import)
@@ -246,7 +252,8 @@ class StyleSheet:
         keywords are kept.
 
         Currently (CSS3), Conditions have the "media", "supports" or "document"
-        keyword.
+        keyword. @import rules that have a media query after the filename
+        are also stored as a Condition.
 
         For example, this is a crude way to only get the @media rules for
         "screen"::
