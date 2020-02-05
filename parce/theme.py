@@ -25,8 +25,8 @@ properties based on the action (standard action) of a Token.
 These properties can be used to colorize text according to a language
 definition.
 
-By default, the properties are read from a normal CSS file, although
-other storage backends could be devised.
+By default, the properties are read from a normal CSS (Cascading StyleSheets)
+file, although other storage backends could be devised.
 
 Theme provides CSS properties for standard actions, and MetaTheme does
 the same, but can have a sub-Theme for every Language.
@@ -47,9 +47,9 @@ Get the CSS properties for an action, use e.g.::
     >>> props
     {'color': [<Value color='#c00000'>]}
 
-A property value is a list of Value instances. As CSS colors can be specified
-in many different ways, you can call get_color() to get the color values
-in (r, g, b, a) format.
+A property value is a list of :py:class:`Value <parce.css.Value>` instances.
+As CSS colors can be specified in many different ways, you can call
+get_color() to get the color values in (r, g, b, a) format.
 
 
 Mapping actions to CSS classes
@@ -59,7 +59,7 @@ Standard actions are mapped to a tuple of classes: the action itself and
 the actions it descends from. All CSS rules are combined, the one with
 the most matches comes first.
 
-For example, Comment maps to the "comment" css class, and Number maps
+For example, Comment maps to the "comment" CSS class, and Number maps
 to ("literal", "number") because Number is a descendant action of Literal.
 
 Some actions might have the same name, e.g. Escape and String.Escape.
