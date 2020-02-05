@@ -193,7 +193,54 @@ class StyleSheet:
         """
         filenames = {filename}
 
+        def get_properties(rule):
+            """Get the properties dict from a Css.rule context node.
+
+            The returned dict maps keys to (important, value) tuples,
+            where important is True when !important was encountered in the
+            property declaration, and value is a list of Value instances
+            representing the value of the property.
+
+            """
+            properties = {}
+            for declaration in rule.query.children(Css.declaration):
+                propname = get_ident_token(declaration[0])
+                value = declaration[2:] if declaration[1] == ":" else declaration[1:]
+                important = "!important" in value
+                value = list(Value.read(value))
+                if value:
+                    properties[propname] = (important, value)
+            return properties
+
+        def get_import_rules(node):
+            """Yield rules from an @import at-rule.
+
+            If the @import rule has a media query after the filename/url,
+            one Condition is yielded.
+
+            """
+            for s in node.query.children(Css.dqstring, Css.sqstring, Css.url_function):
+                fname = get_url(s) if s == Css.url_function else get_string(s)
+                fname = os.path.join(os.path.dirname(filename), fname)
+                # avoid circular @import references
+                if fname not in filenames:
+                    filenames.add(fname)
+                    itree = cls.load_from_file(fname)
+                    if any(n !=';' for n in remove_comments(s.next_siblings())):
+                        # there is probably a media query after the filename
+                        s = cls.from_tree(itree, fname, path, allow_import)
+                        yield Condition("import", node, s)
+                    else:
+                        yield from get_rules(itree)
+                return
+
         def get_rules(tree):
+            """Get all CSS rules from the tree, either as Rule or as Condition.
+
+            The latter is used when rules can be selected or not depending
+            on media, document, supports or import at-rules.
+
+            """
             rules = []
             for node in tree.query.children(Css.atrule, Css.prelude):
                 if node.lexicon is Css.atrule:
@@ -202,20 +249,7 @@ class StyleSheet:
                         keyword = get_ident_token(node[0])
                         if keyword == "import":
                             if allow_import:
-                                for s in node.query.children(Css.dqstring, Css.sqstring, Css.url_function):
-                                    fname = get_url(s) if s == Css.url_function else get_string(s)
-                                    fname = os.path.join(os.path.dirname(filename), fname)
-                                    # avoid circular @import references
-                                    if fname not in filenames:
-                                        filenames.add(fname)
-                                        itree = cls.load_from_file(fname)
-                                        if any(n !=';' for n in remove_comments(s.next_siblings())):
-                                            # there is probably a media query after the filename
-                                            s = cls.from_tree(itree, fname, path, allow_import)
-                                            rules.append(Condition(keyword, node, s))
-                                        else:
-                                            rules.extend(get_rules(itree))
-                                    break
+                                rules.extend(get_import_rules(node))
                         elif node[-1].lexicon is Css.atrule_nested:
                             s = cls.from_tree(node[-1][-1], filename, path, allow_import)
                             rules.append(Condition(keyword, node, s))
@@ -225,20 +259,11 @@ class StyleSheet:
                 elif len(node) > 1:   # Css.prelude
                     # get the selectors (without ending { )
                     selectors = list(remove_comments(node[:-1]))
-                    if selectors:
-                        for rule in node.query.right:
-                            # get the property declarations:
-                            properties = {}
-                            for declaration in rule.query.children(Css.declaration):
-                                propname = get_ident_token(declaration[0])
-                                value = declaration[2:] if declaration[1] == ":" else declaration[1:]
-                                important = "!important" in value
-                                value = list(Value.read(value))
-                                if value:
-                                    properties[propname] = (important, value)
-                            if properties:
-                                rules.append(Rule(selectors, properties))
-                            break
+                    rule = node.right_sibling()
+                    if selectors and rule:
+                        properties = get_properties(rule)
+                        if properties:
+                            rules.append(Rule(selectors, properties))
             return rules
         return cls(get_rules(tree), filename)
 
