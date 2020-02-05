@@ -43,8 +43,8 @@ RE_CSS_IDENTIFIER = (
     r"(?:-?(?:[^\W\d]+|" + RE_CSS_ESCAPE + r")|--)"
     r"(?:[\w-]+|" + RE_CSS_ESCAPE + r")*")
 RE_CSS_AT_KEYWORD = r"@" + RE_CSS_IDENTIFIER
-RE_HEX_COLOR = r"#(?:[0-9a-fA-F]{3,4}){1,2}"
-
+# match either 8, 6, 4 or 3 hex digits
+RE_HEX_COLOR = r"#[0-9a-fA-F]{3}(?:[0-9a-fA-F]{5}|[0-9a-fA-F]{3}|[0-9a-fA-F]?)"
 
 class Css(Language):
     @lexicon
