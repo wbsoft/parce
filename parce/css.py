@@ -55,7 +55,7 @@ Workflow:
 
 Example::
 
-    >>> from parce.css import *
+    >>> from parce.css import StyleSheet
     >>> style = StyleSheet.from_file("parce/themes/default.css").style
     >>> style.select_class("comment").properties()
     {'font-style': [<Value text='italic'>], 'color': [<Value color='#666'>]}
