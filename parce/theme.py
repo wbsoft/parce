@@ -179,6 +179,174 @@ class MetaTheme(Theme):
                 yield pos, end, properties
 
 
+_dispatch = {}
+class TextFormat:
+    """Simple textformat that reads CSS properties and supports a subset of those."""
+    color = None
+    background_color = None
+    text_decoration_color = None
+    text_decoration_line = ()
+    text_decoration_style = None
+    font_family = ()
+    font_size = None
+    font_size_unit = None
+    font_style = None
+    font_style_angle = None
+    font_style_angle_unit = None
+    font_variant_caps = None
+    font_variant_position = None
+    font_weight = None
+
+
+    def at(*propnames):
+        def decorator(func):
+            for p in propnames:
+                _dispatch[p] = func
+            return func
+        return decorator
+
+    def __init__(self, properties):
+        for prop, values in properties.items():
+            meth = self._dispatch.get(prop)
+            if meth:
+                meth(self, values)
+
+    @at("color")
+    def read_color(self, values):
+        for v in values:
+            c = v.get_color()
+            if c:
+                self.color = c
+                return
+
+    @at("background-color")
+    def read_background_color(self, values):
+        for v in values:
+            c = v.get_color()
+            if c:
+                self.background_color = c
+                return
+
+    @at("background")
+    def read_background(self, values):
+        self.read_background_color(values)
+
+    @at("text-decoration-color")
+    def read_text_decoration_color(self, values):
+        for v in values:
+            c = v.get_color()
+            if c:
+                self.text_decoration_color = c
+                return
+
+    @at("text-decoration-line")
+    def read_text_decoration_line(self, values):
+        decos = []
+        for v in values:
+            if v.text in ("underline", "overline", "line-through"):
+                decos.append(v.text)
+            elif v.text == "none":
+                decos.clear()
+        self.text_decoration_line = decos
+
+    @at("text-decoration-style")
+    def read_text_decoration_style(self, values):
+        for v in values:
+            if v.text in ("solid", "double", "dotted", "dashed", "wavy"):
+                self.text_decoration_style = v.text
+                return
+
+    @at("text-decoration")
+    def read_text_decoration(self, values):
+        self.read_text_decoration_color(values)
+        self.read_text_decoration_line(values)
+        self.read_text_decoration_style(values)
+
+    @at("font-family")
+    def read_font_family(self, values):
+        families = []
+        for v in values:
+            if v.text and (v.quoted or v.text in (
+                "serif",
+                "sans-serif",
+                "monospace",
+                "cursive",
+                "fantasy",
+                "system-ui",
+                "math",
+                "emoji",
+                "fangsong",
+            )):
+                families.append(v.text)
+        self.font_family = families
+
+    @at("font-kerning")
+    def read_font_kerning(self, values):
+        for v in values:
+            if v.text in ("auto", "normal", "none"):
+                self.font_kerning = v.text
+                return
+
+    @at("font-size")
+    def read_font_size(self, values):
+        for v in values:
+            if v.text in ("xx-small", "x-small", "small", "medium",
+                          "large", "x-large", "xx-large", "xxx-large",
+                          "larger", "smaller"):
+                self.font_size = v.text
+                return
+            elif v.number is not None:
+                self.font_size = v.number
+                self.font_size_unit = v.unit
+                return
+
+    @at("font-style")
+    def read_font_style(self, values):
+        for v in values:
+            if v.text in ("normal", "italic"):
+                self.font_style = v.text
+                return
+            elif v.text == "oblique":
+                self.font_style = v.text
+            elif v.number is not None:
+                if self.font_style == "oblique" and self.font_style_angle is None:
+                    self.font_style_angle = v.number
+                    self.font_style_angle_unit = v.unit
+                    return
+
+    @at("font-variant-caps")
+    def read_font_variant_caps(self, values):
+        for v in values:
+            if v.text in ("normal", "small-caps", "all-small-caps", "petite-caps",
+                          "all-petite-caps", "unicase", "titling-caps"):
+                self.font_variant_caps = v.text
+                return
+
+    @at("font-variant-position")
+    def read_font_variant_position(self, values):
+        for v in values:
+            if v.text in ("normal", "sub", "super"):
+                self.font_variant_position = v.text
+                return
+
+    @at("font-weight")
+    def read_font_weight(self, values):
+        for v in values:
+            if v.text in ("normal", "bold", "lighter", "bolder"):
+                self.font_weight = v.text
+                return
+            elif v.number is not None:
+                self.font_weight = v.number
+                return
+
+
+
+# throw away the dispatcher decorator
+del TextFormat.at
+TextFormat._dispatch = _dispatch
+del _dispatch
+
+
 def css_classes(action):
     """Return a tuple of lower-case CSS class names for the specified standard action."""
     return tuple(a._name.lower() for a in action)
