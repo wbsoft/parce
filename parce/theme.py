@@ -71,6 +71,28 @@ will match exactly the same CSS rules as an action Comment.Text. So you
 should take some care when designing you action hierachy and not add too much
 base action types.
 
+
+Using MetaTheme
+---------------
+
+A MetaTheme works just like a normal Theme, reading its style properties from
+a CSS file.
+
+But MetaTheme has a special method ``add_language()`` to add a language class
+with its own Theme. The actual theme to use is then chosen based on the lexicon
+of the token's Context, so each language can have its own color scheme.
+
+If a certain language is not added, the MetaTheme's own properties are used.
+
+For example::
+
+    th = MetaTheme.byname('default')     # use the formats from 'default.css'
+    th.add_language(parce.lang.xml.Xml, Theme("my_funky_xml.css"))
+
+Tokens that originate from lexicons from the Xml language then use the colors
+or text formats from my_funky_xml.css, while other tokens are shown in the
+colors of the default stylesheet.
+
 """
 
 
@@ -141,18 +163,18 @@ class MetaTheme(Theme):
     """
     def __init__(self, name):
         super().__init__(name)
-        self.styles = {}
+        self.themes = {}
 
     def add_language(self, language, theme):
         """Add a Theme for the specified language."""
-        self.styles[language] = theme
+        self.themes[language] = theme
 
     def property_ranges(self, tokens):
         """Reimplemented to return properties from added languages."""
         for pos, end, action, language in \
                     util.merge_adjacent_actions_with_language(tokens):
-            theme = self.styles.get(language, self.style)
-            properties = style.properties(action)
+            theme = self.themes.get(language, self)
+            properties = theme.properties(action)
             if properties:
                 yield pos, end, properties
 
