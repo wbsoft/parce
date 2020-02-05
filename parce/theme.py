@@ -340,6 +340,7 @@ class TextFormat:
                     self.font_style_angle_unit = n.unit
                     return
             v = n
+
     @at("font-variant-caps")
     def read_font_variant_caps(self, values):
         for v in values:
