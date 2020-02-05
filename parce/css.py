@@ -232,7 +232,8 @@ class StyleSheet:
                             for declaration in rule.query.children(Css.declaration):
                                 propname = get_ident_token(declaration[0])
                                 value = declaration[2:] if declaration[1] == ":" else declaration[1:]
-                                properties[propname] = value
+                                important = "!important" in value
+                                properties[propname] = (important, list(Value.read(value)))
                             rules.append(Rule(selectors, properties))
                             break
             return rules
@@ -352,13 +353,14 @@ class Style:
 
         """
         result = {}
+        important = set()
         for rule in self.rules:
-            for key, value in rule.properties.items():
-                if key not in result or (
-                     "!important" in value and "!important" not in result[key]):
+            for key, (important, value) in rule.properties.items():
+                if key not in result:
                     result[key] = value
-        for value in result.values():
-            value[:] = Value.read(value)
+                elif important and key not in important:
+                    result[key] = value
+                    important.add(key)
         return result
 
 
