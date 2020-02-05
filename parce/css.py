@@ -830,7 +830,7 @@ class Value:
             for name, value in self.__dict__.items():
                 if value not in (None, []):
                     yield '{}={}'.format(name, repr(value))
-        return '<Value {}>'.format(', '.join(gen()))
+        return '<{} {}>'.format(self.__class__.__name__, ', '.join(gen()))
 
     @classmethod
     def read(cls, nodes):
