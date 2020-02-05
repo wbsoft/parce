@@ -105,12 +105,13 @@ from . import util
 
 
 class Theme:
-    def __init__(self, filename):
+    def __init__(self, filename, factory=None):
         """Instantiate Theme from a CSS file."""
         self.style = css.StyleSheet.from_file(filename).style
+        self.factory = factory or TextFormat
 
     @classmethod
-    def byname(cls, name="default"):
+    def byname(cls, name="default", factory=None):
         """Create Theme by name, that should reside in the themes/ directory."""
         return cls(themes.filename(name))
 
@@ -140,7 +141,7 @@ class Theme:
     def properties(self, action):
         """Return the CSS properties for the specified action."""
         classes = css_classes(action)
-        return self.style.select_class(*classes).properties()
+        return self.factory(self.style.select_class(*classes).properties())
 
     def property_ranges(self, tokens):
         """Yield three-tuples (pos, end, properties) from tokens.
@@ -181,22 +182,34 @@ class MetaTheme(Theme):
 
 _dispatch = {}
 class TextFormat:
-    """Simple textformat that reads CSS properties and supports a subset of those."""
-    color = None
-    background_color = None
-    text_decoration_color = None
-    text_decoration_line = ()
-    text_decoration_style = None
-    font_family = ()
-    font_size = None
-    font_size_unit = None
-    font_style = None
-    font_style_angle = None
-    font_style_angle_unit = None
-    font_variant_caps = None
-    font_variant_position = None
-    font_weight = None
+    """Simple textformat that reads CSS properties and supports a subset of those.
 
+    This factory is used by default by Theme, but you can implement your own.
+    Such a factory only needs to implement an ``__init__`` method that reads
+    the dictionary of property Value lists returned by Style.properties().
+
+    """
+    color = None                    #: the foreground color as Color(r, g, b, a) tuple
+    background_color = None         #: the background color (id)
+    text_decoration_color = None    #: the color for text decoration
+    text_decoration_line = ()       #: underline, overline and/or line-through
+    text_decoration_style = None    #: solid, double, dotted, dashed or wavy
+    font_family = ()                #: family or generic name
+    font_size = None                #: font size
+    font_size_unit = None           #: font size unit if given
+    font_stretch = None             #: font stretch value (keyword or float, 1.0 is normal)
+    font_style = None               #: normal, italic or oblique
+    font_style_angle = None         #: oblique slant if given
+    font_style_angle_unit = None    #: oblique slant unit if given
+    font_system = None              #: system font like 'status-bar'
+    font_variant_caps = None        #: all kind of small caps
+    font_variant_position = None    #: normal, sub or super
+    font_weight = None              #: 100 - 900 or keyword like ``bold``
+
+    def __repr__(self):
+        return "<{} {}>".format(self.__class__.__name__,
+            ", ".join("{}={}".format(key, repr(value))
+                                for key, value in sorted(self.__dict__.items())))
 
     def at(*propnames):
         def decorator(func):
@@ -300,20 +313,30 @@ class TextFormat:
                 self.font_size_unit = v.unit
                 return
 
+    @at("font-stretch")
+    def read_font_stretch(self, values):
+        for v in values:
+            if v.text in ("ultra-condensed", "extra-condensed", "condensed",
+                          "semi-condensed", "semi-expanded", "expanded",
+                          "extra-expanded", "ultra-expanded"):
+                self.font_stretch = v.text
+            elif v.number is not None and v.unit == "%":
+                self.font_stretch = v.number / 100.0
+
     @at("font-style")
     def read_font_style(self, values):
-        for v in values:
+        v = values[0]
+        for n in values[1:] + [None]:
             if v.text in ("normal", "italic"):
                 self.font_style = v.text
                 return
             elif v.text == "oblique":
                 self.font_style = v.text
-            elif v.number is not None:
-                if self.font_style == "oblique" and self.font_style_angle is None:
-                    self.font_style_angle = v.number
-                    self.font_style_angle_unit = v.unit
+                if n and n.number is not None:
+                    self.font_style_angle = n.number
+                    self.font_style_angle_unit = n.unit
                     return
-
+            v = n
     @at("font-variant-caps")
     def read_font_variant_caps(self, values):
         for v in values:
@@ -339,6 +362,33 @@ class TextFormat:
                 self.font_weight = v.number
                 return
 
+    @at("font")
+    def read_font(self, values):
+        self.read_font_style(values)
+        numvalues = []
+        for v in values:
+            if v.text in ("caption", "icon", "menu", "message-box",
+                          "small-caption", "status-bar"):
+                self.font_system = v.text
+                return
+            elif v.text in ("normal", "small-caps"):
+                self.font_variant_caps = v.text
+            elif v.text in ("ultra-condensed", "extra-condensed", "condensed",
+                            "semi-condensed", "semi-expanded", "expanded",
+                            "extra-expanded", "ultra-expanded"):
+                self.font_stretch = v.text
+            elif v.text in ("bold", "lighter", "bolder"):
+                self.font_weight = v.text
+            elif v.number is not None:
+                numvalues.append((v.number, v.unit))
+        self.read_font_family(values)
+        # if more than one size was given, weight is the first
+        if len(numvalues) == 1:
+            self.font_size, self.font_size_unit = numvalues[0]
+        elif len(numvalues) > 1:
+            if self.font_weight is None:
+                self.font_weight = numvalues[0][0]
+            self.font_size, self.font_size_unit = numvalues[1]
 
 
 # throw away the dispatcher decorator
