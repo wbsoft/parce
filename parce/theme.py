@@ -45,7 +45,7 @@ Get the CSS properties for an action, use e.g.::
 
     >>> props = th.properties(String)
     >>> props
-    {'color': [<Value color='#c00000'>]}
+    <TextFormat color=Color(r=192, g=0, b=0, a=255)>
 
 A property value is a list of :py:class:`Value <parce.css.Value>` instances.
 As CSS colors can be specified in many different ways, you can call
@@ -124,7 +124,7 @@ class Theme:
 
         """
         e = css.Element(class_="parce")
-        return self.style.select_element(e).properties()
+        return self.factory(self.style.select_element(e).properties())
 
     @functools.lru_cache()
     def selection(self):
@@ -135,7 +135,7 @@ class Theme:
 
         """
         e = css.Element(class_="parce", pseudo_elements=["selection"])
-        return self.style.select_element(e).properties()
+        return self.factory(self.style.select_element(e).properties())
 
     @functools.lru_cache()
     def properties(self, action):
@@ -181,6 +181,14 @@ class MetaTheme(Theme):
 
 
 _dispatch = {}
+def at(*propnames):
+    def decorator(func):
+        for p in propnames:
+            _dispatch[p] = func
+        return func
+    return decorator
+
+
 class TextFormat:
     """Simple textformat that reads CSS properties and supports a subset of those.
 
@@ -210,13 +218,6 @@ class TextFormat:
         return "<{} {}>".format(self.__class__.__name__,
             ", ".join("{}={}".format(key, repr(value))
                                 for key, value in sorted(self.__dict__.items())))
-
-    def at(*propnames):
-        def decorator(func):
-            for p in propnames:
-                _dispatch[p] = func
-            return func
-        return decorator
 
     def __init__(self, properties):
         for prop, values in properties.items():
@@ -392,9 +393,8 @@ class TextFormat:
 
 
 # throw away the dispatcher decorator
-del TextFormat.at
 TextFormat._dispatch = _dispatch
-del _dispatch
+del at, _dispatch
 
 
 def css_classes(action):
