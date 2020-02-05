@@ -93,6 +93,28 @@ class Theme:
         return cls(themes.filename(name))
 
     @functools.lru_cache()
+    def default(self):
+        """Return the default textformat properties.
+
+        Those are intended to be used for the editor window or encompassing DIV
+        element.
+
+        """
+        e = css.Element(class_="parce")
+        return self.style.select_element(e).properties()
+
+    @functools.lru_cache()
+    def selection(self):
+        """Return the default textformat properties for selected text.
+
+        Those are intended to be used for the editor window or encompassing DIV
+        element.
+
+        """
+        e = css.Element(class_="parce", pseudo_elements=["selection"])
+        return self.style.select_element(e).properties()
+
+    @functools.lru_cache()
     def properties(self, action):
         """Return the CSS properties for the specified action."""
         classes = css_classes(action)
