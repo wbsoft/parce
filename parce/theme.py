@@ -180,6 +180,8 @@ class MetaTheme(Theme):
                 yield pos, end, properties
 
 
+# this decorator is used to dispatch CSS property names to methods of the
+# TextFormat class
 _dispatch = {}
 def at(*propnames):
     def decorator(func):
