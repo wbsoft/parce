@@ -39,7 +39,7 @@ Instantiate a bundled theme with::
 
 To use a custom CSS theme file, load it using::
 
-    >>> th = Theme('/path/to/my/custom/css')
+    >>> th = Theme('/path/to/my/custom.css')
 
 Get the CSS properties for an action, use e.g.::
 
