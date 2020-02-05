@@ -40,6 +40,13 @@ extensions = [
     'sphinx.ext.intersphinx',
 ]
 
+# autodoc
+autodoc_member_order = 'bysource'
+autodoc_default_options = {
+    'member-order': 'bysource',
+}
+
+
 # intersphinx
 intersphinx_mapping = {'python': ('https://docs.python.org/3', None)}
 
