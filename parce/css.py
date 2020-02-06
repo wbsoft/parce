@@ -1059,9 +1059,10 @@ def color2hex(color):
 
 
 def quote_if_needed(s):
-    """Double-quote the string if it is not a valid ident-token."""
+    """Double-quote the string for CSS if it is not a valid ident-token."""
     if not re.fullmatch(r'[\w-]+', s):
-        return util.quote(s)
+        s = re.sub(r'[\\"]', lambda m: escape(m.group()), s)
+        return '"' + s + '"'
     return s
 
 
