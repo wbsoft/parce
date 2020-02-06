@@ -19,10 +19,84 @@
 
 
 """
-Various utility functions.
+Various utility classes and functions.
 """
 
 import codecs
+import weakref
+
+
+class Dispatcher:
+    """Dispatches calls via an instance to methods based on the first argument.
+
+    A Dispatcher is used as a decorator when defining a class, and then called
+    via an instance to select a method based on the first argument (which must
+    be hashable).
+
+    If you override methods in a subclass that were dispatched, the
+    dispatcher automatically dispatches to the new method. If you want to add
+    new keywords in a subclass, just create a new Dispatcher with the same
+    name. It will automatically inherit the references stored in the old
+    dispatcher.
+
+    Usage::
+
+        class MyClass:
+            dispatch = Dispatcher()
+
+            @dispatch(1)
+            def call_one(self, value):
+                print("One called", value)
+
+            @dispatch(2)
+            def call_two(self, value):
+                print("Two called", value)
+
+            def handle_input(self, number, value):
+                self.dispatch(number, value)
+
+        >>> i = MyClass()
+        >>> i.handle_input(2, 3)
+        Two called 3
+
+    """
+
+    def __init__(self):
+        self._table = {}
+        self._tables = weakref.WeakKeyDictionary()
+
+    def __call__(self, *args):
+        def decorator(func):
+            for a in args:
+                self._table[a] = func.__name__
+            return func
+        return decorator
+
+    def __get__(self, instance, owner):
+        try:
+            table = self._tables[owner]
+        except KeyError:
+            dispatchers = []
+            # find our name, and find Dispatchers in base classes with same name
+            # if found, inherit their references
+            mro = iter(owner.mro())
+            for c in mro:
+                for n, v in c.__dict__.items():
+                    if v is self:
+                        for c in mro:
+                            d = c.__dict__.get(n)
+                            if type(d) is type(self):
+                                dispatchers.append(d)
+            _table = {}
+            for d in reversed(dispatchers):
+                _table.update(d._table)
+            _table.update(self._table)
+            # now, store the actual functions instead of their names
+            table = self._tables[owner] = {a: getattr(owner, name)
+                        for a, name in _table.items()}
+        def func(key, *args, **kwargs):
+            return table[key](instance, *args, **kwargs)
+        return func
 
 
 def abbreviate_repr(s, length=30):
