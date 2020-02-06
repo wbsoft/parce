@@ -95,7 +95,9 @@ class Dispatcher:
             table = self._tables[owner] = {a: getattr(owner, name)
                         for a, name in _table.items()}
         def func(key, *args, **kwargs):
-            return table[key](instance, *args, **kwargs)
+            f = table.get(key)
+            if f:
+                return f(instance, *args, **kwargs)
         return func
 
 
