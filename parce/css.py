@@ -123,6 +123,7 @@ class StyleSheet:
         """Initialize a StyleSheet, empty of with the supplied rules/conditions."""
         self.rules = rules or []
         self.filename = filename
+        self._imported_filenames = []
 
     @classmethod
     def load_from_data(cls, data):
@@ -231,6 +232,7 @@ class StyleSheet:
                         s = cls.from_tree(itree, fname, path, allow_import)
                         yield Condition("import", node, s)
                     else:
+                        self._imported_filenames.append(fname)
                         yield from get_rules(itree)
                 return
 
@@ -298,6 +300,22 @@ class StyleSheet:
                     yield r
             else:
                 yield r
+
+    def filenames(self):
+        """Return a list of filenames the currently selected rules depend on.
+
+        Our own filename will be the first in the list, and filenames of
+        ``@import``ed rules that are still selected are appended to the list.
+
+        """
+        def get_filenames(sheet):
+            if sheet.filename:
+                yield sheet.filename
+            yield from sheet._imported_filenames
+            for r in sheet.rules:
+                if isinstance(r, Condition) and r.keyword == "import":
+                    yield from get_filenames(r.style)
+        return list(get_filenames(self))
 
     @property
     def style(self):
