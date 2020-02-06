@@ -59,6 +59,31 @@ class Dispatcher:
         >>> i.handle_input(2, 3)
         Two called 3
 
+    Values of the first argument that are not handled are normally silently
+    ignored, but you can also specify a default function, that is called when
+    a value is not handled::
+
+        class MyClass:
+            @Dispatcher
+            def dispatch(self, number, value):
+                print("Default function called:", number, value)
+
+            @dispatch(1)
+            def call_one(self, value):
+                print("One called", value)
+
+            @dispatch(2)
+            def call_two(self, value):
+                print("Two called", value)
+
+            def handle_input(self, number, value):
+                self.dispatch(number, value)
+
+        >>> i = MyClass()
+        >>> i.handle_input(3, 10)
+        Default function called: 3 10
+
+
     """
 
     def __init__(self, default_func=None):
@@ -80,14 +105,21 @@ class Dispatcher:
             dispatchers = []
             # find our name, and find Dispatchers in base classes with same name
             # if found, inherit their references
-            mro = iter(owner.mro())
+            if self._default_func:
+                mro = iter(owner.mro()[1:])
+                name = self._default_func.__name__
+            else:
+                mro = iter(owner.mro())
+                def get_name():
+                    for c in mro:
+                        for n, v in c.__dict__.items():
+                            if v is self:
+                                return n
+                name = get_name()
             for c in mro:
-                for n, v in c.__dict__.items():
-                    if v is self:
-                        for c in mro:
-                            d = c.__dict__.get(n)
-                            if type(d) is type(self):
-                                dispatchers.append(d)
+                d = c.__dict__.get(name)
+                if type(d) is type(self):
+                    dispatchers.append(d)
             _table = {}
             for d in reversed(dispatchers):
                 _table.update(d._table)
@@ -99,6 +131,8 @@ class Dispatcher:
             f = table.get(key)
             if f:
                 return f(instance, *args, **kwargs)
+            if self._default_func:
+                return self._default_func(instance, key, *args, **kwargs)
         return func
 
 
