@@ -102,7 +102,6 @@ class Dispatcher:
         try:
             table = self._tables[owner]
         except KeyError:
-            dispatchers = []
             # find our name, and find Dispatchers in base classes with same name
             # if found, inherit their references
             if self._default_func:
@@ -116,6 +115,7 @@ class Dispatcher:
                             if v is self:
                                 return n
                 name = get_name()
+            dispatchers = []
             for c in mro:
                 d = c.__dict__.get(name)
                 if type(d) is type(self):
