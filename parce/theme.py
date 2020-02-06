@@ -205,7 +205,7 @@ class TextFormat:
     font_variant_position = None    #: normal, sub or super
     font_weight = None              #: 100 - 900 or keyword like ``bold``
 
-    at = util.Dispatcher()
+    dispatch = util.Dispatcher()
 
     def __repr__(self):
         return "<{} {}>".format(self.__class__.__name__,
@@ -214,9 +214,9 @@ class TextFormat:
 
     def __init__(self, properties):
         for prop, values in properties.items():
-            self.at(prop, values)
+            self.dispatch(prop, values)
 
-    @at("color")
+    @dispatch("color")
     def read_color(self, values):
         for v in values:
             c = v.get_color()
@@ -224,7 +224,7 @@ class TextFormat:
                 self.color = c
                 return
 
-    @at("background-color")
+    @dispatch("background-color")
     def read_background_color(self, values):
         for v in values:
             c = v.get_color()
@@ -232,11 +232,11 @@ class TextFormat:
                 self.background_color = c
                 return
 
-    @at("background")
+    @dispatch("background")
     def read_background(self, values):
         self.read_background_color(values)
 
-    @at("text-decoration-color")
+    @dispatch("text-decoration-color")
     def read_text_decoration_color(self, values):
         for v in values:
             c = v.get_color()
@@ -244,7 +244,7 @@ class TextFormat:
                 self.text_decoration_color = c
                 return
 
-    @at("text-decoration-line")
+    @dispatch("text-decoration-line")
     def read_text_decoration_line(self, values):
         decos = []
         for v in values:
@@ -254,20 +254,20 @@ class TextFormat:
                 decos.clear()
         self.text_decoration_line = decos
 
-    @at("text-decoration-style")
+    @dispatch("text-decoration-style")
     def read_text_decoration_style(self, values):
         for v in values:
             if v.text in ("solid", "double", "dotted", "dashed", "wavy"):
                 self.text_decoration_style = v.text
                 return
 
-    @at("text-decoration")
+    @dispatch("text-decoration")
     def read_text_decoration(self, values):
         self.read_text_decoration_color(values)
         self.read_text_decoration_line(values)
         self.read_text_decoration_style(values)
 
-    @at("font-family")
+    @dispatch("font-family")
     def read_font_family(self, values):
         families = []
         for v in values:
@@ -285,14 +285,14 @@ class TextFormat:
                 families.append(v.text)
         self.font_family = families
 
-    @at("font-kerning")
+    @dispatch("font-kerning")
     def read_font_kerning(self, values):
         for v in values:
             if v.text in ("auto", "normal", "none"):
                 self.font_kerning = v.text
                 return
 
-    @at("font-size")
+    @dispatch("font-size")
     def read_font_size(self, values):
         for v in values:
             if v.text in ("xx-small", "x-small", "small", "medium",
@@ -305,7 +305,7 @@ class TextFormat:
                 self.font_size_unit = v.unit
                 return
 
-    @at("font-stretch")
+    @dispatch("font-stretch")
     def read_font_stretch(self, values):
         for v in values:
             if v.text in ("ultra-condensed", "extra-condensed", "condensed",
@@ -315,7 +315,7 @@ class TextFormat:
             elif v.number is not None and v.unit == "%":
                 self.font_stretch = v.number / 100.0
 
-    @at("font-style")
+    @dispatch("font-style")
     def read_font_style(self, values):
         v = values[0]
         for n in values[1:] + [None]:
@@ -330,7 +330,7 @@ class TextFormat:
                     return
             v = n
 
-    @at("font-variant-caps")
+    @dispatch("font-variant-caps")
     def read_font_variant_caps(self, values):
         for v in values:
             if v.text in ("normal", "small-caps", "all-small-caps", "petite-caps",
@@ -338,14 +338,14 @@ class TextFormat:
                 self.font_variant_caps = v.text
                 return
 
-    @at("font-variant-position")
+    @dispatch("font-variant-position")
     def read_font_variant_position(self, values):
         for v in values:
             if v.text in ("normal", "sub", "super"):
                 self.font_variant_position = v.text
                 return
 
-    @at("font-weight")
+    @dispatch("font-weight")
     def read_font_weight(self, values):
         for v in values:
             if v.text in ("normal", "bold", "lighter", "bolder"):
@@ -355,7 +355,7 @@ class TextFormat:
                 self.font_weight = v.number
                 return
 
-    @at("font")
+    @dispatch("font")
     def read_font(self, values):
         self.read_font_style(values)
         numvalues = []
