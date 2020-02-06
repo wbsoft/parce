@@ -180,17 +180,6 @@ class MetaTheme(Theme):
                 yield pos, end, properties
 
 
-# this decorator is used to dispatch CSS property names to methods of the
-# TextFormat class
-_dispatch = {}
-def at(*propnames):
-    def decorator(func):
-        for p in propnames:
-            _dispatch[p] = func
-        return func
-    return decorator
-
-
 class TextFormat:
     """Simple textformat that reads CSS properties and supports a subset of those.
 
@@ -216,6 +205,8 @@ class TextFormat:
     font_variant_position = None    #: normal, sub or super
     font_weight = None              #: 100 - 900 or keyword like ``bold``
 
+    at = util.Dispatcher()
+
     def __repr__(self):
         return "<{} {}>".format(self.__class__.__name__,
             ", ".join("{}={}".format(key, repr(value))
@@ -223,9 +214,7 @@ class TextFormat:
 
     def __init__(self, properties):
         for prop, values in properties.items():
-            meth = self._dispatch.get(prop)
-            if meth:
-                meth(self, values)
+            self.at(prop, values)
 
     @at("color")
     def read_color(self, values):
@@ -394,10 +383,6 @@ class TextFormat:
                 self.font_weight = numvalues[0][0]
             self.font_size, self.font_size_unit = numvalues[1]
 
-
-# throw away the dispatcher decorator
-TextFormat._dispatch = _dispatch
-del at, _dispatch
 
 
 def css_classes(action):
