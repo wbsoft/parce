@@ -2,6 +2,12 @@ ChangeLog of the Python parce package
 =====================================
 
 
+current:
+
+- Added CSS module to parse and use stylesheets, using CSS lang def
+- Added theme module using CSS to assign text formats to standard actions
+
+
 2020-01-27: parce-0.4.0
 
 - Added testing using pytest
