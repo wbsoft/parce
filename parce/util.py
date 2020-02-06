@@ -215,5 +215,5 @@ def split_list(l, separator):
 
 
 def quote(s):
-    """Like repr, but return s with double quotes."""
+    """Like repr, but return s with double quotes, escaping " and \\."""
     return '"' + re.sub(r'([\\"])', r'\\\1', s) + '"'
