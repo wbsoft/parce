@@ -35,7 +35,7 @@ can be used to select matching rules in a stylesheet. Element provides a
 list-based helper, and AbstractElement can be inherited from to wrap any tree
 structure to use with stylesheet rule selectors.
 
-This module will be used by the :py:mod:`theme <parce.theme>` module to provide
+This module is used by the :py:mod:`theme <parce.theme>` module to provide
 syntax highlighting themes based on CSS files.
 
 Workflow:
