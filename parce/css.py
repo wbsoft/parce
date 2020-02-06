@@ -972,6 +972,11 @@ def remove_comments(nodes):
         yield n
 
 
+def escape(char):
+    """Escape the specified character for CSS."""
+    return "".join(r"\{:x} ".format(ord(c)) for c in char)
+
+
 def unescape(text):
     """Return the unescaped character, text is the contents of an Escape token."""
     value = text[1:]
