@@ -1026,3 +1026,19 @@ def calculate_specificity(selectors):
     return (ids, clss, elts)
 
 
+def color2hex(color):
+    """Return a hexadecimal string with '#' prepended for the Color instance."""
+    r, g, b, a = color
+    x = "#{:06x}".format(r*65536 + g*256 + b)
+    if a < 1:
+        x += format(int(a * 255), '02x')
+    return x
+
+
+def quote_if_needed(s):
+    """Double-quote the string if it is not a valid ident-token."""
+    if not re.fullmatch(r'[\w-]+', s):
+        return util.quote(s)
+    return s
+
+
