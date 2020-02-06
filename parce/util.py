@@ -61,9 +61,10 @@ class Dispatcher:
 
     """
 
-    def __init__(self):
+    def __init__(self, default_func=None):
         self._table = {}
         self._tables = weakref.WeakKeyDictionary()
+        self._default_func = default_func
 
     def __call__(self, *args):
         def decorator(func):
