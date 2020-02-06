@@ -96,6 +96,7 @@ colors of the default stylesheet.
 """
 
 
+import itertools
 import functools
 import os
 
@@ -194,13 +195,13 @@ class TextFormat:
     text_decoration_line = ()       #: underline, overline and/or line-through
     text_decoration_style = None    #: solid, double, dotted, dashed or wavy
     font_family = ()                #: family or generic name
+    font_kerning = None             #: font kerning
     font_size = None                #: font size
     font_size_unit = None           #: font size unit if given
     font_stretch = None             #: font stretch value (keyword or float, 1.0 is normal)
     font_style = None               #: normal, italic or oblique
     font_style_angle = None         #: oblique slant if given
     font_style_angle_unit = None    #: oblique slant unit if given
-    font_system = None              #: system font like 'status-bar'
     font_variant_caps = None        #: all kind of small caps
     font_variant_position = None    #: normal, sub or super
     font_weight = None              #: 100 - 900 or keyword like ``bold``
@@ -215,6 +216,56 @@ class TextFormat:
     def __init__(self, properties):
         for prop, values in properties.items():
             self.dispatch(prop, values)
+
+    def css_properties(self):
+        """Return a dict usable to write out a CSS rule with our properties."""
+        return dict(itertools.chain(
+            self.write_color(),
+            self.write_text_decoration(),
+            self.write_font(),
+        ))
+
+    def write_color(self):
+        """Yield color and background color as CSS properties, if set."""
+        if self.color:
+            yield "color", css.color2hex(self.color)
+        if self.background_color:
+            yield "background-color", css.color2hex(self.background_color)
+
+    def write_text_decoration(self):
+        """Yield a text-decoration property, if set."""
+        props = []
+        props.extend(self.text_decoration_line)
+        if self.text_decoration_style:
+            props.append(self.text_decoration_style)
+        if self.text_decoration_color:
+            props.append(css.color2hex(self.text_decoration_color))
+        if props:
+            yield "text-decoration", " ".join(props)
+
+    def write_font(self):
+        """Yield all font-xxxx properties, if set."""
+        if self.font_family:
+            yield "font-family", ", ".join(map(css.quote_if_needed, self.font_family))
+        if self.font_size:
+            yield "font-size", "{}{}".format(
+                self.font_size, self.font_size_unit or "")
+        if self.font_style == "oblique" and self.font_style_angle:
+            slant = self.font_style_angle
+            unit = self.font_style_angle_unit or ""
+            yield "font-style", "oblique {}{}".format(slant, unit)
+        elif self.font_style:
+            yield "font-style", self.font_style
+        if self.font_stretch:
+            yield "font-stretch", format(self.font_stretch)
+        if self.font_kerning:
+            yield "font-kerning", self.font_kerning
+        if self.font_variant_caps:
+            yield "font-variant-caps", self.font_variant_caps
+        if self.font_variant_position:
+            yield "font-variant-position", self.font_variant_position
+        if self.font_weight:
+            yield "font-weight", format(self.font_weight)
 
     @dispatch("color")
     def read_color(self, values):
@@ -362,7 +413,7 @@ class TextFormat:
         for v in values:
             if v.text in ("caption", "icon", "menu", "message-box",
                           "small-caption", "status-bar"):
-                self.font_system = v.text
+                self.font_family = [v.text]
                 return
             elif v.text in ("normal", "small-caps"):
                 self.font_variant_caps = v.text
