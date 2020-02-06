@@ -106,9 +106,14 @@ from . import util
 
 
 class Theme:
+
+    filenames = ()  #: the filenames of the used stylesheet when instantiated
+
     def __init__(self, filename, factory=None):
         """Instantiate Theme from a CSS file."""
-        self.style = css.StyleSheet.from_file(filename).style
+        stylesheet = css.StyleSheet.from_file(filename)
+        self.style = stylesheet.style
+        self.filenames = stylesheet.filenames()
         self.factory = factory or TextFormat
 
     @classmethod
