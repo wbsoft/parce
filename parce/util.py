@@ -22,6 +22,7 @@
 Various utility classes and functions.
 """
 
+import re
 import codecs
 import weakref
 
@@ -213,3 +214,6 @@ def split_list(l, separator):
         yield from split_list(l[i+1:], separator)
 
 
+def quote(s):
+    """Like repr, but return s with double quotes."""
+    return '"' + re.sub(r'([\\"])', r'\\\1', s) + '"'
