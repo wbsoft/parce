@@ -891,11 +891,11 @@ class Value:
     def get_color(self):
         """Return a named four-tuple Color(r, g, b, a) describing color and alpha.
 
-        All values are in the range 0-255, alpha 255 is fully opaque.
-        None is returned if the color was not valid.
+        The r, g, b values are in the range 0..255, a in 0..1; 1.0 is fully
+        opaque. None is returned if the color was not valid.
 
         """
-        r, g, b, a = -1, -1, -1, 255
+        r, g, b, a = -1, -1, -1, 1.0
         if self.color:
             # hexadecimal color like "#FA0042"
             l = len(self.color) - 1
@@ -910,7 +910,7 @@ class Value:
                 r = (c // 4096 & 15) * 17
                 g = (c // 256 & 15) * 17
                 b = (c // 16 & 15) * 17
-                a = (c & 15) * 17
+                a = (c & 15) * 17 / 255
             elif l == 6:
                 # six digits
                 r = c // 65536 & 255
@@ -921,7 +921,7 @@ class Value:
                 r = c // 16777216 & 255
                 g = c // 65536 & 255
                 b = c // 256 & 255
-                a = c & 255
+                a = (c & 255) / 255
         elif self.text:
             # named color like "dodgerblue"
             if self.text == "transparent":
