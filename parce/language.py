@@ -18,13 +18,74 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 
+import parce.action
+import parce.target
+from parce.lexicon import LexiconDescriptor, Lexicon
+
 
 class Language:
     """A Language represents a set of Lexicons comprising a specific language.
-    
+
     A Language is never instantiated. The class itself serves as a namespace
     and can be inherited from.
-    
-    
-    
+
+
+
     """
+
+
+def lexicons(lang):
+    """Return a list of all the lexicons on the language."""
+    lexicons = []
+    for key, value in lang.__dict__.items():
+        if isinstance(value, LexiconDescriptor):
+            lexicons.append(getattr(lang, key))
+    return lexicons
+
+
+def standardactions(lang):
+    """Return the set of all the StandardAction instances in the language.
+
+    Does not follow targets to other languages.
+
+    """
+    def std_actions(a):
+        if isinstance(a, parce.action.DynamicAction):
+            for a in a.actions:
+                yield from std_actions(a)
+        elif isinstance(a, parce.action.StandardAction):
+            yield a
+
+    def get_actions():
+        for lex in lexicons(lang):
+            for pattern, action, *rest in lex():
+                if pattern is parce.default_target:
+                    continue
+                yield from std_actions(action)
+    return set(get_actions())
+
+
+def languages(lang):
+    """Return the set of all languages that this language refers to.
+
+    Does not follow targets from languages that are referred to.
+
+    """
+    langs = set()
+    def target_lexicons(target):
+        for t in target:
+            if isinstance(t, Lexicon):
+                yield t
+            elif isinstance(t, parce.target.DynamicTarget):
+                for target in t.targets:
+                    yield from target_lexicons(target)
+
+    for lex in lexicons(lang):
+        for pattern, action, *target in lex():
+            if pattern is parce.default_target:
+                target = (action, *target)
+            for lx in target_lexicons(target):
+                if lx.language is not lang:
+                    langs.add(lx.language)
+    return langs
+
