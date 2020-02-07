@@ -389,7 +389,7 @@ class TextFormat:
                           "extra-expanded", "ultra-expanded"):
                 self.font_stretch = v.text
             elif v.number is not None and v.unit == "%":
-                self.font_stretch = v.number / 100.0
+                self.font_stretch = v.number
 
     @dispatch("font-style")
     def read_font_style(self, values):
