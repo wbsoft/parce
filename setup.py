@@ -47,6 +47,7 @@ with open('README.rst', encoding="utf-8") as f:
     long_description = f.read()
 
 package_data = {
+    'parce.themes': ['*.css'],
 }
 
 classifiers = [
