@@ -96,6 +96,7 @@ colors of the default stylesheet.
 """
 
 
+import collections
 import itertools
 import functools
 import os
@@ -103,6 +104,9 @@ import os
 from . import themes
 from . import css
 from . import util
+
+
+PropertyRange = collections.namedtuple("PropertyRange", "pos end properties theme")
 
 
 class Theme:
@@ -159,16 +163,17 @@ class Theme:
         return self.factory(self.style.select_class(*classes).properties())
 
     def property_ranges(self, tokens):
-        """Yield three-tuples (pos, end, properties) from tokens.
+        """Yield four-tuples PropertyRange(pos, end, properties, theme) from tokens.
 
-        properties is a non-empty dictionary (empty dicts are skipped) with
-        CSS properties.
+        The ``properties`` is a non-empty dictionary (empty dicts are
+        skipped) with CSS properties. The ``theme`` is the theme the
+        properties originate from (self).
 
         """
         for pos, end, action in util.merge_adjacent_actions(tokens):
             properties = self.properties(action)
             if properties:
-                yield pos, end, properties
+                yield PropertyRange(pos, end, properties, self)
 
 
 class MetaTheme(Theme):
@@ -186,13 +191,19 @@ class MetaTheme(Theme):
         self.themes[language] = theme
 
     def property_ranges(self, tokens):
-        """Reimplemented to return properties from added languages."""
+        """Reimplemented to return properties from added languages.
+
+        The ``theme`` in each PropertyRange corresponds with the theme the
+        properties originated from, and can be used to get the default() or
+        selection() styles for that range.
+
+        """
         for pos, end, action, language in \
                     util.merge_adjacent_actions_with_language(tokens):
             theme = self.themes.get(language, self)
             properties = theme.properties(action)
             if properties:
-                yield pos, end, properties
+                yield PropertyRange(pos, end, properties, theme)
 
 
 class TextFormat:
