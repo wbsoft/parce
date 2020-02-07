@@ -24,6 +24,7 @@ Various utility classes and functions.
 
 import re
 import codecs
+import functools
 import weakref
 
 
@@ -135,6 +136,11 @@ class Dispatcher:
             if self._default_func:
                 return self._default_func(instance, key, *args, **kwargs)
         return func
+
+
+def cached_property(func):
+    """Like property, but caches the computed value."""
+    return property(functools.lru_cache()(func))
 
 
 def abbreviate_repr(s, length=30):

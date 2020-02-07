@@ -106,20 +106,29 @@ from . import util
 
 
 class Theme:
-
-    filenames = ()  #: the filenames of the used stylesheet when instantiated
-
     def __init__(self, filename, factory=None):
         """Instantiate Theme from a CSS file."""
-        stylesheet = css.StyleSheet.from_file(filename)
-        self.style = stylesheet.style
-        self.filenames = stylesheet.filenames()
+        self._filename = filename
         self.factory = factory or TextFormat
 
     @classmethod
     def byname(cls, name="default", factory=None):
         """Create Theme by name, that should reside in the themes/ directory."""
         return cls(themes.filename(name))
+
+    @util.cached_property
+    def _stylesheet(self):
+        """Load and cache the StyleSheet."""
+        return css.StyleSheet.from_file(self._filename)
+
+    @util.cached_property
+    def style(self):
+        """The stylesheet style rules (see :py:class:`css.Style <parce.css.Style>`)."""
+        return self._stylesheet.style
+
+    def filenames(self):
+        """Return the list of filenames of the used stylesheet when instantiated"""
+        return self._stylesheet.filenames()
 
     @functools.lru_cache()
     def default(self):
