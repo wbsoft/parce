@@ -118,7 +118,7 @@ class Theme:
     @classmethod
     def byname(cls, name="default", factory=None):
         """Create Theme by name, that should reside in the themes/ directory."""
-        return cls(themes.filename(name))
+        return cls(themes.filename(name), factory)
 
     @util.cached_property
     def _stylesheet(self):
