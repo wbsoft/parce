@@ -1,9 +1,6 @@
 The main parce module
 =====================
 
-Module contents
----------------
-
 .. automodule:: parce
     :members:
     :member-order: bysource
