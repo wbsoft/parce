@@ -46,6 +46,9 @@ autodoc_default_options = {
     'member-order': 'bysource',
 }
 
+# If true, the current module name will be prepended to all description
+# unit titles (such as .. function::).
+add_module_names = False
 
 # intersphinx
 intersphinx_mapping = {'python': ('https://docs.python.org/3', None)}
