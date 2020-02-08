@@ -20,6 +20,89 @@
 
 """
 The parce Python module.
+
+For parsing tasks and writing language definitions, or using existing language
+definitions, the main ``parce`` module provides all that's needed.
+
+So a simple::
+
+    import parce
+
+is sufficient. Inside a language definition, it is easier to just use::
+
+    from parce import *
+
+to get easy access to all the actions and the helper functions.
+
+Besides the classes and functions below, the following standard actions are
+defined here. See the :py:mod:`action <parce.action>` module for more
+explanation abount standard actions.
+
+Generic actions:
+
+    .. py:data:: Whitespace
+    .. py:data:: Text
+
+Base actions:
+
+    .. py:data:: Comment
+    .. py:data:: Delimiter
+    .. py:data:: Error
+    .. py:data:: Escape
+    .. py:data:: Keyword
+    .. py:data:: Literal
+    .. py:data:: Name
+    .. py:data:: Template
+
+Actions that derive from :py:data:`Name`:
+
+    .. py:data:: Name.Attribute
+    .. py:data:: Name.Builtin
+    .. py:data:: Name.Class
+    .. py:data:: Name.Command
+    .. py:data:: Name.Constant
+    .. py:data:: Name.Decorator
+    .. py:data:: Name.Exception
+    .. py:data:: Name.Function
+    .. py:data:: Name.Identifier
+    .. py:data:: Name.Macro
+    .. py:data:: Name.Method
+    .. py:data:: Name.Namespace
+    .. py:data:: Name.Object
+    .. py:data:: Name.Property
+    .. py:data:: Name.Symbol
+    .. py:data:: Name.Tag
+    .. py:data:: Name.Variable
+
+Actions that derive from :py:data:`Literal`:
+
+    .. py:data:: Verbatim( = Literal.Verbatim)
+    .. py:data:: String( = Literal.String)
+    .. py:data:: Number( = Literal.Number)
+    .. py:data:: Boolean( = Literal.Boolean)
+    .. py:data:: Char( = Literal.Char)
+
+Other derived actions:
+
+    .. py:data:: Comment.Alert
+    .. py:data:: Literal.Color
+    .. py:data:: Literal.Email
+    .. py:data:: Literal.Url
+    .. py:data:: Operator(= Delimiter.Operator)
+    .. py:data:: String.Double
+    .. py:data:: String.Single
+    .. py:data:: String.Escape
+    .. py:data:: Template.Preprocessed
+    .. py:data:: Text.Deleted
+    .. py:data:: Text.Inserted
+
+If you reference a non-existing sub-action, it is created.
+
+When highlighting, a standard action maps to a list of CSS classes with all the
+names lowercased. So String.Double maps to the ("literal", "string", "double")
+CSS classes. See the :py:mod:`theme <parce.theme>` module for more
+information.
+
 """
 
 from . import pattern, action, target
@@ -164,26 +247,59 @@ default_target = object()   #: denotes a default target when no text matches
 skip = action.SkipAction()
 
 # predefined standard actions
-Whitespace = action.StandardAction("Whitespace")    #:
-Text = action.StandardAction("Text")                #:
+# keep these in sync with the list above in the doc string.
+Whitespace = action.StandardAction("Whitespace")
+Text = action.StandardAction("Text")
 
-Escape = action.StandardAction("Escape")            #:
-Keyword = action.StandardAction("Keyword")          #:
-Name = action.StandardAction("Name")                #:
-Literal = action.StandardAction("Literal")          #:
-Delimiter = action.StandardAction("Delimiter")      #:
-Comment = action.StandardAction("Comment")          #:
-Error = action.StandardAction("Error")              #:
+Comment = action.StandardAction("Comment")
+Delimiter = action.StandardAction("Delimiter")
+Error = action.StandardAction("Error")
+Escape = action.StandardAction("Escape")
+Keyword = action.StandardAction("Keyword")
+Literal = action.StandardAction("Literal")
+Name = action.StandardAction("Name")
+Template = action.StandardAction("Template")
 
-Verbatim = Literal.Verbatim                         #:
-String = Literal.String                             #:
-Number = Literal.Number                             #:
-Boolean = Literal.Boolean                           #:
-Char = Literal.Char                                 #:
-Operator = Delimiter.Operator                       #:
-Builtin = Name.Builtin                              #:
-Function = Name.Function                            #:
-Variable = Name.Variable                            #:
+# Actions that derive from Name
 
+Name.Attribute
+Name.Builtin
+Name.Class
+Name.Command
+Name.Constant
+Name.Decorator
+Name.Exception
+Name.Function
+Name.Identifier
+Name.Macro
+Name.Method
+Name.Namespace
+Name.Object
+Name.Property
+Name.Symbol
+Name.Tag
+Name.Variable
+
+# Actions that derive from Literal:
+
+Verbatim = Literal.Verbatim
+String = Literal.String
+Number = Literal.Number
+Boolean = Literal.Boolean
+Char = Literal.Char
+
+# Other derived actions:
+
+Comment.Alert
+Literal.Color
+Literal.Email
+Literal.Url
+Operator = Delimiter.Operator
+String.Double
+String.Single
+String.Escape
+Template.Preprocessed
+Text.Deleted
+Text.Inserted
 
 

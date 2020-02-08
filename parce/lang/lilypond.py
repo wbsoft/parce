@@ -43,7 +43,7 @@ class LilyPond(Language):
         """Toplevel LilyPond document."""
         yield from cls.common()
         yield from cls.blocks()
-        yield RE_LILYPOND_VARIABLE, Variable, cls.varname
+        yield RE_LILYPOND_VARIABLE, Name.Variable, cls.varname
         yield "=", Operator.Assignment
         yield r"\\version\b", Keyword
 
@@ -71,7 +71,7 @@ class LilyPond(Language):
     @lexicon
     def header(cls):
         yield r'\}', Delimiter.CloseBrace, -1
-        yield RE_LILYPOND_VARIABLE, Variable, cls.varname
+        yield RE_LILYPOND_VARIABLE, Name.Variable, cls.varname
         yield "=", Operator.Assignment
         yield from cls.common()
 
@@ -108,7 +108,7 @@ class LilyPond(Language):
     @lexicon
     def varname(cls):
         """bla.bla.bla syntax."""
-        yield r'\s*(\.)\s*(' + RE_LILYPOND_VARIABLE + ')', bygroup(Delimiter.Dot, Variable)
+        yield r'\s*(\.)\s*(' + RE_LILYPOND_VARIABLE + ')', bygroup(Delimiter.Dot, Name.Variable)
         yield default_target, -1
 
     # -------------------- markup --------------------
@@ -156,7 +156,7 @@ class LilyPond(Language):
             from . import lilypond_words
             text = m.group(m.lastindex + 1)
             return text in lilypond_words.markupcommands
-        return bymatch(test, Function, Function.Markup)
+        return bymatch(test, Name.Function, Name.Function.Markup)
 
 
     # -------------- Scheme ---------------------
