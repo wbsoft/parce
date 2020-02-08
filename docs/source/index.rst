@@ -20,6 +20,7 @@ e.g. to support syntax highlighting as you type.
 The module is written and maintained by Wilbert Berendsen.
 Python 3.5 and higher is supported.
 Testing is done by running ``pytest-3`` in the root directory.
+This manual documents version |release|.
 
 | Homepage: https://parce.info
 | Development: https://github.com/wbsoft/parce
