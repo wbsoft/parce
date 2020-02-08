@@ -52,6 +52,7 @@ Base actions:
     .. py:data:: Keyword
     .. py:data:: Literal
     .. py:data:: Name
+    .. py:data:: Pseudo
     .. py:data:: Template
 
 Actions that derive from :py:data:`Name`:
@@ -258,6 +259,7 @@ Escape = action.StandardAction("Escape")
 Keyword = action.StandardAction("Keyword")
 Literal = action.StandardAction("Literal")
 Name = action.StandardAction("Name")
+Pseudo = action.StandardAction("Pseudo")
 Template = action.StandardAction("Template")
 
 # Actions that derive from Name

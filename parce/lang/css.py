@@ -78,7 +78,7 @@ class Css(Language):
     def selector(cls):
         yield r"\*", Keyword    # "any" element
         yield r"\|", Keyword    # css selector namespace prefix separator
-        yield r"#", Keyword, cls.id_selector
+        yield r"#", Name.Identifier, cls.id_selector
         yield r"\.(?!\d)", Keyword, cls.class_selector
         yield r"::", Keyword, cls.pseudo_element
         yield r":", Keyword, cls.pseudo_class

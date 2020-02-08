@@ -5,33 +5,62 @@
  * Also serves as template for other themes.
  */
 
+
+/*
+ * Defaults for a parce DIV/window etc.
+ */
+
+.parce {
+    background: white;
+    color: black;
+}
+
+.parce::selection {
+    background: royalblue;
+    color: white;
+}
+
+
+
+
 /*
  * inheriting from Name
  */
 
 .parce
-.attribute {
+.name {
+    color: #B7594F;
+}
 
+.parce
+.attribute {
+    color: #0456d5;
 }
 
 .parce
 .builtin {
-
+    color: #C542B7;
 }
 
 .parce
 .class {
-
+    color: #0d00aa;
 }
 
 .parce
 .constant {
-
+    color: #4C9DF2;
 }
 
 .parce
-.element {
+.decorator {
+    color: #24AB25;
+}
 
+.parce
+.exception {
+    color: #F76;
+    font-weight: 600;
 }
 
 .parce
@@ -42,17 +71,20 @@
 
 .parce
 .identifier {
-
+    font-weight: 600;
+    color: #AE4514;
 }
 
 .parce
 .property {
-
+    font-weight: 600;
+    color: #AF463A;
 }
 
 .parce
 .tag {
-
+    color: #0f00bb;
+    font-weight: 600;
 }
 
 .parce
@@ -60,14 +92,16 @@
     color: #00f;
 }
 
+
 /*
  * inheriting from Delimiter
  */
 
 .parce
 .operator {
-
+    color: #592200;
 }
+
 
 /*
  * inheriting from Literal
@@ -75,27 +109,45 @@
 
 .parce
 .boolean {
-
+    font-weight: 600;
+    color: #08f;
 }
 
 .parce
 .char {
-
+    font-weight: 600;
+    color: #a00;
 }
 
 .parce
 .number {
-    color: #808000;
+    color: #b91;
 }
 
 .parce
 .string {
-    color: #c00000;
+    color: #c00;
 }
 
 .parce
 .verbatim {
+    color: #444;
+}
 
+.parce
+.literal.color {
+    color: #F93;
+}
+
+.parce
+.literal.email {
+    color: #0D56D8;
+}
+
+.parce
+.literal.url {
+    color: #0D56D8;
+    text-decoration: dotted underline;
 }
 
 
@@ -114,6 +166,24 @@
 }
 
 .parce
+.comment {
+    font-style: italic;
+    color: #666;
+}
+
+.parce
+.delimiter {
+    font-weight: 600;   /* almost bold */
+}
+
+.parce
+.error {
+    color: red;
+    text-decoration: underline;
+    text-decoration-color: red;
+}
+
+.parce
 .escape {
     color: #008080;
     font-weight: 600;   /* almost bold */
@@ -126,43 +196,17 @@
 }
 
 .parce
-.name {
-    color: darkblue;
-}
-
-.parce
 .literal {
 
 }
 
 .parce
-.delimiter {
-    font-weight: 600;   /* almost bold */
+.pseudo {
+    color: #0FD25C;
 }
 
 .parce
-.comment {
-    font-style: italic;
-    color: #666;
-}
+.template {
 
-.parce
-.error {
-    color: red;
-    text-decoration: underline;
-    text-decoration-color: red;
-}
-
-/*
- * Defaults for a parce DIV/window etc.
- */
-.parce {
-    background: white;
-    color: black;
-}
-
-.parce::selection {
-    background: royalblue;
-    color: white;
 }
 
