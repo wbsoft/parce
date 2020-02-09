@@ -17,10 +17,19 @@
 }
 
 .parce.current-line {
+    background: rgb(255, 255, 224, 0.5) /* lightyellow with .5 alpha */
+}
+
+.parce.current-line:focus {
     background: lightyellow;
 }
 
 .parce::selection {
+    background: lightgray;
+    color: white;
+}
+
+.parce::selection:focus {
     background: dodgerblue;
     color: white;
 }

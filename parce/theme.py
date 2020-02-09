@@ -135,36 +135,43 @@ class Theme:
         return self._stylesheet.filenames()
 
     @functools.lru_cache()
-    def default(self):
+    def default(self, role="default"):
         """Return the default textformat properties.
 
         Those are intended to be used for the editor window or encompassing DIV
-        element.
+        element. The role argument may be "default", "focus", or "disabled".
 
         """
         e = css.Element(class_="parce")
+        if role in ("focus", "disabled"):
+            e.pseudo_class = [role]
         return self.factory(self.style.select_element(e).properties())
 
     @functools.lru_cache()
-    def selection(self):
+    def selection(self, role="default"):
         """Return the default textformat properties for selected text.
 
         Those are intended to be used for the editor window or encompassing DIV
-        element.
+        element. The role argument may be "default", "focus", or "disabled".
 
         """
         e = css.Element(class_="parce", pseudo_elements=["selection"])
+        if role in ("focus", "disabled"):
+            e.pseudo_class = [role]
         return self.factory(self.style.select_element(e).properties())
 
     @functools.lru_cache()
-    def currentline(self):
+    def currentline(self, role="default"):
         """Return the default textformat properties for the current line.
 
         Those are intended to be used for the editor window or encompassing DIV
-        element, probably only the background color.
+        element, probably only the background color. The role argument may be
+        "default", "focus", or "disabled".
 
         """
         e = css.Element(class_="parce current-line")
+        if role in ("focus", "disabled"):
+            e.pseudo_class = [role]
         return self.factory(self.style.select_element(e).properties())
 
     @functools.lru_cache()
