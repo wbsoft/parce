@@ -11,9 +11,13 @@
  */
 
 .parce {
-    background: whitesmoke;
+    background: ivory;
     color: black;
     font: monospace 12pt;
+}
+
+.parce.current-line {
+    background: lightyellow;
 }
 
 .parce::selection {

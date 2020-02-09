@@ -157,6 +157,17 @@ class Theme:
         return self.factory(self.style.select_element(e).properties())
 
     @functools.lru_cache()
+    def currentline(self):
+        """Return the default textformat properties for the current line.
+
+        Those are intended to be used for the editor window or encompassing DIV
+        element, probably only the background color.
+
+        """
+        e = css.Element(class_="parce current-line")
+        return self.factory(self.style.select_element(e).properties())
+
+    @functools.lru_cache()
     def properties(self, action):
         """Return the CSS properties for the specified action."""
         classes = css_classes(action)
