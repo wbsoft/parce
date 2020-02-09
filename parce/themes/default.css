@@ -11,13 +11,13 @@
  */
 
 .parce {
-    background: white;
+    background: whitesmoke;
     color: black;
     font: monospace 12pt;
 }
 
 .parce::selection {
-    background: royalblue;
+    background: dodgerblue;
     color: white;
 }
 
@@ -30,67 +30,67 @@
 
 .parce
 .name {
-    color: #B7594F;
+    color: indianred;
 }
 
 .parce
 .attribute {
-    color: #0456d5;
+    color: dodgerblue;
 }
 
 .parce
 .builtin {
-    color: #C542B7;
+    color: mediumvioletred;
 }
 
 .parce
 .class {
-    color: #0d00aa;
+    color: darkblue;
 }
 
 .parce
 .constant {
-    color: #4C9DF2;
+    color: steelblue;
 }
 
 .parce
 .decorator {
-    color: #24AB25;
+    color: forestgreen;
 }
 
 .parce
 .exception {
-    color: #F76;
+    color: crimson;
     font-weight: 600;
 }
 
 .parce
 .function {
     font-weight: bold;
-    color: #0000c0;
+    color: mediumblue;
 }
 
 .parce
 .identifier {
     font-weight: 600;
-    color: #AE4514;
+    color: saddlebrown;
 }
 
 .parce
 .property {
     font-weight: 600;
-    color: #AF463A;
+    color: brown;
 }
 
 .parce
 .tag {
-    color: #0f00bb;
+    color: darkblue;
     font-weight: 600;
 }
 
 .parce
 .variable {
-    color: #00f;
+    color: blue;
 }
 
 
@@ -111,43 +111,43 @@
 .parce
 .boolean {
     font-weight: 600;
-    color: #08f;
+    color: slateblue;
 }
 
 .parce
 .char {
     font-weight: 600;
-    color: #a00;
+    color: darkred;
 }
 
 .parce
 .number {
-    color: #b91;
+    color: darkgoldenrod;
 }
 
 .parce
 .string {
-    color: #c00;
+    color: firebrick;
 }
 
 .parce
 .verbatim {
-    color: #444;
+    color: darkslategray;
 }
 
 .parce
-.literal.color {
-    color: #F93;
+.color {
+    color: darkorange;
 }
 
 .parce
-.literal.email {
-    color: #0D56D8;
+.email {
+    color: royalblue;
 }
 
 .parce
-.literal.url {
-    color: #0D56D8;
+.url {
+    color: royalblue;
     text-decoration: dotted underline;
 }
 
@@ -170,13 +170,13 @@
 .comment {
     font-family: serif;
     font-style: italic;
-    color: #666;
+    color: dimgray;
 }
 
 .parce
 .delimiter {
     font-weight: 600;   /* almost bold */
-    color: #555;
+    color: dimgray;
 }
 
 .parce
@@ -188,7 +188,7 @@
 
 .parce
 .escape {
-    color: #008080;
+    color: darkcyan;
     font-weight: 600;   /* almost bold */
 }
 
@@ -205,7 +205,7 @@
 
 .parce
 .pseudo {
-    color: #0FD25C;
+    color: limegreen;
 }
 
 .parce
@@ -215,6 +215,6 @@
 
 .parce
 .alert {
-    color: #c23;
+    color: firebrick;
     font-weight: bold;
 }
