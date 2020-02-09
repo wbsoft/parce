@@ -109,6 +109,7 @@ information.
 from . import pattern, action, target
 from . import lexicon as lexicon_, treebuilder, document, treedocument
 from .document import Cursor
+from .language import Language
 from .pkginfo import version, version_string
 
 
@@ -304,5 +305,3 @@ Text.Deleted
 Text.Inserted
 
 
-# we import Language here, because Language uses the standard actions
-from .language import Language

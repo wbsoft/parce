@@ -18,7 +18,6 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 
-from parce import Comment, default_action, words
 import parce.action
 import parce.target
 from parce.lexicon import LexiconDescriptor, Lexicon
@@ -34,8 +33,8 @@ class Language:
 
     @classmethod
     def comment_common(cls):
-        yield words(("XXX", "TODO", "TEMP")), Comment.Alert
-        yield default_action, Comment
+        yield r"\b(XXX|TODO|TEMP)\b", parce.Comment.Alert
+        yield parce.default_action, parce.Comment
 
 
 def lexicons(lang):
