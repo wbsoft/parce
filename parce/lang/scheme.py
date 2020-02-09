@@ -38,7 +38,7 @@ class Scheme(Language):
     @lexicon
     def root(cls):
         yield from cls.common()
-    
+
     @classmethod
     def common(cls):
         yield r"['`,]", Delimiter.Scheme.Quote
@@ -59,12 +59,12 @@ class Scheme(Language):
     def list(cls):
         yield r"\)", Delimiter.CloseParen, -1
         yield from cls.common()
-        
+
     @lexicon
     def vector(cls):
         yield r"\)", Delimiter.CloseVector, -1
         yield from cls.common()
-        
+
     @classmethod
     def get_word_action(cls):
         """Return a dynamic action that is chosen based on the text."""
@@ -73,7 +73,7 @@ class Scheme(Language):
             return text in scheme_words.keywords
         return bytext(test, Name, Keyword)
 
-        
+
     # -------------- String ---------------------
     @lexicon
     def string(cls):
@@ -96,10 +96,6 @@ class Scheme(Language):
         yield from cls.comment_common()
         yield r'$', Comment, -1
 
-    @classmethod
-    def comment_common(cls):
-        yield default_action, Comment
-
 
 class SchemeLily(Scheme):
     """Scheme used with LilyPond."""
@@ -118,7 +114,7 @@ class SchemeLily(Scheme):
         yield r"#[tf]\b", Boolean, -1
         yield r"#\\([a-z]+|.)", Char, -1
         yield r'[^()"{}\s]+', cls.get_word_action(), -1
-        
+
     @classmethod
     def common(cls):
         yield from super().common()

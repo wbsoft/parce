@@ -193,9 +193,3 @@ class LilyPond(Language):
     def singleline_comment(cls):
         yield from cls.comment_common()
         yield r'$', Comment, -1
-
-    @classmethod
-    def comment_common(cls):
-        yield default_action, Comment
-
-

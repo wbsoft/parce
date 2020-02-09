@@ -50,8 +50,8 @@ class Xml(Language):
 
     @lexicon
     def comment(cls):
-        yield default_action, Comment
         yield r'-->', Comment.End, -1
+        yield from cls.comment_common()
 
     @lexicon
     def cdata(cls):

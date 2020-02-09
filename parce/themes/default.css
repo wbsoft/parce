@@ -13,6 +13,7 @@
 .parce {
     background: white;
     color: black;
+    font: monospace 12pt;
 }
 
 .parce::selection {
@@ -167,6 +168,7 @@
 
 .parce
 .comment {
+    font-family: serif;
     font-style: italic;
     color: #666;
 }
@@ -174,6 +176,7 @@
 .parce
 .delimiter {
     font-weight: 600;   /* almost bold */
+    color: #555;
 }
 
 .parce
@@ -210,3 +213,8 @@
 
 }
 
+.parce
+.alert {
+    color: #c23;
+    font-weight: bold;
+}

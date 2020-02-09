@@ -272,6 +272,5 @@ class Css(Language):
     def comment(cls):
         """A comment."""
         yield r"\*/", Comment, -1
-        yield default_action, Comment
-
+        yield from cls.comment_common()
 

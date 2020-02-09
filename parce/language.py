@@ -18,6 +18,7 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 
+from parce import Comment, default_action, words
 import parce.action
 import parce.target
 from parce.lexicon import LexiconDescriptor, Lexicon
@@ -29,9 +30,12 @@ class Language:
     A Language is never instantiated. The class itself serves as a namespace
     and can be inherited from.
 
-
-
     """
+
+    @classmethod
+    def comment_common(cls):
+        yield words(("XXX", "TODO", "TEMP")), Comment.Alert
+        yield default_action, Comment
 
 
 def lexicons(lang):
