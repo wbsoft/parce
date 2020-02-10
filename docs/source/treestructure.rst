@@ -4,8 +4,8 @@ Accessing the Tree Structure
 When you have parsed text, the result is a tree structure of Tokens,
 contained by Contexts, which may be nested in other Contexts.
 
-Let's look at the generated token tree of the simple example of the Getting
-started section::
+Let's look at the generated token tree of the simple example of the
+:doc:`gettingstarted` section::
 
     >>> tree.dump()
     <Context Nonsense.root at 1-108 (19 children)>
@@ -98,58 +98,22 @@ Members shared by Token and Context
 
 These are the attributes Token and Context both provide:
 
-    ``parent``
+    :attr:`parent`
         The parent Context, the root context has ``parent`` ``None``.
-    ``pos``, ``end``
+    :attr:`pos`, :attr:`end`
         The starting resp. ending position of this node in the source text.
-    ``is_token``
+    :attr:`is_token`
         False for Context, True for Token
-    ``is_context``
+    :attr:`is_context`
         True for Context, False for Token
 
 These are the methods Token and Context both provide:
 
-    ``dump()``
-        Display a graphical representation of the node and its contents
-    ``parent_index()``
-        Return the index of this node in its parent
-        (faster than ``parent.index(node)``, because we use a binary search)
-    ``right_sibling()``, ``left_sibling()``
-        Return the left or right sibling, respectively (``None`` if not available)
-    ``right_siblings()``
-        Yield the right siblings in forward order
-    ``left_siblings()``
-        Yield the left siblings in backward order
-    ``next_token()``, ``previous_token()``
-        Return the Token closest to the right resp. to the left of this node.
-        The returned Token can be in a parent or child Context.
-    ``forward()``
-        Yield Tokens in document order starting with the Token that
-        ``next_token()`` returns.
-    ``backward()``
-        Yield Tokens in backward order starting with the Token that
-        ``previous_token()`` returns.
-    ``ancestors(upto=None)``
-        Yield the parent of the token, and then the parent's parent, and so on
-        till the root node is reached. If upto is given and it is one of the
-        ancestors, stop after yielding that ancestor. Otherwise iteration stops
-        at the root node.
-    ``ancestors_with_index(upto=None)``
-        Yield two-tuples (node, index) from ``ancestors()``, adding the index
-        of the node in its parent.
-    ``common_ancestor(other)``
-        Return the nearest common ancestor with the other Context or Token.
-    ``is_ancestor_of(other)``
-        Return True if this Node is an ancestor of the other Node.
-    ``is_first()``, ``is_last()``
-        Return True if the node is the first resp. the last in its Context.
-    ``is_root()``
-        Return True if the node is the root node, i.e. its ``parent`` is ``None``.
-    ``query``
-        Powerful property to find nodes in the tree structure. See below.
-    ``delete()``
-        Remove this node from its parent. If the parent becomes empty, it is
-        removed as well.
+.. currentmodule:: parce.tree
+
+.. autoclass:: Node
+   :noindex:
+   :members:
 
 
 Members of Token
@@ -157,40 +121,40 @@ Members of Token
 
 Token has the following additional methods and attributes for node traversal:
 
-    ``action``
+.. py:class:: Token
+   :noindex:
+
+   .. py:attribute:: action
+      :noindex:
+
         The action the Token was instantiated with
-    ``group``
+
+   .. py:attribute:: group
+      :noindex:
+
         The group the token belongs to. Normally None, but in some cases this
         attribute is a tuple of Tokens that form a group together. See below.
-    ``equals(other)``
-        True if the other Token has the same ``pos``, ``text`` and ``action``
-        attributes and the same context ancestry (see ``state_matches()``).
-    ``state_matches(other)``
-        True if the other Token has the same lexicons in all the ancestors.
-    ``backward_including(upto=None)``
-        Yield all tokens from here in backward direction, including self
-    ``forward_including(upto=None)``
-        Yield all tokens from here in forward direction, including self.
-    ``forward_until(other)``
-        Yield all tokens between ourself and the other.
-    ``forward_until_including(other)``
-        Yield all tokens between ourself and the other, including ourself
-        and the other.
-    ``target()``
-        Return the Context that was started from the rule that this token
-        originated from. Normally this is the right sibling, but it can also
-        be the right sibling of an ancestor.
-    ``common_ancestor_with_trail(other)``
-        Return a three-tuple (context, trail_self, trail_other).
 
-        The ``context`` is the common ancestor such as returned by
-        ``common_ancestor()``, if any. ``trail_self`` is a tuple of indices
-        from the common ancestor upto self, and ``trail_other`` is a tuple of
-        indices from the same ancestor upto the other Token.
+   .. automethod:: Token.equals
+      :noindex:
 
-        If there is no common ancestor, all three are ``None``. But normally,
-        all nodes share the root context, so that will normally be the upmost
-        common ancestor.
+   .. automethod:: Token.state_matches
+      :noindex:
+
+   .. automethod:: Token.forward_including
+      :noindex:
+
+   .. automethod:: Token.forward_until_including
+      :noindex:
+
+   .. automethod:: Token.backward_including
+      :noindex:
+
+   .. automethod:: Token.common_ancestor_with_trail
+      :noindex:
+
+   .. automethod:: Token.target
+      :noindex:
 
 
 Members of Context
@@ -200,43 +164,47 @@ Context builds on the Python ``list()`` builtin, so it has all the methods
 ``list()`` provides. And it has the following addtional methods and attributes
 for node traversal:
 
-    ``lexicon``
-        The lexicon that created this Context
-    ``first_token()``, ``last_token()``
-        Return our first, resp last token. This token can be in a child context.
-    ``find_token(pos)``
-        Return the token at or right of position ``pos``. Always returns a token
-        unless the root context is completely empty.
-    ``find_token_left(pos)``
-        Return the token at or left of position ``pos``. Always returns a token
-        unless the root context is completely empty.
-    ``find_token_after(pos)``
-        Return the first token that is completely right from ``pos``. If there
-        is no token right from ``pos``, ``None`` is returned.
-    ``find_token_before(pos)``
-        Return the last token completely left from pos. Returns ``None`` if
-        there is no token left from ``pos``.
-    ``source()``
-        Return the first token, if any, when going to the left from this
-        context. The returned token is the one that created us, that this
-        context the ``target()`` is for. If the token is member of a group (see
-        below), the first group member is returned.
-    ``tokens()``
-        Yield all tokens from this Context and its child contexts in document
-        order.
-    ``tokens_bw()``
-        Yield all tokens from this Context and its child contexts in backward
-        order.
-    ``tokens_range(start, end=None)``
-        Yield all tokens that completely fill this text range. This makes the
-        most sense if used from the root Context. Note that the first and last
-        tokens may overlap with the start and and positions. If end is left to
-        None, all tokens from start are yielded.
+.. py:class:: Context
+   :noindex:
 
+   .. py:attribute:: lexicon
+      :noindex:
 
-Token, Context and Node have some more methods, but those have to do with
-tree structure modification while (re)parsing text. See the :doc:`tree module's
-documentation <tree>` if you are interested in those.
+      The lexicon that created this Context
+
+   .. automethod:: Context.first_token
+      :noindex:
+
+   .. automethod:: Context.last_token
+      :noindex:
+
+   .. automethod:: Context.find_token
+      :noindex:
+
+   .. automethod:: Context.find_token_left
+      :noindex:
+
+   .. automethod:: Context.find_token_after
+      :noindex:
+
+   .. automethod:: Context.find_token_before
+      :noindex:
+
+   .. automethod:: Context.source
+      :noindex:
+
+   .. automethod:: Context.tokens
+      :noindex:
+
+   .. automethod:: Context.tokens_bw
+      :noindex:
+
+   .. automethod:: Context.tokens_range
+      :noindex:
+
+Token, Context and Node have some more methods, but those have to do with tree
+structure modification while (re)parsing text. See the :mod:`~parce.tree`
+module's documentation if you are interested in those.
 
 Often, when dealing with the tree structure, you want to know whether we have
 a Token or a Context. Instead of calling::
@@ -367,133 +335,79 @@ token::
     ...
     <Token '3' at 16:17 (Literal.Number)>
 
-Here is an overview of all the queries that navigate:
+.. currentmodule:: parce.query
 
-    ``all``
-        yield all descendant nodes, depth-first, in order. First it yields the
-        context, then its children.
-    ``children``
-        yield all the direct children of the current nodes
-    ``parent``
-        yield the parent of all current nodes. This can yield double
-        occurrences of nodes in the list. (Use ``uniq`` to fix that.)
-    ``next``, ``previous``
-        yield the next or previous Token from the current node, if any
-    ``right``, ``left``
-        yield the right or left sibling of every current node, if any
-    ``right_siblings``
-        yield the right siblings of every node in the current node list. This
-        can lead to long result sets with many occurrences of the same nodes.
-    ``left_siblings``
-        yield the left siblings of every node in the current node list, in
-        backward order. Only use ``right_siblings`` and ``left_siblings`` when
-        you want to find one node in the result set.
-    ``[n]``
-        yield the nth child (if available) of each Context node (supports
-        negative indices)
-    ``[slice]``
-        yield from the specified slice of each Context node
-    ``first``, ``last``
-        yield the first resp. the last child of every Context node. Same as
-        ``[0]`` or ``[-1]``.
-    ``target``
-        yield the target context for a token, if any. See
-        :py:meth:`Token.target() <parce.tree.Token.target>`.
-    ``source``
-        yield the source token for a context, if any. See
-        :py:meth:`Context.source() <parce.tree.Context.source>`.
+Here is a list of all the queries that navigate:
 
-And this is an overview of the queries that narrow down the result set:
+    :attr:`~Query.all`,
+    :attr:`~Query.children`,
+    :attr:`~Query.parent`,
+    :attr:`~Query.next`,
+    :attr:`~Query.previous`,
+    :attr:`~Query.right`,
+    :attr:`~Query.left`,
+    :attr:`~Query.right_siblings`,
+    :attr:`~Query.left_siblings`,
+    :attr:`[n] <Query.__getitem__>`,
+    :attr:`[n:m] <Query.__getitem__>`,
+    :attr:`~Query.first`,
+    :attr:`~Query.last`,
+    :attr:`~Query.target`,
+    :attr:`~Query.source`, and
+    :meth:`~Query.map`,
 
-    ``tokens``
-        select only the tokens
-    ``contexts``
-        select only the contexts
-    ``uniq``
-        Removes double occurrences of Tokens or Contexts, which can happen
-        e.g. when selecting the parent of all nodes
-    ``remove_ancestors``
-        remove Context nodes from the current node list that have descendants
-        in the list.
-    ``remove_descendants``
-        remove nodes from the current list if any of their ancestors is also
-        in the list.
-    ``slice(stop)``, ``slice(start, stop [, step])``
-        Slice the full result set, using itertools.islice(). This can help
-        narrowing down the result set. For example::
+And this is a list of the queries that narrow down the result set:
 
-            root.query.all("blaat").slice(1).right_siblings.slice(3) ...
+    :attr:`~Query.tokens`,
+    :attr:`~Query.contexts`,
+    :attr:`~Query.uniq`,
+    :attr:`~Query.remove_ancestors`,
+    :attr:`~Query.remove_descendants`,
+    :meth:`~Query.slice` and
+    :meth:`~Query.filter`.
 
-        will continue the query with only the first occurrence of a token
-        "blaat", and then look for at most three right siblings. If the
-        ``slice(1)`` were not there, all the right siblings would become one large
-        result set because you wouldn't know how many tokens "blaat" were
-        matched.
-    ``remove_ancestors``
-        Remove nodes that have descendants in the current node list.
-    ``remove_descendants``
-        Remove nodes that have ancestors in the current node list.
-    ``filter(predicate)``
-        select nodes for which the predicate function returns a value that
-        evaluates to True
-    ``map(function)``
-        call function on every node and yield its results, which should be
-        nodes as well.
-    ``is_not``
-        inverts the meaning of the following query, e.g. is_not.startingwith()
+The special :attr:`~Query.is_not` operator inverts the meaning of the
+next query, e.g.::
 
-    The following query methods are inverted by ``is_not``:
+    n.query.all.is_not.startingwith("text")
 
-    ``len(length)``, ``len(min_length, max_length)``
-        select only contexts with the speficied ``length``, or a length between
-        ``min_length`` and ``max_length``.
-    ``in_range(start=0, end=None)``
-        select only the nodes that fully fit in the text range. If preceded
-        by ``is_not``, selects the nodes that are outside the specified text
-        range.
-    ``(lexicon), (lexicon, lexicon2, ...)``
-        select the Contexts with that lexicon (or one of the lexicons)
-    ``("text"), ("text", "text2", ...)``
-        select the Tokens with exact that text (or one of the texts)
-    ``startingwith("text")``
-        select the Tokens that start with the specified text
-    ``endingwith("text")``
-        select the Tokens that end with the specified text
-    ``containing("text")``
-        select the Tokens that contain specified text
-    ``matching("regex"), matching(regex)``
-        select the Tokens that match the specified regular epression
-        (using ``re.search``, the expression can match anywhere unless you use
-        ``^`` or ``$`` characters).
-    ``action(*actions)``
-        select the Tokens that have one of the specified actions
-    ``in_action(*actions)``
-        select tokens if their action belongs in the realm of one of the
-        specified StandardActions
+The following query methods can be inverted by prepending `is_not`:
 
-For convenience, there are four "endpoint" methods for a query that make
+    :meth:`~Query.len`,
+    :meth:`~Query.in_range`,
+    :meth:`(lexicon) <Query.__call__>`,
+    :meth:`(lexicon, lexicon2, ...) <Query.__call__>`,
+    :meth:`("text") <Query.__call__>`,
+    :meth:`("text", "text2", ...) <Query.__call__>`,
+    :meth:`~Query.startingwith`,
+    :meth:`~Query.endingwith`,
+    :meth:`~Query.containing`,
+    :meth:`~Query.matching`,
+    :meth:`~Query.action` and
+    :meth:`~Query.in_action`.
+
+For convenience, there are some "endpoint" methods for a query that make
 it easier in some cases to process the results:
 
-    ``dump()``
+    :meth:`~Query.dump`
         for debugging, dumps all resulting nodes to standard output
-    ``list()``
+    :meth:`~Query.list`
         aggregates the result set in a list.
-    ``count()``
+    :meth:`~Query.count`
         returns the number of nodes in the result set.
-    ``pick(default=None)``
+    :meth:`~Query.pick`
         picks the first result, or returns the default if the result set was
         empty.
-    ``pick_last(default=None)``
+    :meth:`~Query.pick_last`
         exhausts the query generator and returns the last result, or the
         default if there are no results.
 
 Finally, there is one method that actually changes the tree:
 
-    ``delete()``
+    :meth:`~Query.delete`
         deletes all selected nodes from their parents. If a context would
         become empty, it is deleted as well, instead of its children.
 
-
-Additional information can be found in the :doc:`query module's
-documentation <query>`.
+Additional information can be found in the :mod:`~parce.query` module's
+documentation.
 

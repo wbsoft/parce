@@ -63,6 +63,15 @@ class Node:
     is_token = False
     is_context = False
 
+    def dump(self, depth=0):
+        """Display a graphical representation of the node and its contents."""
+        prefix = (" ╰╴" if self.is_last() else " ├╴") if depth else ""
+        node = self
+        for i in range(depth - 1):
+            node = node.parent
+            prefix = ("   " if node.is_last() else " │ ") + prefix
+        print(prefix + repr(self))
+
     def parent_index(self):
         """Return our index in the parent.
 
@@ -86,15 +95,6 @@ class Node:
             else:
                 hi = mid
         return lo
-
-    def dump(self, depth=0):
-        """Prints a nice graphical representation, for debugging purposes."""
-        prefix = (" ╰╴" if self.is_last() else " ├╴") if depth else ""
-        node = self
-        for i in range(depth - 1):
-            node = node.parent
-            prefix = ("   " if node.is_last() else " │ ") + prefix
-        print(prefix + repr(self))
 
     def root(self):
         """Return the root node."""
@@ -242,7 +242,7 @@ class Node:
 
     @property
     def query(self):
-        """Query this node in different ways; see the query module."""
+        """Query this node in different ways; see the :mod:`~parce.query` module."""
         def gen():
             yield self
         return query.Query(gen)
@@ -340,11 +340,26 @@ class Token(Node):
         self.action = action
 
     def equals(self, other):
-        """Return True if other has same pos, text and action and state."""
+        """Return True if the other Token has the same ``pos``, ``text`` and
+        ``action`` attributes and the same context ancestry (see
+        :meth:`state_matches`).
+
+        """
         return (self.pos == other.pos
                 and self.text == other.text
                 and self.action == other.action
                 and self.state_matches(other))
+
+    def state_matches(self, other):
+        """Return True if the other Token has the same lexicons in the ancestors."""
+        if other is self:
+            return True
+        for c1, c2 in zip(self.ancestors(), other.ancestors()):
+            if c1 is c2:
+                return True
+            elif c1.lexicon != c2.lexicon:
+                return False
+        return c1.parent is None and c2.parent is None
 
     def __repr__(self):
         text = util.abbreviate_repr(self.text[:31])
@@ -467,19 +482,8 @@ class Token(Node):
             c = c.parent
         self.parent = context
 
-    def state_matches(self, other):
-        """Return True if the other Token has the same lexicons in the ancestors."""
-        if other is self:
-            return True
-        for c1, c2 in zip(self.ancestors(), other.ancestors()):
-            if c1 is c2:
-                return True
-            elif c1.lexicon != c2.lexicon:
-                return False
-        return c1.parent is None and c2.parent is None
-
     def common_ancestor_with_trail(self, other):
-        """Return (context, trail_self, trail_other).
+        """Return a three-tuple(context, trail_self, trail_other).
 
         The context is the common ancestor such as returned by common_ancestor,
         if any. trail_self is a tuple of indices from the common ancestor upto
@@ -725,7 +729,13 @@ class Context(list, Node):
             return self[i]
 
     def tokens_range(self, start, end=None):
-        """Yield all tokens in this text range. Use from the root Context."""
+        """Yield all tokens that completely fill this text range.
+
+        This makes the most sense if used from the root Context. Note that the
+        first and last tokens may overlap with the start and and positions. If
+        end is left to None, all tokens from start are yielded.
+
+        """
         if not self:
             return  # empty
         start_token = self.find_token(start) if start else self.first_token()
