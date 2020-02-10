@@ -116,6 +116,11 @@ html_theme_options = {
     'github_repo': 'parce',
     'show_related': 'true',
     'description': parce.pkginfo.description,
+    'extra_nav_links': {
+        'parce@Github': 'https://github.com/wbsoft/parce',
+        'parce@PyPi': 'https://pypi.org/project/parce',
+        'parce for Qt': 'https://parce.info/parceqt',
+    },
 }
 
 # Add any paths that contain custom static files (such as style sheets) here,
