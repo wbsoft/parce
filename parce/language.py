@@ -33,6 +33,7 @@ class Language:
 
     @classmethod
     def comment_common(cls):
+        """Highlights TODO, XXX and TEMP inside comments using Comment.Alert."""
         yield r"\b(XXX|TODO|TEMP)\b", parce.Comment.Alert
         yield parce.default_action, parce.Comment
 

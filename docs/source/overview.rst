@@ -16,6 +16,14 @@ taylor them to your own needs. This documentation helps you going, see
 Features
 ^^^^^^^^
 
+* parse text to a tree structure of `tokens`, according to a language definition
+* examine and query the generated tree structure
+* apply changes to the text, and only update the needed part of a tree
+* provides a Document (mutable string) that can be modified and that keeps
+  its tokenized tree up-to-date automatically
+* parsing and tokenizing can be done in a background thread
+* map the `action` of a token to CSS classes for highlighting based on CSS
+
 You can parse a text once and examine the generated tree structure of tokens,
 but, and this is a key point of `parce`, you can also use a Document which
 keeps its text contents tokenized automatically, and if you change part of
@@ -51,10 +59,6 @@ is available.
 TODO
 ^^^^
 
-Functionality to provide default text formats for highlighting text
-will be added, based on CSS.
+* create highlighted output such as HTML
+* more bundled languages :-)
 
-Modules to convert plain tokenized text to syntax highlighted formats
-such as HTML will also be added.
-
-More bundled languages :-)

@@ -41,12 +41,12 @@ We define a simple language to get started::
             yield r'$', Comment, -1
             yield default_action, Comment
 
-``Language``, ``Text``, ``Number``, ``String``, ``Comment`` and ``lexicon`` are
-objects imported from parce. ``Language`` is a class currently doing nothing
-but may get some behaviour in the future. ``Text``, ``Number``, ``String``, and
-``Comment`` are so-called standard actions. Just objects that describe the type
-of the matched text. Standard actions have no behaviour and are essentially
-singleton objects using virtually no memory.
+``Language``, ``Text``, ``Number``, ``lexicon``, etcetera are objects imported
+from parce. ``Language`` is the base class for all language definitions.
+``Text``, ``Number``, ``String``, ``Delimiter`` and ``Comment`` are so-called
+standard actions. Standard actions are simple named objects that identify the
+type of the matched text. They have no behaviour and are essentially singleton
+objects using virtually no memory.
 
 The ``lexicon`` decorator makes a function into a ``Lexicon`` object, which
 encapsulates the parsing of text using the rules supplied in the function.
@@ -61,7 +61,7 @@ that the previous lexicon takes over parsing again.
 Parsing text using our language
 -------------------------------
 
-Now, we use this language to parse some text::
+Now, we use this language definition to parse some text::
 
     >>> text = '''
     ... Some text with 3 numbers and 1 "string inside

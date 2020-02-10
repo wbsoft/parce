@@ -27,6 +27,7 @@ Helper objects to construct regular expressions.
 class Pattern:
     """Base class for objects that build a regular expression."""
     def build(self):
+        """Create and return the regular expression string."""
         raise NotImplementedError
 
 
@@ -38,6 +39,7 @@ class Words(Pattern):
         self.suffix = suffix
 
     def build(self):
+        """Return an optimized regular expression string from the words list."""
         from . import regex
         expr = regex.words2regexp(self.words)
         if self.prefix or self.suffix:
@@ -57,6 +59,7 @@ class Char(Pattern):
         self.positive = positive
 
     def build(self):
+        """Return an optimized regular expression string for the characters."""
         from . import regex
         negate = "" if self.positive else "^"
         return '[' + negate + regex.make_charclass(set(self.chars)) + ']'

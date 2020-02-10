@@ -135,9 +135,10 @@ def tokens(root_lexicon, text):
 
 
 def words(words):
-    """Return a Pattern object that builds a regular expression from a list of words.
+    """Return a Pattern matching any of the words.
 
-    To be used as a pattern in a rule.
+    The returned Pattern builds an optimized regular expression matching any of
+    the words contained in the `words` list.
 
     """
     return pattern.Words(words)
@@ -146,7 +147,7 @@ def words(words):
 def char(chars, positive=True):
     """Return a Pattern matching one of the characters in the specified string.
 
-    If positive is False, the set of characters is complemented, i.e. the
+    If `positive` is False, the set of characters is complemented, i.e. the
     Pattern matches any single character that is not in the specified string.
 
     """
@@ -156,7 +157,11 @@ def char(chars, positive=True):
 def bygroup(*actions):
     """Return a SubgroupAction that yields tokens for each subgroup in a regular expression.
 
-    To be used as an action in a rule.
+    This action uses capturing subgroups in the regular expression pattern and
+    creates a Token for every subgroup, with that action. You should provide
+    the same number of actions as there are capturing subgroups in the pattern.
+    Use non-capturing subgroups for the parts you're not interested in, or the
+    special ``skip`` action.
 
     """
     return action.SubgroupAction(*actions)
@@ -165,16 +170,11 @@ def bygroup(*actions):
 def bymatch(predicate, *actions):
     """Return a MatchAction that chooses the action based on the match object.
 
-    To be used as an action in a rule.
-
-    The predicate is run with the match object as argument and should return
-    the (integer) index of the desired action. True and False are also valid
-    return values, they count as 1 and 0, respectively.
-
-    This might look cumbersome (it might look easier to just return the action
-    from the function), but this way we know the possible actions beforehand,
-    and we could translate the actions via a mapping and still keep everything
-    working.
+    The returned MatchAction calls the predicate function with the match object
+    as argument. The function should return the index of the action to choose.
+    If you provide two possible actions, the predicate function may also return
+    True or False, in which case True chooses the second action and
+    False the first.
 
     """
     return action.MatchAction(predicate, *actions)
@@ -183,10 +183,9 @@ def bymatch(predicate, *actions):
 def bytext(predicate, *actions):
     """Return a TextAction that chooses the action based on the text.
 
-    To be used as an action in a rule.
-
-    The predicate is run with the match object as argument and should return
-    the index of the desired action. See also bymatch().
+    The returned TextAction calls the predicate function with the matched text
+    as argument.  The function should return the index of the action to choose,
+    in the same way as with :func:`~parce.bymatch`.
 
     """
     return action.TextAction(predicate, *actions)
@@ -195,15 +194,14 @@ def bytext(predicate, *actions):
 def tomatch(predicate, *targets):
     """Return a MatchTarget that chooses the target based on the match object.
 
-    To be used as a target in a rule.
-
     The predicate is run with the match object as argument and should return
     the (integer) index of the desired target. True and False are also valid
     return values, they count as 1 and 0, respectively.
 
     Each target can be a list or tuple of targets, just like in normal rules,
     where the third and more items form a list of targets. A target can also be
-    a single integer or a lexicon. Use () or 0 for a target that does nothing.
+    a single integer or a lexicon. Use ``()`` or ``0`` for a target that does
+    nothing.
 
     """
     return target.MatchTarget(predicate, *targets)

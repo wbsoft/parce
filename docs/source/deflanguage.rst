@@ -3,11 +3,11 @@ Anatomy of a Language
 
 In this chapter we'll cover all the details of how a language can be defined.
 
-To ``parce``, a Language is currently just a grouping container for lexicons,
-which group rules, and rules consist of a pattern, an action and zero or more
-targets.
+To ``parce``, a :class:`~parce.language.Language` is currently just a grouping
+container for lexicons, which group rules, and rules consist of a pattern, an
+action and zero or more targets.
 
-Let's look closer again at the example from the Getting started section::
+Let's look closer again at the example from the :doc:`gettingstarted` section::
 
 
     import re
@@ -33,37 +33,48 @@ Let's look closer again at the example from the Getting started section::
             yield default_action, Comment
 
 
-The ``@lexicon`` decorated methods behave like classmethods, i.e. when you
-call the method through the class definition, it yields the rules, and the
-code yielding the rules knows the current Language class via the ``cls``
-argument. So the rules are able to in their target point to other lexicons of
-the same class. This makes inheriting and re-implementing just one or a few
-lexicons very easy. Of course a target may also point to a lexicon from a
-*different* language class, in case you need to switch languages.
+The :attr:`@lexicon <parce.lexicon>` decorated methods behave like
+classmethods, i.e. when you call the method through the class definition, it
+yields the rules, and the code yielding the rules knows the current Language
+class via the ``cls`` argument. So the rules are able to in their target point
+to other lexicons of the same class. This makes inheriting and re-implementing
+just one or a few lexicons very easy. Of course a target may also point to a
+lexicon from a *different* language class, in case you need to switch
+languages.
+
 
 The pattern
 -----------
 
 The first item in a normal rule is the pattern, which is either a string
 containing a regular expression, or an object inheriting from
-``pattern.Pattern``. In that case, the regular expression is obtained by
-calling the ``build()`` method of the pattern. You use a Pattern object where
-manually writing a regular expression is too tedious.
+:class:`~parce.pattern.Pattern`. Some simple regular expressions can be seen
+in the ``root`` lexicon of the above example:
+
+    ``r'\d+'``
+        matches one or more decimal digits (0 - 9)
+    ``r'\w+'``
+        matches one or more "word" characters (i.e. non-whitespace,
+        non-puctuation)
+
+See for more information about regular expressions the documentation
+of the Python :mod:`re` module.
+
+When using a Pattern instance, `parce` obtains the regular expression by
+calling its :meth:`~parce.pattern.Pattern.build` method. You can use a Pattern
+object where manually writing a regular expression is too tedious.
 
 There are convenient functions for creating some types of Pattern instances:
 
-``words(long_list_of_words)`` creates an optimized regular expression
-  matching any of the words contained in the ``long_list_of_words``.
+    .. autofunction:: parce.words
+        :noindex:
 
-``char(string)`` creates an optimized regular expression matching any one
-  of the characters contained in the string. To make an expression matching
-  any character that is *not* in the string, use ``char(string, False)``.
+    .. autofunction:: parce.char
+        :noindex:
 
-See for more information about regular expressions the documentation
-of the Python :py:mod:`re` module.
+See for more information about Pattern objects the documentation of the
+:mod:`~parce.pattern` module.
 
-See for more information about ``Pattern`` objects the documentation of the
-:doc:`pattern <pattern>` module.
 
 The action
 ----------
@@ -72,42 +83,35 @@ The second item in a normal rule is the action. This can be any object, as
 ``parce`` does not do anything special with it. You can provide a number,
 a string, a method, whatever.
 
-There are, however, two action types provided by ``parce``:
+There are, however, two action types provided by `parce`:
 
 1. a standard action type. A standard action looks like ``String``, etc. and
    is a singleton object that is either created using the
-   ``action.StandardAction()`` class or by accessing a nonexistent attribute
-   of an exisiting standard action. This concept is borrowed of the pygments
-   module. A standard action defined in the latter way can be seen as a "child"
-   of the action it was created from.
+   :class:`~parce.action.StandardAction` class or by accessing a nonexistent
+   attribute of an existing standard action. This concept is borrowed of the
+   `pygments` module. A standard action defined in the latter way can be seen as
+   a "child" of the action it was created from.
 
    A standard action always creates one Token from the pattern's match (if the
    match contained text).
 
-   Language definitions included in ``parce`` use these standard actions.
+   Language definitions included in `parce` use these standard actions.
+   A list of pre-defined standard actions is in the :mod:`parce` module.
 
-2. the ``DynamicAction`` class. These actions are created dynamically when
-   a rule's pattern has matched, and they can create zero or more Token
-   instances with action based on the match object or text.
+2. the :class:`~parce.action.DynamicAction` class. These actions are created
+   dynamically when a rule's pattern has matched, and they can create zero or
+   more Token instances with action based on the match object or text.
 
    There are a few convenient functions to create dynamic actions:
 
-   ``bygroup(Act1, Act2, ...)`` uses capturing subgroups in the regular
-       expression pattern and creates a Token for every subgroup, with that
-       action. You should provide the same number of actions as there are
-       capturing subgroups in the pattern. Use non-capturing subgroups for
-       the parts you're not interested in, or the special ``skip`` action
-       (see below).
+    .. autofunction:: parce.bygroup
+        :noindex:
 
-   ``bymatch(predicate, Act1, Act2, ...)`` calls the predicate function
-       with the match object as argument. The function should return the
-       index of the action to choose. If you provide two possible actions,
-       the predicate function may also return ``True`` or ``False``, in which
-       case ``True`` chooses the second action and ``False`` the first.
+    .. autofunction:: parce.bymatch
+        :noindex:
 
-   ``bytext(predicate, Act1, Act2, ...)`` calls the predicate function
-       with the matched text as argument.  The function should return the
-       index of the action to choose, in the same way as with ``bymatch()``.
+    .. autofunction:: parce.bytext
+        :noindex:
 
 (You might wonder why the predicate functions would not directly return the
 action. This is done to be able to know all actions beforehand, and to be
@@ -116,10 +120,11 @@ when parsing a document. So the actions are not hardwired even if they appear
 verbatim in the lexicon's rules.)
 
 There also exists a special DynamicAction in the ``skip`` object, it's an
-instance of ``SkipAction`` and it yields no actions, so in effect creating no
-Tokens. Use it if you want to match text, but do not need the tokens.
+instance of :class:`~parce.action.SkipAction` and it yields no actions, so in
+effect creating no Tokens. Use it if you want to match text, but do not need
+the tokens.
 
-See for more information the documentation of the :doc:`action <action>` module.
+See for more information the documentation of the :mod:`~parce.action` module.
 
 
 The target
@@ -148,17 +153,17 @@ as follows:
 
 Instead of a target list, one DynamicTarget may be specified. This computes
 the target list based on the regular expression's match object. There is one
-convenience function: ``tomatch(predicate, targetlist1, targetlist2, ..)``
-that works in the same was as the dynamic action objects. A "``targetlist``"
-may also be a single target such as ``-1`` or ``cls.something``.
+convenience function:
+
+    .. autofunction:: parce.tomatch
+     :noindex:
 
 A target is always executed after adding the token(s) that were generated to
 the current context. The newly created context can be seen as the "target" of
 the token that switched to it. If the match object did not contain actual
 text, no Token is generated, but the target *is* handled of course.
 
-See for more information the documentation of the :doc:`target <target>`
-module.
+See for more information the documentation of the :mod:`~parce.target` module.
 
 
 Special rules
@@ -181,13 +186,13 @@ to match, but induce other behaviour:
 Lexicon parameters
 ------------------
 
-The ``@lexicon`` decorator optionally accepts arguments. Currently one
-argument is supported:
+The :attr:`@lexicon <parce.lexicon>` decorator optionally accepts arguments.
+Currently one argument is supported:
 
-``re_flags``, to set the regular expression flags for the pattern
-    the lexicon will create.
+    ``re_flags``, to set the regular expression flags for the pattern
+        the lexicon will create.
 
-See for more information the documentation of the :doc:`lexicon <lexicon>`
+See for more information the documentation of the :mod:`~parce.lexicon`
 module.
 
 
