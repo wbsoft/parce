@@ -98,26 +98,12 @@ Summary of the query methods:
 
 Endpoint methods (some are mainly for debugging):
 
-count()
-    Just prints the number of nodes in the result set
-
-dump()
-    dump()s the full result nodes to stdout
-
-list()
-    aggregate the results in a list
-
-pick(default=None)
-    just pick the first result, or the default if there are no results
-
-pick_last(default=None)
-    exhaust the query generator and return the last result, or the default
-    if there are no results
-
-delete()
-    delete all selected nodes from their parents. If a node would become
-    empty, it is deleted instead of its children. Returns the number of
-    actually deleted nodes.
+    :meth:`~Query.count`,
+    :meth:`~Query.dump`,
+    :meth:`~Query.list`,
+    :meth:`~Query.pick`,
+    :meth:`~Query.pick_last` and
+    :meth:`~Query.delete`.
 
 
 Navigating nodes:
@@ -128,138 +114,62 @@ following methods you can find your way through a tree structure. Every method
 returns a new Query object, having the previous one as source of nodes. Most
 methods are implemented as properties, so you don't have to write parentheses.
 
-all
-    yield all descendant nodes, depth-first, in order. First it yields the
-    context, then its children.
-
-children
-    yield all the direct children of the current node(s)
-
-parent
-    yield the parent of all current nodes. This can yield double
-    occurrences of nodes in the list. (Use uniq to fix that.)
-
-next, previous
-    yield the next or previous Token from the current node, if any
-
-right, left
-    yield the right or left sibling of every current node, if any
-
-right_siblings
-    yield the right siblings of every node in the current node list.
-    This can lead to long result sets with many occurrences of the same
-    nodes.
-
-left_siblings
-    yield the left siblings of every node in the current node list, in
-    backward order. Only use right\_ and left_siblings when you want to
-    find one node in the result set.
-
-[n]
-    yield the nth child (if available) of each Context node
-    (supports negative indices)
-
-[n:m]
-    yield from the specified slice of each Context node
-
-first, last
-    yield the first resp. the last child of every Context node.
-    Same as [0] or [-1].
-
-target
-    yield the target context for a token, if any.
-    See :meth:`Token.target() <parce.tree.Token.target>`.
-
-source
-    yield the source token for a context, if any.
-    See :meth:`Context.source() <parce.tree.Context.source>`.
+    :attr:`~Query.all`,
+    :attr:`~Query.children`,
+    :attr:`~Query.parent`,
+    :attr:`~Query.next`,
+    :attr:`~Query.previous`,
+    :attr:`~Query.right`,
+    :attr:`~Query.left`,
+    :attr:`~Query.right_siblings`,
+    :attr:`~Query.left_siblings`,
+    :attr:`[n] <Query.__getitem__>`,
+    :attr:`[n:m] <Query.__getitem__>`,
+    :attr:`~Query.first`,
+    :attr:`~Query.last`,
+    :attr:`~Query.target` and
+    :attr:`~Query.source`.
 
 
 Selecting (filtering) nodes:
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 These methods filter out current nodes without adding new nodes
-to the selection.
+to the selection:
 
-tokens
-    select only the tokens
+    :attr:`~Query.tokens`,
+    :attr:`~Query.contexts`,
+    :attr:`~Query.uniq`,
+    :attr:`~Query.remove_ancestors`,
+    :attr:`~Query.remove_descendants`,
+    :meth:`~Query.slice`,
+    :meth:`~Query.filter`,
+    :meth:`~Query.map`,
 
-contexts
-    select only the contexts
+The special :attr:`~Query.is_not` operator inverts the meaning of the
+next query, e.g.::
 
-uniq
-    Removes double occurrences of Tokens or Contexts, which can happen
-    e.g. when selecting the parent of all nodes
-
-remove_ancestors
-    remove Context nodes from the current node list that have descendants
-    in the list.
-
-remove_descendants
-    remove nodes from the current list if any of their ancestors is also
-    in the list.
-
-slice(stop), slice(start, stop [, step])
-    Slice the full result set, using itertools.islice(). This can help
-    narrowing down the result set. For example:
-
-        root.query.all("blaat").slice(1).right_siblings.slice(3) ...
-
-    will continue the query with only the first occurrence of a token
-    "blaat", and then look for at most three right siblings. If the
-    slice(1) were not there, all the right siblings would become one large
-    result set because you wouldn't know how many tokens "blaat" were
-    matched.
-
-filter(predicate)
-    select nodes for which the predicate function returns a value that
-    evaluates to True
-
-map(function)
-    call function on every node and yield its results, which should be
-    nodes as well.
-
-is_not
-    inverts the meaning of the following query, e.g. is_not.startingwith()
+    n.query.all.is_not.startingwith("text")
 
 The following query methods are inverted by `is_not`:
 
-len(length), len(min_length, max_length)
-    select only contexts with the speficied length, or a length between
-    min_length and max_length.
+    :meth:`~Query.len`,
+    :meth:`~Query.in_range`,
+    :meth:`(lexicon) <Query.__call__>`,
+    :meth:`(lexicon, lexicon2, ...) <Query.__call__>`,
+    :meth:`("text") <Query.__call__>`,
+    :meth:`("text", "text2", ...) <Query.__call__>`,
+    :meth:`~Query.startingwith`,
+    :meth:`~Query.endingwith`,
+    :meth:`~Query.containing`,
+    :meth:`~Query.matching`,
+    :meth:`~Query.action` and
+    :meth:`~Query.in_action`.
 
-in_range(start=0, end=None)
-    select only the nodes that fully fit in the text range. If preceded
-    by `is_not`, selects the nodes that are outside the specified text
-    range.
-
-(lexicon), (lexicon, lexicon2, ...)
-    select the Contexts with that lexicon (or one of the lexicons)
-
-("text"), ("text", "text2", ...)
-    select the Tokens with exact that text (or one of the texts)
-
-startingwith("text")
-    select the Tokens that start with the specified text
-
-endingwith("text")
-    select the Tokens that end with the specified text
-
-containing("text")
-    select the Tokens that contain specified text
-
-matching("regex" [, flags=0]), matching(regex [, flags=0])
-    select the Tokens that match the specified regular epression
-    (using re.search, the expression can match anywhere unless you use
-    ^ or $ characters).
-
-action(\*actions)
-    select the Tokens that have one of the specified actions
-
-in_action(\*actions)
-    select tokens if their action belongs in the realm of one of the
-    specified StandardActions
-
+There is a subtle difference between `action` and `in_action`: with the
+first, the action should exactly match, with the latter the tokens are
+selected when the action exactly matches, or is a descendant of the given
+action.
 
 """
 
@@ -422,7 +332,12 @@ class Query:
 
     @pquery
     def parent(self):
-        """The parent of every node."""
+        """Yield the parent of every node.
+
+        This can lead to many double occurrences of the same node in the
+        result set; use :attr:`~Query.uniq` to fix that.
+
+        """
         for n in self:
             if n.parent:
                 yield n.parent
@@ -541,7 +456,11 @@ class Query:
 
     @pquery
     def uniq(self):
-        """Remove double occurrences. Can happen when you use the parent."""
+        """Remove double occurrences of the same node from the result set.
+
+        This can happen e.g. when you find the parent of multiple nodes.
+
+        """
         seen = set()
         for n in self:
             i = id(n)
@@ -551,7 +470,17 @@ class Query:
 
     @query
     def slice(self, *args):
-        """Slice the full result set. Arguments like for :py:func:`itertools.islice()`.
+        """Slice the full result set, using :py:func:`itertools.islice`.
+
+        This can help narrowing down the result set. For example::
+
+            root.query.all("blaat").slice(1).right_siblings.slice(3) ...
+
+        will continue the query with only the first occurrence of a token
+        "blaat", and then look for at most three right siblings. If the
+        slice(1) were not there, all the right siblings would become one
+        large result set because you wouldn't know how many tokens "blaat"
+        were matched.
 
         """
         yield from itertools.islice(self, *args)
@@ -640,7 +569,12 @@ class Query:
 
     @query
     def matching(self, pattern, flags=0):
-        """Yield tokens matching the regular expression (using re.search)."""
+        """Yield tokens matching the regular expression.
+
+        :func:`re.search` is used, so the expression can match anywhere
+        unless you use ^ or $ characters).
+
+        """
         for t in self:
             if t.is_token and self._inv ^ bool(re.search(pattern, t.text, flags)):
                 yield t
