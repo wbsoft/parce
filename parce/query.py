@@ -123,7 +123,7 @@ delete()
 Navigating nodes:
 ^^^^^^^^^^^^^^^^^
 
-The query itself yields just yields the node it was started from. But using the
+The query itself just yields the node it was started from. But using the
 following methods you can find your way through a tree structure. Every method
 returns a new Query object, having the previous one as source of nodes. Most
 methods are implemented as properties, so you don't have to write parentheses.
@@ -167,10 +167,12 @@ first, last
     Same as [0] or [-1].
 
 target
-    yield the target context for a token, if any. See Token.target().
+    yield the target context for a token, if any.
+    See :meth:`Token.target() <parce.tree.Token.target>`.
 
 source
-    yield the source token for a context, if any. See Context.source().
+    yield the source token for a context, if any.
+    See :meth:`Context.source() <parce.tree.Context.source>`.
 
 
 Selecting (filtering) nodes:
@@ -485,7 +487,11 @@ class Query:
 
     @pquery
     def target(self):
-        """Yield the target Context for every token, if available. See Token.target()."""
+        """Yield the target Context for every token, if available.
+
+        See :meth:`Token.target() <parce.tree.Token.target>`.
+
+        """
         for t in self:
             if t.is_token:
                 target = t.target()
@@ -494,7 +500,11 @@ class Query:
 
     @pquery
     def source(self):
-        """Yield the source Token for every context, if available. See Context.source()."""
+        """Yield the source Token for every context, if available.
+
+        See :meth:`Context.source() <parce.tree.Context.source>`.
+
+        """
         for n in self:
             if n.is_context:
                 source = n.source()
@@ -541,7 +551,11 @@ class Query:
 
     @query
     def slice(self, *args):
-        """Slice the full result set. Arguments like for itertools.islice()."""
+        """Slice the full result set.
+
+        Arguments like for :doc:`itertools.islice() <python:library/itertools>`.
+
+        """
         yield from itertools.islice(self, *args)
 
     @pquery
