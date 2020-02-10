@@ -551,9 +551,7 @@ class Query:
 
     @query
     def slice(self, *args):
-        """Slice the full result set.
-
-        Arguments like for :doc:`itertools.islice() <python:library/itertools>`.
+        """Slice the full result set. Arguments like for :py:func:`itertools.islice()`.
 
         """
         yield from itertools.islice(self, *args)

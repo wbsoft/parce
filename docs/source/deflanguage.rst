@@ -60,7 +60,7 @@ There are convenient functions for creating some types of Pattern instances:
   any character that is *not* in the string, use ``char(string, False)``.
 
 See for more information about regular expressions the documentation
-of the :doc:`Python re module <python:library/re>`.
+of the Python :py:mod:`re` module.
 
 See for more information about ``Pattern`` objects the documentation of the
 :doc:`pattern <pattern>` module.
