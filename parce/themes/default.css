@@ -116,6 +116,12 @@
     color: #592200;
 }
 
+.parce
+.delimiter.operator {
+    color: black;
+    font-weight: 400;
+}
+
 
 /*
  * inheriting from Literal
@@ -189,7 +195,7 @@
 .parce
 .delimiter {
     font-weight: 600;   /* almost bold */
-    color: dimgray;
+    color: black;
 }
 
 .parce
