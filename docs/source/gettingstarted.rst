@@ -112,9 +112,9 @@ We see that the returned object is a ``Context`` containing ``Token`` and other
 that a lexicon generated. A Token is a light-weight object knowing its text,
 position and the action that was specified in the rule.
 
-Note that is is not needed at all to use the predefined actions of parce in
-your language definition; you can specify any object you want, including
-strings or methods!
+Note that anything you do not look for in your lexicons (in this case most
+whitespace for example) is simply ignored. But the special rule with
+``default_action`` matches everything not captured by another rule.
 
 This tree structure is what ``parce`` provides. You can find tokens on position::
 
@@ -135,7 +135,10 @@ Context have a ``query`` property that unleashes these powers::
      ├╴<Token 'string inside\nover multiple '... at 33:66 (Literal.String)>
      ╰╴<Token '"' at 66:67 (Literal.String)>
 
-Note that anything you do not look for in your lexicon is simply ignored.
-But the special rule with ``default_action`` matches everything not captured
-by another rule.
+See the :mod:`~parce.query` module for more information.
+
+.. note::
+    Note that is is not needed at all to use the predefined actions of parce in
+    your language definition; you can specify any object you want, including
+    strings or methods.
 

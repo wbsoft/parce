@@ -127,8 +127,9 @@ methods are implemented as properties, so you don't have to write parentheses.
     :attr:`[n:m] <Query.__getitem__>`,
     :attr:`~Query.first`,
     :attr:`~Query.last`,
-    :attr:`~Query.target` and
-    :attr:`~Query.source`.
+    :attr:`~Query.target`,
+    :attr:`~Query.source`, and
+    :meth:`~Query.map`,
 
 
 Selecting (filtering) nodes:
@@ -142,16 +143,15 @@ to the selection:
     :attr:`~Query.uniq`,
     :attr:`~Query.remove_ancestors`,
     :attr:`~Query.remove_descendants`,
-    :meth:`~Query.slice`,
-    :meth:`~Query.filter`,
-    :meth:`~Query.map`,
+    :meth:`~Query.slice` and
+    :meth:`~Query.filter`.
 
 The special :attr:`~Query.is_not` operator inverts the meaning of the
 next query, e.g.::
 
     n.query.all.is_not.startingwith("text")
 
-The following query methods are inverted by `is_not`:
+The following query methods can be inverted by prepending `is_not`:
 
     :meth:`~Query.len`,
     :meth:`~Query.in_range`,
@@ -197,6 +197,14 @@ def pquery(func):
 
 
 class Query:
+    """A Query navigates and filters a node tree.
+
+    A Query is instantiated either by calling :attr:`Token.query
+    <parce.tree.Node.query>` or :attr:`Context.query <parce.tree.Node.query>`,
+    or by calling :meth:`Query.from_nodes` on a list of nodes (tokens and/or
+    contexts).
+
+    """
     __slots__ = '_gen', '_inv'
 
     def __init__(self, gen, invert=False):
@@ -210,11 +218,6 @@ class Query:
     def from_nodes(cls, nodes):
         """Create a Query object querying a list of nodes in one go."""
         return cls(lambda: iter(nodes))
-
-    @property
-    def is_not(self):
-        """Invert the next query."""
-        return type(self)(self._gen, not self._inv)
 
     # end points
     def count(self):
@@ -297,7 +300,7 @@ class Query:
         """Get the specified item or items of every context node.
 
         Note that the result nodes always form a flat iterable. No IndexError
-        will be raised if an index would be out of range for any nore.
+        will be raised if an index would be out of range for any node.
 
         """
         # slicing or itemgetting with integers are not invertible selectors
@@ -500,6 +503,11 @@ class Query:
         for n in self:
             if id(n) not in ids:
                 yield n
+
+    @property
+    def is_not(self):
+        """Invert the next query."""
+        return type(self)(self._gen, not self._inv)
 
     # invertible selectors
     @query
