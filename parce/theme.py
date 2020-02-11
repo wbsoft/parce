@@ -213,7 +213,7 @@ class Formatter:
 
     def __init__(self, theme, factory=None):
         self._theme = theme
-        self._factory = factory or lambda f: f
+        self._factory = factory or (lambda f: f)
         self._formatters = {}
 
     def theme(self):
@@ -258,13 +258,16 @@ class Formatter:
         added using add-language, ``window`` are the properties returned by
         Formatter.window() for that theme.
 
+        If different tokens are adjacent and have the same properties, the
+        ranges are merged.
+
         """
         if self._formatters:
             def get_props(token):
                 lang = token.parent.lexicon.language
                 formatter = self._formatters.get(lang)
-                window = formatter.window() if self.subtheme_window_enabled else None
                 if formatter:
+                    window = formatter.window() if self.subtheme_window_enabled else None
                     return formatter.properties(token.action), window
                 return self.properties(token.action), None
         else:
