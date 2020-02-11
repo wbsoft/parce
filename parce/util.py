@@ -157,6 +157,9 @@ def merge_adjacent(stream, factory=tuple):
     If they are adjacent, and the rest of the tuples compares the same,
     the items are merged.
 
+    Instead of the default factory `tuple`, you can give a named tuple
+    or any other type to wrap the streams items in.
+
     """
     stream = iter(stream)
     for pos, end, *rest in stream:
