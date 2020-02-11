@@ -197,7 +197,9 @@ class Formatter:
     """A Formatter uses a Theme to format text.
 
     A factory can be set that maps the TextFormats from the theme to
-    something else if desired, before they are cached.
+    something else if desired, before they are cached. A factory might
+    return None, indicating that no particular formatting is set for
+    that action.
 
     A Formatter is instantiated with a theme that it will use, but it is
     possible to add other Themes for specific languages using add_language().
@@ -273,8 +275,12 @@ class Formatter:
         else:
             def get_props(token):
                 return self.properties(token.action), None
-        stream = ((t.pos, t.end, *get_props(t)) for t in tokens)
-        return util.merge_adjacent(stream, PropertyRange)
+        def gen():
+            for t in tokens:
+                props, window = get_props(t)
+                if props is not None:
+                    yield t.pos, t.end, props, window
+        return util.merge_adjacent(gen(), PropertyRange)
 
 
 class TextFormat:
@@ -283,6 +289,8 @@ class TextFormat:
     This factory is used by default by Theme, but you can implement your own.
     Such a factory only needs to implement an ``__init__`` method that reads
     the dictionary of property Value lists returned by Style.properties().
+
+    A TextFormat has a False boolean value if no single property is set.
 
     """
     color = None                    #: the foreground color as Color(r, g, b, a) tuple
@@ -312,6 +320,10 @@ class TextFormat:
     def __init__(self, properties):
         for prop, values in properties.items():
             self.dispatch(prop, values)
+
+    def __bool__(self):
+        """Return True if at least one property is set."""
+        return bool(self.__dict__)
 
     def css_properties(self):
         """Return a dict usable to write out a CSS rule with our properties."""
