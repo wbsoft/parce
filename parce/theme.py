@@ -89,6 +89,7 @@ base action types.
 
 
 import itertools
+import functools
 
 from . import themes
 from . import util
@@ -121,6 +122,7 @@ class Theme:
         """Return the list of filenames of the used stylesheet when instantiated"""
         return self._stylesheet.filenames()
 
+    @functools.lru_cache()
     def window(self, state="default"):
         """Return the default textformat.
 
@@ -133,6 +135,7 @@ class Theme:
             e.pseudo_classes = [state]
         return self.TextFormat(self.style.select_element(e).properties())
 
+    @functools.lru_cache()
     def selection(self, state="default"):
         """Return the default textformat for selected text.
 
@@ -145,6 +148,7 @@ class Theme:
             e.pseudo_classes = [state]
         return self.TextFormat(self.style.select_element(e).properties())
 
+    @functools.lru_cache()
     def currentline(self, state="default"):
         """Return the default textformat for the current line.
 
@@ -158,6 +162,7 @@ class Theme:
             e.pseudo_classes = [state]
         return self.TextFormat(self.style.select_element(e).properties())
 
+    @functools.lru_cache()
     def textformat(self, action):
         """Return the TextFormat for the specified action."""
         classes = css_classes(action)
