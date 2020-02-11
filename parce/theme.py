@@ -28,8 +28,14 @@ definition.
 By default, the properties are read from a normal CSS (Cascading StyleSheets)
 file, although other storage backends could be devised.
 
-Theme provides CSS properties for standard actions, and MetaTheme does
-the same, but can have a sub-Theme for every Language.
+A Theme provides CSS ``properties()`` for standard actions, and for three
+general situations: ``window()``, which denotes an editor window (or an
+encompassing DIV or PRE block in HTML), ``selection()``, which is used for
+selected text, and ``currentline()``, which can highlight the current line
+the cursor is in in an editor.
+
+From the properties returned by ``selection()`` and ``currentline()``, in
+most cases only the background color will be used.
 
 In the ``themes/`` directory are bundled CSS themes that can be used.
 Instantiate a bundled theme with::
@@ -72,26 +78,34 @@ should take some care when designing you action hierachy and not add too much
 base action types.
 
 
-Using MetaTheme
+Using Formatter
 ---------------
 
-A MetaTheme works just like a normal Theme, reading its style properties from
-a CSS file.
+Holds a Theme the information from a CSS file and can it provide the
+formatting for every standard action, a Formatter is used to actually do
+something with a theme. A formatter can convert TextFormat instances from a Theme
+to something you can use, caches those objects and provides a way to apply
+formatting to a range of Tokens.
 
-But MetaTheme has a special method ``add_language()`` to add a language class
-with its own Theme. The actual theme to use is then chosen based on the lexicon
-of the token's Context, so each language can have its own color scheme.
-
-If a certain language is not added, the MetaTheme's own properties are used.
+As a special feature, Formatter has a special method ``add_language()`` to
+add a language class with its own Theme. The actual theme to use is then
+chosen based on the lexicon of the token's Context, so an embedded language
+can have its own color scheme.
 
 For example::
 
-    th = MetaTheme.byname('default')     # use the formats from 'default.css'
-    th.add_language(parce.lang.xml.Xml, Theme("my_funky_xml.css"))
+    th = Theme.byname('default')     # use the formats from 'default.css'
+    f = Formatter(th)
+    f.add_language(parce.lang.xml.Xml, Theme("my_funky_xml.css"))
 
 Tokens that originate from lexicons from the Xml language then use the colors
 or text formats from my_funky_xml.css, while other tokens are shown in the
 colors of the default stylesheet.
+
+If you set ``f.subtheme_window_enabled`` to True (which it is by default),
+some formatters can set the window properties for a subtheme to the region of
+tokens originating from that theme, enabling an even more advanced
+colorization scheme.
 
 """
 
@@ -106,19 +120,21 @@ from . import css
 from . import util
 
 
-PropertyRange = collections.namedtuple("PropertyRange", "pos end properties theme")
+PropertyRange = collections.namedtuple("PropertyRange", "pos end properties window")
 
 
 class Theme:
-    def __init__(self, filename, factory=None):
+    """A Theme maps a StandardAction to a TextFormat with CSS properties."""
+    factory = None # will be filled in later
+
+    def __init__(self, filename):
         """Instantiate Theme from a CSS file."""
         self._filename = filename
-        self.factory = factory or TextFormat
 
     @classmethod
-    def byname(cls, name="default", factory=None):
+    def byname(cls, name="default"):
         """Create Theme by name, that should reside in the themes/ directory."""
-        return cls(themes.filename(name), factory)
+        return cls(themes.filename(name))
 
     @util.cached_property
     def _stylesheet(self):
@@ -134,8 +150,7 @@ class Theme:
         """Return the list of filenames of the used stylesheet when instantiated"""
         return self._stylesheet.filenames()
 
-    @functools.lru_cache()
-    def default(self, state="default"):
+    def window(self, state="default"):
         """Return the default textformat properties.
 
         Those are intended to be used for the editor window or encompassing DIV
@@ -147,7 +162,6 @@ class Theme:
             e.pseudo_classes = [state]
         return self.factory(self.style.select_element(e).properties())
 
-    @functools.lru_cache()
     def selection(self, state="default"):
         """Return the default textformat properties for selected text.
 
@@ -160,7 +174,6 @@ class Theme:
             e.pseudo_classes = [state]
         return self.factory(self.style.select_element(e).properties())
 
-    @functools.lru_cache()
     def currentline(self, state="default"):
         """Return the default textformat properties for the current line.
 
@@ -174,54 +187,91 @@ class Theme:
             e.pseudo_classes = [state]
         return self.factory(self.style.select_element(e).properties())
 
-    @functools.lru_cache()
     def properties(self, action):
         """Return the CSS properties for the specified action."""
         classes = css_classes(action)
         return self.factory(self.style.select_class(*classes).properties())
 
-    def property_ranges(self, tokens):
-        """Yield four-tuples PropertyRange(pos, end, properties, theme) from tokens.
 
-        The ``properties`` is a non-empty dictionary (empty dicts are
-        skipped) with CSS properties. The ``theme`` is the theme the
-        properties originate from (self).
+class Formatter:
+    """A Formatter uses a Theme to format text.
 
-        """
-        for pos, end, action in util.merge_adjacent_actions(tokens):
-            properties = self.properties(action)
-            if properties:
-                yield PropertyRange(pos, end, properties, self)
+    A factory can be set that maps the TextFormats from the theme to
+    something else if desired, before they are cached.
 
+    A Formatter is instantiated with a theme that it will use, but it is
+    possible to add other Themes for specific languages using add_language().
 
-class MetaTheme(Theme):
-    """A special Theme that can have sub-themes per-language.
-
-    If a language was not added, the own properties are used.
+    If the subtheme_window_enabled instance variable is set to True (the
+    default), the property_ranges yielded for sub-languages have the window()
+    properties for that language's Theme in the window attribute, which is
+    None otherwise.  This can be used to highlight languages inside other
+    languages with their own window theme, if desired.
 
     """
-    def __init__(self, name):
-        super().__init__(name)
-        self.themes = {}
+    subtheme_window_enabled = True
+
+    def __init__(self, theme, factory=None):
+        self._theme = theme
+        self._factory = factory or lambda f: f
+        self._formatters = {}
+
+    def theme(self):
+        """Return our Theme."""
+        return self._theme
 
     def add_language(self, language, theme):
         """Add a Theme for the specified language."""
-        self.themes[language] = theme
+        if theme is not self.theme():
+            for formatter in self._formatters.values():
+                if formatter.theme() is theme:
+                    break
+            else:
+                formatter = type(self)(theme, self._factory)
+            self._formatters[language] = formatter
+
+    @functools.lru_cache()
+    def window(self):
+        """Return the textformats for the editor window or encompassing DIV."""
+        return self._factory(self._theme.window())
+
+    @functools.lru_cache()
+    def selection(self):
+        """Return the textformats for the selected text."""
+        return self._factory(self._theme.selection())
+
+    @functools.lru_cache()
+    def currentline(self):
+        """Return the textformats for the current line."""
+        return self._factory(self._theme.currentline())
+
+    @functools.lru_cache()
+    def properties(self, action):
+        """Return the textformats for the specified standard action."""
+        return self._factory(self._theme.properties(action))
 
     def property_ranges(self, tokens):
-        """Reimplemented to return properties from added languages.
+        """Yield four-tuples PropertyRange(pos, end, properties, window).
 
-        The ``theme`` in each PropertyRange corresponds with the theme the
-        properties originated from, and can be used to get the default() or
-        selection() styles for that range.
+        For the base theme, ``window`` is None, but, if
+        ``subtheme_window_enabled`` is set to True, for sub-themes that were
+        added using add-language, ``window`` are the properties returned by
+        Formatter.window() for that theme.
 
         """
-        for pos, end, action, language in \
-                    util.merge_adjacent_actions_with_language(tokens):
-            theme = self.themes.get(language, self)
-            properties = theme.properties(action)
-            if properties:
-                yield PropertyRange(pos, end, properties, theme)
+        if self._formatters:
+            def get_props(token):
+                lang = token.parent.lexicon.language
+                formatter = self._formatters.get(lang)
+                window = formatter.window() if self.subtheme_window_enabled else None
+                if formatter:
+                    return formatter.properties(token.action), window
+                return self.properties(token.action), None
+        else:
+            def get_props(token):
+                return self.properties(token.action), None
+        stream = ((t.pos, t.end, *get_props(t)) for t in tokens)
+        return util.merge_adjacent(stream, PropertyRange)
 
 
 class TextFormat:
@@ -477,6 +527,9 @@ class TextFormat:
                 self.font_weight = numvalues[0][0]
             self.font_size, self.font_size_unit = numvalues[1]
 
+
+# Let Theme use the TextFormat class use as factory by default
+Theme.factory = TextFormat
 
 
 def css_classes(action):

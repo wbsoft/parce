@@ -150,7 +150,7 @@ def abbreviate_repr(s, length=30):
     return repr(s)
 
 
-def merge_adjacent(stream):
+def merge_adjacent(stream, factory=tuple):
     """Yield items from a stream of tuples.
 
     The first two items of each tuple are regarded as pos and end.
@@ -162,10 +162,10 @@ def merge_adjacent(stream):
     for pos, end, *rest in stream:
         for npos, nend, *nrest in stream:
             if nrest != rest or npos > end:
-                yield (pos, end, *rest)
+                yield factory(pos, end, *rest)
                 pos, rest = npos, nrest
             end = nend
-        yield (pos, end, *rest)
+        yield factory(pos, end, *rest)
 
 
 def merge_adjacent_actions(tokens):
