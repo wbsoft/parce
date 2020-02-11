@@ -91,6 +91,7 @@ base action types.
 import itertools
 import functools
 
+from . import css
 from . import themes
 from . import util
 
@@ -110,7 +111,6 @@ class Theme:
     @util.cached_property
     def _stylesheet(self):
         """Load and cache the StyleSheet."""
-        from . import css
         return css.StyleSheet.from_file(self._filename)
 
     @util.cached_property

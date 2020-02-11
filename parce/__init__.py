@@ -110,7 +110,6 @@ from . import pattern, action, target
 from . import lexicon as lexicon_, treebuilder, document, treedocument
 from .document import Cursor
 from .language import Language
-from .theme import Theme
 from .pkginfo import version, version_string
 
 
@@ -236,6 +235,18 @@ def lexicon(rules_func=None, **kwargs):
     def lexicon(rules_func):
         return lexicon_.LexiconDescriptor(rules_func, **kwargs)
     return lexicon
+
+
+def theme_by_name(name="default"):
+    """Return a Theme from the default themes in the themes/ directory."""
+    from .theme import Theme
+    return Theme.byname(name)
+
+
+def theme_from_file(filename):
+    """Return a Theme loaded from the specified CSS filename."""
+    from .theme import Theme
+    return Theme(filename)
 
 
 # these can be used in rules where a pattern is expected
