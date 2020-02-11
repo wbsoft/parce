@@ -128,16 +128,15 @@ from . import css
 from . import util
 
 
-PropertyRange = collections.namedtuple("PropertyRange", "pos end properties window")
+FormatRange = collections.namedtuple("FormatRange", "pos end textformat window")
 
 
 class Theme:
     """A Theme maps a StandardAction to a TextFormat with CSS properties."""
-    factory = None # will be filled in later
-
     def __init__(self, filename):
         """Instantiate Theme from a CSS file."""
         self._filename = filename
+        self.factory = TextFormat
 
     @classmethod
     def byname(cls, name="default"):
@@ -159,9 +158,9 @@ class Theme:
         return self._stylesheet.filenames()
 
     def window(self, state="default"):
-        """Return the default textformat properties.
+        """Return the default textformat.
 
-        Those are intended to be used for the editor window or encompassing DIV
+        This is intended to be used for the editor window or encompassing DIV
         element. The state argument may be "default", "focus", or "disabled".
 
         """
@@ -171,9 +170,9 @@ class Theme:
         return self.factory(self.style.select_element(e).properties())
 
     def selection(self, state="default"):
-        """Return the default textformat properties for selected text.
+        """Return the default textformat for selected text.
 
-        Those are intended to be used for the editor window or encompassing DIV
+        This is intended to be used for the editor window or encompassing DIV
         element. The state argument may be "default", "focus", or "disabled".
 
         """
@@ -183,9 +182,9 @@ class Theme:
         return self.factory(self.style.select_element(e).properties())
 
     def currentline(self, state="default"):
-        """Return the default textformat properties for the current line.
+        """Return the default textformat for the current line.
 
-        Those are intended to be used for the editor window or encompassing DIV
+        This is intended to be used for the editor window or encompassing DIV
         element, probably only the background color. The state argument may be
         "default", "focus", or "disabled".
 
@@ -195,8 +194,8 @@ class Theme:
             e.pseudo_classes = [state]
         return self.factory(self.style.select_element(e).properties())
 
-    def properties(self, action):
-        """Return the CSS properties for the specified action."""
+    def textformat(self, action):
+        """Return the TextFormat for the specified action."""
         classes = css_classes(action)
         return self.factory(self.style.select_class(*classes).properties())
 
@@ -214,7 +213,7 @@ class Formatter:
 
     If the subtheme_window_enabled instance variable is set to True (the
     default), the property_ranges yielded for sub-languages have the window()
-    properties for that language's Theme in the window attribute, which is
+    textformat for that language's Theme in the window attribute, which is
     None otherwise.  This can be used to highlight languages inside other
     languages with their own window theme, if desired.
 
@@ -242,7 +241,7 @@ class Formatter:
 
     @functools.lru_cache()
     def window(self, state="default"):
-        """Return the textformats for the editor window or encompassing DIV.
+        """Return the textformat for the editor window or encompassing DIV.
 
         Just like with Theme, state can be "default", "focus" or "disabled."
 
@@ -251,7 +250,7 @@ class Formatter:
 
     @functools.lru_cache()
     def selection(self, state="default"):
-        """Return the textformats for the selected text.
+        """Return the textformat for the selected text.
 
         Just like with Theme, state can be "default", "focus" or "disabled."
 
@@ -260,7 +259,7 @@ class Formatter:
 
     @functools.lru_cache()
     def currentline(self, state="default"):
-        """Return the textformats for the current line.
+        """Return the textformat for the current line.
 
         Just like with Theme, state can be "default", "focus" or "disabled."
 
@@ -268,11 +267,11 @@ class Formatter:
         return self._factory(self._theme.currentline(state))
 
     @functools.lru_cache()
-    def properties(self, action):
+    def textformat(self, action):
         """Return the textformats for the specified standard action."""
-        return self._factory(self._theme.properties(action))
+        return self._factory(self._theme.textformat(action))
 
-    def property_ranges(self, tokens):
+    def format_ranges(self, tokens):
         """Yield four-tuples PropertyRange(pos, end, properties, window).
 
         For the base theme, ``window`` is None, but, if
@@ -290,17 +289,17 @@ class Formatter:
                 formatter = self._formatters.get(lang)
                 if formatter:
                     window = formatter.window() if self.subtheme_window_enabled else None
-                    return formatter.properties(token.action), window
-                return self.properties(token.action), None
+                    return formatter.textformat(token.action), window
+                return self.textformat(token.action), None
         else:
             def get_props(token):
-                return self.properties(token.action), None
+                return self.textformat(token.action), None
         def gen():
             for t in tokens:
                 props, window = get_props(t)
                 if props is not None:
                     yield t.pos, t.end, props, window
-        return util.merge_adjacent(gen(), PropertyRange)
+        return util.merge_adjacent(gen(), FormatRange)
 
 
 class TextFormat:
@@ -561,10 +560,6 @@ class TextFormat:
             if self.font_weight is None:
                 self.font_weight = numvalues[0][0]
             self.font_size, self.font_size_unit = numvalues[1]
-
-
-# Let Theme use the TextFormat class use as factory by default
-Theme.factory = TextFormat
 
 
 def css_classes(action):
