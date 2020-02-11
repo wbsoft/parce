@@ -27,10 +27,10 @@ something with a theme. A Formatter can convert TextFormat instances from a
 Theme to something you can use, caches those objects and provides a way to
 apply formatting to a range of Tokens.
 
-As a special feature, Formatter has a special method ``add_language()`` to
-add a language class with its own Theme. The actual theme to use is then
-chosen based on the lexicon of the token's Context, so an embedded language
-can have its own color scheme.
+As a special feature, Formatter has a method ``add_language()`` to add a
+language class with its own Theme. The actual theme to use is then chosen
+based on the lexicon of the token's Context, so an embedded language can have
+its own color scheme.
 
 For example::
 
@@ -62,19 +62,20 @@ FormatRange = collections.namedtuple("FormatRange", "pos end textformat window")
 class Formatter:
     """A Formatter uses a Theme to format text.
 
-    A factory can be set that maps the TextFormats from the theme to
+    A ``factory`` can be set that maps the TextFormats from the theme to
     something else if desired, before they are cached. A factory might
     return None, indicating that no particular formatting is set for
     that action.
 
     A Formatter is instantiated with a theme that it will use, but it is
-    possible to add other Themes for specific languages using add_language().
+    possible to add other Themes for specific languages using
+    ``add_language()``.
 
-    If the subtheme_window_enabled instance variable is set to True (the
-    default), the property_ranges yielded for sub-languages have the window()
-    textformat for that language's Theme in the window attribute, which is
-    None otherwise.  This can be used to highlight languages inside other
-    languages with their own window theme, if desired.
+    If the ``subtheme_window_enabled`` instance variable is set to True (the
+    default), the ``property_ranges()`` yielded for sub-languages have the
+    ``window()`` textformat for that language's Theme in the ``window``
+    attribute, which is None otherwise.  This can be used to highlight
+    languages inside other languages with their own window theme, if desired.
 
     """
     subtheme_window_enabled = True
