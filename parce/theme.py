@@ -85,43 +85,12 @@ will match exactly the same CSS rules as an action Comment.Text. So you
 should take some care when designing you action hierachy and not add too much
 base action types.
 
-
-Using Formatter
----------------
-
-Holds a Theme the information from a CSS file and can it provide the
-formatting for every standard action, a Formatter is used to actually do
-something with a theme. A formatter can convert TextFormat instances from a Theme
-to something you can use, caches those objects and provides a way to apply
-formatting to a range of Tokens.
-
-As a special feature, Formatter has a special method ``add_language()`` to
-add a language class with its own Theme. The actual theme to use is then
-chosen based on the lexicon of the token's Context, so an embedded language
-can have its own color scheme.
-
-For example::
-
-    th = Theme.byname('default')     # use the formats from 'default.css'
-    f = Formatter(th)
-    f.add_language(parce.lang.xml.Xml, Theme("my_funky_xml.css"))
-
-Tokens that originate from lexicons from the Xml language then use the colors
-or text formats from my_funky_xml.css, while other tokens are shown in the
-colors of the default stylesheet.
-
-If you set ``f.subtheme_window_enabled`` to True (which it is by default),
-some formatters can set the window properties for a subtheme to the region of
-tokens originating from that theme, enabling an even more advanced
-colorization scheme.
-
 """
 
 
 import itertools
 
 from . import themes
-from . import css
 from . import util
 
 
@@ -140,6 +109,7 @@ class Theme:
     @util.cached_property
     def _stylesheet(self):
         """Load and cache the StyleSheet."""
+        from . import css
         return css.StyleSheet.from_file(self._filename)
 
     @util.cached_property
@@ -235,6 +205,31 @@ class TextFormat:
     def __bool__(self):
         """Return True if at least one property is set."""
         return bool(self.__dict__)
+
+    def __sub__(self, other):
+        """Return a new TextFormat with the properties removed that are the same in ``other``."""
+        new = type(self)({})
+        for props in (
+            ('color',),
+            ('background_color',),
+            ('text_decoration_color', 'text_decoration_line', 'text_decoration_style'),
+            ('font_family',),
+            ('font_kerning',),
+            ('font_size', 'font_size_unit'),
+            ('font_stretch',),
+            ('font_style', 'font_style_angle', 'font_style_angle_unit'),
+            ('font_variant_caps',),
+            ('font_variant_position',),
+            ('font_weight',),
+        ):
+            if any(prop in self.__dict__ for prop in props):
+                if any(self.__dict__.get(prop) != other.__dict__.get(prop) for prop in props):
+                    for prop in props:
+                        try:
+                            new.__dict__[prop] = self.__dict__[prop]
+                        except KeyError:
+                            pass
+        return new
 
     def css_properties(self):
         """Return a dict usable to write out a CSS rule with our properties."""

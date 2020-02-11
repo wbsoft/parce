@@ -110,6 +110,7 @@ from . import pattern, action, target
 from . import lexicon as lexicon_, treebuilder, document, treedocument
 from .document import Cursor
 from .language import Language
+from .theme import Theme
 from .pkginfo import version, version_string
 
 
