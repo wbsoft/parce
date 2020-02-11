@@ -99,7 +99,7 @@ class Theme:
     def __init__(self, filename):
         """Instantiate Theme from a CSS file."""
         self._filename = filename
-        self.factory = TextFormat
+        self.TextFormat = TextFormat
 
     @classmethod
     def byname(cls, name="default"):
@@ -131,7 +131,7 @@ class Theme:
         e = css.Element(class_="parce")
         if state in ("focus", "disabled"):
             e.pseudo_classes = [state]
-        return self.factory(self.style.select_element(e).properties())
+        return self.TextFormat(self.style.select_element(e).properties())
 
     def selection(self, state="default"):
         """Return the default textformat for selected text.
@@ -143,7 +143,7 @@ class Theme:
         e = css.Element(class_="parce", pseudo_elements=["selection"])
         if state in ("focus", "disabled"):
             e.pseudo_classes = [state]
-        return self.factory(self.style.select_element(e).properties())
+        return self.TextFormat(self.style.select_element(e).properties())
 
     def currentline(self, state="default"):
         """Return the default textformat for the current line.
@@ -156,12 +156,12 @@ class Theme:
         e = css.Element(class_="parce current-line")
         if state in ("focus", "disabled"):
             e.pseudo_classes = [state]
-        return self.factory(self.style.select_element(e).properties())
+        return self.TextFormat(self.style.select_element(e).properties())
 
     def textformat(self, action):
         """Return the TextFormat for the specified action."""
         classes = css_classes(action)
-        return self.factory(self.style.select_class(*classes).properties())
+        return self.TextFormat(self.style.select_class(*classes).properties())
 
 
 class TextFormat:
@@ -222,13 +222,13 @@ class TextFormat:
             ('font_variant_position',),
             ('font_weight',),
         ):
-            if any(prop in self.__dict__ for prop in props):
-                if any(self.__dict__.get(prop) != other.__dict__.get(prop) for prop in props):
-                    for prop in props:
-                        try:
-                            new.__dict__[prop] = self.__dict__[prop]
-                        except KeyError:
-                            pass
+            if any(prop in self.__dict__ for prop in props) and \
+                    any(self.__dict__.get(prop) != other.__dict__.get(prop) for prop in props):
+                for prop in props:
+                    try:
+                        new.__dict__[prop] = self.__dict__[prop]
+                    except KeyError:
+                        pass
         return new
 
     def css_properties(self):
