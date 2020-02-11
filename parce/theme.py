@@ -37,6 +37,14 @@ the cursor is in in an editor.
 From the properties returned by ``selection()`` and ``currentline()``, in
 most cases only the background color will be used.
 
+The methods ``window()``, ``selection()`` and ``currentline()`` also accept a
+state argument, which can be "default", "focus" or "disabled". A theme always
+supports the default state, but can provide separate colors for the "focus"
+or "disabled" state, which can be used to change the basic formatting in an
+editor window based on its state (in keyboard focus or disabled). If a theme
+does not support the "disabled" and/or "focus" state, the default scheme is
+used.
+
 In the ``themes/`` directory are bundled CSS themes that can be used.
 Instantiate a bundled theme with::
 
@@ -233,19 +241,31 @@ class Formatter:
             self._formatters[language] = formatter
 
     @functools.lru_cache()
-    def window(self):
-        """Return the textformats for the editor window or encompassing DIV."""
-        return self._factory(self._theme.window())
+    def window(self, state="default"):
+        """Return the textformats for the editor window or encompassing DIV.
+
+        Just like with Theme, state can be "default", "focus" or "disabled."
+
+        """
+        return self._factory(self._theme.window(state))
 
     @functools.lru_cache()
-    def selection(self):
-        """Return the textformats for the selected text."""
-        return self._factory(self._theme.selection())
+    def selection(self, state="default"):
+        """Return the textformats for the selected text.
+
+        Just like with Theme, state can be "default", "focus" or "disabled."
+
+        """
+        return self._factory(self._theme.selection(state))
 
     @functools.lru_cache()
-    def currentline(self):
-        """Return the textformats for the current line."""
-        return self._factory(self._theme.currentline())
+    def currentline(self, state="default"):
+        """Return the textformats for the current line.
+
+        Just like with Theme, state can be "default", "focus" or "disabled."
+
+        """
+        return self._factory(self._theme.currentline(state))
 
     @functools.lru_cache()
     def properties(self, action):
