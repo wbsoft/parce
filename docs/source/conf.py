@@ -114,7 +114,7 @@ html_theme_options = {
     'fixed_sidebar': 'true',
     'github_user': 'wbsoft',
     'github_repo': 'parce',
-    'show_related': 'true',
+#    'show_related': 'true',
     'show_relbar_bottom': 'true',
     'description': parce.pkginfo.description,
     'extra_nav_links': {
