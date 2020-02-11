@@ -150,6 +150,24 @@ def abbreviate_repr(s, length=30):
     return repr(s)
 
 
+def merge_adjacent(stream):
+    """Yield items from a stream of tuples.
+
+    The first two items of each tuple are regarded as pos and end.
+    If they are adjacent, and the rest of the tuples compares the same,
+    the items are merged.
+
+    """
+    stream = iter(stream)
+    for pos, end, *rest in stream:
+        for npos, nend, *nrest in stream:
+            if nrest != rest or npos > end:
+                yield (pos, end, *rest)
+                pos, rest = npos, nrest
+            end = nend
+        yield (pos, end, *rest)
+
+
 def merge_adjacent_actions(tokens):
     """Yield three-tuples (pos, end, action).
 
@@ -157,14 +175,7 @@ def merge_adjacent_actions(tokens):
     one range.
 
     """
-    stream = ((t.pos, t.end, t.action) for t in tokens)
-    for pos, end, action in stream:
-        for npos, nend, naction in stream:
-            if naction != action or npos > end:
-                yield pos, end, action
-                pos, action = npos, naction
-            end = nend
-        yield pos, end, action
+    return merge_adjacent((t.pos, t.end, t.action) for t in tokens)
 
 
 def merge_adjacent_actions_with_language(tokens):
@@ -174,14 +185,8 @@ def merge_adjacent_actions_with_language(tokens):
     are merged into one range.
 
     """
-    stream = ((t.pos, t.end, t.action, t.parent.lexicon.language) for t in tokens)
-    for pos, end, action, lang in stream:
-        for npos, nend, naction, nlang in stream:
-            if naction != action or npos > end or nlang != lang:
-                yield pos, end, action, lang
-                pos, action, lang = npos, naction, nlang
-            end = nend
-        yield pos, end, action, lang
+    return merge_adjacent((t.pos, t.end, t.action, t.parent.lexicon.language)
+                          for t in tokens)
 
 
 def get_bom_encoding(data):
