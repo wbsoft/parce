@@ -118,17 +118,11 @@ colorization scheme.
 """
 
 
-import collections
 import itertools
-import functools
-import os
 
 from . import themes
 from . import css
 from . import util
-
-
-FormatRange = collections.namedtuple("FormatRange", "pos end textformat window")
 
 
 class Theme:
@@ -198,108 +192,6 @@ class Theme:
         """Return the TextFormat for the specified action."""
         classes = css_classes(action)
         return self.factory(self.style.select_class(*classes).properties())
-
-
-class Formatter:
-    """A Formatter uses a Theme to format text.
-
-    A factory can be set that maps the TextFormats from the theme to
-    something else if desired, before they are cached. A factory might
-    return None, indicating that no particular formatting is set for
-    that action.
-
-    A Formatter is instantiated with a theme that it will use, but it is
-    possible to add other Themes for specific languages using add_language().
-
-    If the subtheme_window_enabled instance variable is set to True (the
-    default), the property_ranges yielded for sub-languages have the window()
-    textformat for that language's Theme in the window attribute, which is
-    None otherwise.  This can be used to highlight languages inside other
-    languages with their own window theme, if desired.
-
-    """
-    subtheme_window_enabled = True
-
-    def __init__(self, theme, factory=None):
-        self._theme = theme
-        self._factory = factory or (lambda f: f)
-        self._formatters = {}
-
-    def theme(self):
-        """Return our Theme."""
-        return self._theme
-
-    def add_language(self, language, theme):
-        """Add a Theme for the specified language."""
-        if theme is not self.theme():
-            for formatter in self._formatters.values():
-                if formatter.theme() is theme:
-                    break
-            else:
-                formatter = type(self)(theme, self._factory)
-            self._formatters[language] = formatter
-
-    @functools.lru_cache()
-    def window(self, state="default"):
-        """Return the textformat for the editor window or encompassing DIV.
-
-        Just like with Theme, state can be "default", "focus" or "disabled."
-
-        """
-        return self._factory(self._theme.window(state))
-
-    @functools.lru_cache()
-    def selection(self, state="default"):
-        """Return the textformat for the selected text.
-
-        Just like with Theme, state can be "default", "focus" or "disabled."
-
-        """
-        return self._factory(self._theme.selection(state))
-
-    @functools.lru_cache()
-    def currentline(self, state="default"):
-        """Return the textformat for the current line.
-
-        Just like with Theme, state can be "default", "focus" or "disabled."
-
-        """
-        return self._factory(self._theme.currentline(state))
-
-    @functools.lru_cache()
-    def textformat(self, action):
-        """Return the textformats for the specified standard action."""
-        return self._factory(self._theme.textformat(action))
-
-    def format_ranges(self, tokens):
-        """Yield four-tuples PropertyRange(pos, end, properties, window).
-
-        For the base theme, ``window`` is None, but, if
-        ``subtheme_window_enabled`` is set to True, for sub-themes that were
-        added using add-language, ``window`` are the properties returned by
-        Formatter.window() for that theme.
-
-        If different tokens are adjacent and have the same properties, the
-        ranges are merged.
-
-        """
-        if self._formatters:
-            def get_props(token):
-                lang = token.parent.lexicon.language
-                formatter = self._formatters.get(lang)
-                if formatter:
-                    window = formatter.window() if self.subtheme_window_enabled else None
-                    return formatter.textformat(token.action), window
-                return self.textformat(token.action), None
-        else:
-            def get_props(token):
-                return self.textformat(token.action), None
-        def gen():
-            for t in tokens:
-                props, window = get_props(t)
-                if props is not None:
-                    yield t.pos, t.end, props, window
-        return util.merge_adjacent(gen(), FormatRange)
 
 
 class TextFormat:
