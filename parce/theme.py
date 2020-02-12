@@ -266,6 +266,13 @@ class TextFormat:
                         pass
         return new
 
+    def __add__(self, other):
+        """Return a new TextFormat adding the other's properties."""
+        new = type(self)({})
+        new.__dict__.update(self.__dict__)
+        new.__dict__.update(other.__dict__)
+        return new
+
     def css_properties(self):
         """Return a dict usable to write out a CSS rule with our properties."""
         return dict(itertools.chain(
