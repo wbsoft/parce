@@ -208,6 +208,38 @@ class TextFormat:
 
     A TextFormat has a False boolean value if no single property is set.
 
+    You can add and subtract TextFormats::
+
+        >>> import parce
+        >>> t = parce.theme_by_name()
+        >>> f = t.window()
+        >>> f
+        <TextFormat background_color=Color(r=255, g=255, b=240, a=1.0), color=
+        Color(r=0, g=0, b=0, a=1.0), font_family=['monospace'], font_size=12,
+        font_size_unit='pt'>
+        >>> f2 = t.textformat(parce.Comment)
+        >>> f2
+        <TextFormat color=Color(r=105, g=105, b=105, a=1.0), font_family=['serif'],
+        font_style='italic'>
+        >>> f + f2
+        <TextFormat background_color=Color(r=255, g=255, b=240, a=1.0), color=
+        Color(r=105, g=105, b=105, a=1.0), font_family=['serif'], font_size=12,
+        font_size_unit='pt', font_style='italic'>
+        >>> f - f2
+        <TextFormat background_color=Color(r=255, g=255, b=240, a=1.0), color=
+        Color(r=0, g=0, b=0, a=1.0), font_family=['monospace'], font_size=12,
+        font_size_unit='pt'>
+        >>>
+
+    Adding a TextFormat returns a new format with our properties set and then
+    the properties of the other. This is useful when it is not possible to
+    overlay properties with underlying window properties.
+
+    Subtracting a TextFormat returns a new format with the properties removed
+    that are the same in the other format. This is useful when properties of
+    a certain action happen to be the same as the underlying window properties;
+    it is not needed to set these again in such cases.
+
     """
     color = None                    #: the foreground color as Color(r, g, b, a) tuple
     background_color = None         #: the background color (id)
