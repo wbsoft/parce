@@ -536,3 +536,39 @@ def css_classes(action):
     return tuple(a._name.lower() for a in action)
 
 
+def tokens_with_language(tokens):
+    """Yield two-tuples(language, token).
+
+    The language is the language the token belongs to. One of the items can be
+    None. If token is None, the language changes right after the last token and
+    there is some untokenized range before the text token. If language is None,
+    there is no language change. The first token will always be yielded with
+    its language.
+
+    This function can be used to highlight tokens with a theme that depends on
+    the current language.
+
+    """
+    tokens = iter(tokens)
+    for prev in tokens:
+        lang = prev.parent.lexicon.language
+        yield lang, prev
+        start = prev.end
+        for t in tokens:
+            newlang = t.parent.lexicon.language
+            if newlang is not lang:
+                if t.pos > start:
+                    p = prev.common_ancestor(t)
+                    if p.lexicon.language is not lang:
+                        yield p.lexicon.language, None
+                    if p.lexicon.language is newlang:
+                        yield None, t
+                    else:
+                        yield newlang, t
+                else:
+                    yield newlang, t
+                lang = newlang
+            else:
+                yield None, t
+            prev = t
+
