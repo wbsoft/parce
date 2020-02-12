@@ -97,7 +97,7 @@ class LilyPond(Language):
         yield r'%\{', Comment, cls.multiline_comment
         yield r'%', Comment, cls.singleline_comment
         yield r'"', String, cls.string
-        yield r'[#$]', Delimiter.SchemeStart, cls.scheme
+        yield r'[#$]', Delimiter.SchemeStart, cls.get_scheme_target()
 
     @classmethod
     def common(cls):
@@ -118,7 +118,7 @@ class LilyPond(Language):
         yield r'\{', Delimiter.OpenBrace, -1, cls.markup_environ
         yield RE_LILYPOND_COMMAND, cls.get_markup_action(), cls.get_markup_target()
         yield r'"', String, -1, cls.string
-        yield r'[#$]', Delimiter.SchemeStart, -1, cls.scheme
+        yield r'[#$]', Delimiter.SchemeStart, -1, cls.get_scheme_target()
         yield r'%\{', Comment, cls.multiline_comment
         yield r'%', Comment, cls.singleline_comment
         yield RE_LILYPOND_MARKUP_TEXT, Text, -1
@@ -160,11 +160,10 @@ class LilyPond(Language):
 
 
     # -------------- Scheme ---------------------
-    @lexicon
-    def scheme(cls):
+    @classmethod
+    def get_scheme_target(cls):
         from .scheme import SchemeLily
-        yield from SchemeLily.one_arg()
-        yield default_target, -1
+        return SchemeLily.one_arg
 
     @lexicon
     def schemelily(cls):

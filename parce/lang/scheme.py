@@ -114,6 +114,7 @@ class SchemeLily(Scheme):
         yield r"#[tf]\b", Boolean, -1
         yield r"#\\([a-z]+|.)", Char, -1
         yield r'[^()"{}\s]+', cls.get_word_action(), -1
+        yield default_target, -1
 
     @classmethod
     def common(cls):
