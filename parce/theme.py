@@ -553,11 +553,10 @@ def tokens_with_language(tokens):
     for prev in tokens:
         lang = prev.parent.lexicon.language
         yield lang, prev
-        start = prev.end
         for t in tokens:
             newlang = t.parent.lexicon.language
             if newlang is not lang:
-                if t.pos > start:
+                if t.pos > prev.end:
                     p = prev.common_ancestor(t)
                     if p.lexicon.language is not lang:
                         yield p.lexicon.language, None
