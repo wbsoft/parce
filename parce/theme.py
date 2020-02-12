@@ -273,6 +273,14 @@ class TextFormat:
         new.__dict__.update(other.__dict__)
         return new
 
+    def __eq__(self, other):
+        """Return True if other has the same properties."""
+        return self.__dict__ == other.__dict__
+
+    def __ne__(self, other):
+        """Return True if other has different properties."""
+        return self.__dict__ != other.__dict__
+
     def css_properties(self):
         """Return a dict usable to write out a CSS rule with our properties."""
         return dict(itertools.chain(
