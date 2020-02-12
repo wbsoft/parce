@@ -169,6 +169,36 @@ class Theme:
         return self.TextFormat(self.style.select_class(*classes).properties())
 
 
+class MetaTheme:
+    """A Theme that encapsulates a default Theme and per-language sub-Themes."""
+    def __init__(self, theme):
+        """Instantiate with default theme."""
+        self.theme = theme
+        self.themes = {}
+
+    def add_theme(self, language, theme):
+        """Add a specific Theme for the specified Language."""
+        self.themes[language] = theme
+
+    def window(self, state="default"):
+        """Return the window TextFormat for the state of the default theme."""
+        return self.theme.window(state)
+
+    def selection(self, state="default"):
+        """Return the selection TextFormat for the state of the default theme."""
+        return self.theme.selection(state)
+
+    def currentline(self, state="default"):
+        """Return the currentline TextFormat for the state of the default theme."""
+        return self.theme.currentline(state)
+
+    def textformat(self, action):
+        """Return the TextFormat for the specified action of the default theme."""
+        return self.theme.textformat(action)
+
+
+
+
 class TextFormat:
     """Simple textformat that reads CSS properties and supports a subset of those.
 
