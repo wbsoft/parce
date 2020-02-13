@@ -651,17 +651,30 @@ class Context(list, Node):
         while i < hi:
             mid = (i + hi) // 2
             n = self[mid]
-            if n.is_context:
-                n = n.last_token()
             if n.end <= pos:
                 i = mid + 1
             else:
                 hi = mid
-        if i < len(self):
-            if self[i].is_context:
-                return self[i].find_token(pos)
-            return self[i]
-        return self.last_token()
+        i = min(i, len(self) - 1)
+        return self[i].find_token(pos) if self[i].is_context else self[i]
+
+    def find_token_with_trail(self, pos):
+        """Return the Token at or to the right of position, and the trail of indices."""
+        trail = []
+        def find(node):
+            i = 0
+            hi = len(node)
+            while i < hi:
+                mid = (i + hi) // 2
+                n = node[mid]
+                if n.end <= pos:
+                    i = mid + 1
+                else:
+                    hi = mid
+            i = min(i, len(node) - 1)
+            trail.append(i)
+            return find(node[i]) if node[i].is_context else node[i]
+        return find(self), trail
 
     def find_token_left(self, pos):
         """Return the Token at or to the left of position."""
@@ -670,18 +683,30 @@ class Context(list, Node):
         while i < hi:
             mid = (i + hi) // 2
             n = self[mid]
-            if n.is_context:
-                n = n.first_token()
             if n.pos < pos:
                 i = mid + 1
             else:
                 hi = mid
-        if i > 0:
-            i -= 1
-            if self[i].is_context:
-                return self[i].find_token_left(pos)
-            return self[i]
-        return self.first_token()
+        i = max(0, i - 1)
+        return self[i].find_token_left(pos) if self[i].is_context else self[i]
+
+    def find_token_left_with_trail(self, pos):
+        """Return the Token at or to the left of position, and the trail of indices."""
+        trail = []
+        def find(node):
+            i = 0
+            hi = len(node)
+            while i < hi:
+                mid = (i + hi) // 2
+                n = node[mid]
+                if n.pos < pos:
+                    i = mid + 1
+                else:
+                    hi = mid
+            i = max(0, i - 1)
+            trail.append(i)
+            return find(node[i]) if node[i].is_context else node[i]
+        return find(self), trail
 
     def find_token_after(self, pos):
         """Return the first token completely right from pos.
@@ -701,9 +726,7 @@ class Context(list, Node):
             else:
                 hi = mid
         if i < len(self):
-            if self[i].is_context:
-                return self[i].find_token_after(pos)
-            return self[i]
+            return self[i].find_token_after(pos) if self[i].is_context else self[i]
 
     def find_token_before(self, pos):
         """Return the last token completely left from pos.
@@ -724,15 +747,13 @@ class Context(list, Node):
                 i = mid + 1
         if i > 0:
             i -= 1
-            if self[i].is_context:
-                return self[i].find_token_before(pos)
-            return self[i]
+            return self[i].find_token_before(pos) if self[i].is_context else self[i]
 
     def tokens_range(self, start, end=None):
         """Yield all tokens that completely fill this text range.
 
         This makes the most sense if used from the root Context. Note that the
-        first and last tokens may overlap with the start and and positions. If
+        first and last tokens may overlap with the start and end positions. If
         end is left to None, all tokens from start are yielded.
 
         """
