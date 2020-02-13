@@ -157,9 +157,11 @@ class Node:
 
     def common_ancestor(self, other):
         """Return the common ancestor with the Context or Token."""
-        ancestors = [self]
+        ancestors = []
+        if self.is_context:
+            ancestors.append(self)
         ancestors.extend(self.ancestors())
-        if other in ancestors:
+        if other.is_context and other in ancestors:
             return other
         for n in other.ancestors():
             if n in ancestors:
