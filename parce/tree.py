@@ -751,8 +751,14 @@ class Context(list, Node):
             i -= 1
             return self[i].find_token_before(pos) if self[i].is_context else self[i]
 
-    def context_ranges(self, start=0, end=None):
-        """Yield iterables of nodes to yield tokens from."""
+    def context_slices(self, start=0, end=None):
+        """Yield (context, slice) tuples to yield tokens from.
+
+        Yield the tokens using the context[slice] notation. The first and
+        last tokens that would be yielded from the iterables may overlap with
+        the start and end positions.
+
+        """
         if not self:
             return  # empty
         start_token = end_token = None
@@ -760,7 +766,7 @@ class Context(list, Node):
             if end <= start:
                 return
             end_token, end_trail = self.find_token_left_with_trail(end)
-        if start:
+        if start > 0:
             start_token, start_trail = self.find_token_with_trail(start)
         context = self
         i = 0
@@ -772,39 +778,42 @@ class Context(list, Node):
             else:
                 ancestors = zip(start_token.ancestors(), reversed(start_trail))
                 for p, i in ancestors:
-                    yield p[i:]     # include start_token
+                    yield p, slice(i, None)     # include start_token
                     break
                 for p, i in ancestors:
                     if p is context:
                         break
-                    yield p[i+1:]
+                    if i < len(p) - 1:
+                        yield p, slice(i + 1, None)
                 i += 1
         if end_token:
             if context is end_token.parent:
-                yield context[i:end_trail[-1]+1]    # include end_token
+                yield context, slice(i, end_trail[-1] + 1)    # include end_token
             else:
                 for j, p in enumerate(end_token.ancestors(), 1):
                     if p is context:
                         break
-                yield context[i:end_trail[-j]]
-                p = context[end_trail[-j]]
+                j = end_trail[-j]
+                if i < j:
+                    yield context, slice(i, j)
+                p = context[j]
                 for j in end_trail[1-j:-1]:
-                    yield p[:j]
+                    if j:
+                        yield p, slice(j)
                     p = p[j]
-                yield p[:end_trail[-1]+1]   # include end_token
+                yield p, slice(end_trail[-1] + 1)   # include end_token
         else:
-            yield context[i:]
+            yield context, slice(i, None)
 
     def tokens_range(self, start, end=None):
         """Yield all tokens that completely fill this text range.
 
-        This makes the most sense if used from the root Context. Note that the
-        first and last tokens may overlap with the start and end positions. If
-        end is left to None, all tokens from start are yielded.
+        The first and last tokens may overlap with the start and end
+        positions.
 
         """
-        for r in self.context_ranges(start, end):
-            yield from tokens(r)
+        for context, slice_ in self.context_slices(start, end):
+            yield from tokens(context[slice_])
 
     def source(self):
         """Return the first Token, if any, when going to the left from this context.
