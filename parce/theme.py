@@ -26,15 +26,16 @@ These properties can be used to colorize text according to a language
 definition.
 
 By default, the properties are read from a normal CSS (Cascading StyleSheets)
-file, although other storage backends could be devised.
+file and presented to the user of the Theme module through TextFormat objects,
+although other storage backends could be devised.
 
-A Theme provides CSS ``properties()`` for standard actions, and for three
+A Theme provides a ``textformat()`` for standard actions, and for three
 general situations: ``window()``, which denotes an editor window (or an
 encompassing DIV or PRE block in HTML), ``selection()``, which is used for
 selected text, and ``currentline()``, which can highlight the current line
 the cursor is in in an editor.
 
-From the properties returned by ``selection()`` and ``currentline()``, in
+From the TextFormat returned by ``selection()`` and ``currentline()``, in
 most cases only the background color will be used.
 
 The methods ``window()``, ``selection()`` and ``currentline()`` also accept a
@@ -55,23 +56,19 @@ To use a custom CSS theme file, load it using::
 
     >>> th = Theme('/path/to/my/custom.css')
 
-Get the CSS properties for an action, use e.g.::
+Get a TextFormat for an action, use e.g.::
 
-    >>> props = th.properties(String)
-    >>> props
+    >>> f = th.textformat(String)
+    >>> f
     <TextFormat color=Color(r=192, g=0, b=0, a=255)>
-
-A property value is a list of :py:class:`Value <parce.css.Value>` instances.
-As CSS colors can be specified in many different ways, you can call
-get_color() to get the color values in (r, g, b, a) format.
 
 
 Mapping actions to CSS classes
 ------------------------------
 
-Standard actions are mapped to a tuple of classes: the action itself and
-the actions it descends from. All CSS rules are combined, the one with
-the most matches comes first.
+Standard actions are mapped to a tuple of CSS class names: the action itself
+and the actions it descends from. All CSS rules are combined, the one with the
+most matches comes first.
 
 For example, Comment maps to the "comment" CSS class, and Number maps
 to ("literal", "number") because Number is a descendant action of Literal.
