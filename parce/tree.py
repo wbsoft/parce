@@ -776,13 +776,11 @@ class Context(list, Node):
             if context is start_token.parent:
                 i = start_trail[-1] # include start_token
             else:
-                ancestors = zip(start_token.ancestors(), reversed(start_trail))
+                ancestors = zip(start_token.ancestors(context), reversed(start_trail))
                 for p, i in ancestors:
                     yield p, slice(i, None)     # include start_token
                     break
                 for p, i in ancestors:
-                    if p is context:
-                        break
                     if i < len(p) - 1:
                         yield p, slice(i + 1, None)
                 i += 1
