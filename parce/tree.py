@@ -751,6 +751,50 @@ class Context(list, Node):
             i -= 1
             return self[i].find_token_before(pos) if self[i].is_context else self[i]
 
+    def context_ranges(self, start=0, end=None):
+        """Yield iterables of nodes to yield tokens from."""
+        if not self:
+            return  # empty
+        start_token = end_token = None
+        if end is not None and end < self.end:
+            if end <= start:
+                return
+            end_token, end_trail = self.find_token_left_with_trail(end)
+        if start:
+            start_token, start_trail = self.find_token_with_trail(start)
+        context = self
+        i = 0
+        if start_token:
+            if end_token:
+                context = start_token.common_ancestor(end_token)
+            if context is start_token.parent:
+                i = start_trail[-1] # include start_token
+            else:
+                ancestors = zip(start_token.ancestors(), reversed(start_trail))
+                for p, i in ancestors:
+                    yield p[i:]     # include start_token
+                    break
+                for p, i in ancestors:
+                    if p is context:
+                        break
+                    yield p[i+1:]
+                i += 1
+        if end_token:
+            if context is end_token.parent:
+                yield context[i:end_trail[-1]+1]    # include end_token
+            else:
+                for j, p in enumerate(end_token.ancestors(), 1):
+                    if p is context:
+                        break
+                yield context[i:end_trail[-j]]
+                p = context[end_trail[-j]]
+                for j in end_trail[1-j:-1]:
+                    yield p[:j]
+                    p = p[j]
+                yield p[:end_trail[-1]+1]   # include end_token
+        else:
+            yield context[i:]
+
     def tokens_range(self, start, end=None):
         """Yield all tokens that completely fill this text range.
 
