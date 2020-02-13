@@ -25,6 +25,7 @@ Various utility classes and functions.
 import re
 import codecs
 import functools
+import threading
 import weakref
 
 
@@ -138,9 +139,33 @@ class Dispatcher:
         return func
 
 
+def cached_method(func):
+    """Wrap a method and caches its return value.
+
+    The method argument tuple should be hashable. Keyword arguments are not
+    supported. The cache is tread-safe. Does not keep a reference to the
+    instance.
+
+    """
+    _cache = weakref.WeakKeyDictionary()
+    _lock = threading.Lock()
+    @functools.wraps(func)
+    def wrapper(self, *args):
+        try:
+            return _cache[self][args]
+        except KeyError:
+            with _lock:
+                try:
+                    return _cache[self][args]
+                except KeyError:
+                    v = _cache.setdefault(self, {})[args] = func(self, *args)
+                    return v
+    return wrapper
+
+
 def cached_property(func):
     """Like property, but caches the computed value."""
-    return property(functools.lru_cache()(func))
+    return property(cached_method(func))
 
 
 def abbreviate_repr(s, length=30):
