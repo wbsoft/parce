@@ -790,14 +790,12 @@ class Context(list, Node):
             if context is end_token.parent:
                 yield context, slice(i, end_trail[-1] + 1)    # include end_token
             else:
-                for j, p in enumerate(end_token.ancestors(), 1):
-                    if p is context:
-                        break
-                j = end_trail[-j]
-                if i < j:
-                    yield context, slice(i, j)
-                p = context[j]
-                for j in end_trail[1-j:-1]:
+                j = sum(-1 for _ in end_token.ancestors(context))
+                k = end_trail[j]
+                if i < k:
+                    yield context, slice(i, k)
+                p = context[k]
+                for j in end_trail[j+1:-1]:
                     if j:
                         yield p, slice(j)
                     p = p[j]
