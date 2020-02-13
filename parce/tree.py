@@ -803,17 +803,8 @@ class Context(list, Node):
         end is left to None, all tokens from start are yielded.
 
         """
-        if not self:
-            return  # empty
-        start_token = self.find_token(start) if start else self.first_token()
-        if end is None or end >= self.end:
-            yield from start_token.forward_including()
-            return
-        if start_token.end >= end:
-            yield start_token
-            return
-        end_token = self.find_token_left(end)
-        yield from start_token.forward_until_including(end_token)
+        for r in self.context_ranges(start, end):
+            yield from tokens(r)
 
     def source(self):
         """Return the first Token, if any, when going to the left from this context.
