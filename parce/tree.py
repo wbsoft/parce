@@ -753,12 +753,12 @@ class Context(list, Node):
         if end is not None and end < self.end:
             if end <= start:
                 return
-            end_token, end_trail = self.find_token_left_with_trail(end)
+            end_trail = self.find_token_left_with_trail(end)[1]
         else:
-            end_token, end_trail = None, []
+            end_trail = []
         if start > 0:
-            start_token, start_trail = self.find_token_with_trail(start)
-            if end_token:
+            start_trail = self.find_token_with_trail(start)[1]
+            if end_trail:
                 # find the youngest common ancestor
                 for n, (i, j) in enumerate(zip(start_trail, end_trail)):
                     if i != j or context[i].is_token:
@@ -768,7 +768,7 @@ class Context(list, Node):
                     del start_trail[:n]
                     del end_trail[:n]
         else:
-            start_token, start_trail = None, []
+            start_trail = []
         yield from context.slices(start_trail, end_trail)
 
     def slices(self, start_trail, end_trail):
