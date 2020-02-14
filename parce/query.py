@@ -387,7 +387,7 @@ class Query:
 
     @pquery
     def ancestors(self):
-        """Yield the anchestor contexts of every node."""
+        """Yield the ancestor contexts of every node."""
         for n in self:
             yield from n.ancestors()
 
