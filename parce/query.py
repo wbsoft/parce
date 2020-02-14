@@ -87,6 +87,12 @@ purposes, there are also the list(), pick(), count() and dump() methods.::
             print(atr)
 
 
+A query resolves to False if there is no single result::
+
+    if token.query.ancestors(LilyPond.header):
+        do_something() # the token is a descendant of a LilyPond.header context
+
+
 You can also directly instantiate a Query object for a list of nodes, if you
 want to query those in one go::
 
@@ -223,6 +229,12 @@ class Query:
         return cls(lambda: iter(nodes))
 
     # end points
+    def __bool__(self):
+        """Return True if there is at least one result."""
+        for n in self:
+            return True
+        return False
+
     def count(self):
         """Compute the length of the iterable."""
         return sum(1 for _ in self)
