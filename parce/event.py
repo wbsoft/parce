@@ -40,10 +40,12 @@ class EventHandler:
             yield from self.events(context, slice_)
 
     def events(self, context, slice_=None):
-        """Yield events for the tokens from the iterable of nodes.
+        """Yield events for the tokens from the context.
 
-        Calls ``context_start()`` and ``context_end()`` when a Context
-        starts resp. ends. Yields the result from ``token()`` for every Token.
+        A slice() can be given, which specifies the part of the context to
+        yield events from. Calls ``context_start()`` and ``context_end()`` when
+        a Context starts resp. ends. Yields the result from ``token()`` for
+        every Token.
 
         """
         nodes = context[slice_] if slice_ is not None else context
