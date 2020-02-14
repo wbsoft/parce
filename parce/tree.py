@@ -397,27 +397,15 @@ class Token(Node):
         yield self
         yield from self.backward(upto)
 
-    def forward_until(self, other):
-        """Yield all tokens between us and the other."""
-        if other.pos > self.pos:
-            context, trail_start, trail_end = self.common_ancestor_with_trail(other)
-            if context:
-                p = self.parent
-                for i in trail_start[:0:-1]:
-                    yield from tokens(p[i+1:])
-                    p = p.parent
-                yield from tokens(context[trail_start[0]+1:trail_end[0]])
-                node = context[trail_end[0]]
-                for i in trail_end[1:]:
-                    yield from tokens(node[:i])
-                    node = node[i]
-
     def forward_until_including(self, other):
-        """Like forward_until, but including self and other."""
-        yield self
+        """Yield all tokens starting with us and upto and including the other."""
         if other.pos > self.pos:
-            yield from self.forward_until(other)
-            yield other
+            context, start_trail, end_trail = self.common_ancestor_with_trail(other)
+            if context:
+                for context, slice_ in context.slices(start_trail, end_trail):
+                    yield from tokens(context[slice_])
+        else:
+            yield self
 
     def cut(self):
         """Remove this token and all tokens to the right from the tree."""
@@ -761,45 +749,66 @@ class Context(list, Node):
         """
         if not self:
             return  # empty
-        start_token = end_token = None
+        context = self
         if end is not None and end < self.end:
             if end <= start:
                 return
             end_token, end_trail = self.find_token_left_with_trail(end)
+        else:
+            end_token, end_trail = None, []
         if start > 0:
             start_token, start_trail = self.find_token_with_trail(start)
-        context = self
-        i = 0
-        if start_token:
             if end_token:
-                context = start_token.common_ancestor(end_token)
-            if context is start_token.parent:
-                i = start_trail[-1] # include start_token
-            else:
-                ancestors = zip(start_token.ancestors(context), reversed(start_trail))
-                for p, i in ancestors:
-                    yield p, slice(i, None)     # include start_token
-                    break
-                for p, i in ancestors:
+                # find the youngest common ancestor
+                for n, (i, j) in enumerate(zip(start_trail, end_trail)):
+                    if i != j or context[i].is_token:
+                        break
+                    context = context[i]
+                if n:
+                    del start_trail[:n]
+                    del end_trail[:n]
+        else:
+            start_token, start_trail = None, []
+        yield from context.slices(start_trail, end_trail)
+
+    def slices(self, start_trail, end_trail):
+        """Yield from the current context (context, slice) tuples.
+
+        ``start_trail`` and ``end_trail`` both are lists of indices that
+        point to descendant tokens of this context. The yielded slices
+        include these tokens.
+
+        """
+        if start_trail:
+            start = start_trail[0]
+            if len(start_trail) > 1:
+                ancestors = []
+                n = self[start]
+                for i in start_trail[1:]:
+                    ancestors.append((n, i))
+                    n = n[i]
+                yield ancestors[-1][0], slice(i, None) # include start token
+                for p, i in ancestors[-2::-1]:
                     if i < len(p) - 1:
                         yield p, slice(i + 1, None)
-                i += 1
-        if end_token:
-            if context is end_token.parent:
-                yield context, slice(i, end_trail[-1] + 1)    # include end_token
-            else:
-                j = sum(-1 for _ in end_token.ancestors(context))
-                k = end_trail[j]
-                if i < k:
-                    yield context, slice(i, k)
-                p = context[k]
-                for j in end_trail[j+1:-1]:
-                    if j:
-                        yield p, slice(j)
-                    p = p[j]
-                yield p, slice(end_trail[-1] + 1)   # include end_token
+                start += 1
         else:
-            yield context, slice(i, None)
+            start = 0
+        if end_trail:
+            end = end_trail[0]
+            if len(end_trail) == 1:
+                yield self, slice(start, end + 1)    # include end token
+            else:
+                if start < end:
+                    yield self, slice(start, end)
+                n = self[end]
+                for end in end_trail[1:-1]:
+                    if end:
+                        yield n, slice(end)
+                    n = n[end]
+                yield n, slice(end_trail[-1] + 1)   # include end token
+        else:
+            yield self, slice(start, None)
 
     def tokens_range(self, start, end=None):
         """Yield all tokens that completely fill this text range.
