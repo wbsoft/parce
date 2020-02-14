@@ -342,6 +342,7 @@ Here is a list of all the queries that navigate:
     :attr:`~Query.all`,
     :attr:`~Query.children`,
     :attr:`~Query.parent`,
+    :attr:`~Query.ancestors`,
     :attr:`~Query.next`,
     :attr:`~Query.previous`,
     :attr:`~Query.right`,
@@ -401,6 +402,9 @@ it easier in some cases to process the results:
     :meth:`~Query.pick_last`
         exhausts the query generator and returns the last result, or the
         default if there are no results.
+    :meth:`~Query.range`
+        returns the text range as a tuple (pos, end) the result set
+        encompasses
 
 Finally, there is one method that actually changes the tree:
 

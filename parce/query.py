@@ -32,8 +32,9 @@ initially yields just that object.
 
 You can navigate using `children`, `all`, `first`, `last`, `[n]`, `[n:n]`,
 `[n:n:n]`, `next`, `previous`, `right`, `left`, `right_siblings`,
-`left_siblings`, `map()`, and `parent`. Use `uniq` to remove double occurrences
-of nodes, which can e.g. happen when navigating to the parent of all nodes.
+`left_siblings`, `map()`, `parent` and `ancestors`. Use `uniq` to remove
+double occurrences of nodes, which can e.g. happen when navigating to the
+parent of all nodes.
 
 You can narrow down the search using `tokens`, `contexts`, `remove_ancestors`,
 `remove_descendants`, `slice()` and `filter()`.
@@ -102,7 +103,8 @@ Endpoint methods (some are mainly for debugging):
     :meth:`~Query.dump`,
     :meth:`~Query.list`,
     :meth:`~Query.pick`,
-    :meth:`~Query.pick_last` and
+    :meth:`~Query.pick_last`,
+    :meth:`~Query.range` and
     :meth:`~Query.delete`.
 
 
@@ -117,6 +119,7 @@ methods are implemented as properties, so you don't have to write parentheses.
     :attr:`~Query.all`,
     :attr:`~Query.children`,
     :attr:`~Query.parent`,
+    :attr:`~Query.ancestors`,
     :attr:`~Query.next`,
     :attr:`~Query.previous`,
     :attr:`~Query.right`,
@@ -245,6 +248,24 @@ class Query:
             pass
         return default
 
+    def range(self):
+        """Return the text range as a tuple (pos, end).
+
+        The ``pos`` is the lowest pos of the nodes in the current set, and
+        ``end`` is the highest end of the nodes.  If the result set is empty,
+        (-1, -1) is returned.
+
+        """
+        pos = end = -1
+        nodes = iter(self)
+        for n in nodes:
+            pos = n.pos
+            end = n.end
+            for n in nodes:
+                pos = min(pos, n.pos)
+                end = max(end, n.end)
+        return pos, end
+
     def delete(self):
         """Delete all selected nodes from their parents.
 
@@ -334,6 +355,25 @@ class Query:
         return innergen(self)
 
     @pquery
+    def alltokens(self):
+        """Shortcut for all.tokens."""
+        for n in self:
+            if n.is_token:
+                yield n
+            else:
+                yield from n.tokens()
+
+    @pquery
+    def allcontexts(self):
+        """Shortcut for all.contexts."""
+        def innergen(node):
+            for n in node:
+                if n.is_context:
+                    yield n
+                    yield from innergen(n)
+        return innergen(self)
+
+    @pquery
     def parent(self):
         """Yield the parent of every node.
 
@@ -344,6 +384,12 @@ class Query:
         for n in self:
             if n.parent:
                 yield n.parent
+
+    @pquery
+    def ancestors(self):
+        """Yield the anchestor contexts of every node."""
+        for n in self:
+            yield from n.ancestors()
 
     @pquery
     def first(self):
