@@ -820,11 +820,6 @@ class Context(list, Node):
         for context, slice_ in self.context_slices(start, end):
             yield from tokens(context[slice_])
 
-    def events_range(self, start=0, end=None):
-        """Yield events."""
-        for context, slice_ in self.context_slices(start, end):
-            yield from events(context, slice_)
-
     def source(self):
         """Return the first Token, if any, when going to the left from this context.
 
@@ -837,20 +832,6 @@ class Context(list, Node):
             if token.group:
                 token = token.group[0]
             return token
-
-
-def events(context, slice_=None):
-    """Yields events from the iterable of nodes."""
-    nodes = context[slice_] if slice_ is not None else context
-    pos = nodes[0].pos
-    end = nodes[-1].end
-    yield "context_start", pos, context
-    for n in nodes:
-        if n.is_token:
-            yield "token", n.pos, n
-        else:
-            yield from events(n)
-    yield "context_end", end, context
 
 
 def tokens(nodes):
