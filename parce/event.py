@@ -22,7 +22,7 @@
 Iterate over a tree using events.
 
 Makes it possible to detect context or language changes without
-having multiple tests or comparisons on every token.
+having multiple tests or comparisons on every node.
 
 """
 
