@@ -101,7 +101,7 @@ before the insertion position remain the same. When that is not the case, the
 parser goes even back further.
 
 And after the changed region, the old tokens are only reused in the case they
-have exactly the same anchestry. Typing a character that opens a new context of
+have exactly the same ancestry. Typing a character that opens a new context of
 course changes the meaning of the following text, and also that is handled
 correctly.
 
