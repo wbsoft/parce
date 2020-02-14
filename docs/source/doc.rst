@@ -127,7 +127,7 @@ The ``parce.Document`` class is in fact built from two base classes:
 ``TreeDocumentMixin`` from the :py:mod:`treedocument <parce.treedocument>` module.
 
 Using both base classes, it is not difficult to design a class that wraps an
-objext representing a text document in a GUI editor. You need only to provide
+object representing a text document in a GUI editor. You need only to provide
 two methods in your wrapper: ``text()`` to get all text, and
 ``_update_contents()`` to change the text programmatically. When the text is
 changed, AbstractDocument calls ``contents_changed``, which in
