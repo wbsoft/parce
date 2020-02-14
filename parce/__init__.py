@@ -134,14 +134,18 @@ def tokens(root_lexicon, text):
     return root(root_lexicon, text).tokens()
 
 
-def words(words):
-    """Return a Pattern matching any of the words.
+def words(words, prefix="", suffix=""):
+    r"""Return a Pattern matching any of the words.
 
     The returned Pattern builds an optimized regular expression matching any of
     the words contained in the `words` list.
 
+    A ``prefix`` or ``suffix`` can be given, which will be added to the regular
+    expression. Using the word boundary character ``\b`` as suffix is
+    recommended to be sure the match ends at a word end.
+
     """
-    return pattern.Words(words)
+    return pattern.Words(words, prefix, suffix)
 
 
 def char(chars, positive=True):
