@@ -37,18 +37,18 @@ class EventHandler:
     def events_range(self, tree, start=0, end=None):
         """Yield events from range."""
         for context, slice_ in tree.context_slices(start, end):
-            yield from self.events(context, slice_)
+            yield from self.events(context[slice_])
 
-    def events(self, context, slice_=None):
-        """Yield events for the tokens from the context.
+    def events(self, nodes):
+        """Yield events for the tokens from the list of nodes.
 
-        A slice() can be given, which specifies the part of the context to
-        yield events from. Calls ``context_start()`` and ``context_end()`` when
-        a Context starts resp. ends. Yields the result from ``token()`` for
-        every Token.
+        The ``nodes`` should have the same parent (``nodes`` may just be the
+        context.) Calls ``context_start()`` and ``context_end()`` when a
+        Context starts resp. ends. Yields the result from ``token()`` for every
+        Token.
 
         """
-        nodes = context[slice_] if slice_ is not None else context
+        context = nodes[0].parent
         pos = nodes[0].pos
         end = nodes[-1].end
         self.context_start(pos, context)
