@@ -49,17 +49,15 @@ class EventHandler:
 
         """
         context = nodes[0].parent
-        pos = nodes[0].pos
-        end = nodes[-1].end
-        self.context_start(pos, context)
+        self.context_start(context)
         for n in nodes:
             yield from self.token(n) if n.is_token else self.events(n)
-        self.context_end(end, context)
+        self.context_end(context)
 
-    def context_start(self, pos, context):
+    def context_start(self, context):
         """Called when a new context starts."""
 
-    def context_end(self, end, context):
+    def context_end(self, context):
         """Called when a new context ends."""
 
     def token(self, token):

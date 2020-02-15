@@ -169,48 +169,22 @@ class Theme:
         classes = css_classes(action)
         return self.TextFormat(self.style.select_class(*classes).properties())
 
-    def tokens_with_theme(self, tokens):
-        """Yield tuples(token, theme).
+    def tokens(self, formatter, slices):
+        """Yield tokens from the slices, calling the formatter if necessary.
 
-        The first tuple always yields a token and a theme. For a normal Theme,
-        the rest of the tokens is yielded with theme set to None.
-
-        For a MetaTheme, the ``theme`` is set whenever it changes. When a new
-        theme starts, the ``token`` may be None, which indicates that there
-        will be a (small) untokenized region in that theme. The ``theme`` is
-        None when it didn't change.
+        The ``slices`` argument is an iterable of (context, slice) tuples.
+        such as returned by Context.slices() and Context.context_slices().
+        In Theme, the formatter argument is unused.
 
         """
-        tokens = iter(tokens)
-        for t in tokens:
-            yield t, self
-            for t in tokens:
-                yield t, None
-
-    def format_ranges(self, tokens):
-        """Yield four-tuples TextFormatRange(pos, end, textformat, theme).
-
-        For a normal Theme, the ``theme`` is only set in the first four-tuple
-        and is identical to the theme itself.
-
-        For a MetaTheme, the ``theme`` is set whenever it changes. When a new
-        theme starts, the ``textformat`` may be None (and ``pos`` == ``end`` in
-        that case), which indicates an untokenized range in that theme.
-
-        The returned ``textformat`` (a TextFormat instance) originates from the
-        active theme.
-
-        You can safely ignore theme changes, but if you want to, you can use
-        the theme changes to render parts of a text that are in a certain
-        theme with that theme's own window properties (font, color, background
-        etc.).
-
-        """
-        tokens = iter(tokens)
-        for t in tokens:
-            yield TextFormatRange(t.pos, t.end, self.textformat(t.action), self)
-            for t in tokens:
-                yield TextFormatRange(t.pos, t.end, self.textformat(t.action), None)
+        def events(nodes):
+            for n in nodes:
+                if n.is_token:
+                    yield n
+                else:
+                    yield from events(n)
+        for context, slice_ in slices:
+            yield from events(context[slice_])
 
 
 class MetaTheme:
@@ -258,43 +232,35 @@ class MetaTheme:
         """Return the TextFormat for the specified action of the default theme."""
         return self.theme.textformat(action)
 
-    def tokens_with_theme(self, tokens):
-        """Yield tuples(token, theme).
+    def tokens(self, formatter, slices):
+        """Yield tokens, calling the formatter to set the correct theme.
 
-        See :meth:`Theme.tokens_with_theme` for documentation.
-
-        """
-        theme = None
-        for t, lang in tokens_with_language(tokens):
-            if lang:
-                newtheme = self.get_theme(lang)
-                if newtheme is not theme:
-                    theme = newtheme
-                    yield t, theme
-                    continue
-            if t:
-                yield t, None
-
-    def format_ranges(self, tokens):
-        """Yield four-tuples TextFormatRange(pos, end, textformat, theme).
-
-        See :meth:`Theme.format_ranges` for documentation.
+        The ``slices`` argument is an iterable of (context, slice) tuples.
+        such as returned by Context.slices() and Context.context_slices().
+        When a theme changes, formatter.switch_theme() is called for a new
+        context with that theme.
 
         """
-        tokens = self.tokens_with_theme(tokens)
-        for prev, theme in tokens:
-            yield TextFormatRange(prev.pos, prev.end, theme.textformat(prev.action), theme)
-            for t, newtheme in tokens:
-                if newtheme:
-                    theme = newtheme
-                    if t is None:
-                        yield TextFormatRange(prev.end, prev.end, None, theme)
-                    else:
-                        yield TextFormatRange(t.pos, t.end, theme.textformat(t.action), theme)
-                        prev = t
-                elif t:
-                    yield TextFormatRange(t.pos, t.end, theme.textformat(t.action), None)
-                    prev = t
+        def events(nodes, current_language, current_theme):
+            lang = nodes[0].parent.lexicon.language
+            if lang is not current_language:
+                theme = self.get_theme(lang)
+                if theme is not current_theme:
+                    with formatter.switch_theme(theme):
+                        for n in nodes:
+                            if n.is_token:
+                                yield n
+                            else:
+                                yield from events(n, lang, theme)
+                    return
+            for n in nodes:
+                if n.is_token:
+                    yield n
+                else:
+                    yield from events(n, language, current_theme)
+        lang = tree.lexicon.language
+        for context, slice_ in slices:
+            yield from events(context[slice_], lang, self)
 
 
 class TextFormat:
@@ -633,38 +599,4 @@ def css_classes(action):
     """Return a tuple of lower-case CSS class names for the specified standard action."""
     return tuple(a._name.lower() for a in action)
 
-
-def tokens_with_language(tokens):
-    """Yield two-tuples(token, language).
-
-    The language is the language the token belongs to. If token is None, the
-    language changes right after the last token and there is some untokenized
-    range before the text token. If language is None, there is no language
-    change. The first token will always be yielded with its language.
-
-    This function can be used to highlight tokens with a theme that depends on
-    the current language.
-
-    """
-    tokens = iter(tokens)
-    for prev in tokens:
-        lang = prev.parent.lexicon.language
-        yield prev, lang
-        for t in tokens:
-            newlang = t.parent.lexicon.language
-            if newlang is lang:
-                yield t, None
-            else:
-                if t.pos > prev.end:
-                    p = prev.common_ancestor(t)
-                    if p.lexicon.language is not lang:
-                        yield None, p.lexicon.language
-                    if p.lexicon.language is newlang:
-                        yield t, None
-                    else:
-                        yield t, newlang
-                else:
-                    yield t, newlang
-                lang = newlang
-            prev = t
 
