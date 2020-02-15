@@ -169,12 +169,15 @@ class Theme:
         classes = css_classes(action)
         return self.TextFormat(self.style.select_class(*classes).properties())
 
-    def tokens(self, formatter, slices):
-        """Yield tokens from the slices, calling the formatter if necessary.
+    def tokens(self, theme_context, slices):
+        """Yield tokens from the slices, calling ``theme_context`` if necessary.
 
         The ``slices`` argument is an iterable of (context, slice) tuples.
         such as returned by Context.slices() and Context.context_slices().
-        In Theme, the formatter argument is unused.
+        When a theme changes, ``theme_context()`` is called with the theme
+        for a new context with that theme (``theme_context(theme)`` should
+        return a context manager). In Theme, the ``theme_context`` argument
+        is unused.
 
         """
         def events(nodes):
@@ -202,7 +205,7 @@ class MetaTheme:
         """Return the theme for the language.
 
         If the exact language was not found, the base classes of the Language are
-        tried. If still no luck, the default theme is returned.
+        tried. If still no luck, self is returned.
 
         """
         try:
@@ -214,7 +217,7 @@ class MetaTheme:
                 return self.themes[lang]
             except KeyError:
                 pass
-        return self.theme
+        return self
 
     def window(self, state="default"):
         """Return the window TextFormat for the state of the default theme."""
@@ -232,13 +235,14 @@ class MetaTheme:
         """Return the TextFormat for the specified action of the default theme."""
         return self.theme.textformat(action)
 
-    def tokens(self, formatter, slices):
-        """Yield tokens, calling the formatter to set the correct theme.
+    def tokens(self, theme_context, slices):
+        """Yield tokens, calling theme_context() to set the correct theme.
 
         The ``slices`` argument is an iterable of (context, slice) tuples.
         such as returned by Context.slices() and Context.context_slices().
-        When a theme changes, formatter.switch_theme() is called for a new
-        context with that theme.
+        When a theme changes, ``theme_context()`` is called with the theme
+        for a new context with that theme (``theme_context(theme)`` should
+        return a context manager).
 
         """
         def events(nodes, current_language, current_theme):
@@ -246,7 +250,7 @@ class MetaTheme:
             if lang is not current_language:
                 theme = self.get_theme(lang)
                 if theme is not current_theme:
-                    with formatter.switch_theme(theme):
+                    with theme_context(theme):
                         for n in nodes:
                             if n.is_token:
                                 yield n
