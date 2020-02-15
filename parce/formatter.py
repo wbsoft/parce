@@ -131,7 +131,7 @@ class Formatter:
 
     @util.cached_method
     def currentline(self, state="default"):
-        """Return out textformat for the current line."""
+        """Return our textformat for the current line."""
         return self._factory(self._theme.currentline(state))
 
     def format_cache(self, theme):
