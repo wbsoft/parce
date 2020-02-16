@@ -30,6 +30,10 @@ from parce import *
 from . import lilypond_words
 
 
+SKIP_WHITESPACE = (r"\s+", skip)
+
+RE_FRACTION = r"\d+/\d+"
+
 RE_LILYPOND_ID_RIGHT_BOUND = r"(?![_-]?[^\W\d])"
 RE_LILYPOND_ID = r"[^\W\d_]+(?:[_-][^\W\d_]+)*"
 RE_LILYPOND_VARIABLE = RE_LILYPOND_ID + RE_LILYPOND_ID_RIGHT_BOUND
@@ -43,8 +47,14 @@ RE_LILYPOND_DYNAMIC = (
     r"|cresc|decresc|dim|cr|decr"
     r")(?![A-Za-z])")
 
+RE_LILYPOND_DURATION = \
+    r"(\\(maxima|longa|breve)\b|(1|2|4|8|16|32|64|128|256|512|1024|2048)(?!\d))"
+
 
 # Standard actions used here:
+Duration = Number.Duration
+Duration.Dot
+Duration.Scaling
 Dynamic = Name.Command.Dynamic
 LyricText = Text.LyricText
 
@@ -124,6 +134,8 @@ class LilyPond(Language):
         yield r"<<", Delimiter.OpenBrace, cls.simultaneous
         yield r"<", Delimiter.OpenChord, cls.chord
         yield r"\{", Delimiter.OpenBrace, cls.sequential
+        yield RE_FRACTION, Number
+        yield RE_LILYPOND_DURATION, Duration, cls.duration_dots
         # TODO: find special commands like \relative, \repeat, \key, \time
         yield RE_LILYPOND_DYNAMIC, Dynamic
         yield RE_LILYPOND_COMMAND, Name.Command
@@ -146,16 +158,31 @@ class LilyPond(Language):
         """A < chord > construct."""
         yield r">", Delimiter.CloseChord, -1
 
+    # ------------------ duration ------------------------
+    @lexicon
+    def duration_dots(cls):
+        """ zero or more dots after a duration. """
+        yield SKIP_WHITESPACE
+        yield r'\.', Duration.Dot
+        yield default_target, cls.duration_scaling
+
+    @lexicon
+    def duration_scaling(cls):
+        """ * n / m after a duration. """
+        yield SKIP_WHITESPACE
+        yield from cls.comments()
+        yield r"(\*)\s*(\d+(?:/\d+)?)", bygroup(Duration, Duration.Scaling)
+        yield default_target, -2
+
 
     # --------------------- lyrics -----------------------
     # -------------------- base stuff --------------------
     @classmethod
     def base(cls):
         """Find comment, string and scheme."""
-        yield r'%\{', Comment, cls.multiline_comment
-        yield r'%', Comment, cls.singleline_comment
         yield r'"', String, cls.string
         yield r'[#$]', Delimiter.SchemeStart, cls.get_scheme_target()
+        yield from cls.comments()
 
     @classmethod
     def common(cls):
@@ -177,8 +204,7 @@ class LilyPond(Language):
         yield RE_LILYPOND_COMMAND, cls.get_markup_action(), cls.get_markup_target()
         yield r'"', String, -1, cls.string
         yield r'[#$]', Delimiter.SchemeStart, -1, cls.get_scheme_target()
-        yield r'%\{', Comment, cls.multiline_comment
-        yield r'%', Comment, cls.singleline_comment
+        yield from cls.comments()
         yield RE_LILYPOND_MARKUP_TEXT, Text, -1
 
     @classmethod
@@ -239,6 +265,11 @@ class LilyPond(Language):
         yield default_action, String
 
     # -------------- Comment ---------------------
+    @classmethod
+    def comments(cls):
+        yield r'%\{', Comment, cls.multiline_comment
+        yield r'%', Comment, cls.singleline_comment
+
     @lexicon
     def multiline_comment(cls):
         yield r'%}', Comment, -1
