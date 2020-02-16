@@ -152,7 +152,8 @@ class Formatter:
         """Return a FormatCache for the Theme.
 
         The FormatCache caches the converted textformat, optionally taking
-        the default window style into account.
+        the default window style into account.  And the Formatter caches the
+        FormatCaches :-)
 
         """
         try:
