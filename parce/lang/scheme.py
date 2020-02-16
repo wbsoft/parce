@@ -118,7 +118,7 @@ class SchemeLily(Scheme):
 
     @classmethod
     def common(cls):
-        yield from super().common()
         from . import lilypond
         yield r"#{", Delimiter.LilyPond, lilypond.LilyPond.schemelily
+        yield from super().common()
 
