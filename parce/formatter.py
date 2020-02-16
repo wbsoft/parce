@@ -52,10 +52,9 @@ FormatRange = collections.namedtuple("FormatRange", "pos end textformat")
 class FormatCache:
     """A FormatCache caches conversions from TextFormat to something else.
 
-    It can keep a window() TextFormat into account for secondary themes
-    (themes that are invoked on a per-language basis), and it can adjust
-    the formats for the sub-themed tokens with the window() format for
-    that theme.
+    It can keep a window() TextFormat into account for sub-themes (themes
+    that are invoked on a per-language basis), and it can adjust the formats
+    for the sub-themed tokens with the window() format for that theme.
 
     The factory that was given to the Formatter is used by the FormatCache to
     convert the TextFormat of the theme to something used by the formatter.
@@ -66,9 +65,9 @@ class FormatCache:
     the FormatCache it uses.
 
     """
-    def __init__(self, theme, factory, secondary=True):
+    def __init__(self, theme, factory, add_window=True):
         """Caches conversions from TextFormat to something else."""
-        if secondary:
+        if add_window:
             window = theme.window()
             self.window = factory(window)
             self._format = lambda action: factory(window + theme.textformat(action))
@@ -115,13 +114,10 @@ class Formatter:
     """A Formatter is used to format or highlight text according to a theme.
 
     Supply the theme, and an optional factory that converts a TextFormat
-    to something else.  If you set ``secondary_subthemes`` to True (the default),
-    TextFormats of subthemes will be mixed with their window() attributes.
-    If you set ``secondary_subthemes`` to False, the textformats of subthemes
-    will not be altered.
+    to something else.
 
     """
-    def __init__(self, theme, factory=None, secondary_subthemes=True):
+    def __init__(self, theme, factory=None):
         self._lock = threading.Lock()   # lock for FormatCaches
         self._theme = theme
         self._factory = factory or (lambda f: f)
@@ -163,8 +159,9 @@ class Formatter:
                 try:
                     return self._caches[theme]
                 except KeyError:
+                    add_window = self.theme().get_add_window(theme)
                     c = self._caches[theme] = FormatCache(
-                            theme, self.factory, self.secondary_subthemes)
+                                    theme, self.factory, add_window)
                 return c
 
     def format_ranges(self, slices):

@@ -194,15 +194,24 @@ class MetaTheme:
     """A Theme that encapsulates a default Theme and per-language sub-Themes."""
     def __init__(self, theme):
         """Instantiate with default theme."""
-        self.theme = theme
-        self.themes = {}
+        self._theme = theme
+        self._themes = {}
+        self._add_window = {theme: False}
 
-    def add_theme(self, language, theme):
-        """Add a specific Theme for the specified Language."""
-        self.themes[language] = theme
+    def add_theme(self, language, theme, add_window=False):
+        """Add a specific Theme for the specified Language.
+
+        If ``add_window`` is set to True, the formatter will render text from
+        the specified language with its own ``window`` default style added to
+        all formats. A formatter will also need to take care to render
+        untokenized ranges with the ``window()`` style of the sub-theme.
+
+        """
+        self._themes[language] = theme
+        self._add_window[theme] = add_window
 
     def get_theme(self, language):
-        """Return the theme for the language.
+        """Return the tuple(theme, add_window) for the language.
 
         If the exact language was not found, the base classes of the Language are
         tried. If still no luck, self is returned.
@@ -218,6 +227,10 @@ class MetaTheme:
             except KeyError:
                 pass
         return self
+
+    def get_add_window(self, theme):
+        """Return the ``add_window`` value that was set when adding this sub-theme."""
+        return self._add_window.get(theme, False)
 
     def window(self, state="default"):
         """Return the window TextFormat for the state of the default theme."""
