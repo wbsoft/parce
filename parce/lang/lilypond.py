@@ -36,17 +36,29 @@ RE_LILYPOND_VARIABLE = RE_LILYPOND_ID + RE_LILYPOND_ID_RIGHT_BOUND
 RE_LILYPOND_COMMAND = r"\\(" + RE_LILYPOND_ID + ")" + RE_LILYPOND_ID_RIGHT_BOUND
 RE_LILYPOND_MARKUP_TEXT = r'[^{}"\\\s#%]+'
 
+RE_LILYPOND_DYNAMIC = (
+    r"\\[<!>]|"
+    r"\\(f{1,5}|p{1,5}"
+    r"|mf|mp|fp|spp?|sff?|sfz|rfz"
+    r"|cresc|decresc|dim|cr|decr"
+    r")(?![A-Za-z])")
+
+
+# Standard actions used here:
+Dynamic = Name.Command.Dynamic
+LyricText = Text.LyricText
+
 
 class LilyPond(Language):
 
     @lexicon
     def root(cls):
         """Toplevel LilyPond document."""
-        yield from cls.common()
         yield from cls.blocks()
         yield RE_LILYPOND_VARIABLE, Name.Variable, cls.varname
         yield "=", Operator.Assignment
         yield r"\\version\b", Keyword
+        yield from cls.music()
 
     @classmethod
     def blocks(cls):
@@ -87,6 +99,7 @@ class LilyPond(Language):
     def layout(cls):
         yield r'\}', Delimiter.CloseBrace, -1
         yield r"(\\context)\s*(\{)", bygroup(Keyword, Delimiter.OpenBrace), cls.layout_context
+        yield from cls.music()
         yield from cls.base()
 
     @lexicon
@@ -104,7 +117,38 @@ class LilyPond(Language):
         yield "=", Operator.Assignment
         yield from cls.base()
 
+    # ------------------ music ----------------------
+    @classmethod
+    def music(cls):
+        """Musical items."""
+        yield r"<<", Delimiter.OpenBrace, cls.simultaneous
+        yield r"<", Delimiter.OpenChord, cls.chord
+        yield r"\{", Delimiter.OpenBrace, cls.sequential
+        # TODO: find special commands like \relative, \repeat, \key, \time
+        yield RE_LILYPOND_DYNAMIC, Dynamic
+        yield RE_LILYPOND_COMMAND, Name.Command
+        yield from cls.common()
 
+    @lexicon
+    def sequential(cls):
+        """A { } construct."""
+        yield r"\}", Delimiter.CloseBrace, -1
+        yield from cls.music()
+
+    @lexicon
+    def simultaneous(cls):
+        """A << >> construct."""
+        yield r">>", Delimiter.CloseBrace, -1
+        yield from cls.music()
+
+    @lexicon
+    def chord(cls):
+        """A < chord > construct."""
+        yield r">", Delimiter.CloseChord, -1
+
+
+    # --------------------- lyrics -----------------------
+    # -------------------- base stuff --------------------
     @classmethod
     def base(cls):
         """Find comment, string and scheme."""
