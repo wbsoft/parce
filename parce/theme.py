@@ -218,12 +218,12 @@ class MetaTheme:
 
         """
         try:
-            return self.themes[language]
+            return self._themes[language]
         except KeyError:
             pass
         for lang in language.mro()[:-2]:    # don't test Language and object
             try:
-                return self.themes[lang]
+                return self._themes[lang]
             except KeyError:
                 pass
         return self
@@ -234,19 +234,19 @@ class MetaTheme:
 
     def window(self, state="default"):
         """Return the window TextFormat for the state of the default theme."""
-        return self.theme.window(state)
+        return self._theme.window(state)
 
     def selection(self, state="default"):
         """Return the selection TextFormat for the state of the default theme."""
-        return self.theme.selection(state)
+        return self._theme.selection(state)
 
     def currentline(self, state="default"):
         """Return the currentline TextFormat for the state of the default theme."""
-        return self.theme.currentline(state)
+        return self._theme.currentline(state)
 
     def textformat(self, action):
         """Return the TextFormat for the specified action of the default theme."""
-        return self.theme.textformat(action)
+        return self._theme.textformat(action)
 
     def tokens(self, theme_context, slices):
         """Yield tokens, calling theme_context() to set the correct theme.
@@ -274,8 +274,8 @@ class MetaTheme:
                 if n.is_token:
                     yield n
                 else:
-                    yield from events(n, language, current_theme)
-        lang = tree.lexicon.language
+                    yield from events(n, current_language, current_theme)
+        lang = None
         for context, slice_ in slices:
             yield from events(context[slice_], lang, self)
 

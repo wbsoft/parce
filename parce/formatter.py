@@ -88,18 +88,21 @@ class FormatContext:
     used is the ``switch_theme()`` context manager method, which is called by
     the ``tokens()`` method of MetaTheme.
 
+    The default Formatter uses the ``window`` property and ``format`` method
+    to get the window style for the current theme and the factory that turns
+    a standard action if the format we want.
+
     """
     def __init__(self, formatter):
-        self.formatter = formatter
-        t = formatter.theme()
-        c = self.cache = formatter.format_cache(t)
+        self._formatter = formatter
+        c = self.cache = formatter.format_cache(formatter.theme())
         self.window = c.window
         self.format = c.format
 
     @contextlib.contextmanager
     def switch_theme(self, theme):
         old = self.cache
-        c = self.cache = self.formatter.format_cache(theme)
+        c = self.cache = self._formatter.format_cache(theme)
         self.window = c.window
         self.format = c.format
         try:
@@ -161,7 +164,7 @@ class Formatter:
                 except KeyError:
                     add_window = self.theme().get_add_window(theme)
                     c = self._caches[theme] = FormatCache(
-                                    theme, self.factory, add_window)
+                                    theme, self._factory, add_window)
                 return c
 
     def format_ranges(self, slices):
@@ -169,16 +172,21 @@ class Formatter:
 
         The ``format`` is the value returned by Theme.textformat() for the
         token's action, converted by our factory (and cached of course).
+        Ranges with a TextFormat for which our factory returns None are
+        skipped.
 
         """
-        end = sys.maxsize
         c = FormatContext(self)
-        for t in self._theme.tokens(c.switch_theme, slices):
-            if t.pos > end and c.window is not None:
-                # if a sub-language is active, draw its background
-                yield FormatRange(end, t.pos, c.window)
-            yield FormatRange(t.pos, t.end, c.format(t.action))
-            end = t.end
-
+        def stream():
+            end = sys.maxsize
+            for t in self._theme.tokens(c.switch_theme, slices):
+                if t.pos > end and c.window is not None:
+                    # if a sub-language is active, draw its background
+                    yield end, t.pos, c.window
+                f = c.format(t.action)
+                if f is not None:
+                    yield t.pos, t.end, f
+                end = t.end
+        yield from util.merge_adjacent(stream(), FormatRange)
 
 
