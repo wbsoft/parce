@@ -856,6 +856,6 @@ def tokens_bw(nodes):
         if n.is_token:
             yield n
         else:
-            yield from tokens_bw(n)
+            yield from tokens_bw(reversed(n))
 
 
