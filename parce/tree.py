@@ -778,6 +778,9 @@ class Context(list, Node):
         point to descendant tokens of this context. The yielded slices
         include these tokens.
 
+        The yielded slices will never be empty, in that case this method
+        will skip them.
+
         """
         if start_trail:
             start = start_trail[0]
@@ -807,7 +810,7 @@ class Context(list, Node):
                         yield n, slice(end)
                     n = n[end]
                 yield n, slice(end_trail[-1] + 1)   # include end token
-        else:
+        elif start < len(self):
             yield self, slice(start, None)
 
     def tokens_range(self, start, end=None):
