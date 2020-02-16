@@ -2,6 +2,18 @@ ChangeLog of the Python parce package
 =====================================
 
 
+2020-02-16: parce-0.6.0
+
+- Large improvements in theme module, MetaTheme working well
+- MetaTheme can render embedded themes with their own window style
+- Added formatter module to format/highlight/colorize text using a Theme
+- More queries in query module, and a query evaluates to False when no results
+- Smart Context.context_slices method that yields slices of nodes per-context
+  for every range. When processing the nodes from each slice we know they
+  originated in the same lexicon and language.
+- Documentation improvements, better cross-linking
+
+
 2020-02-07: parce-0.5.0
 
 - Added CSS module to parse and use stylesheets, using CSS lang def
