@@ -24,6 +24,15 @@ The Formatter uses a Theme to highlight text according to the token's
 When a MetaTheme is used, a Formatter is capable of switching Theme
 as the MetaTheme provides a special theme for a certain embedded language.
 
+All kinds of text formatting and/or highlighting can be implemented by using
+or inheriting of Formatter. If you need to convert the TextFormats from the
+theme to something else, you can provide a factory to Formatter to do that.
+
+If you need more special behaviour, you can inherit from Formatter and
+reimplement ``format_ranges()``, to do other things or to use a different
+FormatContext.
+
+
 """
 
 
@@ -48,24 +57,29 @@ class FormatCache:
     the formats for the sub-themed tokens with the window() format for
     that theme.
 
+    The factory that was given to the Formatter is used by the FormatCache to
+    convert the TextFormat of the theme to something used by the formatter.
+
+    A Formatter keeps a FormatCache for its theme, and in the case of a
+    MetaTheme, a FormatCache is used for every sub-theme. The FormatContext
+    is used to switch theme, and in its default implementation it switches
+    the FormatCache it uses.
+
     """
-    window = None
     def __init__(self, theme, factory, secondary=True):
         """Caches conversions from TextFormat to something else."""
-        self.factory = factory
-        self.theme = theme
-        self.secondary = secondary
         if secondary:
-            self.window = factory(theme.window())
+            window = theme.window()
+            self.window = factory(window)
+            self._format = lambda action: factory(window + theme.textformat(action))
+        else:
+            self.window = None
+            self._format = lambda action: factory(theme.textformat(action))
 
     @util.cached_method
     def format(self, action):
-        if self.secondary:
-            f = self.theme.window()
-            f += self.theme.textformat(action)
-        else:
-            f = self.theme.textformat(action)
-        return self.factory(f)
+        """Return our text format for the action, caching it for later reuse."""
+        return self._format(action)
 
 
 class FormatContext:
@@ -137,7 +151,8 @@ class Formatter:
     def format_cache(self, theme):
         """Return a FormatCache for the Theme.
 
-        This is used when a sub-theme from a MetaTheme is used.
+        The FormatCache caches the converted textformat, optionally taking
+        the default window style into account.
 
         """
         try:
