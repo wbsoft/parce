@@ -241,7 +241,7 @@ def build_regexp(r):
 def make_charclass(chars):
     """Return a string with adjacent characters grouped.
 
-    eg ('a', 'b', 'c', 'd', 'f') is turned into '[a-df]'.
+    eg ('a', 'b', 'c', 'd', 'f') is turned into 'a-df'.
     Special characters are properly escaped.
 
     """
