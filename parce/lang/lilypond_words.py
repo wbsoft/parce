@@ -182,3 +182,39 @@ markupcommands_nargs = (
 )
 
 markupcommands = sum(markupcommands_nargs, ())
+
+contexts = (
+    'ChoirStaff',
+    'ChordNames',
+    'CueVoice',
+    'Devnull',
+    'DrumStaff',
+    'DrumVoice',
+    'Dynamics',
+    'FiguredBass',
+    'FretBoards',
+    'Global',
+    'GrandStaff',
+    'GregorianTranscriptionStaff',
+    'GregorianTranscriptionVoice',
+    'KievanStaff', # since 2.16
+    'KievanVoice', # since 2.16
+    'Lyrics',
+    'MensuralStaff',
+    'MensuralVoice',
+    'NoteNames',
+    'NullVoice',     # since 2.18
+    'PetrucciStaff', # since 2.16
+    'PetrucciVoice', # since 2.16
+    'PianoStaff',
+    'RhythmicStaff',
+    'Score',
+    'Staff',
+    'StaffGroup',
+    'TabStaff',
+    'TabVoice',
+    'Timing',
+    'VaticanaStaff',
+    'VaticanaVoice',
+    'Voice',
+)

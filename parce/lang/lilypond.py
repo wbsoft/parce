@@ -25,8 +25,9 @@ Parser for LilyPond syntax.
 
 import re
 
-
 from parce import *
+
+from . import lilypond_words
 
 
 RE_LILYPOND_ID_RIGHT_BOUND = r"(?![_-]?[^\W\d])"
@@ -78,16 +79,29 @@ class LilyPond(Language):
     @lexicon
     def paper(cls):
         yield r'\}', Delimiter.CloseBrace, -1
+        yield RE_LILYPOND_VARIABLE, Name.Variable, cls.varname
+        yield "=", Operator.Assignment
         yield from cls.base()
 
     @lexicon
     def layout(cls):
         yield r'\}', Delimiter.CloseBrace, -1
+        yield r"(\\context)\s*(\{)", bygroup(Keyword, Delimiter.OpenBrace), cls.layout_context
         yield from cls.base()
 
     @lexicon
     def midi(cls):
         yield r'\}', Delimiter.CloseBrace, -1
+        yield r"(\\context)\s*(\{)", bygroup(Keyword, Delimiter.OpenBrace), cls.layout_context
+        yield from cls.base()
+
+    @lexicon
+    def layout_context(cls):
+        r"""Contents of \layout or \midi { \context { } } or \with. { }."""
+        yield r'\}', Delimiter.CloseBrace, -1
+        yield words(lilypond_words.contexts, prefix=r"\\", suffix=r"\b"), Name.Class
+        yield RE_LILYPOND_VARIABLE, Name.Variable, cls.varname
+        yield "=", Operator.Assignment
         yield from cls.base()
 
 
@@ -134,7 +148,6 @@ class LilyPond(Language):
     @classmethod
     def get_markup_argument_count(cls, command):
         """Return the number of arguments the markup command (without \\) expects."""
-        from . import lilypond_words
         for i in range(5):
             if command in lilypond_words.markupcommands_nargs[i]:
                 return i
@@ -153,7 +166,6 @@ class LilyPond(Language):
     def get_markup_action(cls):
         """Get the action for a command in \markup { }."""
         def test(m):
-            from . import lilypond_words
             text = m.group(m.lastindex + 1)
             return text in lilypond_words.markupcommands
         return bymatch(test, Name.Function, Name.Function.Markup)
