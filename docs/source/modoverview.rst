@@ -8,7 +8,6 @@ Overview of all modules
    action.rst
    css.rst
    document.rst
-   event.rst
    formatter.rst
    language.rst
    lexicon.rst
