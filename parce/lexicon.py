@@ -157,7 +157,8 @@ class Lexicon:
                     yield pos, text[pos:], None, default_action
             elif default_target:
                 def parse(text, pos):
-                    yield (pos, "", None, None, *default_target)
+                    if pos < len(text):
+                        yield (pos, "", None, None, *default_target)
             else:
                 # just quits parsing
                 def parse(text, pos):
@@ -193,7 +194,8 @@ class Lexicon:
                         while needle == text[pos:pos+l]:
                             yield (pos, needle, None, *action_target)
                             pos += l
-                        yield (pos, "", None, None, *default_target)
+                        if pos < len(text):
+                            yield (pos, "", None, None, *default_target)
                 else:
                     def parse(text, pos):
                         """Parse text, skipping unknown text."""
@@ -232,7 +234,8 @@ class Lexicon:
                         yield (pos, m.group(), m, *index[m.lastindex])
                         pos = m.end()
                     else:
-                        yield (pos, "", None, None, *default_target)
+                        if pos < len(text):
+                            yield (pos, "", None, None, *default_target)
                         break
         else:
             def parse(text, pos):
