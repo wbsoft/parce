@@ -47,11 +47,19 @@ RE_LILYPOND_DYNAMIC = (
     r"|cresc|decresc|dim|cr|decr"
     r")(?![A-Za-z])")
 
+RE_LILYPOND_REST = r"[rRs](?![A-Za-z])"
+RE_LILYPOND_PITCH = r"[a-z](?:(?:-(?:sharp|flat){1,2})|[a-zé]+)?(?![A-Za-z])"
+
 RE_LILYPOND_DURATION = \
     r"(\\(maxima|longa|breve)\b|(1|2|4|8|16|32|64|128|256|512|1024|2048)(?!\d))"
 
 
 # Standard actions used here:
+Rest = Name.Rest
+Pitch = Name.Pitch
+Octave = Pitch.Octave
+OctaveCheck = Pitch.Octave.Check
+Accidental = Pitch.Accidental
 Duration = Number.Duration
 Duration.Dot
 Duration.Scaling
@@ -134,6 +142,8 @@ class LilyPond(Language):
         yield r"<<", Delimiter.OpenBrace, cls.simultaneous
         yield r"<", Delimiter.OpenChord, cls.chord
         yield r"\{", Delimiter.OpenBrace, cls.sequential
+        yield RE_LILYPOND_REST, Rest
+        yield RE_LILYPOND_PITCH, Pitch, cls.pitch
         yield RE_FRACTION, Number
         yield RE_LILYPOND_DURATION, Duration, cls.duration_dots
         # TODO: find special commands like \relative, \repeat, \key, \time
@@ -157,6 +167,15 @@ class LilyPond(Language):
     def chord(cls):
         """A < chord > construct."""
         yield r">", Delimiter.CloseChord, -1
+
+    # ------------------ pitch --------------------------
+    @lexicon
+    def pitch(cls):
+        yield r",+|'+", Octave
+        yield r"[?!]", Accidental
+        yield r"=(,+|'+)?", OctaveCheck, -1
+        yield SKIP_WHITESPACE
+        yield default_target, -1
 
     # ------------------ duration ------------------------
     @lexicon
