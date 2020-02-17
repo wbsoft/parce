@@ -58,13 +58,20 @@ RE_LILYPOND_DURATION = \
 Rest = Name.Rest
 Pitch = Name.Pitch
 Octave = Pitch.Octave
-OctaveCheck = Pitch.Octave.Check
+OctaveCheck = Pitch.Octave.OctaveCheck
 Accidental = Pitch.Accidental
 Duration = Number.Duration
 Duration.Dot
 Duration.Scaling
 Dynamic = Name.Command.Dynamic
 LyricText = Text.LyricText
+Spanner = Delimiter.Spanner
+Spanner.Slur
+Spanner.Ligature
+Spanner.Tie
+Direction = Delimiter.Direction
+Script = Char.Script
+Fingering = Number.Fingering
 
 
 class LilyPond(Language):
@@ -139,9 +146,17 @@ class LilyPond(Language):
     @classmethod
     def music(cls):
         """Musical items."""
+        yield from cls.common()
         yield r"<<", Delimiter.OpenBrace, cls.simultaneous
         yield r"<", Delimiter.OpenChord, cls.chord
         yield r"\{", Delimiter.OpenBrace, cls.sequential
+        yield r"\\\\", Delimiter.VoiceSeparator
+        yield r"\\[\[\]]", Spanner.Ligature
+        yield r"[\[\]]", Spanner.Beam
+        yield r"\\[()]", Spanner.Slur.Phrasing
+        yield r"[()]", Spanner.Slur
+        yield r"~", Spanner.Tie
+        yield r"[-_^]", Direction, cls.script
         yield RE_LILYPOND_REST, Rest
         yield RE_LILYPOND_PITCH, Pitch, cls.pitch
         yield RE_FRACTION, Number
@@ -149,7 +164,6 @@ class LilyPond(Language):
         # TODO: find special commands like \relative, \repeat, \key, \time
         yield RE_LILYPOND_DYNAMIC, Dynamic
         yield RE_LILYPOND_COMMAND, Name.Command
-        yield from cls.common()
 
     @lexicon
     def sequential(cls):
@@ -167,6 +181,13 @@ class LilyPond(Language):
     def chord(cls):
         """A < chord > construct."""
         yield r">", Delimiter.CloseChord, -1
+
+    # ------------------ script -------------------------
+    @lexicon
+    def script(cls):
+        yield r"[+|!>._^-]", Script, -1
+        yield r"\d+", Fingering, -1
+        yield default_target, -1
 
     # ------------------ pitch --------------------------
     @lexicon
