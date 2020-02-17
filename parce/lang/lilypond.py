@@ -162,6 +162,8 @@ class LilyPond(Language):
         yield RE_FRACTION, Number
         yield RE_LILYPOND_DURATION, Duration, cls.duration_dots
         # TODO: find special commands like \relative, \repeat, \key, \time
+        yield r"(\\key)\b(?:\s+("+RE_LILYPOND_PITCH+"))?", bygroup(Keyword, Pitch)
+        yield r"(\\clef)(?:\s+([a-z]+))?(?![a-zA-Z])", bygroup(Keyword, Name.Class)
         yield RE_LILYPOND_DYNAMIC, Dynamic
         yield RE_LILYPOND_COMMAND, Name.Command
 
@@ -181,6 +183,7 @@ class LilyPond(Language):
     def chord(cls):
         """A < chord > construct."""
         yield r">", Delimiter.CloseChord, -1
+        yield from cls.music()
 
     # ------------------ script -------------------------
     @lexicon
