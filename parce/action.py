@@ -103,7 +103,7 @@ DynamicAction
 If an instance of DynamicAction is encountered in a rule, its filter_actions()
 method is called to yield a (pos, text action) tuple. Normally the
 filter_actions() method simply calls back the filter_actions() method of the
-lexer with the new action, which could again be an Action instance.
+treebuilder with the new action, which could again be an Action instance.
 
 Nesting is possible in most cases, only some actions require the match object
 to be present; and such actions can't be used as default action, or inside
@@ -205,7 +205,7 @@ class DynamicAction:
     def __init__(self, *actions):
         self.actions = actions
 
-    def filter_actions(self, lexer, pos, text, match):
+    def filter_actions(self, builder, pos, text, match):
         raise NotImplementedError
 
 
@@ -216,9 +216,9 @@ class SubgroupAction(DynamicAction):
     there are action attributes given to __init__().
 
     """
-    def filter_actions(self, lexer, pos, text, match):
+    def filter_actions(self, builder, pos, text, match):
         for i, action in enumerate(self.actions, match.lastindex + 1):
-            yield from lexer.filter_actions(action, match.start(i), match.group(i), None)
+            yield from builder.filter_actions(action, match.start(i), match.group(i), None)
 
 
 class PredicateAction(DynamicAction):
@@ -230,10 +230,10 @@ class PredicateAction(DynamicAction):
     def index(self, text, match):
         raise NotImplementedError
 
-    def filter_actions(self, lexer, pos, text, match):
+    def filter_actions(self, builder, pos, text, match):
         index = self.index(text, match)
         action = self.actions[index]
-        yield from lexer.filter_actions(action, pos, text, match)
+        yield from builder.filter_actions(action, pos, text, match)
 
 
 class MatchAction(PredicateAction):
@@ -262,6 +262,6 @@ class TextAction(PredicateAction):
 
 class SkipAction(DynamicAction):
     """A DynamicAction that yields nothing."""
-    def filter_actions(self, lexer, pos, text, match):
+    def filter_actions(self, builder, pos, text, match):
         yield from ()
 
