@@ -148,8 +148,10 @@ class LilyPond(Language):
         """Yield commands that can occur in all input modes."""
         yield RE_LILYPOND_DYNAMIC, Dynamic
         # TODO: find special commands like \relative, \repeat
-        yield r"(\\lyric(?:mode|s))\b\s*(\{|<<)?", bygroup(Keyword.Lyric, Delimiter.OpenBrace), \
-            ifgroup(2, cls.lyrics)
+        yield r"(\\lyric(?:mode|s))\b\s*(\\s(?:equential|imultaneous)\b)?\s*(\{|<<)?", \
+            bygroup(Keyword.Lyric, Keyword, Delimiter.OpenBrace), \
+            ifgroup(3, cls.lyrics)
+        yield r"\\lyricsto\b", Keyword.Lyric, cls.lyricsto
         yield RE_LILYPOND_COMMAND, Name.Command
 
     # ------------------ music ----------------------
@@ -240,6 +242,15 @@ class LilyPond(Language):
         yield RE_FRACTION, Number
         yield RE_LILYPOND_DURATION, Duration, cls.duration_dots
         yield from cls.commands()
+
+    @lexicon
+    def lyricsto(cls):
+        """Find the argument of a \\lyricsto command."""
+        yield from cls.base()
+        yield r"\\s(sequential|imultaneous)\b", Keyword
+        yield r"\{|<<", Delimiter.OpenBrace, -1, cls.lyrics
+        yield SKIP_WHITESPACE
+        yield default_target, -1
 
     # -------------------- base stuff --------------------
     @classmethod
