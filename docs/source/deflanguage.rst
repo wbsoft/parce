@@ -158,6 +158,25 @@ convenience function:
     .. autofunction:: parce.tomatch
      :noindex:
 
+And there is *one* special dynamic action that yields *both* the action *and*
+the target, which is useful when you want to make both the action and the
+target depend on the same predicate function:
+
+    .. autofunction:: parce.onmatch
+     :noindex:
+
+So instead of::
+
+    predicate = lambda m: m.group() in some_list
+    yield "pattern", bymatch(predicate, Action1, Action2), tomatch(predicate, target1, target2)
+
+you can write::
+
+    predicate = lambda m: m.group() in some_list
+    yield "pattern", onmatch(predicate, (Action1, target1), (Action2, target2))
+
+which is more efficient, because the predicate is evaluated only once.
+
 A target is always executed after adding the token(s) that were generated to
 the current context. The newly created context can be seen as the "target" of
 the token that switched to it. If the match object did not contain actual

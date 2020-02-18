@@ -201,7 +201,7 @@ def onmatch(predicate, *action_targets):
 
     You can specify multiple (action, target[, target, ...]) tuples. The
     predicate is called with the match object as argument and should return the
-    (integer) index of the desired (action, *targets) tuple.
+    (integer) index of the desired (action, \*targets) tuple.
 
     This is used when you want to have both the action and the target depend on
     the same predicate function.
