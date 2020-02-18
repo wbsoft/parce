@@ -2,6 +2,11 @@ ChangeLog of the Python parce package
 =====================================
 
 
+current:
+
+- Added onmatch(), specifying both action and target using one predicate
+
+
 2020-02-16: parce-0.6.0
 
 - Large improvements in theme module, MetaTheme working well
