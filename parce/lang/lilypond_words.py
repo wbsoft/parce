@@ -1085,4 +1085,6 @@ pitchnames = {
 pitchnames["español"] = pitchnames["espanol"]
 #pitchnames["francais"] = pitchnames["français"]
 
+# a set with all the pitchnames for fast membership testing
+all_pitchnames = frozenset(name for d in pitchnames.values() for name in d)
 

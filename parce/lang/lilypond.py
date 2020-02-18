@@ -48,7 +48,7 @@ RE_LILYPOND_DYNAMIC = (
     r")(?![A-Za-z])")
 
 RE_LILYPOND_REST = r"[rRs](?![A-Za-z])"
-RE_LILYPOND_PITCH = r"[a-z](?:(?:-(?:sharp|flat){1,2})|[a-zé]+)?(?![A-Za-z])"
+RE_LILYPOND_PITCHWORD = r"[^\W\d_]+(?:-[^\W\d_]+)*(?![^\W\d])"
 
 RE_LILYPOND_DURATION = \
     r"(\\(maxima|longa|breve)\b|(1|2|4|8|16|32|64|128|256|512|1024|2048)(?!\d))"
@@ -158,12 +158,10 @@ class LilyPond(Language):
         yield r"~", Spanner.Tie
         yield r"[-_^]", Direction, cls.script
         yield RE_LILYPOND_REST, Rest
-        yield RE_LILYPOND_PITCH, Pitch, cls.pitch
+        yield RE_LILYPOND_PITCHWORD, bymatch(cls.is_pitch, Name.Class, Pitch), tomatch(cls.is_pitch, 0, cls.pitch)
         yield RE_FRACTION, Number
         yield RE_LILYPOND_DURATION, Duration, cls.duration_dots
-        # TODO: find special commands like \relative, \repeat, \key, \time
-        yield r"(\\key)\b(?:\s+("+RE_LILYPOND_PITCH+"))?", bygroup(Keyword, Pitch)
-        yield r"(\\clef)(?:\s+([a-z]+))?(?![a-zA-Z])", bygroup(Keyword, Name.Class)
+        # TODO: find special commands like \relative, \repeat
         yield RE_LILYPOND_DYNAMIC, Dynamic
         yield RE_LILYPOND_COMMAND, Name.Command
 
@@ -193,6 +191,10 @@ class LilyPond(Language):
         yield default_target, -1
 
     # ------------------ pitch --------------------------
+    @classmethod
+    def is_pitch(cls, matchobj):
+        return matchobj.group() in lilypond_words.all_pitchnames
+
     @lexicon
     def pitch(cls):
         yield r",+|'+", Octave
