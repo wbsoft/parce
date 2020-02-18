@@ -260,6 +260,37 @@ class TextAction(PredicateAction):
         return self.predicate(text)
 
 
+class TargetAction(MatchAction):
+    """This special dynamic action yields both an action and zero or more targets.
+
+    This is a shortcut for using a MatchAction and a MatchTarget, which would
+    evaluate the predicate twice, which is of course unefficient.
+
+    Usage::
+
+        TargetAction(predicate, (Act1, *targets1), (Act2, *targets2), ...)
+
+    The predicate should return the index; that action + targets is then chosen.
+
+    """
+    def __init__(self, predicate, *action_targets):
+        self.predicate = predicate
+        self.actions, self.targets = zip(*((action, target)
+                for action, *target in action_targets))
+
+    def tokens_and_target(self, builder, pos, text, match):
+        """Return tokens and target for the match."""
+        index = self.predicate(match)
+        action = self.actions[index]
+        target = self.targets[index]
+        tokens = tuple(builder.filter_actions(action, pos, text, match))
+        return tokens, target
+
+    def target(self, match):
+        """Just return the target, in case of an empty match."""
+        return self.targets[self.index(match)]
+
+
 class SkipAction(DynamicAction):
     """A DynamicAction that yields nothing."""
     def filter_actions(self, builder, pos, text, match):

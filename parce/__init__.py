@@ -195,6 +195,21 @@ def bytext(predicate, *actions):
     return action.TextAction(predicate, *actions)
 
 
+def onmatch(predicate, *action_targets):
+    """Return a TargetAction that both provides an action *and* a target, based
+    on the match object.
+
+    You can specify multiple (action, target[, target, ...]) tuples. The
+    predicate is called with the match object as argument and should return the
+    (integer) index of the desired (action, *targets) tuple.
+
+    This is used when you want to have both the action and the target depend on
+    the same predicate function.
+
+    """
+    return action.TargetAction(predicate, *action_targets)
+
+
 def tomatch(predicate, *targets):
     """Return a MatchTarget that chooses the target based on the match object.
 
