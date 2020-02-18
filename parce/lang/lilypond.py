@@ -157,8 +157,9 @@ class LilyPond(Language):
         yield r"[()]", Spanner.Slur
         yield r"~", Spanner.Tie
         yield r"[-_^]", Direction, cls.script
+        yield r"q(?![^\W\d])", Pitch
         yield RE_LILYPOND_REST, Rest
-        yield RE_LILYPOND_PITCHWORD, bymatch(cls.is_pitch, Name.Class, Pitch), tomatch(cls.is_pitch, 0, cls.pitch)
+        yield RE_LILYPOND_PITCHWORD, onmatch(cls.is_pitch, (Name.Class,), (Pitch, cls.pitch))
         yield RE_FRACTION, Number
         yield RE_LILYPOND_DURATION, Duration, cls.duration_dots
         # TODO: find special commands like \relative, \repeat
