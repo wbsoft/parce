@@ -142,6 +142,16 @@ class LilyPond(Language):
         yield "=", Operator.Assignment
         yield from cls.base()
 
+    # ------------------ commands that can occur in all input modes --------
+    @classmethod
+    def commands(cls):
+        """Yield commands that can occur in all input modes."""
+        yield RE_LILYPOND_DYNAMIC, Dynamic
+        # TODO: find special commands like \relative, \repeat
+        yield r"(\\lyric(?:mode|s))\b\s*(\{|<<)?", bygroup(Keyword.Lyric, Delimiter.OpenBrace), \
+            ifgroup(2, cls.lyrics)
+        yield RE_LILYPOND_COMMAND, Name.Command
+
     # ------------------ music ----------------------
     @classmethod
     def music(cls):
@@ -162,9 +172,7 @@ class LilyPond(Language):
         yield RE_LILYPOND_PITCHWORD, onmatch(cls.is_pitch, (Name.Class,), (Pitch, cls.pitch))
         yield RE_FRACTION, Number
         yield RE_LILYPOND_DURATION, Duration, cls.duration_dots
-        # TODO: find special commands like \relative, \repeat
-        yield RE_LILYPOND_DYNAMIC, Dynamic
-        yield RE_LILYPOND_COMMAND, Name.Command
+        yield from cls.commands()
 
     @lexicon
     def sequential(cls):
@@ -222,6 +230,17 @@ class LilyPond(Language):
 
 
     # --------------------- lyrics -----------------------
+    @lexicon
+    def lyrics(cls):
+        """Yield contents in lyric mode."""
+        yield from cls.common()
+        yield r">>|\}", Delimiter.CloseBrace, -1
+        yield r"<<|\{", Delimiter.OpenBrace, 1
+        yield r"[^\s\d{}$#]+", LyricText
+        yield RE_FRACTION, Number
+        yield RE_LILYPOND_DURATION, Duration, cls.duration_dots
+        yield from cls.commands()
+
     # -------------------- base stuff --------------------
     @classmethod
     def base(cls):
@@ -325,3 +344,15 @@ class LilyPond(Language):
     def singleline_comment(cls):
         yield from cls.comment_common()
         yield r'$', Comment, -1
+
+
+def ifgroup(n, *target):
+    """Return a dynamic target that only is followed if group n in the match is not empty."""
+    def predicate(m):
+        if m.group(m.lastindex + n):
+            return 1
+        else:
+            return 0
+    return tomatch(predicate, 0, target)
+
+
