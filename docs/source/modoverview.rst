@@ -15,7 +15,6 @@ Overview of all modules
    pkginfo.rst
    query.rst
    regex.rst
-   target.rst
    theme.rst
    themes.rst
    tree.rst

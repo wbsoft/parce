@@ -151,29 +151,17 @@ as follows:
   to a Context that already exists. The root context is never popped of the
   stack.
 
-Instead of a target list, one DynamicTarget may be specified. This computes
-the target list based on the regular expression's match object. There is one
-convenience function:
-
-    .. autofunction:: parce.tomatch
-     :noindex:
-
-And there is *one* special dynamic action that yields *both* the action *and*
-the target, which is useful when you want to make both the action and the
-target depend on the same predicate function:
-
-    .. autofunction:: parce.onmatch
-     :noindex:
-
-So instead of::
+The functions :function:`~parce.bytext` and :function:`~parce.bytext` can
+also be used for mapping a *target* based on the text or match object, or
+even action and targets at the same time. So instead of::
 
     predicate = lambda m: m.group() in some_list
-    yield "pattern", bymatch(predicate, Action1, Action2), tomatch(predicate, target1, target2)
+    yield "pattern", bymatch(predicate, Action1, Action2), bymatch(predicate, target1, target2)
 
 you can write::
 
     predicate = lambda m: m.group() in some_list
-    yield "pattern", onmatch(predicate, (Action1, target1), (Action2, target2))
+    yield "pattern", bymatch(predicate, (Action1, target1), (Action2, target2))
 
 which is more efficient, because the predicate is evaluated only once.
 
@@ -181,8 +169,6 @@ A target is always executed after adding the token(s) that were generated to
 the current context. The newly created context can be seen as the "target" of
 the token that switched to it. If the match object did not contain actual
 text, no Token is generated, but the target *is* handled of course.
-
-See for more information the documentation of the :mod:`~parce.target` module.
 
 
 Special rules

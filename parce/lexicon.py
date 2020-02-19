@@ -136,20 +136,20 @@ class Lexicon:
     def _get_parser_func(self):
         """Compile the pattern rules and return a parse(text, pos) func."""
         patterns = []
-        action_targets = []
+        rules = []
         default_action = None
         default_target = None
         # make lists of pattern, action and possible targets
-        for pattern, action, *target in self():
+        for pattern, *rule in self():
             if pattern is parce.default_action:
-                default_action = action
+                default_action = rule[0]
             elif pattern is parce.default_target:
-                default_target = action, *target
+                default_target = rule
             else:
                 if isinstance(pattern, parce.pattern.Pattern):
                     pattern = pattern.build()
                 patterns.append(pattern)
-                action_targets.append((action, *target))
+                rules.append(rule)
 
         if not patterns:
             if default_action:
@@ -167,14 +167,12 @@ class Lexicon:
 
         # if there is only one pattern, and no dynamic action or target,
         # see if the pattern is simple enough to just use str.find
-        if (len(patterns) == 1
-            and not isinstance(action_targets[0][0], parce.action.DynamicAction)
-            and not any(isinstance(target, parce.target.DynamicTarget)
-                            for target in action_targets[0][1:])):
+        if len(patterns) == 1 and not any(isinstance(item, DynamicItem)
+                                          for item in rules[0]):
             needle = parce.regex.to_string(patterns[0])
             if needle:
                 l= len(needle)
-                action_target = action_targets[0]
+                rule = rules[0]
                 if default_action:
                     def parse(text, pos):
                         """Parse text, using a default action for unknown text."""
@@ -184,7 +182,7 @@ class Lexicon:
                                 yield pos, text[pos:i], None, default_action
                             elif i == -1:
                                 break
-                            yield (i, needle, None, *action_target)
+                            yield (i, needle, None, *rule)
                             pos = i + l
                         if pos < len(text):
                             yield pos, text[pos:], None, default_action
@@ -192,7 +190,7 @@ class Lexicon:
                     def parse(text, pos):
                         """Parse text, stopping with the default target at unknown text."""
                         while needle == text[pos:pos+l]:
-                            yield (pos, needle, None, *action_target)
+                            yield (pos, needle, None, *rule)
                             pos += l
                         if pos < len(text):
                             yield (pos, "", None, None, *default_target)
@@ -203,17 +201,37 @@ class Lexicon:
                             i = text.find(needle, pos)
                             if i == -1:
                                 break
-                            yield (i, needle, None, *action_target)
+                            yield (i, needle, None, *rule)
                             pos = i + l
                 return parse
+
         # compile the regexp for all patterns
         rx = re.compile("|".join("(?P<g_{0}>{1})".format(i, pattern)
             for i, pattern in enumerate(patterns)), self.re_flags)
         # make a fast mapping list from matchObj.lastindex to the targets
+        # rule lists that contain DynamicRuleItem instances are put in
+        # the dynamic index
         indices = sorted(v for k, v in rx.groupindex.items() if k.startswith('g_'))
         index = [None] * (indices[-1] + 1)
-        for i, action_target in zip(indices, action_targets):
-            index[i] = action_target
+        dynamic = [None] * (indices[-1] + 1)
+        for i, rule in zip(indices, rules):
+            if any(isinstance(item, DynamicRuleItem) for item in rule):
+                dynamic[i] = rule
+            else:
+                index[i] = rule
+
+        # for rule containing no dynamic stuff, index has the rule, otherwise
+        # falls back to dynamic, which is then immediately executed
+        def rule(m):
+            return index[m.lastindex] or replace(m)
+        def replace(m):
+            def inner_replace(items):
+                for i in items:
+                    if isinstance(i, DynamicRuleItem):
+                        yield from inner_replace(i.bymatch(m))
+                    else:
+                        yield i
+            return inner_replace(dynamic[m.lastindex])
 
         if default_action:
             def parse(text, pos):
@@ -221,7 +239,7 @@ class Lexicon:
                 for m in rx.finditer(text, pos):
                     if m.start() > pos:
                         yield pos, text[pos:m.start()], None, default_action
-                    yield (m.start(), m.group(), m, *index[m.lastindex])
+                    yield (m.start(), m.group(), m, *rule(m))
                     pos = m.end()
                 if pos < len(text):
                     yield (pos, text[pos:], None, default_action)
@@ -231,7 +249,7 @@ class Lexicon:
                 while True:
                     m = rx.match(text, pos)
                     if m:
-                        yield (pos, m.group(), m, *index[m.lastindex])
+                        yield (pos, m.group(), m, *rule(m))
                         pos = m.end()
                     else:
                         if pos < len(text):
@@ -241,7 +259,52 @@ class Lexicon:
             def parse(text, pos):
                 """Parse text, skipping unknown text."""
                 for m in rx.finditer(text, pos):
-                    yield (m.start(), m.group(), m, *index[m.lastindex])
+                    yield (m.start(), m.group(), m, *rule(m))
         return parse
+
+
+class DynamicItem:
+    """Base class for all items from rules that are replaced."""
+
+
+class DynamicRuleItem(DynamicItem):
+    """Base class for items that are already replaced by the lexicon."""
+    def __init__(self, predicate, *itemlists):
+        self.predicate = predicate
+        self.itemlists = [i if isinstance(i, (tuple, list)) else (i,)
+                          for i in itemlists]
+
+    def bymatch(self, match):
+        """Should return an itemlist pointed to by the index returned by the predicate."""
+        raise NotImplementedError
+
+
+class TextRuleItem(DynamicRuleItem):
+    """Calls the predicate with the matched text.
+
+    The predicate should return the index of the itemlists to return.
+
+    """
+    def bymatch(self, match):
+        return self.bytext(match.group())
+
+    def bytext(self, text):
+        index = self.predicate(text)
+        return self.itemlists[index]
+
+
+class MatchRuleItem(DynamicRuleItem):
+    """Calls the predicate with the match object.
+
+    The predicate should return the index of the itemlists to return.
+
+    """
+    def bymatch(self, match):
+        index = self.predicate(match)
+        return self.itemlists[index]
+
+    def bytext(self, text):
+        # should never happen
+        raise RuntimeError("can't use bytext() on a MatchRuleItem")
 
 

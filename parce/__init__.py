@@ -161,69 +161,44 @@ def char(chars, positive=True):
 def bygroup(*actions):
     """Return a SubgroupAction that yields tokens for each subgroup in a regular expression.
 
-    This action uses capturing subgroups in the regular expression pattern and
-    creates a Token for every subgroup, with that action. You should provide
-    the same number of actions as there are capturing subgroups in the pattern.
-    Use non-capturing subgroups for the parts you're not interested in, or the
-    special ``skip`` action.
+    This action uses capturing subgroups in the regular expression pattern
+    and creates a Token for every subgroup, with that action. You should
+    provide the same number of actions as there are capturing subgroups in
+    the pattern. Use non-capturing subgroups for the parts you're not
+    interested in, or the special ``skip`` action.
 
     """
     return action.SubgroupAction(*actions)
 
 
-def bymatch(predicate, *actions):
-    """Return a MatchAction that chooses the action based on the match object.
+def bymatch(predicate, *itemlists):
+    """Return a MatchRuleItem that chooses its output based on the match object.
 
-    The returned MatchAction calls the predicate function with the match object
-    as argument. The function should return the index of the action to choose.
-    If you provide two possible actions, the predicate function may also return
-    True or False, in which case True chooses the second action and
-    False the first.
+    The returned MatchRuleItem calls the predicate function with the match
+    object as argument. The function should return the index of the itemslist
+    to choose. If you provide two possible actions, the predicate function
+    may also return True or False, in which case True chooses the second
+    itemlist and False the first.
 
-    """
-    return action.MatchAction(predicate, *actions)
-
-
-def bytext(predicate, *actions):
-    """Return a TextAction that chooses the action based on the text.
-
-    The returned TextAction calls the predicate function with the matched text
-    as argument.  The function should return the index of the action to choose,
-    in the same way as with :func:`~parce.bymatch`.
+    This helper can be used both for action and target objects, or both
+    at the same time.
 
     """
-    return action.TextAction(predicate, *actions)
+    return lexicon_.MatchRuleItem(predicate, *itemlists)
 
 
-def onmatch(predicate, *action_targets):
-    """Return a TargetAction that both provides an action *and* a target, based
-    on the match object.
+def bytext(predicate, *itemlists):
+    """Return a TextRuleItem that chooses the itemlist based on the text.
 
-    You can specify multiple (action, target[, target, ...]) tuples. The
-    predicate is called with the match object as argument and should return the
-    (integer) index of the desired (action, \*targets) tuple.
+    The returned TextRuleItem calls the predicate function with the matched
+    text as argument.  The function should return the index of the itemlist
+    to choose, in the same way as with :func:`~parce.bymatch`.
 
-    This is used when you want to have both the action and the target depend on
-    the same predicate function.
-
-    """
-    return action.TargetAction(predicate, *action_targets)
-
-
-def tomatch(predicate, *targets):
-    """Return a MatchTarget that chooses the target based on the match object.
-
-    The predicate is run with the match object as argument and should return
-    the (integer) index of the desired target. True and False are also valid
-    return values, they count as 1 and 0, respectively.
-
-    Each target can be a list or tuple of targets, just like in normal rules,
-    where the third and more items form a list of targets. A target can also be
-    a single integer or a lexicon. Use ``()`` or ``0`` for a target that does
-    nothing.
+    This helper can be used both for action and target objects, or both
+    at the same time.
 
     """
-    return target.MatchTarget(predicate, *targets)
+    return lexicon_.TextRuleItem(predicate, *itemlists)
 
 
 def lexicon(rules_func=None, **kwargs):

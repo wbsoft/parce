@@ -39,8 +39,8 @@ import contextlib
 import itertools
 import threading
 
-from parce.action import DynamicAction, TargetAction
-from parce.target import DynamicTarget
+from parce.action import DynamicAction
+from parce.lexicon import DynamicItem, DynamicRuleItem
 from parce.tree import Context, Token, _GroupToken
 
 
@@ -323,10 +323,7 @@ class TreeBuilder:
         for pos, txt, match, action, *target in context.lexicon.parse(text, pos):
             if txt:
                 if isinstance(action, DynamicAction):
-                    if isinstance(action, TargetAction):
-                        tokens, target = action.tokens_and_target(self, pos, txt, match)
-                    else:
-                        tokens = tuple(action.filter_actions(self, pos, txt, match))
+                    tokens = tuple(action.filter_actions(self, pos, txt, match))
                     if len(tokens) == 1:
                         tokens = Token(context, *tokens[0]),
                     else:
@@ -337,10 +334,6 @@ class TreeBuilder:
                     tokens = Token(context, pos, txt, action),
             else:
                 tokens = ()
-                if match and isinstance(action, TargetAction):
-                    target = action.target(match)
-            if target and isinstance(target[0], DynamicTarget):
-                target = target[0].target(match)
             yield pos + len(txt), tokens, target
 
     def update_context(self, context, target):
@@ -364,8 +357,12 @@ class TreeBuilder:
 
     def filter_actions(self, action, pos, txt, match):
         """Handle filtering via DynamicAction instances."""
-        if isinstance(action, DynamicAction):
-            yield from action.filter_actions(self, pos, txt, match)
+        if isinstance(action, DynamicItem):
+            if isinstance(action, DynamicAction):
+                yield from action.filter_actions(self, pos, txt, match)
+            else:
+                action = action.bymatch(match)
+                yield from self.filter_actions(self, action, pos, txt, patch)
         elif txt:
             yield pos, txt, action
 

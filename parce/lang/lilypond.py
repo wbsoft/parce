@@ -171,7 +171,7 @@ class LilyPond(Language):
         yield r"[-_^]", Direction, cls.script
         yield r"q(?![^\W\d])", Pitch
         yield RE_LILYPOND_REST, Rest
-        yield RE_LILYPOND_PITCHWORD, onmatch(cls.is_pitch, (Name.Class,), (Pitch, cls.pitch))
+        yield RE_LILYPOND_PITCHWORD, bymatch(cls.is_pitch, (Name.Class,), (Pitch, cls.pitch))
         yield RE_FRACTION, Number
         yield RE_LILYPOND_DURATION, Duration, cls.duration_dots
         yield from cls.commands()
@@ -289,7 +289,7 @@ class LilyPond(Language):
         def test(m):
             command = m.group(m.lastindex + 1)
             return cls.get_markup_argument_count(command)
-        return tomatch(test, -1, 0, 1, 2, 3)
+        return bymatch(test, -1, 0, 1, 2, 3)
 
     @classmethod
     def get_markup_argument_count(cls, command):
@@ -311,10 +311,8 @@ class LilyPond(Language):
     @classmethod
     def get_markup_action(cls):
         """Get the action for a command in \markup { }."""
-        def test(m):
-            text = m.group(m.lastindex + 1)
-            return text in lilypond_words.markupcommands
-        return bymatch(test, Name.Function, Name.Function.Markup)
+        test = lambda text: text in lilypond_words.markupcommands
+        return bytext(test, Name.Function, Name.Function.Markup)
 
 
     # -------------- Scheme ---------------------
@@ -364,6 +362,6 @@ def ifgroup(n, *target):
             return 1
         else:
             return 0
-    return tomatch(predicate, 0, target)
+    return bymatch(predicate, 0, target)
 
 

@@ -147,6 +147,10 @@ to silently ignore the matched text.
 
 import threading
 
+
+from .lexicon import DynamicItem
+
+
 # we use a global lock for standardaction creation, it seems overkill
 # to me to equip every instance with one.
 _lock = threading.Lock()
@@ -196,7 +200,7 @@ class StandardAction:
         return self
 
 
-class DynamicAction:
+class DynamicAction(DynamicItem):
     """Base class for dynamic action objects.
 
     All actions a DynamicAction object can yield are in the actions attribute.
@@ -219,76 +223,6 @@ class SubgroupAction(DynamicAction):
     def filter_actions(self, builder, pos, text, match):
         for i, action in enumerate(self.actions, match.lastindex + 1):
             yield from builder.filter_actions(action, match.start(i), match.group(i), None)
-
-
-class PredicateAction(DynamicAction):
-    """Base class expecting a predicate function and actions."""
-    def __init__(self, predicate, *actions):
-        self.predicate = predicate
-        super().__init__(*actions)
-
-    def index(self, text, match):
-        raise NotImplementedError
-
-    def filter_actions(self, builder, pos, text, match):
-        index = self.index(text, match)
-        action = self.actions[index]
-        yield from builder.filter_actions(action, pos, text, match)
-
-
-class MatchAction(PredicateAction):
-    """Expects a function as argument that is called with the match object.
-
-    The function should return the index indicating the action to return.
-    The function may also return True or False, which are regarded as 1 or 0,
-    respectively.
-
-    """
-    def index(self, text, match):
-        return self.predicate(match)
-
-
-class TextAction(PredicateAction):
-    """Expects a function as argument that is called with the matched text.
-
-    The function should return the index indicating the action to return.
-    The function may also return True or False, which are regarded as 1 or 0,
-    respectively.
-
-    """
-    def index(self, text, match):
-        return self.predicate(text)
-
-
-class TargetAction(MatchAction):
-    """This special dynamic action yields both an action and zero or more targets.
-
-    This is a shortcut for using a MatchAction and a MatchTarget, which would
-    evaluate the predicate twice, which is of course unefficient.
-
-    Usage::
-
-        TargetAction(predicate, (Act1, *targets1), (Act2, *targets2), ...)
-
-    The predicate should return the index; that action + targets is then chosen.
-
-    """
-    def __init__(self, predicate, *action_targets):
-        self.predicate = predicate
-        self.actions, self.targets = zip(*((action, target)
-                for action, *target in action_targets))
-
-    def tokens_and_target(self, builder, pos, text, match):
-        """Return tokens and target for the match."""
-        index = self.predicate(match)
-        action = self.actions[index]
-        target = self.targets[index]
-        tokens = tuple(builder.filter_actions(action, pos, text, match))
-        return tokens, target
-
-    def target(self, match):
-        """Just return the target, in case of an empty match."""
-        return self.targets[self.index(match)]
 
 
 class SkipAction(DynamicAction):
