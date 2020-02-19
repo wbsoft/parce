@@ -98,9 +98,9 @@ There are, however, two action types provided by `parce`:
    Language definitions included in `parce` use these standard actions.
    A list of pre-defined standard actions is in the :mod:`parce` module.
 
-2. the :class:`~parce.action.DynamicAction` class. These actions are created
-   dynamically when a rule's pattern has matched, and they can create zero or
-   more Token instances with action based on the match object or text.
+2. Dynamic actions. These actions are created dynamically when a rule's
+   pattern has matched, and they can create zero or more Token instances with
+   action based on the match object or text.
 
    There are a few convenient functions to create dynamic actions:
 

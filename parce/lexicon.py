@@ -284,7 +284,7 @@ class TextRuleItem(DynamicRuleItem):
 
     The predicate should return the index of the itemlists to return.
     A TextRuleItem is preferable instantiated using the
-    :function:`parce.bytext` function.
+    :func:`parce.bytext` function.
 
     """
     def bymatch(self, match):
@@ -300,7 +300,7 @@ class MatchRuleItem(DynamicRuleItem):
 
     The predicate should return the index of the itemlists to return.
     A MatchRuleItem is preferable instantiated using the
-    :function:`parce.bymatch` function.
+    :func:`parce.bymatch` function.
 
     """
     def bymatch(self, match):
