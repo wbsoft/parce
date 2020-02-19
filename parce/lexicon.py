@@ -161,6 +161,7 @@ class Lexicon:
                 patterns.append(pattern)
                 rules.append(rule)
 
+        # handle the empty lexicon case
         if not patterns:
             if default_action:
                 def parse(text, pos):
@@ -218,23 +219,24 @@ class Lexicon:
         # compile the regexp for all patterns
         rx = re.compile("|".join("(?P<g_{0}>{1})".format(i, pattern)
             for i, pattern in enumerate(patterns)), self.re_flags)
-        # make a fast mapping list from matchObj.lastindex to the targets
-        # rule lists that contain DynamicRuleItem instances are put in
-        # the dynamic index
+        # make a fast mapping list from matchObj.lastindex to the rules.
+        # rules that contain DynamicRuleItem instances are put in the dynamic index
         indices = sorted(v for k, v in rx.groupindex.items() if k.startswith('g_'))
-        index = [None] * (indices[-1] + 1)
+        static = [None] * (indices[-1] + 1)
         dynamic = [None] * (indices[-1] + 1)
         for i, rule in zip(indices, rules):
             if any(isinstance(item, DynamicRuleItem) for item in rule):
                 dynamic[i] = rule
             else:
-                index[i] = rule
+                static[i] = rule
 
-        # for rule containing no dynamic stuff, index has the rule, otherwise
+        # for rule containing no dynamic stuff, static has the rule, otherwise
         # falls back to dynamic, which is then immediately executed
-        def rule(m):
-            return index[m.lastindex] or replace(m)
+        def token(m):
+            """Return pos, text, match, *rule for the match object."""
+            return (m.start(), m.group(), m, *(static[m.lastindex] or replace(m)))
         def replace(m):
+            """Recursively replace dynamic rule items in the rule pointed to by match object."""
             def inner_replace(items):
                 for i in items:
                     if isinstance(i, DynamicRuleItem):
@@ -249,7 +251,7 @@ class Lexicon:
                 for m in rx.finditer(text, pos):
                     if m.start() > pos:
                         yield pos, text[pos:m.start()], None, default_action
-                    yield (m.start(), m.group(), m, *rule(m))
+                    yield token(m)
                     pos = m.end()
                 if pos < len(text):
                     yield (pos, text[pos:], None, default_action)
@@ -259,7 +261,7 @@ class Lexicon:
                 while True:
                     m = rx.match(text, pos)
                     if m:
-                        yield (pos, m.group(), m, *rule(m))
+                        yield token(m)
                         pos = m.end()
                     else:
                         if pos < len(text):
@@ -269,7 +271,7 @@ class Lexicon:
             def parse(text, pos):
                 """Parse text, skipping unknown text."""
                 for m in rx.finditer(text, pos):
-                    yield (m.start(), m.group(), m, *rule(m))
+                    yield token(m)
         return parse
 
 
