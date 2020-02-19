@@ -204,16 +204,9 @@ class LilyPond(Language):
         yield SKIP_WHITESPACE
         yield from cls.common() # markup, scheme, string, comment
         yield RE_LILYPOND_DURATION, Duration, cls.duration_dots
-        yield "=", Operator.Assignment, cls.tempo_range
+        yield r"(=)\s*(?:(\d+)(?:\s*(-)\s*(\d+))?)?", bygroup(
+            Operator.Assignment, Number, Operator, Number), -1
         yield default_target, -1
-
-    @lexicon
-    def tempo_range(cls):
-        def pred(m):
-            return 0 if m.group(m.lastindex + 2) else 1
-        yield SKIP_WHITESPACE
-        yield r"(\d+)(?:\s*(-))?", bygroup(Number, Operator), bymatch(pred, 0, -2)
-        yield default_target, -2
 
     # ------------------ script -------------------------
     @lexicon
