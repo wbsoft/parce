@@ -80,14 +80,21 @@ class LexiconValidator:
         self.errors.clear()
         self.warnings.clear()
         default_act, default_tg = None, None
-        for pattern, *rule in self.lexicon():
+        for rule in self.lexicon():
+            if not isinstance(rule, (tuple, list)):
+                self.error("invalid rule; should be tuple or list")
+                continue
+            elif len(rule) < 2:
+                self.error("invalid rule; pattern and action should be there")
+                continue
+            pattern, *rule = rule
             if pattern is parce.default_action:
                 if default_act:
                     self.error("conflicting default actions")
                 else:
                     default_act = rule[0]
                     if isinstance(default_act, DynamicRuleItem):
-                        self.warning("dynamic default_action -- will not be replaced!")
+                        self.warning("dynamic default_action; will not be replaced!")
             elif pattern is parce.default_target:
                 if default_tg:
                     self.error("conflicting default targets")
