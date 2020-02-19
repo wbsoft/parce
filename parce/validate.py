@@ -113,8 +113,30 @@ class LexiconValidator:
                 self.warning("pattern {} matches the empty string".format(repr(pattern)))
 
     def validate_rule(self, rule):
-        """Validate a rule, which should be action, target[, target, ...]."""
-        #TODO implement
+        """Validate a rule, which should be action, target[, target, ...].
+
+        Does not look at the action, but checks whether all the targets are
+        valid (either an integer or a Lexicon).
+
+        """
+        # find all possible permutations of the rule when there are DynamicRuleItems
+        def future(items):
+            items = list(items)
+            for i, item in enumerate(items):
+                if isinstance(item, DynamicRuleItem):
+                    prefix = items[:i]
+                    for suffix in future(items[i+1:]):
+                        for itemlist in item.itemlists:
+                            for l in future(itemlist):
+                                yield prefix + l + suffix
+                    break
+            else:
+                yield items
+        # all possible rule paths
+        for path in future(rule):
+            for target in path[1:]:     # the first item always is the action
+                if not isinstance(target, (int, Lexicon)):
+                    self.error("invalid target: {}".format(target))
 
     def check_default_target(self, target):
         """Check whether this default target could lead to circular references.
