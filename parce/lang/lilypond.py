@@ -105,6 +105,7 @@ class LilyPond(Language):
     def score(cls):
         yield r'\}', Delimiter.CloseBrace, -1
         yield from cls.blocks()
+        yield from cls.music()
 
     @lexicon
     def header(cls):
@@ -131,6 +132,7 @@ class LilyPond(Language):
     def midi(cls):
         yield r'\}', Delimiter.CloseBrace, -1
         yield r"(\\context)\s*(\{)", bygroup(Keyword, Delimiter.OpenBrace), cls.layout_context
+        yield from cls.music()
         yield from cls.base()
 
     @lexicon
@@ -148,6 +150,7 @@ class LilyPond(Language):
         """Yield commands that can occur in all input modes."""
         yield RE_LILYPOND_DYNAMIC, Dynamic
         # TODO: find special commands like \relative, \repeat
+        yield r"\\tempo(?![^\W\d])", Keyword, cls.tempo
         yield r"(\\lyric(?:mode|s))\b\s*(\\s(?:equential|imultaneous)\b)?\s*(\{|<<)?", \
             bygroup(Keyword.Lyric, Keyword, Delimiter.OpenBrace), \
             ifgroup(3, cls.lyrics)
@@ -193,6 +196,24 @@ class LilyPond(Language):
         """A < chord > construct."""
         yield r">", Delimiter.CloseChord, -1
         yield from cls.music()
+
+    # ------------------ special commands ---------------
+    @lexicon
+    def tempo(cls):
+        """Find content after a tempo command."""
+        yield SKIP_WHITESPACE
+        yield from cls.common() # markup, scheme, string, comment
+        yield RE_LILYPOND_DURATION, Duration, cls.duration_dots
+        yield "=", Operator.Assignment, cls.tempo_range
+        yield default_target, -1
+
+    @lexicon
+    def tempo_range(cls):
+        def pred(m):
+            return 0 if m.group(m.lastindex + 2) else 1
+        yield SKIP_WHITESPACE
+        yield r"(\d+)(?:\s*(-))?", bygroup(Number, Operator), bymatch(pred, 0, -2)
+        yield default_target, -2
 
     # ------------------ script -------------------------
     @lexicon
