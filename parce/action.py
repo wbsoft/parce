@@ -128,18 +128,11 @@ For example, the rule::
 yields two tokens in case of a match, one for "0x" and the other for the
 other group of the match.
 
-TextAction and MatchAction
---------------------------
 
-Those expect a preficate function as the first argument, and one or more
-actions as further arguments.
+skip
+----
 
-The predicate is run if the rule matches, for TextAction with the text
-as argument, and for MatchAction with the match object as argument. The
-return value is the index of the action to pick. False and True count as
-0 and 1 respectively.
-
-A _SkipAction() is stored in the module variable `skip` and causes the rule
+A SkipAction() is stored in the module variable ``skip`` and causes the rule
 to silently ignore the matched text.
 
 """

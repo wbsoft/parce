@@ -22,16 +22,26 @@
 A Lexicon groups rules to match.
 
 A LexiconDescriptor is created by decorating a function yielding rules with the
-`@lexicon` decorator. When a LexiconDescriptor is accessed for
-the first time via a Language subclass, a Lexicon for that class is
-created and cached, and returned each time that attribute is accessed.
+`@lexicon` decorator. When a LexiconDescriptor is accessed for the first time
+via a Language subclass, a Lexicon for that class is created and cached, and
+returned each time that attribute is accessed.
 
-The Lexicon can parse text according to the rules. When parsing for the
-first time, the rules-function is run with the language class as argument, and
-the rules it creates are cached.
+The Lexicon can parse text according to the rules. When parsing for the first
+time, the rules-function is run with the language class as argument, and the
+rules it creates are cached.
 
 This makes it possible to inherit from a Language class and only re-implement
 some lexicons, the others keep working as in the base class.
+
+When in a pattern rule an object that inherits from ``DynamicRuleItem`` is
+encountered, its ``bymatch()`` method is called with the match object, which
+should return a list of items the DynamicRuleItem should be replaced with. This
+list is again checked for DynamicRuleItem objects,
+
+In most cases a DynamicRuleItem will be instantiated with a predicate and lists
+of replacement objects. The predicate should return an integer index value (or
+True or False, which count as 1 and 0, respectively), which determines the list
+of replacement values to use.
 
 """
 
