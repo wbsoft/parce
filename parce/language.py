@@ -19,7 +19,6 @@
 
 
 import parce.action
-import parce.target
 from parce.lexicon import LexiconDescriptor, Lexicon
 
 

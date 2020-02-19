@@ -106,7 +106,7 @@ information.
 
 """
 
-from . import pattern, action, target
+from . import pattern, action
 from . import lexicon as lexicon_, treebuilder, document, treedocument
 from .document import Cursor
 from .language import Language

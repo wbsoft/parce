@@ -4,7 +4,9 @@ ChangeLog of the Python parce package
 
 current:
 
-- Added onmatch(), specifying both action and target using one predicate
+- bytext() and bymatch() are now generic "replacables", they can be used
+  to specify an alternative action, target or both in one go. tomatch() was not
+  needed anymore and is gone.
 
 
 2020-02-16: parce-0.6.0

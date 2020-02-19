@@ -22,9 +22,8 @@ import collections
 import re
 
 import parce
-from parce.lexicon import LexiconDescriptor, Lexicon
+from parce.lexicon import DynamicRuleItem, LexiconDescriptor, Lexicon
 from parce.pattern import Pattern
-from parce.target import DynamicTarget
 
 
 def validate_language(lang):
@@ -81,21 +80,21 @@ class LexiconValidator:
         self.errors.clear()
         self.warnings.clear()
         default_act, default_tg = None, None
-        for pattern, action, *target in self.lexicon():
+        for pattern, *rule in self.lexicon():
             if pattern is parce.default_action:
                 if default_act:
                     self.error("conflicting default actions")
                 else:
-                    default_act = action
+                    default_act = rule[0]
             elif pattern is parce.default_target:
                 if default_tg:
                     self.error("conflicting default targets")
                 else:
-                    default_tg = action, *target
+                    default_tg = rule
                     self.check_default_target(default_tg)
             else:
                 self.validate_pattern(pattern)
-                self.validate_target(target)
+                self.validate_rule(rule)
 
         if default_act and default_tg:
             self.error("can't have both default_action and default_target")
@@ -113,20 +112,9 @@ class LexiconValidator:
             if rx.match(''):
                 self.warning("pattern {} matches the empty string".format(repr(pattern)))
 
-    def validate_target(self, target):
-        """Validate a target."""
-        def targets():
-            if len(target) == 1 and isinstance(target[0], DynamicTarget):
-                for t in target[0].targets:
-                    yield from t
-            else:
-                yield from target
-        for t in targets():
-            if isinstance(t, DynamicTarget):
-                self.error("a DynamicTarget must be the only one: {}".format(target))
-            elif not isinstance(t, (int, Lexicon)):
-                self.error("invalid target {} in targets {}".format(t, target))
-                break
+    def validate_rule(self, rule):
+        """Validate a rule, which should be action, target[, target, ...]."""
+        #TODO implement
 
     def check_default_target(self, target):
         """Check whether this default target could lead to circular references.
