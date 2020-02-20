@@ -320,7 +320,7 @@ class TreeBuilder:
 
     def parse_context(self, context, text, pos):
         """Yield Token instances as long as we are in the current context."""
-        for pos, txt, match, action, *target in context.lexicon.parse(text, pos):
+        for pos, txt, match, action, target in context.lexicon.parse(text, pos):
             if txt:
                 if isinstance(action, DynamicAction):
                     tokens = tuple(action.filter_actions(self, pos, txt, match))
@@ -338,21 +338,16 @@ class TreeBuilder:
 
     def update_context(self, context, target):
         """Move to another context depending on target."""
-        for t in target:
-            if isinstance(t, int):
-                for pop in range(t, 0):
-                    if context.parent:
-                        if not context:
-                            del context.parent[-1]
-                        context = context.parent
-                    else:
-                        break
-                for push in range(0, t):
-                    context = Context(context.lexicon, context)
-                    context.parent.append(context)
+        for pop in range(target.pop, 0):
+            if context.parent:
+                if not context:
+                    del context.parent[-1]
+                context = context.parent
             else:
-                context = Context(t, context)
-                context.parent.append(context)
+                break
+        for lexicon in target.push:
+            context = Context(lexicon or context.lexicon, context)
+            context.parent.append(context)
         return context
 
     def filter_actions(self, action, pos, txt, match):

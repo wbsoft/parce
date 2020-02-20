@@ -45,6 +45,7 @@ of replacement values to use.
 
 """
 
+import itertools
 import re
 import threading
 
@@ -154,7 +155,7 @@ class Lexicon:
             if pattern is parce.default_action:
                 default_action = rule[0]
             elif pattern is parce.default_target:
-                default_target = rule
+                default_target = Target(rule)
             else:
                 if isinstance(pattern, parce.pattern.Pattern):
                     pattern = pattern.build()
@@ -165,11 +166,11 @@ class Lexicon:
         if not patterns:
             if default_action:
                 def parse(text, pos):
-                    yield pos, text[pos:], None, default_action
+                    yield pos, text[pos:], None, default_action, None
             elif default_target:
                 def parse(text, pos):
                     if pos < len(text):
-                        yield (pos, "", None, None, *default_target)
+                        yield pos, "", None, None, default_target
             else:
                 # just quits parsing
                 def parse(text, pos):
@@ -183,28 +184,29 @@ class Lexicon:
             needle = parce.regex.to_string(patterns[0])
             if needle:
                 l= len(needle)
-                rule = rules[0]
+                action, *target = rules[0]
+                target = target and Target(target) or None
                 if default_action:
                     def parse(text, pos):
                         """Parse text, using a default action for unknown text."""
                         while True:
                             i = text.find(needle, pos)
                             if i > pos:
-                                yield pos, text[pos:i], None, default_action
+                                yield pos, text[pos:i], None, default_action, None
                             elif i == -1:
                                 break
-                            yield (i, needle, None, *rule)
+                            yield i, needle, None, action, target
                             pos = i + l
                         if pos < len(text):
-                            yield pos, text[pos:], None, default_action
+                            yield pos, text[pos:], None, default_action, None
                 elif default_target:
                     def parse(text, pos):
                         """Parse text, stopping with the default target at unknown text."""
                         while needle == text[pos:pos+l]:
-                            yield (pos, needle, None, *rule)
+                            yield pos, needle, None, action, target
                             pos += l
                         if pos < len(text):
-                            yield (pos, "", None, None, *default_target)
+                            yield pos, "", None, None, default_target
                 else:
                     def parse(text, pos):
                         """Parse text, skipping unknown text."""
@@ -212,7 +214,7 @@ class Lexicon:
                             i = text.find(needle, pos)
                             if i == -1:
                                 break
-                            yield (i, needle, None, *rule)
+                            yield i, needle, None, action, target
                             pos = i + l
                 return parse
 
@@ -228,13 +230,15 @@ class Lexicon:
             if any(isinstance(item, DynamicRuleItem) for item in rule):
                 dynamic[i] = rule
             else:
-                static[i] = rule
+                action, *target = rule
+                static[i] = (action, target and Target(target) or None)
 
         # for rule containing no dynamic stuff, static has the rule, otherwise
         # falls back to dynamic, which is then immediately executed
         def token(m):
             """Return pos, text, match, *rule for the match object."""
             return (m.start(), m.group(), m, *(static[m.lastindex] or replace(m)))
+
         def replace(m):
             """Recursively replace dynamic rule items in the rule pointed to by match object."""
             def inner_replace(items):
@@ -243,18 +247,19 @@ class Lexicon:
                         yield from inner_replace(i.bymatch(m))
                     else:
                         yield i
-            return inner_replace(dynamic[m.lastindex])
+            action, *target = inner_replace(dynamic[m.lastindex])
+            return action, target and Target(target) or None
 
         if default_action:
             def parse(text, pos):
                 """Parse text, using a default action for unknown text."""
                 for m in rx.finditer(text, pos):
                     if m.start() > pos:
-                        yield pos, text[pos:m.start()], None, default_action
+                        yield pos, text[pos:m.start()], None, default_action, None
                     yield token(m)
                     pos = m.end()
                 if pos < len(text):
-                    yield (pos, text[pos:], None, default_action)
+                    yield pos, text[pos:], None, default_action, None
         elif default_target:
             def parse(text, pos):
                 """Parse text, stopping with the default target at unknown text."""
@@ -265,7 +270,7 @@ class Lexicon:
                         pos = m.end()
                     else:
                         if pos < len(text):
-                            yield (pos, "", None, None, *default_target)
+                            yield pos, "", None, None, default_target
                         break
         else:
             def parse(text, pos):
@@ -323,4 +328,62 @@ class MatchRuleItem(DynamicRuleItem):
         # should never happen
         raise RuntimeError("can't use bytext() on a MatchRuleItem")
 
+
+class Target:
+    """Abstracts a target.
+
+    A Target has two attributes:
+
+        ``pop``
+            zero or negative integer, indicating how may contexts to pop
+            off the current context.
+
+        ``push``
+            a list of lexicons that need to be created. A lexicon may be None,
+            indicating that the same lexicon needs to be pushed.
+
+    Targets can be added and be applied in once if desired.
+    A Target evaluates to False if pop == 0 and push is the empty list.
+
+    A Target is instantiated with the list of targets in a rule.
+
+    """
+    __slots__ = "pop", "push"
+
+    def __init__(self, args=()):
+        pop = 0
+        push = []
+        for i in args:
+            if isinstance(i, int):
+                if i < 0:
+                    if -i < len(push):
+                        del push[i:]
+                    else:
+                        pop += len(push) + i
+                        push.clear()
+                elif i:
+                    push.extend(itertools.repeat(None, i))
+            else:
+                push.append(i)
+        self.pop = pop
+        self.push = push
+
+    def __repr__(self):
+        return '<Target {} [{}]>'.format(self.pop, ' '.join(map(format, self.push)))
+
+    def __bool__(self):
+        return bool(self.pop or self.push)
+
+    def __add__(self, other):
+        t = type(self)()
+        if other.pop == 0:
+            t.pop = self.pop
+            t.push = self.push + other.push
+        elif -other.pop <= len(self.push):
+            t.pop = self.pop
+            t.push = self.push[:other.pop] + other.push
+        else:
+            t.pop = self.pop + len(self.push) + other.pop
+            t.push = other.push
+        return t
 
