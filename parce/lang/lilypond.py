@@ -87,7 +87,8 @@ class LilyPond(Language):
     def root(cls):
         """Toplevel LilyPond document."""
         yield from cls.blocks()
-        yield RE_LILYPOND_VARIABLE, Name.Variable, cls.varname
+        yield RE_LILYPOND_VARIABLE, Name.Variable
+        yield "[,.]", Delimiter
         yield "=", Operator.Assignment
         yield r"\\version\b", Keyword
         yield from cls.music()
@@ -117,36 +118,38 @@ class LilyPond(Language):
     @lexicon
     def header(cls):
         yield r'\}', Delimiter.CloseBrace, -1
-        yield RE_LILYPOND_VARIABLE, Name.Variable, cls.varname
+        yield RE_LILYPOND_VARIABLE, Name.Variable
+        yield "[,.]", Delimiter
         yield "=", Operator.Assignment
         yield from cls.common()
 
     @lexicon
     def paper(cls):
         yield r'\}', Delimiter.CloseBrace, -1
-        yield RE_LILYPOND_VARIABLE, Name.Variable, cls.varname
+        yield RE_LILYPOND_VARIABLE, Name.Variable
+        yield "[,.]", Delimiter
         yield "=", Operator.Assignment
-        yield from cls.base()
+        yield from cls.common()
+        yield from cls.commands()
 
     @lexicon
     def layout(cls):
         yield r'\}', Delimiter.CloseBrace, -1
         yield r"(\\context)\s*(\{)", bygroup(Keyword, Delimiter.OpenBrace), cls.layout_context
         yield from cls.music()
-        yield from cls.base()
 
     @lexicon
     def midi(cls):
         yield r'\}', Delimiter.CloseBrace, -1
         yield r"(\\context)\s*(\{)", bygroup(Keyword, Delimiter.OpenBrace), cls.layout_context
         yield from cls.music()
-        yield from cls.base()
 
     @lexicon
     def layout_context(cls):
         r"""Contents of \layout or \midi { \context { } } or \with. { }."""
         yield r'\}', Delimiter.CloseBrace, -1
         yield words(lilypond_words.contexts, prefix=r"\\", suffix=r"\b"), Context
+        yield words(lilypond_words.grobs), Grob
         yield words(lilypond_words.keywords, prefix=r"\\", suffix=r"(?![^\W\d])"), Keyword
         yield RE_LILYPOND_VARIABLE, Name.Variable, cls.varname
         yield "=", Operator.Assignment
@@ -159,6 +162,7 @@ class LilyPond(Language):
         pitch = bytext(cls.is_pitch, Name.Symbol, Pitch)
         yield RE_LILYPOND_DYNAMIC, Dynamic
         # TODO: find special commands like, \repeat
+        yield r"\\(?:un)?set(?![^\W\d])", Keyword, cls.set_unset
         yield r"\\(?:new|change|context)(?![^\W\d])", Keyword, cls.context
         yield r"(\\with)\s*(\{)", bygroup(Keyword, Delimiter.OpenBrace), cls.layout_context
         yield r"(\\relative)(?![^\W\d])(?:\s+" + RE_LILYPOND_PITCH_OCT + ")?", \
@@ -239,6 +243,17 @@ class LilyPond(Language):
         yield from cls.common()
         yield default_target, -1
 
+    @lexicon
+    def set_unset(cls):
+        """\\set, \\unset."""
+        yield SKIP_WHITESPACE
+        yield words(lilypond_words.contexts), Context
+        yield r'[.,]', Delimiter
+        yield "=", Operator.Assignment
+        yield RE_LILYPOND_VARIABLE + "(?=\s*([,.=])?)", Name.Variable, bymatch(
+            (lambda m: bool(m.group(m.lastindex + 1))), -1, 0)
+        yield default_target, -1
+
     # ------------------ script -------------------------
     @lexicon
     def script(cls):
@@ -283,7 +298,7 @@ class LilyPond(Language):
         yield from cls.common()
         yield r">>|\}", Delimiter.CloseBrace, -1
         yield r"<<|\{", Delimiter.OpenBrace, 1
-        yield r"[^\s\d{}$#]+", LyricText
+        yield r"[^\\\s\d{}$#]+", LyricText
         yield RE_FRACTION, Number
         yield RE_LILYPOND_DURATION, Duration, cls.duration_dots
         yield from cls.commands()
