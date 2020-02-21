@@ -194,10 +194,12 @@ class TreeBuilder:
                     if tokens:
                         if head:
                             # move start if the tokens before start didn't change
-                            if (old_tokens_index + len(tokens) < len(old_tokens) and
-                                all(new.equals(old)
-                                    for old, new in zip(old_tokens[old_tokens_index:], tokens))):
-                                start = pos
+                            if (old_tokens_index + len(tokens) < len(old_tokens)
+                                  and all(new.equals(old)
+                                    for old, new in zip(old_tokens[old_tokens_index:], tokens))
+                                  and ((len(old_tokens[old_tokens_index].group) == len(tokens))
+                                    if old_tokens[old_tokens_index].group else True)):
+                                start = old_tokens[old_tokens_index+len(tokens)-1].end
                                 old_tokens_index += len(tokens)
                             elif old_tokens_index == 0:
                                 # the first tokens already don't match with the
@@ -210,8 +212,12 @@ class TreeBuilder:
                                 break
                             else:
                                 # from here we will really use the new tokens
+                                for old, new in zip(old_tokens[old_tokens_index:], tokens):
+                                    if new.equals(old):
+                                        start = new.end
+                                    else:
+                                        break
                                 t = old_tokens[old_tokens_index]
-                                start = t.end if t.equals(tokens[0]) else t.pos
                                 context = t.parent
                                 t.cut() # throw away old tree from here
                                 # give the new tokens the real context as parent
