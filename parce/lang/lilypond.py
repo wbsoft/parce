@@ -47,8 +47,13 @@ RE_LILYPOND_DYNAMIC = (
     r"|cresc|decresc|dim|cr|decr"
     r")(?![A-Za-z])")
 
-RE_LILYPOND_REST = r"[rRs](?![A-Za-z])"
-RE_LILYPOND_PITCHWORD = r"[^\W\d_]+(?:-[^\W\d_]+)*(?![^\W\d])"
+RE_LILYPOND_REST = r"[rRs](?![^\W\d])"
+
+# a string that could be a valid pitch name (or drum name)
+RE_LILYPOND_PITCHWORD = r"(?<![^\W\d])[a-zé]+(?:-[a-zé]+)*(?![^\W\d])"
+
+# a pitch name followed by an optional octave (two capturing groups)
+RE_LILYPOND_PITCH_OCT = "(" + RE_LILYPOND_PITCHWORD + r")\s*('+|,+)?"
 
 RE_LILYPOND_DURATION = \
     r"(\\(maxima|longa|breve)\b|(1|2|4|8|16|32|64|128|256|512|1024|2048)(?!\d))"
@@ -60,6 +65,8 @@ Pitch = Name.Pitch
 Octave = Pitch.Octave
 OctaveCheck = Pitch.Octave.OctaveCheck
 Accidental = Pitch.Accidental
+Context = Name.Constant.Context
+Grob = Name.Object.Grob
 Duration = Number.Duration
 Duration.Dot
 Duration.Scaling
@@ -139,7 +146,8 @@ class LilyPond(Language):
     def layout_context(cls):
         r"""Contents of \layout or \midi { \context { } } or \with. { }."""
         yield r'\}', Delimiter.CloseBrace, -1
-        yield words(lilypond_words.contexts, prefix=r"\\", suffix=r"\b"), Name.Class
+        yield words(lilypond_words.contexts, prefix=r"\\", suffix=r"\b"), Context
+        yield words(lilypond_words.keywords, prefix=r"\\", suffix=r"(?![^\W\d])"), Keyword
         yield RE_LILYPOND_VARIABLE, Name.Variable, cls.varname
         yield "=", Operator.Assignment
         yield from cls.base()
@@ -148,13 +156,22 @@ class LilyPond(Language):
     @classmethod
     def commands(cls):
         """Yield commands that can occur in all input modes."""
+        pitch = bytext(cls.is_pitch, Name.Symbol, Pitch)
         yield RE_LILYPOND_DYNAMIC, Dynamic
-        # TODO: find special commands like \relative, \repeat
+        # TODO: find special commands like, \repeat
+        yield r"\\(?:new|change|context)(?![^\W\d])", Keyword, cls.context
+        yield r"(\\with)\s*(\{)", bygroup(Keyword, Delimiter.OpenBrace), cls.layout_context
+        yield r"(\\relative)(?![^\W\d])(?:\s+" + RE_LILYPOND_PITCH_OCT + ")?", \
+            bygroup(Keyword, pitch, Octave)
+        yield (r"(\\transpose)(?![^\W\d])(?:\s+" + RE_LILYPOND_PITCH_OCT + ")?"
+               "(?:\s*" + RE_LILYPOND_PITCH_OCT + ")?"), \
+               bygroup(Keyword, pitch, Octave, pitch, Octave)
         yield r"\\tempo(?![^\W\d])", Keyword, cls.tempo
         yield r"(\\lyric(?:mode|s))\b\s*(\\s(?:equential|imultaneous)\b)?\s*(\{|<<)?", \
             bygroup(Keyword.Lyric, Keyword, Delimiter.OpenBrace), \
             ifgroup(3, cls.lyrics)
         yield r"\\lyricsto\b", Keyword.Lyric, cls.lyricsto
+        yield words(lilypond_words.keywords, prefix=r"\\", suffix=r"(?![^\W\d])"), Keyword
         yield RE_LILYPOND_COMMAND, Name.Command
 
     # ------------------ music ----------------------
@@ -174,7 +191,11 @@ class LilyPond(Language):
         yield r"[-_^]", Direction, cls.script
         yield r"q(?![^\W\d])", Pitch
         yield RE_LILYPOND_REST, Rest
-        yield RE_LILYPOND_PITCHWORD, bymatch(cls.is_pitch, (Name.Class,), (Pitch, cls.pitch))
+        yield RE_LILYPOND_PITCHWORD, bytext(cls.is_pitch, (Name.Symbol,), (Pitch, cls.pitch))
+        yield words(lilypond_words.contexts), Context
+        yield words(lilypond_words.grobs), Grob
+        yield r'[.,]', Delimiter
+        yield r'=', Operator.Assignment
         yield RE_FRACTION, Number
         yield RE_LILYPOND_DURATION, Duration, cls.duration_dots
         yield from cls.commands()
@@ -208,6 +229,16 @@ class LilyPond(Language):
             Operator.Assignment, Number, Operator, Number), -1
         yield default_target, -1
 
+    @lexicon
+    def context(cls):
+        """\\new, \\change, \\context Context [="name"] stuff."""
+        yield SKIP_WHITESPACE
+        yield words(lilypond_words.contexts), Context
+        yield "=", Operator.Assignment
+        yield r"(\\with)\s*(\{)", bygroup(Keyword, Delimiter.OpenBrace), -1, cls.layout_context
+        yield from cls.common()
+        yield default_target, -1
+
     # ------------------ script -------------------------
     @lexicon
     def script(cls):
@@ -217,8 +248,8 @@ class LilyPond(Language):
 
     # ------------------ pitch --------------------------
     @classmethod
-    def is_pitch(cls, matchobj):
-        return matchobj.group() in lilypond_words.all_pitchnames
+    def is_pitch(cls, text):
+        return text in lilypond_words.all_pitchnames
 
     @lexicon
     def pitch(cls):
