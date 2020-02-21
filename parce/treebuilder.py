@@ -362,8 +362,8 @@ class TreeBuilder:
             if isinstance(action, DynamicAction):
                 yield from action.filter_actions(self, pos, txt, match)
             else:
-                action = action.bymatch(match)
-                yield from self.filter_actions(self, action, pos, txt, patch)
+                for action in action.replace(txt, match):
+                    yield from self.filter_actions(action, pos, txt, match)
         elif txt:
             yield pos, txt, action
 
