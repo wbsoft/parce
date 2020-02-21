@@ -215,7 +215,7 @@ class SubgroupAction(DynamicAction):
     """
     def filter_actions(self, builder, pos, text, match):
         for i, action in enumerate(self.actions, match.lastindex + 1):
-            yield from builder.filter_actions(action, match.start(i), match.group(i), None)
+            yield from builder.filter_actions(action, match.start(i), match.group(i), match)
 
 
 class SkipAction(DynamicAction):

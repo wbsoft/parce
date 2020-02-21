@@ -244,7 +244,7 @@ class Lexicon:
             def inner_replace(items):
                 for i in items:
                     if isinstance(i, DynamicRuleItem):
-                        yield from inner_replace(i.bymatch(m))
+                        yield from inner_replace(i.replace(m.group(), m))
                     else:
                         yield i
             action, *target = inner_replace(dynamic[m.lastindex])
@@ -291,9 +291,14 @@ class DynamicRuleItem(DynamicItem):
         self.itemlists = [i if isinstance(i, (tuple, list)) else (i,)
                           for i in itemlists]
 
-    def bymatch(self, match):
-        """Should return an itemlist pointed to by the index returned by the predicate."""
-        raise NotImplementedError
+    def replace(self, text, match):
+        """Return one of the itemlists.
+
+        Based on either text or match (depending on implementation) one
+        is chosen.
+
+        """
+        raise NotImplementedError()
 
 
 class TextRuleItem(DynamicRuleItem):
@@ -304,10 +309,7 @@ class TextRuleItem(DynamicRuleItem):
     :func:`parce.bytext` function.
 
     """
-    def bymatch(self, match):
-        return self.bytext(match.group())
-
-    def bytext(self, text):
+    def replace(self, text, match):
         index = self.predicate(text)
         return self.itemlists[index]
 
@@ -320,13 +322,9 @@ class MatchRuleItem(DynamicRuleItem):
     :func:`parce.bymatch` function.
 
     """
-    def bymatch(self, match):
+    def replace(self, text, match):
         index = self.predicate(match)
         return self.itemlists[index]
-
-    def bytext(self, text):
-        # should never happen
-        raise RuntimeError("can't use bytext() on a MatchRuleItem")
 
 
 class Target:
