@@ -152,8 +152,9 @@ class LilyPond(Language):
         yield words(lilypond_words.grobs), Grob
         yield words(lilypond_words.keywords, prefix=r"\\", suffix=r"(?![^\W\d])"), Keyword
         yield RE_LILYPOND_VARIABLE, Name.Variable, cls.varname
-        yield "=", Operator.Assignment
-        yield from cls.base()
+        yield "(=)(?:\s*("+RE_FRACTION+"|\d+))?", bygroup(Operator.Assignment, Number)
+        yield from cls.common()
+        yield from cls.commands()
 
     # ------------------ commands that can occur in all input modes --------
     @classmethod
@@ -163,6 +164,7 @@ class LilyPond(Language):
         yield RE_LILYPOND_DYNAMIC, Dynamic
         # TODO: find special commands like, \repeat
         yield r"\\(?:un)?set(?![^\W\d])", Keyword, cls.set_unset
+        yield r"\\(?:override|revert)(?![^\W\d])", Keyword, cls.override
         yield r"\\(?:new|change|context)(?![^\W\d])", Keyword, cls.context
         yield r"(\\with)\s*(\{)", bygroup(Keyword, Delimiter.OpenBrace), cls.layout_context
         yield r"(\\relative)(?![^\W\d])(?:\s+" + RE_LILYPOND_PITCH_OCT + ")?", \
@@ -202,6 +204,7 @@ class LilyPond(Language):
         yield r'=', Operator.Assignment
         yield RE_FRACTION, Number
         yield RE_LILYPOND_DURATION, Duration, cls.duration_dots
+        yield r"\d+", Number
         yield from cls.commands()
 
     @lexicon
@@ -249,7 +252,19 @@ class LilyPond(Language):
         yield SKIP_WHITESPACE
         yield words(lilypond_words.contexts), Context
         yield r'[.,]', Delimiter
-        yield "=", Operator.Assignment
+        yield "(=)(?:\s*("+RE_FRACTION+"|\d+))?", bygroup(Operator.Assignment, Number)
+        yield RE_LILYPOND_VARIABLE + "(?=\s*([,.=])?)", Name.Variable, bymatch(
+            (lambda m: bool(m.group(m.lastindex + 1))), -1, 0)
+        yield default_target, -1
+
+    @lexicon
+    def override(cls):
+        """\\override, \\revert."""
+        yield SKIP_WHITESPACE
+        yield words(lilypond_words.contexts), Context
+        yield words(lilypond_words.grobs), Grob
+        yield r'[.,]', Delimiter
+        yield "(=)(?:\s*("+RE_FRACTION+"|\d+))?", bygroup(Operator.Assignment, Number)
         yield RE_LILYPOND_VARIABLE + "(?=\s*([,.=])?)", Name.Variable, bymatch(
             (lambda m: bool(m.group(m.lastindex + 1))), -1, 0)
         yield default_target, -1
