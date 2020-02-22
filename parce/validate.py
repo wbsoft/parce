@@ -24,6 +24,7 @@ import re
 import parce
 from parce.lexicon import DynamicRuleItem, LexiconDescriptor, Lexicon
 from parce.pattern import Pattern
+from . import util
 
 
 def validate_language(lang):
@@ -80,6 +81,7 @@ class LexiconValidator:
         self.errors.clear()
         self.warnings.clear()
         default_act, default_tg = None, None
+        patterns = set()
         for rule in self.lexicon():
             if not isinstance(rule, (tuple, list)):
                 self.error("invalid rule; should be tuple or list")
@@ -102,7 +104,12 @@ class LexiconValidator:
                     default_tg = rule
                     self.check_default_target(default_tg)
             else:
+                if isinstance(pattern, Pattern):
+                    pattern = pattern.build()
                 self.validate_pattern(pattern)
+                if pattern in patterns:
+                    self.warning("repeating same pattern: {}".format(util.abbreviate_repr(pattern)))
+                patterns.add(pattern)
                 self.validate_rule(rule)
 
         if default_act and default_tg:
@@ -111,8 +118,6 @@ class LexiconValidator:
 
     def validate_pattern(self, pattern):
         """Validate a regular expression pattern."""
-        if isinstance(pattern, Pattern):
-            pattern = pattern.build()
         try:
             rx = re.compile(pattern, self.lexicon.re_flags)
         except re.error as e:

@@ -201,7 +201,6 @@ class LilyPond(Language):
         yield words(lilypond_words.contexts), Context
         yield words(lilypond_words.grobs), Grob
         yield r'[.,]', Delimiter
-        yield r'=', Operator.Assignment
         yield RE_FRACTION, Number
         yield RE_LILYPOND_DURATION, Duration, cls.duration_dots
         yield r"\d+", Number
