@@ -49,8 +49,6 @@ class Lexer:
         lexicons = self.lexicons
         temp_target = None
         circular = set()
-        circular_pos = -1
-        old_tokens = None
         while True:
             for pos, txt, match, action, target in lexicons[-1].parse(text, pos):
                 if txt:
@@ -75,13 +73,13 @@ class Lexer:
                             else:
                                 break
                         if not txt:
-                            move = (len(lexicons), len(target.push))
-                            if pos == circular_pos and move in circular:
+                            state = (pos, len(lexicons), len(target.push))
+                            if state in circular:
                                 if pos < len(text):
                                     pos += 1
                                 circular.clear()
                             else:
-                                circular.add(move)
+                                circular.add(state)
                         else:
                             circular.clear()
                         lexicons.extend(target.push)
