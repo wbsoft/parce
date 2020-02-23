@@ -52,6 +52,7 @@ import threading
 import parce.action
 import parce.pattern
 import parce.regex
+from parce.target import Target
 
 
 class LexiconDescriptor:
@@ -155,7 +156,7 @@ class Lexicon:
             if pattern is parce.default_action:
                 default_action = rule[0]
             elif pattern is parce.default_target:
-                default_target = Target(rule)
+                default_target = Target(self, rule)
             else:
                 if isinstance(pattern, parce.pattern.Pattern):
                     pattern = pattern.build()
@@ -185,7 +186,7 @@ class Lexicon:
             if needle:
                 l= len(needle)
                 action, *target = rules[0]
-                target = target and Target(target) or None
+                target = target and Target(self, target) or None
                 if default_action:
                     def parse(text, pos):
                         """Parse text, using a default action for unknown text."""
@@ -231,7 +232,7 @@ class Lexicon:
                 dynamic[i] = rule
             else:
                 action, *target = rule
-                static[i] = (action, target and Target(target) or None)
+                static[i] = (action, target and Target(self, target) or None)
 
         # for rule containing no dynamic stuff, static has the rule, otherwise
         # falls back to dynamic, which is then immediately executed
@@ -248,7 +249,7 @@ class Lexicon:
                     else:
                         yield i
             action, *target = inner_replace(dynamic[m.lastindex])
-            return action, target and Target(target) or None
+            return action, target and Target(self, target) or None
 
         if default_action:
             def parse(text, pos):
@@ -326,62 +327,4 @@ class MatchRuleItem(DynamicRuleItem):
         index = self.predicate(match)
         return self.itemlists[index]
 
-
-class Target:
-    """Abstracts a target.
-
-    A Target has two attributes:
-
-        ``pop``
-            zero or negative integer, indicating how may contexts to pop
-            off the current context.
-
-        ``push``
-            a list of lexicons that need to be created. A lexicon may be None,
-            indicating that the same lexicon needs to be pushed.
-
-    Targets can be added and be applied in once if desired.
-    A Target evaluates to False if pop == 0 and push is the empty list.
-
-    A Target is instantiated with the list of targets in a rule.
-
-    """
-    __slots__ = "pop", "push"
-
-    def __init__(self, args=()):
-        pop = 0
-        push = []
-        for i in args:
-            if isinstance(i, int):
-                if i < 0:
-                    if -i < len(push):
-                        del push[i:]
-                    else:
-                        pop += len(push) + i
-                        push.clear()
-                elif i:
-                    push.extend(itertools.repeat(None, i))
-            else:
-                push.append(i)
-        self.pop = pop
-        self.push = push
-
-    def __repr__(self):
-        return '<Target {} [{}]>'.format(self.pop, ' '.join(map(format, self.push)))
-
-    def __bool__(self):
-        return bool(self.pop or self.push)
-
-    def __add__(self, other):
-        t = type(self)()
-        if other.pop == 0:
-            t.pop = self.pop
-            t.push = self.push + other.push
-        elif -other.pop <= len(self.push):
-            t.pop = self.pop
-            t.push = self.push[:other.pop] + other.push
-        else:
-            t.pop = self.pop + len(self.push) + other.pop
-            t.push = other.push
-        return t
 

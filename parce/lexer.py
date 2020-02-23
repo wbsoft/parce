@@ -47,7 +47,7 @@ class Lexer:
     def events(self, text, pos=0):
         """Get the events from parsing text from the specified position."""
         lexicons = self.lexicons
-        temp_target = None
+        final_target = None
         circular = set()
         while True:
             for pos, txt, match, action, target in lexicons[-1].parse(text, pos):
@@ -57,9 +57,8 @@ class Lexer:
                     else:
                         tokens = (pos, txt, action),
                     if tokens:
-                        yield Event(temp_target or None, tokens)
-                        temp_target = None
-                    pos += len(txt)
+                        yield Event(final_target, tokens)
+                        final_target = None
                 if target:
                     if target.pop:
                         # never pop off root
@@ -67,11 +66,6 @@ class Lexer:
                             target.pop = 1 - len(lexicons)
                         del lexicons[target.pop:]
                     if target.push:
-                        for i, t in enumerate(target.push):
-                            if t is None:
-                                target.push[i] = lexicons[-1]
-                            else:
-                                break
                         if not txt:
                             state = (pos, len(lexicons), len(target.push))
                             if state in circular:
@@ -83,10 +77,8 @@ class Lexer:
                         else:
                             circular.clear()
                         lexicons.extend(target.push)
-                    if temp_target:
-                        temp_target += target
-                    else:
-                        temp_target = target
+                    final_target += target
+                    pos += len(txt)
                     break   # continue with new lexicon
             else:
                 break   # done
