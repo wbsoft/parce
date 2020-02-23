@@ -75,7 +75,7 @@ class Lexer:
                             else:
                                 break
                         if not txt:
-                            move = (len(lexicons), len(push))
+                            move = (len(lexicons), len(target.push))
                             if pos == circular_pos and move in circular:
                                 if pos < len(text):
                                     pos += 1
