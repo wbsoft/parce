@@ -908,7 +908,7 @@ class Context(list, Node):
                         yield from events(n[:end])
                     n = n[end]
                 target.push(n.lexicon)
-                yield from events(n[end_trail[-1]+1:])   # include end token
+                yield from events(n[:end_trail[-1]+1])   # include end token
         elif start < len(self):
             yield from events(self[start:])
 
