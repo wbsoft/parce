@@ -749,12 +749,26 @@ class Context(list, Node):
         the start and end positions.
 
         """
+        context, start_trail, end_trail = self.context_trails(start, end)
+        if context:
+            yield from context.slices(start_trail, end_trail)
+
+    def context_trails(self, start=0, end=None):
+        """Return a three-tuple(context, start_trail, end_trail).
+
+        This can be used to denote a range of the tree structure in slices. The
+        returned context is the common ancestor of the tokens found at start
+        and end (or the current node if start or end fall outside the range of
+        the node). The trails are (possibly empty) lists of indices pointing to
+        the start and end token, if any.
+
+        """
         if not self:
-            return  # empty
+            return None, None, None  # empty
         context = self
         if end is not None and end < self.end:
             if end <= start:
-                return
+                return None, None, None
             end_trail = self.find_token_left_with_trail(end)[1]
         else:
             end_trail = []
@@ -771,7 +785,7 @@ class Context(list, Node):
                     del end_trail[:n]
         else:
             start_trail = []
-        yield from context.slices(start_trail, end_trail)
+        return context, start_trail, end_trail
 
     def slices(self, start_trail, end_trail):
         """Yield from the current context (context, slice) tuples.
