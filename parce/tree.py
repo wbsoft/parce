@@ -54,6 +54,8 @@ import itertools
 from parce import util
 from parce import query
 from parce.lexicon import Lexicon
+from parce.lexer import Event
+from parce.target import Target
 
 
 class Node:
@@ -835,6 +837,25 @@ class Context(list, Node):
             if token.group:
                 token = token.group[0]
             return token
+
+    def events(self):
+        """Yield Events for all child nodes."""
+        def events(context, target):
+            nodes = iter(context)
+            for n in nodes:
+                if n.is_token:
+                    if n.group:
+                        tokens = tuple((t.pos, t.text, t.action) for t in n.group)
+                        for _ in range(len(n.group) - 1):
+                            next(nodes)
+                    else:
+                        tokens = (n.pos, n.text, n.action),
+                    yield Event(target, tokens)
+                    target = None
+                else:
+                    yield from events(n, target + Target.enter(n.lexicon))
+                    target = Target.leave()
+        yield from events(self, None)
 
 
 def tokens(nodes):
