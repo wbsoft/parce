@@ -52,7 +52,7 @@ import threading
 import parce.action
 import parce.pattern
 import parce.regex
-from parce.target import Target
+from parce.target import TargetFactory
 
 
 class LexiconDescriptor:
@@ -156,7 +156,7 @@ class Lexicon:
             if pattern is parce.default_action:
                 default_action = rule[0]
             elif pattern is parce.default_target:
-                default_target = Target(self, rule)
+                default_target = TargetFactory.make(self, rule)
             else:
                 if isinstance(pattern, parce.pattern.Pattern):
                     pattern = pattern.build()
@@ -185,8 +185,8 @@ class Lexicon:
             needle = parce.regex.to_string(patterns[0])
             if needle:
                 l= len(needle)
-                action, *target = rules[0]
-                target = target and Target(self, target) or None
+                action, *rule = rules[0]
+                target = TargetFactory.make(self, rule)
                 if default_action:
                     def parse(text, pos):
                         """Parse text, using a default action for unknown text."""
@@ -232,7 +232,7 @@ class Lexicon:
                 dynamic[i] = rule
             else:
                 action, *target = rule
-                static[i] = (action, target and Target(self, target) or None)
+                static[i] = (action, TargetFactory.make(self, target))
 
         # for rule containing no dynamic stuff, static has the rule, otherwise
         # falls back to dynamic, which is then immediately executed
@@ -249,7 +249,7 @@ class Lexicon:
                     else:
                         yield i
             action, *target = inner_replace(dynamic[m.lastindex])
-            return action, target and Target(self, target) or None
+            return action, TargetFactory.make(self, target)
 
         if default_action:
             def parse(text, pos):

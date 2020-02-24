@@ -22,107 +22,72 @@
 A Target describes where to go.
 """
 
+import collections
 import itertools
 
 
-class Target:
-    """Abstracts a target.
+Target = collections.namedtuple("Target", "pop push")
 
-    A Target has two attributes:
 
-        ``pop``
-            zero or negative integer, indicating how may contexts to pop
-            off the current context.
+class TargetFactory:
+    """Maintains a current target and allows you to store changes.
 
-        ``push``
-            a list of lexicons that need to be created. A lexicon may be None,
-            indicating that the same lexicon needs to be pushed.
-
-    Targets can be added and be applied in once if desired.
-    A Target evaluates to None if pop == 0 and push is the empty list.
-
-    A Target is instantiated with the list of targets in a rule.
+    Call get() to het the final Target, and to reset the factory's internal
+    state.
 
     """
-    __slots__ = 'pop', 'push'
+    def __init__(self):
+        self._pop = 0
+        self._push = []
 
-    def __new__(cls, lexicon=None, args=()):
-        pop = 0
-        push = []
-        for i in args:
-            if isinstance(i, int):
-                if i < 0:
-                    if -i < len(push):
-                        del push[i:]
-                    else:
-                        pop += len(push) + i
-                        push.clear()
-                elif i:
-                    push.extend(itertools.repeat(lexicon, i))
+    def add(self, target):
+        """Add a Target to this factory."""
+        if target:
+            if target.pop == 0:
+                self._push.extend(target.push)
+            elif -target.pop <= len(self._push):
+                self._push[target.pop:] = target.push
             else:
-                push.append(i)
-        return cls._make(pop, push)
+                self._pop += len(self._push) + target.pop
+                self._push[:] = target.push
+
+    def get(self):
+        """Get the current target, may be None if no pop and push.
+
+        After this the current target is reset.
+
+        """
+        if self._pop or self._push:
+            t = Target(self._pop, self._push)
+            self.__init__()
+            return t
+
+    def push(self, *lexicons):
+        """Enter one or more lexicons."""
+        self._push.extend(lexicons)
+
+    def pop(self, pop=-1):
+        """Pop off one (or more) lexicon."""
+        if pop:
+            if -pop <= len(self._push):
+                del self._push[pop:]
+            else:
+                self._pop += len(self._push) + pop
+                self._push.clear()
 
     @classmethod
-    def _make(cls, pop, push):
-        if pop or push:
-            target = object.__new__(cls)
-            target.pop = pop
-            target.push = push
-            return target
+    def make(cls, lexicon, rule):
+        """Create a Target of a rule."""
+        if rule:
+            f = cls()
+            for t in rule:
+                if isinstance(t, int):
+                    if t < 0:
+                        f.pop(t)
+                    elif t:
+                        f.push(*itertools.repeat(lexicon, t))
+                else:
+                    f.push(t)
+            return f.get()
 
-    def __repr__(self):
-        return '<Target {} [{}]>'.format(self.pop, ' '.join(map(format, self.push)))
-
-    def __bool__(self):
-        return bool(self.pop or self.push)
-
-    def __eq__(self, other):
-        if isinstance(other, Target):
-            return self.pop == other.pop and self.push == other.push
-        elif other is None:
-            return self.pop == 0 and not self.push
-        else:
-            return super().__eq__(other)
-
-    def __ne__(self, other):
-        if isinstance(other, Target):
-            return self.pop != other.pop or self.push != other.push
-        elif other is None:
-            return bool(self.pop or self.push)
-        else:
-            return super().__ne__(other)
-
-    def __add__(self, other):
-        if other is None:
-            pop = self.pop
-            push = self.push
-        elif other.pop == 0:
-            pop = self.pop
-            push = self.push + other.push
-        elif -other.pop <= len(self.push):
-            pop = self.pop
-            push = self.push[:other.pop] + other.push
-        else:
-            pop = self.pop + len(self.push) + other.pop
-            push = other.push
-        return self._make(pop, push)
-
-    __radd__ = __add__
-
-    @classmethod
-    def enter(cls, lexicon):
-        """Return a new Target with lexicon pushed."""
-        target = object.__new__(cls)
-        target.pop = 0
-        target.push = [lexicon]
-        return target
-
-    @classmethod
-    def leave(cls):
-        """Return a new Target that pops one lexicon off."""
-        target = object.__new__(cls)
-        target.pop = -1
-        target.push = []
-        return target
 

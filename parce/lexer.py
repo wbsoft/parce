@@ -27,6 +27,7 @@ import collections
 
 from .action import DynamicAction
 from .lexicon import DynamicItem
+from .target import TargetFactory, Target
 
 
 Event = collections.namedtuple("Event", "target tokens")
@@ -47,7 +48,7 @@ class Lexer:
     def events(self, text, pos=0):
         """Get the events from parsing text from the specified position."""
         lexicons = self.lexicons
-        final_target = None
+        target_factory = TargetFactory()
         circular = set()
         while True:
             for pos, txt, match, action, target in lexicons[-1].parse(text, pos):
@@ -57,13 +58,12 @@ class Lexer:
                     else:
                         tokens = (pos, txt, action),
                     if tokens:
-                        yield Event(final_target, tokens)
-                        final_target = None
+                        yield Event(target_factory.get(), tokens)
                 if target:
                     if target.pop:
                         # never pop off root
                         if -target.pop >= len(lexicons):
-                            target.pop = 1 - len(lexicons)
+                            target = Target(1 - len(lexicons), target.push)
                         del lexicons[target.pop:]
                     if target.push:
                         if not txt:
@@ -77,7 +77,7 @@ class Lexer:
                         else:
                             circular.clear()
                         lexicons.extend(target.push)
-                    final_target += target
+                    target_factory.add(target)
                     pos += len(txt)
                     break   # continue with new lexicon
             else:
