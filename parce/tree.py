@@ -409,6 +409,13 @@ class Token(Node):
         else:
             yield self
 
+    def events_until_including(self, other):
+        """Yield events for all tokens starting with us and upto and including the other."""
+        if other.pos > self.pos:
+            context, start_trail, end_trail = self.common_ancestor_with_trail(other)
+            if context:
+                yield from context.events(start_trail, end_trail)
+
     def cut(self):
         """Remove this token and all tokens to the right from the tree."""
         for parent, index in self.ancestors_with_index():
