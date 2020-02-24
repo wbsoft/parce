@@ -852,7 +852,7 @@ class Context(list, Node):
                 token = token.group[0]
             return token
 
-    def events(self):
+    def events(self, start_trail=None, end_trail=None):
         """Yield Events for all child nodes."""
         def events(context, target):
             nodes = iter(context)
@@ -869,7 +869,44 @@ class Context(list, Node):
                 else:
                     yield from events(n, target + Target.enter(n.lexicon))
                     target = Target.leave()
-        yield from events(self, None)
+
+        target = None
+        if start_trail:
+            start = start_trail[0]
+            if len(start_trail) > 1:
+                ancestors = []
+                n = self[start]
+                for i in start_trail[1:]:
+                    ancestors.append((n, i))
+                    n = n[i]
+                yield from events(ancestors[-1][0][i:], target) # include start token
+                for p, i in ancestors[-2::-1]:
+                    target += Target.leave()
+                    if i < len(p) - 1:
+                        yield from events(p[i+1:], target)
+                        target = None
+                start += 1
+        else:
+            start = 0
+        if end_trail:
+            end = end_trail[0]
+            if len(end_trail) == 1:
+                yield from events(self[start:end+1], target)    # include end token
+            else:
+                if start < end:
+                    yield from events(self[start:end], target)
+                    target = None
+                n = self[end]
+                for end in end_trail[1:-1]:
+                    target += Target.enter(n.lexicon)
+                    if end:
+                        yield from events(n[:end], target)
+                        target = None
+                    n = n[end]
+                target += Target.enter(n.lexicon)
+                yield from events(n[end_trail[-1]+1:], target)   # include end token
+        elif start < len(self):
+            yield from events(self[start:], target)
 
 
 def tokens(nodes):
