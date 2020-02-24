@@ -854,7 +854,8 @@ class Context(list, Node):
 
     def events(self, start_trail=None, end_trail=None):
         """Yield Events for all child nodes."""
-        def events(context, target):
+        def events(context):
+            nonlocal target
             nodes = iter(context)
             for n in nodes:
                 if n.is_token:
@@ -867,8 +868,9 @@ class Context(list, Node):
                     yield Event(target, tokens)
                     target = None
                 else:
-                    yield from events(n, target + Target.enter(n.lexicon))
-                    target = Target.leave()
+                    target += Target.enter(n.lexicon)
+                    yield from events(n)
+                    target += Target.leave()
 
         target = None
         if start_trail:
@@ -879,34 +881,31 @@ class Context(list, Node):
                 for i in start_trail[1:]:
                     ancestors.append((n, i))
                     n = n[i]
-                yield from events(ancestors[-1][0][i:], target) # include start token
+                yield from events(ancestors[-1][0][i:]) # include start token
                 for p, i in ancestors[-2::-1]:
                     target += Target.leave()
                     if i < len(p) - 1:
-                        yield from events(p[i+1:], target)
-                        target = None
+                        yield from events(p[i+1:])
                 start += 1
         else:
             start = 0
         if end_trail:
             end = end_trail[0]
             if len(end_trail) == 1:
-                yield from events(self[start:end+1], target)    # include end token
+                yield from events(self[start:end+1])    # include end token
             else:
                 if start < end:
-                    yield from events(self[start:end], target)
-                    target = None
+                    yield from events(self[start:end])
                 n = self[end]
                 for end in end_trail[1:-1]:
                     target += Target.enter(n.lexicon)
                     if end:
-                        yield from events(n[:end], target)
-                        target = None
+                        yield from events(n[:end])
                     n = n[end]
                 target += Target.enter(n.lexicon)
-                yield from events(n[end_trail[-1]+1:], target)   # include end token
+                yield from events(n[end_trail[-1]+1:])   # include end token
         elif start < len(self):
-            yield from events(self[start:], target)
+            yield from events(self[start:])
 
 
 def tokens(nodes):
