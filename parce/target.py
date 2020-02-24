@@ -77,6 +77,22 @@ class Target:
     def __bool__(self):
         return bool(self.pop or self.push)
 
+    def __eq__(self, other):
+        if isinstance(other, Target):
+            return self.pop == other.pop and self.push == other.push
+        elif other is None:
+            return self.pop == 0 and not self.push
+        else:
+            return super().__eq__(other)
+
+    def __ne__(self, other):
+        if isinstance(other, Target):
+            return self.pop != other.pop or self.push != other.push
+        elif other is None:
+            return bool(self.pop or self.push)
+        else:
+            return super().__ne__(other)
+
     def __add__(self, other):
         if other is None:
             pop = self.pop
@@ -94,4 +110,19 @@ class Target:
 
     __radd__ = __add__
 
+    @classmethod
+    def enter(cls, lexicon):
+        """Return a new Target with lexicon pushed."""
+        target = object.__new__(cls)
+        target.pop = 0
+        target.push = [lexicon]
+        return target
+
+    @classmethod
+    def leave(cls):
+        """Return a new Target that pops one lexicon off."""
+        target = object.__new__(cls)
+        target.pop = -1
+        target.push = []
+        return target
 
