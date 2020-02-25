@@ -117,6 +117,7 @@ class TreeBuilder:
         if not self.root.lexicon:
             self.root.clear()
             self.start, self.end = start, start + added
+            self.lexicons = None
             return
 
         # manage end, and record if there is text after the modified part (tail)

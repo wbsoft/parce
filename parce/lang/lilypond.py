@@ -129,6 +129,7 @@ class LilyPond(Language):
         yield RE_LILYPOND_VARIABLE, Name.Variable
         yield "[,.]", Delimiter
         yield "=", Operator.Assignment
+        yield RE_FRACTION + r"|\d+", Number
         yield from cls.common()
         yield from cls.commands()
 
