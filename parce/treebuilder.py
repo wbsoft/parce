@@ -40,6 +40,7 @@ import itertools
 import threading
 
 from parce.action import DynamicAction
+from parce.lexer import Lexer
 from parce.lexicon import DynamicItem, DynamicRuleItem
 from parce.tree import Context, Token, _GroupToken
 
@@ -147,7 +148,6 @@ class TreeBuilder:
             else:
                 tail = False
 
-        circular = set()
         lowest_start = sys.maxsize
         restart = True
         while restart:
@@ -167,205 +167,127 @@ class TreeBuilder:
 
                     # while parsing we'll see whether we can still use the
                     # old tokens from start_token till last_token.
-                    # make a temporary copy-context for the new tokens
-                    context = c = Context(start_token.parent.lexicon, None)
-                    for p in start_token.parent.ancestors():
-                        new = Context(p.lexicon, None)
-                        new.append(c)
-                        c.parent = c = new
-                    # if there are no tokens before start_token, start at 0
-                    start = start_token.pos if start_token.previous_token() else 0
-                    old_tokens = list(start_token.forward_until_including(last_token))
-                    old_tokens_index = 0
+                    lexicons = [p.lexicon for p in start_token.ancestors()]
+                    lexicons.reverse()
+                    lexer = Lexer(lexicons)
+                    events = lexer.events(text, start_token.pos)
+                    old_events = start_token.events_until_including(last_token)
+                    prev = None
+                    for old, new in zip(old_events, events):
+                        if new != old:
+                            if prev is None:
+                                # go back further
+                                start = old.tokens[0][0]
+                                restart = True
+                            else:
+                                # push back the new event
+                                events = itertools.chain((new,), events)
+                                pos, txt = prev.tokens[-1][:2]
+                                start = pos + len(txt)
+                                for n, o in zip(new.tokens, old.tokens):
+                                    if n != o:
+                                        break
+                                    start = o[0] + len(o[1])
+                            break
+                        prev = new
+                    else:
+                        if prev is None:
+                            # no new events at all, that would be very strange
+                            # but go back further in that case
+                            start = start_token.pos
+                            restart = True
+                        else:
+                            pos, txt = prev.tokens[-1][:2]
+                            start = pos + len(txt)
+                    if restart:
+                        if not start_token.previous_token():
+                            head = False
+                        continue
+                    pos = prev.tokens[-1][0]
+                    token = self.root.find_token(pos)
+                    context = token.parent
+                    for p, i in token.ancestors_with_index():
+                        del p[i+1:]
                 else:
                     lowest_start = 0
                     head = False
             if not head:
-                start = 0
+                lexer = Lexer([self.root.lexicon])
+                events = lexer.events(text)
                 context = self.root
                 context.clear()
+                start = 0
 
             # start parsing
-            pos = tpos = start
-            done = False
-            circular.clear()
-            while not done:
-                for pos, tokens, target in self.parse_context(context, text, pos):
-                    if tokens:
-                        if head:
-                            # move start if the tokens before start didn't change
-                            if (old_tokens_index + len(tokens) < len(old_tokens)
-                                  and all(new.equals(old)
-                                    for old, new in zip(old_tokens[old_tokens_index:], tokens))
-                                  and ((len(old_tokens[old_tokens_index].group) == len(tokens))
-                                    if old_tokens[old_tokens_index].group else True)):
-                                start = old_tokens[old_tokens_index+len(tokens)-1].end
-                                old_tokens_index += len(tokens)
-                            elif old_tokens_index == 0:
-                                # the first tokens already don't match with the
-                                # old ones. Go back some more tokens if possible
-                                # (this will probably never happen)
-                                if not old_tokens[0].previous_token():
-                                    start = 0
-                                    head = False
-                                restart = done = True
+            for e in events:
+                if e.target:
+                    for _ in range(e.target.pop, 0):
+                        context = context.parent
+                    for lexicon in e.target.push:
+                        context = Context(lexicon, context)
+                        context.parent.append(context)
+                if len(e.tokens) > 1:
+                    tokens = tuple(_GroupToken(context, *t) for t in e.tokens)
+                    for t in tokens:
+                        t.group = tokens
+                else:
+                    tokens = Token(context, *e.tokens[0]),
+                if tail:
+                    if tokens[0].pos > tail_pos:
+                        for tail_token, tail_pos in tail_gen:
+                            if tail_pos >= tokens[0].pos:
                                 break
-                            else:
-                                # from here we will really use the new tokens
-                                for old, new in zip(old_tokens[old_tokens_index:], tokens):
-                                    if new.equals(old):
-                                        start = new.end
-                                    else:
-                                        break
-                                t = old_tokens[old_tokens_index]
-                                context = t.parent
-                                t.cut() # throw away old tree from here
-                                # give the new tokens the real context as parent
-                                for t in tokens:
-                                    t.parent = context
-                                context.extend(tokens)
-                                if target:
-                                    context = self.update_context(context, target)
-                                head = False    # stop looking further
-                                break # continue with new context anyway
-                        elif tail:
-                            if tokens[0].pos > tail_pos:
-                                for tail_token, tail_pos in tail_gen:
-                                    if tail_pos >= tokens[0].pos:
-                                        break
-                                else:
-                                    tail = False
-                            if (tokens[0].pos == tail_pos
-                                    and tokens[0].state_matches(tail_token)):
-                                # we can attach the tail here.
-                                if offset:
-                                    # adjust the pos of the old tail tokens.
-                                    # We don't use tail_token.forward() because
-                                    # it uses parent_index() which depends on sorted
-                                    # pos values
-                                    tail_token.cut_left()
-                                    for t in tail_tree.tokens():
-                                        t.pos += offset
-                                # add the old tokens to the current context
-                                tail_token.join(context)
-                                end = tail_pos
-                                done = True
-                                break
-                        context.extend(tokens)
-                        # we check for new changes here, so we always have tokens
-                        # in the current context
-                        if self.changes:
-                            c = self.get_changes()
-                            if c:
-                                # break out and adjust the current tokenizing process
-                                text = c.text
-                                start = c.position
-                                head = start > 0
-                                if c.root_lexicon != False:
-                                    self.root.lexicon = c.root_lexicon
-                                    head = tail = False
-                                elif tail:
-                                    # reuse old tail?
-                                    new_tail_pos = start + c.added
-                                    if new_tail_pos >= len(text):
-                                        tail = False
-                                    else:
-                                        offset += c.added - c.removed
-                                        tail_pos += offset
-                                        if new_tail_pos > tail_pos:
-                                            for tail_token, tail_pos in tail_gen:
-                                                if tail_pos >= new_tail_pos:
-                                                    break
-                                            else:
-                                                tail = False
-                                restart = done = True
-                                break # restart at new start position
-                        if target:
-                            context = self.update_context(context, target)
-                            break # continue with new context
-                    elif target:
-                        # this place is reached if there is a target but no tokens
-                        # beware of circular targets....
-                        circular.add(id(context))
-                        context = self.update_context(context, target)
-                        if pos == tpos:
-                            if id(context) in circular:
-                                # circular target found, just advance 1.
-                                # the current context will always be the one that
-                                # already existed (same id, so the ancestor)
-                                circular.clear()
-                                if pos < len(text):
-                                    pos += 1
-                                else:
-                                    done = True # quit if at end anyway
-                                    end = pos
-                                    self.unwind(context)
                         else:
-                            tpos = pos
-                            circular.clear()
-                        break   # continue with new context
-                else:
-                    end = len(text)
-                    self.unwind(context)
-                    break
+                            tail = False
+                    if (tokens[0].pos == tail_pos
+                            and tokens[0].state_matches(tail_token)):
+                        # we can attach the tail here.
+                        if offset:
+                            # adjust the pos of the old tail tokens.
+                            # We don't use tail_token.forward() because
+                            # it uses parent_index() which depends on sorted
+                            # pos values
+                            tail_token.cut_left()
+                            for t in tail_tree.tokens():
+                                t.pos += offset
+                        # add the old tokens to the current context
+                        tail_token.join(context)
+                        end = tail_pos
+                        break
+                context.extend(tokens)
+                # we check for new changes here, so we always have tokens
+                # in the current context
+                if self.changes:
+                    c = self.get_changes()
+                    if c:
+                        # break out and adjust the current tokenizing process
+                        text = c.text
+                        start = c.position
+                        head = start > 0
+                        if c.root_lexicon != False:
+                            self.root.lexicon = c.root_lexicon
+                            head = tail = False
+                        elif tail:
+                            # reuse old tail?
+                            new_tail_pos = start + c.added
+                            if new_tail_pos >= len(text):
+                                tail = False
+                            else:
+                                offset += c.added - c.removed
+                                tail_pos += offset
+                                if new_tail_pos > tail_pos:
+                                    for tail_token, tail_pos in tail_gen:
+                                        if tail_pos >= new_tail_pos:
+                                            break
+                                    else:
+                                        tail = False
+                        restart = True
+                        break # restart at new start position
+            else:
+                # we ran till the end, pick the open lexicons
+                self.lexicons = lexer.lexicons[1:]
+                end = len(text)
         self.start, self.end = min(start, lowest_start), end
-
-    def unwind(self, context):
-        """Recursively remove the context from its parent if empty.
-
-        Leaves the list of lexicons that were left open in the `lexicons`
-        attribute. When parsing ended in the root context, that list is empty.
-
-        """
-        self.lexicons = []
-        while context.parent:
-            self.lexicons.append(context.lexicon)
-            if not context:
-                del context.parent[-1]
-            context = context.parent
-
-    def parse_context(self, context, text, pos):
-        """Yield Token instances as long as we are in the current context."""
-        for pos, txt, match, action, target in context.lexicon.parse(text, pos):
-            if txt:
-                if isinstance(action, DynamicAction):
-                    tokens = tuple(action.filter_actions(self, pos, txt, match))
-                    if len(tokens) == 1:
-                        tokens = Token(context, *tokens[0]),
-                    else:
-                        tokens = tuple(_GroupToken(context, *t) for t in tokens)
-                        for t in tokens:
-                            t.group = tokens
-                else:
-                    tokens = Token(context, pos, txt, action),
-            else:
-                tokens = ()
-            yield pos + len(txt), tokens, target
-
-    def update_context(self, context, target):
-        """Move to another context depending on target."""
-        for pop in range(target.pop, 0):
-            if context.parent:
-                if not context:
-                    del context.parent[-1]
-                context = context.parent
-            else:
-                break
-        for lexicon in target.push:
-            context = Context(lexicon or context.lexicon, context)
-            context.parent.append(context)
-        return context
-
-    def filter_actions(self, action, pos, txt, match):
-        """Handle filtering via DynamicAction instances."""
-        if isinstance(action, DynamicItem):
-            if isinstance(action, DynamicAction):
-                yield from action.filter_actions(self, pos, txt, match)
-            else:
-                for action in action.replace(txt, match):
-                    yield from self.filter_actions(action, pos, txt, match)
-        elif txt:
-            yield pos, txt, action
 
 
 class BackgroundTreeBuilder(TreeBuilder):
