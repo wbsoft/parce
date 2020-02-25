@@ -20,6 +20,15 @@
 
 """
 The Lexer is responsible for parsing text using Lexicons.
+
+The lexer generates Event objects, which contain a target (or None) and one or
+more tokens. The target, if not None, specifies a state change (i.e. leave the
+current lexicon(s) or descend into specified lexicons. (See the
+:mod:`~parce.target` module.)
+
+The tokens is a tuple of one or more token tuples. A token is a ``(pos, text,
+action)`` tuple.
+
 """
 
 
