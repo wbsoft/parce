@@ -55,10 +55,10 @@ class Lexer:
                 if txt:
                     if isinstance(action, DynamicAction):
                         tokens = tuple(action.filter_actions(self, pos, txt, match))
+                        if tokens:
+                            yield Event(target_factory.get(), tokens)
                     else:
-                        tokens = (pos, txt, action),
-                    if tokens:
-                        yield Event(target_factory.get(), tokens)
+                        yield Event(target_factory.get(), ((pos, txt, action),))
                 if target:
                     if target.pop:
                         # never pop off root
