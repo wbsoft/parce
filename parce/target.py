@@ -20,6 +20,19 @@
 
 """
 A Target describes where to go.
+
+In a lexicon rule, you can specify destinations using integers or lexicons.
+A Target generalizes this in two values/attributes: ``pop`` and ``push``.
+
+``pop`` is zero or a negative integer, determining how many lexicons to
+pop off the current state/context.
+
+``push`` is a list of zero or more lexicons, determining which lexicons to
+add to the current state.
+
+You can sort of "add" targets using a TargetFactory, which can create single
+Target objects combining multiple targets in once.
+
 """
 
 import collections
@@ -32,7 +45,7 @@ Target = collections.namedtuple("Target", "pop push")
 class TargetFactory:
     """Maintains a current target and allows you to store changes.
 
-    Call get() to het the final Target, and to reset the factory's internal
+    Call get() to get the final Target, and to reset the factory's internal
     state.
 
     """
