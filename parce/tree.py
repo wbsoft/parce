@@ -411,7 +411,7 @@ class Token(Node):
 
     def events_until_including(self, other):
         """Yield events for all tokens starting with us and upto and including the other."""
-        if other.pos > self.pos:
+        if other.pos >= self.pos:
             context, start_trail, end_trail = self.common_ancestor_with_trail(other)
             if context:
                 yield from context.events(start_trail, end_trail)
@@ -867,9 +867,10 @@ class Context(list, Node):
             for n in nodes:
                 if n.is_token:
                     if n.group:
+                        skip = len(n.group) - n.group.index(n) - 1
                         tokens = tuple((t.pos, t.text, t.action) for t in n.group)
-                        for _ in range(len(n.group) - 1):
-                            next(nodes)
+                        for _ in itertools.islice(nodes, skip):
+                            pass
                     else:
                         tokens = (n.pos, n.text, n.action),
                     yield Event(target.get(), tokens)
