@@ -36,6 +36,8 @@ class TargetFactory:
     state.
 
     """
+    __slots__ = '_pop', '_push'
+
     def __init__(self):
         self._pop = 0
         self._push = []
