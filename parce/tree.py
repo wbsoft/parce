@@ -866,13 +866,11 @@ class Context(list, Node):
             nodes = iter(context)
             for n in nodes:
                 if n.is_token:
+                    tokens = (n.pos, n.text, n.action),
                     if n.group:
-                        skip = len(n.group) - n.group.index(n) - 1
-                        tokens = tuple((t.pos, t.text, t.action) for t in n.group)
-                        for _ in itertools.islice(nodes, skip):
-                            pass
-                    else:
-                        tokens = (n.pos, n.text, n.action),
+                        rest = len(n.group) - n.group.index(n) - 1
+                        tokens += tuple((t.pos, t.text, t.action)
+                            for t in itertools.islice(nodes, rest))
                     yield Event(target.get(), tokens)
                 else:
                     target.push(n.lexicon)
