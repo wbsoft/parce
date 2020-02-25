@@ -401,31 +401,16 @@ class Token(Node):
 
     def forward_until_including(self, other):
         """Yield all tokens starting with us and upto and including the other."""
-        if other.pos > self.pos:
-            context, start_trail, end_trail = self.common_ancestor_with_trail(other)
-            if context:
-                for context, slice_ in context.slices(start_trail, end_trail):
-                    yield from tokens(context[slice_])
-        else:
-            yield self
+        context, start_trail, end_trail = self.common_ancestor_with_trail(other)
+        if context:
+            for context, slice_ in context.slices(start_trail, end_trail):
+                yield from tokens(context[slice_])
 
     def events_until_including(self, other):
         """Yield events for all tokens starting with us and upto and including the other."""
-        if other.pos >= self.pos:
-            context, start_trail, end_trail = self.common_ancestor_with_trail(other)
-            if context:
-                yield from context.events(start_trail, end_trail)
-
-    def cut(self):
-        """Remove this token and all tokens to the right from the tree."""
-        for parent, index in self.ancestors_with_index():
-            del parent[index+1:]
-        del self.parent[-1] # including ourselves
-
-    def cut_left(self):
-        """Remove all tokens to the left from the tree."""
-        for parent, index in self.ancestors_with_index():
-            del parent[:index]
+        context, start_trail, end_trail = self.common_ancestor_with_trail(other)
+        if context:
+            yield from context.events(start_trail, end_trail)
 
     def split(self):
         """Split off a new tree, starting with this token.
@@ -497,15 +482,16 @@ class Token(Node):
         if other is self:
             i = self.parent_index()
             return self.parent, (i,), (i,)
-        s_ancestors, s_indices = zip(*self.ancestors_with_index())
-        o_indices = []
-        for n, i in other.ancestors_with_index():
-            o_indices.append(i)
-            try:
-                s_i = s_ancestors.index(n)
-            except ValueError:
-                continue
-            return n, s_indices[s_i::-1], o_indices[::-1]
+        if other.pos > self.pos:
+            s_ancestors, s_indices = zip(*self.ancestors_with_index())
+            o_indices = []
+            for n, i in other.ancestors_with_index():
+                o_indices.append(i)
+                try:
+                    s_i = s_ancestors.index(n)
+                except ValueError:
+                    continue
+                return n, s_indices[s_i::-1], o_indices[::-1]
         return None, None, None
 
     def target(self):
@@ -625,9 +611,14 @@ class Context(list, Node):
         for t in self.tokens_bw():
             return t.end
 
-    def tokens(self):
-        """Yield all Tokens, descending into nested Contexts."""
-        yield from tokens(self)
+    def tokens(self, start=0, end=None):
+        """Yield all tokens (that completely fill this text range if specified).
+
+        The first and last tokens may overlap with the start and end positions.
+
+        """
+        for context, slice_ in self.context_slices(start, end):
+            yield from tokens(context[slice_])
 
     def tokens_bw(self):
         """Yield all Tokens, descending into nested Contexts, in backward direction."""
@@ -643,8 +634,8 @@ class Context(list, Node):
         for t in self.tokens_bw():
             return t
 
-    def find_token(self, pos):
-        """Return the Token at or to the right of position."""
+    def find(self, pos):
+        """Return the index of our child at pos."""
         i = 0
         hi = len(self)
         while i < hi:
@@ -654,29 +645,28 @@ class Context(list, Node):
                 i = mid + 1
             else:
                 hi = mid
-        i = min(i, len(self) - 1)
-        return self[i].find_token(pos) if self[i].is_context else self[i]
+        return min(i, len(self) - 1)
+
+    def find_token(self, pos):
+        """Return the Token at or to the right of position."""
+        n = self[self.find(pos)]
+        while n.is_context:
+            n = n[n.find(pos)]
+        return n
 
     def find_token_with_trail(self, pos):
         """Return the Token at or to the right of position, and the trail of indices."""
-        trail = []
-        def find(node):
-            i = 0
-            hi = len(node)
-            while i < hi:
-                mid = (i + hi) // 2
-                n = node[mid]
-                if n.end <= pos:
-                    i = mid + 1
-                else:
-                    hi = mid
-            i = min(i, len(node) - 1)
+        i = self.find(pos)
+        n = self[i]
+        trail = [i]
+        while n.is_context:
+            i = n.find(pos)
+            n = n[i]
             trail.append(i)
-            return find(node[i]) if node[i].is_context else node[i]
-        return find(self), trail
+        return n, trail
 
-    def find_token_left(self, pos):
-        """Return the Token at or to the left of position."""
+    def find_left(self, pos):
+        """Return the index of our child at or to the left of pos."""
         i = 0
         hi = len(self)
         while i < hi:
@@ -686,26 +676,25 @@ class Context(list, Node):
                 i = mid + 1
             else:
                 hi = mid
-        i = max(0, i - 1)
-        return self[i].find_token_left(pos) if self[i].is_context else self[i]
+        return max(0, i - 1)
+
+    def find_token_left(self, pos):
+        """Return the Token at or to the left of position."""
+        n = self[self.find_left(pos)]
+        while n.is_context:
+            n = n[n.find_left(pos)]
+        return n
 
     def find_token_left_with_trail(self, pos):
         """Return the Token at or to the left of position, and the trail of indices."""
-        trail = []
-        def find(node):
-            i = 0
-            hi = len(node)
-            while i < hi:
-                mid = (i + hi) // 2
-                n = node[mid]
-                if n.pos < pos:
-                    i = mid + 1
-                else:
-                    hi = mid
-            i = max(0, i - 1)
+        i = self.find_left(pos)
+        n = self[i]
+        trail = [i]
+        while n.is_context:
+            i = n.find_left(pos)
+            n = n[i]
             trail.append(i)
-            return find(node[i]) if node[i].is_context else node[i]
-        return find(self), trail
+        return n, trail
 
     def find_token_after(self, pos):
         """Return the first token completely right from pos.
@@ -836,16 +825,6 @@ class Context(list, Node):
         elif start < len(self):
             yield self, slice(start, None)
 
-    def tokens_range(self, start, end=None):
-        """Yield all tokens that completely fill this text range.
-
-        The first and last tokens may overlap with the start and end
-        positions.
-
-        """
-        for context, slice_ in self.context_slices(start, end):
-            yield from tokens(context[slice_])
-
     def source(self):
         """Return the first Token, if any, when going to the left from this context.
 
@@ -860,7 +839,13 @@ class Context(list, Node):
             return token
 
     def events(self, start_trail=None, end_trail=None):
-        """Yield Events for all child nodes."""
+        """Yield Events for all or specified child nodes.
+
+        Using ``start_trail`` and ``end_trail`` the range of tokens can be
+        specified; a trail is a list of indices to follow to get to a specific
+        token, such as returned by the various ``find_\*_with_trail`` methods.
+
+        """
         target = TargetFactory()
         def events(context):
             nodes = iter(context)

@@ -199,9 +199,6 @@ for node traversal:
    .. automethod:: Context.tokens_bw
       :noindex:
 
-   .. automethod:: Context.tokens_range
-      :noindex:
-
 Token, Context and Node have some more methods, but those have to do with tree
 structure modification while (re)parsing text. See the :mod:`~parce.tree`
 module's documentation if you are interested in those.

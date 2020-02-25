@@ -10,11 +10,13 @@ Overview of all modules
    document.rst
    formatter.rst
    language.rst
+   lexer.rst
    lexicon.rst
    pattern.rst
    pkginfo.rst
    query.rst
    regex.rst
+   target.rst
    theme.rst
    themes.rst
    tree.rst

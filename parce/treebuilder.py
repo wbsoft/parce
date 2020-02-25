@@ -248,7 +248,8 @@ class TreeBuilder:
                             # We don't use tail_token.forward() because
                             # it uses parent_index() which depends on sorted
                             # pos values
-                            tail_token.cut_left()
+                            for p, i in tail_token.ancestors_with_index():
+                                del p[:i]
                             for t in tail_tree.tokens():
                                 t.pos += offset
                         # add the old tokens to the current context
