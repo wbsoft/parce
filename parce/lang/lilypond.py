@@ -163,7 +163,7 @@ class LilyPond(Language):
         """Yield commands that can occur in all input modes."""
         pitch = bytext(cls.is_pitch, Name.Symbol, Pitch)
         yield RE_LILYPOND_DYNAMIC, Dynamic
-        # TODO: find special commands like, \repeat
+        yield r"(\\repeat)\b(?:\s+([a-z]+)\s*(\d+)?)?", bygroup(Keyword, Name.Symbol, Number)
         yield r"\\(?:un)?set(?![^\W\d])", Keyword, cls.set_unset
         yield r"\\(?:override|revert)(?![^\W\d])", Keyword, cls.override
         yield r"\\(?:new|change|context)(?![^\W\d])", Keyword, cls.context
