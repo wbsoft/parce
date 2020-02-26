@@ -783,7 +783,7 @@ class Context(list, Node):
             start_trail = []
         return context, start_trail, end_trail
 
-    def slices(self, start_trail, end_trail):
+    def slices(self, start_trail, end_trail, target_factory=None):
         """Yield from the current context (context, slice) tuples.
 
         ``start_trail`` and ``end_trail`` both are lists of indices that
@@ -792,6 +792,9 @@ class Context(list, Node):
 
         The yielded slices will never be empty, in that case this method
         will skip them.
+
+        If you specify a ``target_factory``, it should be a TargetFactory
+        object, and it will be updated along with the yielded slices.
 
         """
         if start_trail:
@@ -804,8 +807,12 @@ class Context(list, Node):
                     n = n[i]
                 yield ancestors[-1][0], slice(i, None) # include start token
                 for p, i in ancestors[-2::-1]:
+                    if target_factory:
+                        target_factory.pop()
                     if i < len(p) - 1:
                         yield p, slice(i + 1, None)
+                if target_factory:
+                    target_factory.pop()
                 start += 1
         else:
             start = 0
@@ -818,9 +825,13 @@ class Context(list, Node):
                     yield self, slice(start, end)
                 n = self[end]
                 for end in end_trail[1:-1]:
+                    if target_factory:
+                        target_factory.push(n.lexicon)
                     if end:
                         yield n, slice(end)
                     n = n[end]
+                if target_factory:
+                    target_factory.push(n.lexicon)
                 yield n, slice(end_trail[-1] + 1)   # include end token
         elif start < len(self):
             yield self, slice(start, None)
@@ -861,40 +872,8 @@ class Context(list, Node):
                     target.push(n.lexicon)
                     yield from events(n)
                     target.pop()
-
-        if start_trail:
-            start = start_trail[0]
-            if len(start_trail) > 1:
-                ancestors = []
-                n = self[start]
-                for i in start_trail[1:]:
-                    ancestors.append((n, i))
-                    n = n[i]
-                yield from events(ancestors[-1][0][i:]) # include start token
-                for p, i in ancestors[-2::-1]:
-                    target.pop()
-                    if i < len(p) - 1:
-                        yield from events(p[i+1:])
-                start += 1
-        else:
-            start = 0
-        if end_trail:
-            end = end_trail[0]
-            if len(end_trail) == 1:
-                yield from events(self[start:end+1])    # include end token
-            else:
-                if start < end:
-                    yield from events(self[start:end])
-                n = self[end]
-                for end in end_trail[1:-1]:
-                    target.push(n.lexicon)
-                    if end:
-                        yield from events(n[:end])
-                    n = n[end]
-                target.push(n.lexicon)
-                yield from events(n[:end_trail[-1]+1])   # include end token
-        elif start < len(self):
-            yield from events(self[start:])
+        for context, slice_ in self.slices(start_trail, end_trail, target):
+            yield from events(context[slice_])
 
 
 def tokens(nodes):
