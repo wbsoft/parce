@@ -142,3 +142,34 @@ See the :mod:`~parce.query` module for more information.
     your language definition; you can specify any object you want, including
     strings or methods.
 
+If you want, you can also get a flat stream of events describing the parsing
+process. Events are simply named tuples consisting of a ``target`` and
+``tokens`` tuples. It is what `parce` internally uses to build the tree
+structure::
+
+    >>> for e in events(Nonsense.root, text):
+    ...     print(e)
+    ...
+    Event(target=None, tokens=((1, 'Some', Text),))
+    Event(target=None, tokens=((6, 'text', Text),))
+    Event(target=None, tokens=((11, 'with', Text),))
+    Event(target=None, tokens=((16, '3', Literal.Number),))
+    Event(target=None, tokens=((18, 'numbers', Text),))
+    Event(target=None, tokens=((26, 'and', Text),))
+    Event(target=None, tokens=((30, '1', Literal.Number),))
+    Event(target=None, tokens=((32, '"', Literal.String),))
+    Event(target=Target(pop=0, push=[Nonsense.string]), tokens=((33, 'string inside\nover multiple lines', Literal.String),))
+    Event(target=None, tokens=((66, '"', Literal.String),))
+    Event(target=Target(pop=-1, push=[]), tokens=((67, ',', Delimiter),))
+    Event(target=None, tokens=((69, 'and', Text),))
+    Event(target=None, tokens=((73, '1', Literal.Number),))
+    Event(target=None, tokens=((75, '%', Comment),))
+    Event(target=Target(pop=0, push=[Nonsense.comment]), tokens=((76, ' comment that', Comment),))
+    Event(target=Target(pop=-1, push=[]), tokens=((90, 'ends', Text),))
+    Event(target=None, tokens=((95, 'on', Text),))
+    Event(target=None, tokens=((98, 'a', Text),))
+    Event(target=None, tokens=((100, 'newline', Text),))
+    Event(target=None, tokens=((107, '.', Delimiter),))
+
+More information about the events stream can be found in the documentation
+of the :mod:`~parce.lexer` module.

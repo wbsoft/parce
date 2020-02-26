@@ -27,7 +27,62 @@ current lexicon(s) or descend into specified lexicons. (See the
 :mod:`~parce.target` module.)
 
 The tokens is a tuple of one or more token tuples. A token is a ``(pos, text,
-action)`` tuple.
+action)`` tuple. Note that an Event always contains at least one token tuple,
+and that a tokens's text is always non-empty. (A rule's pattern might match the
+empty string, but no token is generated in that case, although the target is
+followed.)
+
+The Lexer is capable of handling circular default targets: if a target is
+pushed again in the same context at the same text position (and another
+target pops back), it is detected and the text position pointer is advanced
+by one. (Run-away pushed targets are not detected, those are detected by
+the :mod:`~parce.validate` module.)
+
+The TreeBuilder (:mod:`~parce.treebuilder`) uses a Lexer internally to parse
+text and create the tree structure.
+
+Example::
+
+    >>> import parce.lexer
+    >>> import parce.lang.css
+    >>> for e in parce.lexer.Lexer([parce.lang.css.Css.root]).events("h1 { color: red; }"):
+    ...     print(e)
+    ...
+    Event(target=Target(pop=0, push=[Css.prelude, Css.selector, Css.element_selector]), tokens=((0, 'h1', Name.Tag),))
+    Event(target=Target(pop=-2, push=[]), tokens=((3, '{', Delimiter),))
+    Event(target=Target(pop=-1, push=[Css.rule, Css.declaration, Css.property]), tokens=((5, 'color', Name.Property),))
+    Event(target=Target(pop=-1, push=[]), tokens=((10, ':', Delimiter),))
+    Event(target=Target(pop=0, push=[Css.identifier]), tokens=((12, 'red', Literal.Color),))
+    Event(target=Target(pop=-1, push=[]), tokens=((15, ';', Delimiter),))
+    Event(target=Target(pop=-1, push=[]), tokens=((17, '}', Delimiter),))
+
+There is a convenience function in the ``parce`` module namespace that calls
+Lexer for you::
+
+    >>> import parce
+    >>> from parce.lang.css import Css
+    >>> for e in parce.events(Css.root, "h1 { color: red; }"):
+    ...     print(e)
+
+And here's how the same text would translate to a tree structure::
+
+    >>> parce.root(parce.lang.css.Css.root, "h1 { color: red; }").dump()
+    <Context Css.root at 0-18 (2 children)>
+     ├╴<Context Css.prelude at 0-4 (2 children)>
+     │  ├╴<Context Css.selector at 0-2 (1 children)>
+     │  │  ╰╴<Context Css.element_selector at 0-2 (1 children)>
+     │  │     ╰╴<Token 'h1' at 0:2 (Name.Tag)>
+     │  ╰╴<Token '{' at 3:4 (Delimiter)>
+     ╰╴<Context Css.rule at 5-18 (2 children)>
+        ├╴<Context Css.declaration at 5-16 (4 children)>
+        │  ├╴<Context Css.property at 5-10 (1 children)>
+        │  │  ╰╴<Token 'color' at 5:10 (Name.Property)>
+        │  ├╴<Token ':' at 10:11 (Delimiter)>
+        │  ├╴<Context Css.identifier at 12-15 (1 children)>
+        │  │  ╰╴<Token 'red' at 12:15 (Literal.Color)>
+        │  ╰╴<Token ';' at 15:16 (Delimiter)>
+        ╰╴<Token '}' at 17:18 (Delimiter)>
+
 
 """
 
@@ -48,6 +103,9 @@ class Lexer:
     ``lexicons`` is a list of one or more lexicon instances, the first one
     being the root lexicon. Lexicons can add lexicons to this list and pop
     lexicons off while parsing text. The first lexicon is never popped off.
+
+    While parsing text using the ``events()`` method, the ``lexicons``
+    attribute reflects the current state: the current lexicon is at the end.
 
     """
     def __init__(self, lexicons):

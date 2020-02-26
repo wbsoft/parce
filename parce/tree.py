@@ -255,12 +255,13 @@ class Node:
         """Remove this node from its parent.
 
         If the parent would become empty, it is removed too.
+        Returns the first non-empty ancestor.
 
         """
         for parent, index in self.ancestors_with_index():
             del parent[index]
             if len(parent):
-                return
+                return parent
 
 
 class Token(Node):

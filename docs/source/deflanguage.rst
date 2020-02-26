@@ -151,7 +151,7 @@ as follows:
   to a Context that already exists. The root context is never popped of the
   stack.
 
-The functions :function:`~parce.bytext` and :function:`~parce.bytext` can
+The functions :func:`~parce.bymatch` and :func:`~parce.bytext` can
 also be used for mapping a *target* based on the text or match object, or
 even action and targets at the same time. So instead of::
 

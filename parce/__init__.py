@@ -106,8 +106,9 @@ information.
 
 """
 
-from . import pattern, action
-from . import lexicon as lexicon_, treebuilder, document, treedocument
+from . import action, pattern, lexer
+from . import lexicon as lexicon_
+from . import treebuilder, document, treedocument
 from .document import Cursor
 from .language import Language
 from .pkginfo import version, version_string
@@ -132,6 +133,11 @@ def root(root_lexicon, text):
 def tokens(root_lexicon, text):
     """Convenience function that yields all the tokens from the text."""
     return root(root_lexicon, text).tokens()
+
+
+def events(root_lexicon, text):
+    """Convenience function that yields all the events from the text."""
+    return lexer.Lexer([root_lexicon]).events(text)
 
 
 def words(words, prefix="", suffix=""):
