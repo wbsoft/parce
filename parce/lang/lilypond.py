@@ -174,6 +174,8 @@ class LilyPond(Language):
                "(?:\s*" + RE_LILYPOND_PITCH_OCT + ")?"), \
                bygroup(Keyword, pitch, Octave, pitch, Octave)
         yield r"\\tempo(?![^\W\d])", Keyword, cls.tempo
+        yield r"(\\chord(?:s|mode))\b\s*(\{)?", bygroup(Keyword, Delimiter.OpenBrace), \
+            ifgroup(2, cls.chords)
         yield r"(\\lyric(?:mode|s))\b\s*(\\s(?:equential|imultaneous)\b)?\s*(\{|<<)?", \
             bygroup(Keyword.Lyric, Keyword, Delimiter.OpenBrace), \
             ifgroup(3, cls.lyrics)
@@ -190,6 +192,7 @@ class LilyPond(Language):
         yield r"<", Delimiter.OpenChord, cls.chord
         yield r"\{", Delimiter.OpenBrace, cls.sequential
         yield r"\\\\", Delimiter.VoiceSeparator
+        yield r"\|", Delimiter.PipeSymbol
         yield r"\\[\[\]]", Spanner.Ligature
         yield r"[\[\]]", Spanner.Beam
         yield r"\\[()]", Spanner.Slur.Phrasing
@@ -202,6 +205,7 @@ class LilyPond(Language):
         yield words(lilypond_words.contexts), Context
         yield words(lilypond_words.grobs), Grob
         yield r'[.,]', Delimiter
+        yield r'(:)\s*(8|16|32|64|128|256|512|1024|2048)(?!\d)', bygroup(Delimiter.Tremolo, Duration.Tremolo)
         yield RE_FRACTION, Number
         yield RE_LILYPOND_DURATION, Duration, cls.duration_dots
         yield r"\d+", Number
@@ -325,6 +329,26 @@ class LilyPond(Language):
         yield r"\\s(sequential|imultaneous)\b", Keyword
         yield r"\{|<<", Delimiter.OpenBrace, -1, cls.lyrics
         yield SKIP_WHITESPACE
+        yield default_target, -1
+
+    # ---------------------- chordmode ---------------------
+    @lexicon
+    def chords(cls):
+        """\\chordmode and \\chords."""
+        yield r":|/\+?", Delimiter.ChordSeparator, cls.chord_modifier
+        yield r"\}", Delimiter.CloseBrace, -1
+        yield r"\{", Delimiter.OpenBrace, 1
+        yield from cls.music()
+
+    @lexicon
+    def chord_modifier(cls):
+        """Stuff in chord mode after a `:`"""
+        yield r"((?<![a-z])|^)(?:aug|dim|sus|min|maj|m)(?![a-z])", Name.Symbol
+        yield r"(\d+)([-+])?", bygroup(Number, Operator.Alteration)
+        yield r"\.", Delimiter
+        yield r"/\+?", Delimiter.ChordSeparator
+        pitch = bytext(cls.is_pitch, Name.Symbol, Pitch)
+        yield RE_LILYPOND_PITCHWORD, pitch
         yield default_target, -1
 
     # -------------------- base stuff --------------------
