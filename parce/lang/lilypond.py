@@ -181,10 +181,7 @@ class LilyPond(Language):
         yield r"(\\chord(?:s|mode))\b\s*(\{)?", bygroup(Keyword, Delimiter.OpenBrace), \
             ifgroup(2, cls.chordmode)
         yield from cls.notemode_rule()
-        yield r"(\\(?:lyric(?:mode|s)|addlyrics))\b\s*(\\s(?:equential|imultaneous)\b)?\s*(\{|<<)?", \
-            bygroup(Keyword.Lyric, Keyword, Delimiter.OpenBrace), \
-            ifgroup(3, cls.lyricmode)
-        yield r"\\lyricsto\b", Keyword.Lyric, cls.lyricsto
+        yield from cls.lyricmode_rules()
         yield RE_LILYPOND_COMMAND, cls.check_builtin()
 
     @classmethod
@@ -366,6 +363,13 @@ class LilyPond(Language):
             except ValueError:
                 return 3
         return bytext(predicate, LyricHyphen, LyricExtender, LyricSkip, LyricText)
+
+    @classmethod
+    def lyricmode_rules(cls):
+        yield r"(\\(?:lyric(?:mode|s)|addlyrics))\b\s*(\\s(?:equential|imultaneous)\b)?\s*(\{|<<)?", \
+            bygroup(Keyword.Lyric, Keyword, Delimiter.OpenBrace), \
+            ifgroup(3, cls.lyricmode)
+        yield r"\\lyricsto\b", Keyword.Lyric, cls.lyricsto
 
     # ---------------------- notemode ---------------------
     @lexicon
