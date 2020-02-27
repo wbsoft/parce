@@ -59,7 +59,7 @@ RE_LILYPOND_DURATION = \
     r"(\\(maxima|longa|breve)\b|(1|2|4|8|16|32|64|128|256|512|1024|2048)(?!\d))"
 
 
-# Standard actions used here:
+# Standard actions defined/used here:
 Rest = Name.Rest
 Pitch = Name.Pitch
 Octave = Pitch.Octave
@@ -71,7 +71,10 @@ Duration = Number.Duration
 Duration.Dot
 Duration.Scaling
 Dynamic = Name.Command.Dynamic
-LyricText = Text.LyricText
+LyricText = Text.Lyric.LyricText
+LyricHyphen = Delimiter.Lyric.LyricHyphen
+LyricExtender = Delimiter.Lyric.LyricExtender
+LyricSkip = Delimiter.Lyric.LyricSkip
 Spanner = Delimiter.Spanner
 Spanner.Slur
 Spanner.Ligature
@@ -180,8 +183,23 @@ class LilyPond(Language):
             bygroup(Keyword.Lyric, Keyword, Delimiter.OpenBrace), \
             ifgroup(3, cls.lyrics)
         yield r"\\lyricsto\b", Keyword.Lyric, cls.lyricsto
-        yield words(lilypond_words.keywords, prefix=r"\\", suffix=r"(?![^\W\d])"), Keyword
-        yield RE_LILYPOND_COMMAND, Name.Command
+        yield RE_LILYPOND_COMMAND, cls.check_builtin()
+
+    @classmethod
+    def check_builtin(cls):
+        """Return a suitable action for a \\command.
+
+        When the command is a member of lilypond_keywords Keyword is returned,
+        When the command is in the music_commands, Name.Builtin is returned,
+        otherwise Name.Command.
+
+        """
+        def predicate(text):
+            text = text[1:] # skip the "\"
+            return 0 if text in lilypond_words.keywords else \
+                   1 if text in lilypond_words.music_commands_set else \
+                   2
+        return bytext(predicate, Keyword, Name.Builtin, Name.Command)
 
     # ------------------ music ----------------------
     @classmethod
@@ -317,7 +335,7 @@ class LilyPond(Language):
         yield from cls.common()
         yield r">>|\}", Delimiter.CloseBrace, -1
         yield r"<<|\{", Delimiter.OpenBrace, 1
-        yield r"[^\\\s\d{}$#]+", LyricText
+        yield r"[^\\\s\d{}$#]+", cls.lyricstext_action()
         yield RE_FRACTION, Number
         yield RE_LILYPOND_DURATION, Duration, cls.duration_dots
         yield from cls.commands()
@@ -330,6 +348,21 @@ class LilyPond(Language):
         yield r"\{|<<", Delimiter.OpenBrace, -1, cls.lyrics
         yield SKIP_WHITESPACE
         yield default_target, -1
+
+    @classmethod
+    def lyricstext_action(cls):
+        """Return a dynamic action for Lyric objects.
+
+        Most times the text will be LyricText but it can be LyricHyphen,
+        LyricExtender or LyricSkip.
+
+        """
+        def predicate(text):
+            try:
+                return ["--", "__", "_"].index(text)
+            except ValueError:
+                return 3
+        return bytext(predicate, LyricHyphen, LyricExtender, LyricSkip, LyricText)
 
     # ---------------------- chordmode ---------------------
     @lexicon
