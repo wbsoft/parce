@@ -179,7 +179,7 @@ class LilyPond(Language):
         yield r"\\tempo(?![^\W\d])", Keyword, cls.tempo
         yield r"(\\chord(?:s|mode))\b\s*(\{)?", bygroup(Keyword, Delimiter.OpenBrace), \
             ifgroup(2, cls.chords)
-        yield r"(\\lyric(?:mode|s))\b\s*(\\s(?:equential|imultaneous)\b)?\s*(\{|<<)?", \
+        yield r"(\\(?:lyric(?:mode|s)|addlyrics))\b\s*(\\s(?:equential|imultaneous)\b)?\s*(\{|<<)?", \
             bygroup(Keyword.Lyric, Keyword, Delimiter.OpenBrace), \
             ifgroup(3, cls.lyrics)
         yield r"\\lyricsto\b", Keyword.Lyric, cls.lyricsto
