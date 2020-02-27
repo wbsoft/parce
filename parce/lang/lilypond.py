@@ -182,6 +182,7 @@ class LilyPond(Language):
             ifgroup(2, cls.chordmode)
         yield from cls.notemode_rule()
         yield from cls.lyricmode_rules()
+        yield from cls.drummode_rule()
         yield RE_LILYPOND_COMMAND, cls.check_builtin()
 
     @classmethod
@@ -387,6 +388,43 @@ class LilyPond(Language):
                    2
         yield r"(\\note(?:s|mode))\b\s*(\{|<<)?", bygroup(Keyword, Delimiter.OpenBrace), \
             bymatch(music_predicate, (cls.notemode, cls.sequential), (cls.notemode, cls.simultaneous), 0)
+
+    # ---------------------- drummode ---------------------
+    @lexicon
+    def drummode(cls):
+        """\\drummode and \\drums."""
+        yield default_target, -1
+
+    @classmethod
+    def drummode_items(cls):
+        """What can be found in drummode."""
+        yield r"\{", Delimiter.OpenBrace, cls.drummode_sequential
+        yield r"<<", Delimiter.OpenBrace, cls.drummode_simultaneous
+        yield r"\}|>>", Delimiter.CloseBrace, -1
+        yield RE_LILYPOND_PITCHWORD, bytext((lambda t:
+                t in  lilypond_words.drum_pitchnames_set),
+                Name.Symbol, Pitch.Drum)
+        yield from cls.music()
+
+    @lexicon
+    def drummode_sequential(cls):
+        yield from cls.drummode_items()
+
+    @lexicon
+    def drummode_simultaneous(cls):
+        yield from cls.drummode_items()
+
+    @classmethod
+    def drummode_rule(cls):
+        """Yield the rule for \\drummode / \\drums."""
+        def predicate(m):
+            brace = m.group(m.lastindex + 2)
+            return 0 if brace == "{" else \
+                   1 if brace == "<<" else \
+                   2
+        yield r"(\\drum(?:s|mode))\b\s*(\{|<<)?", bygroup(Keyword.Drum, Delimiter.OpenBrace), \
+            bymatch(predicate, (cls.drummode, cls.drummode_sequential),
+                               (cls.drummode, cls.drummode_simultaneous), 0)
 
     # ---------------------- chordmode ---------------------
     @lexicon
