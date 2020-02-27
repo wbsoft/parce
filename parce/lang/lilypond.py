@@ -180,8 +180,7 @@ class LilyPond(Language):
         yield r"\\tempo(?![^\W\d])", Keyword, cls.tempo
         yield r"(\\chord(?:s|mode))\b\s*(\{)?", bygroup(Keyword, Delimiter.OpenBrace), \
             ifgroup(2, cls.chordmode)
-        yield r"(\\note(?:s|mode))\b\s*(\{)?", bygroup(Keyword, Delimiter.OpenBrace), \
-            ifgroup(2, cls.notemode)
+        yield from cls.notemode_rule()
         yield r"(\\(?:lyric(?:mode|s)|addlyrics))\b\s*(\\s(?:equential|imultaneous)\b)?\s*(\{|<<)?", \
             bygroup(Keyword.Lyric, Keyword, Delimiter.OpenBrace), \
             ifgroup(3, cls.lyricmode)
@@ -371,9 +370,19 @@ class LilyPond(Language):
     # ---------------------- notemode ---------------------
     @lexicon
     def notemode(cls):
-        """\\chordmode and \\chords."""
-        yield r"\}", Delimiter.CloseBrace, -1
-        yield from cls.music()
+        """\\notemode and \\notes."""
+        yield default_target, -1
+
+    @classmethod
+    def notemode_rule(cls):
+        """Yield the rule for \\notemode / \\notes."""
+        def music_predicate(m):
+            brace = m.group(m.lastindex + 2)
+            return 0 if brace == "{" else \
+                   1 if brace == "<<" else \
+                   2
+        yield r"(\\note(?:s|mode))\b\s*(\{|<<)?", bygroup(Keyword, Delimiter.OpenBrace), \
+            bymatch(music_predicate, (cls.notemode, cls.sequential), (cls.notemode, cls.simultaneous), 0)
 
     # ---------------------- chordmode ---------------------
     @lexicon
