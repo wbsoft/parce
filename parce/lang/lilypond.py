@@ -179,10 +179,10 @@ class LilyPond(Language):
                bygroup(Keyword, pitch, Octave, pitch, Octave)
         yield r"\\tempo(?![^\W\d])", Keyword, cls.tempo
         yield r"(\\chord(?:s|mode))\b\s*(\{)?", bygroup(Keyword, Delimiter.OpenBrace), \
-            ifgroup(2, cls.chords)
+            ifgroup(2, cls.chordmode)
         yield r"(\\(?:lyric(?:mode|s)|addlyrics))\b\s*(\\s(?:equential|imultaneous)\b)?\s*(\{|<<)?", \
             bygroup(Keyword.Lyric, Keyword, Delimiter.OpenBrace), \
-            ifgroup(3, cls.lyrics)
+            ifgroup(3, cls.lyricmode)
         yield r"\\lyricsto\b", Keyword.Lyric, cls.lyricsto
         yield RE_LILYPOND_COMMAND, cls.check_builtin()
 
@@ -332,7 +332,7 @@ class LilyPond(Language):
 
     # --------------------- lyrics -----------------------
     @lexicon
-    def lyrics(cls):
+    def lyricmode(cls):
         """Yield contents in lyric mode."""
         yield from cls.common()
         yield r">>|\}", Delimiter.CloseBrace, -1
@@ -347,7 +347,7 @@ class LilyPond(Language):
         """Find the argument of a \\lyricsto command."""
         yield from cls.base()
         yield r"\\s(sequential|imultaneous)\b", Keyword
-        yield r"\{|<<", Delimiter.OpenBrace, -1, cls.lyrics
+        yield r"\{|<<", Delimiter.OpenBrace, -1, cls.lyricmode
         yield SKIP_WHITESPACE
         yield default_target, -1
 
@@ -368,7 +368,7 @@ class LilyPond(Language):
 
     # ---------------------- chordmode ---------------------
     @lexicon
-    def chords(cls):
+    def chordmode(cls):
         """\\chordmode and \\chords."""
         yield r":|/\+?", Delimiter.ChordSeparator, cls.chord_modifier
         yield r"\}", Delimiter.CloseBrace, -1
