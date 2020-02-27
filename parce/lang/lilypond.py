@@ -180,6 +180,8 @@ class LilyPond(Language):
         yield r"\\tempo(?![^\W\d])", Keyword, cls.tempo
         yield r"(\\chord(?:s|mode))\b\s*(\{)?", bygroup(Keyword, Delimiter.OpenBrace), \
             ifgroup(2, cls.chordmode)
+        yield r"(\\note(?:s|mode))\b\s*(\{)?", bygroup(Keyword, Delimiter.OpenBrace), \
+            ifgroup(2, cls.notemode)
         yield r"(\\(?:lyric(?:mode|s)|addlyrics))\b\s*(\\s(?:equential|imultaneous)\b)?\s*(\{|<<)?", \
             bygroup(Keyword.Lyric, Keyword, Delimiter.OpenBrace), \
             ifgroup(3, cls.lyricmode)
@@ -365,6 +367,13 @@ class LilyPond(Language):
             except ValueError:
                 return 3
         return bytext(predicate, LyricHyphen, LyricExtender, LyricSkip, LyricText)
+
+    # ---------------------- notemode ---------------------
+    @lexicon
+    def notemode(cls):
+        """\\chordmode and \\chords."""
+        yield r"\}", Delimiter.CloseBrace, -1
+        yield from cls.music()
 
     # ---------------------- chordmode ---------------------
     @lexicon
