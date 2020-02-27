@@ -65,6 +65,7 @@ Pitch = Name.Pitch
 Octave = Pitch.Octave
 OctaveCheck = Pitch.Octave.OctaveCheck
 Accidental = Pitch.Accidental
+Articulation = Name.Script.Articulation
 Context = Name.Constant.Context
 Grob = Name.Object.Grob
 Duration = Number.Duration
@@ -198,8 +199,9 @@ class LilyPond(Language):
             text = text[1:] # skip the "\"
             return 0 if text in lilypond_words.keywords else \
                    1 if text in lilypond_words.music_commands_set else \
-                   2
-        return bytext(predicate, Keyword, Name.Builtin, Name.Command)
+                   2 if text in lilypond_words.articulations_set else \
+                   3
+        return bytext(predicate, Keyword, Name.Builtin, Articulation, Name.Command)
 
     # ------------------ music ----------------------
     @classmethod

@@ -19,9 +19,9 @@
 
 
 """
-LilyPond words. To be generated somehow.
+LilyPond words.
 
-For now, markup commands.
+Some lists could maybe be generated dynamically.
 
 """
 
@@ -662,6 +662,10 @@ repeat_scripts = (
     'coda',
     'varcoda',
 )
+
+
+articulations_set = frozenset(
+    articulations + ornaments + fermatas + instrument_scripts + repeat_scripts)
 
 
 ancient_scripts = (
