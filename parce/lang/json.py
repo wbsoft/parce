@@ -36,9 +36,7 @@ class Json(Language):
         yield r"\[", Delimiter, cls.array
         yield '"', String, cls.string
         yield r"-?\d+(?:\.\d+)?(?:[Ee][+-]?\d+)?", Number
-        yield r"\btrue\b", Name.Object
-        yield r"\bfalse\b", Name.Object
-        yield r"\bnull\b", Name.Object
+        yield r"\b(?:true|false|null)\b", Name.Constant
 
     @lexicon
     def object(cls):
@@ -48,7 +46,7 @@ class Json(Language):
 
     @lexicon
     def key(cls):
-        yield from cls.values()
+        yield '"', String, cls.string
         yield ":", Delimiter, -1, cls.value
 
     @lexicon
@@ -66,6 +64,6 @@ class Json(Language):
     @lexicon
     def string(cls):
         yield '"', String, -1
-        yield r'\\(["\\/bfnrt]|u[0-9a-fA-F]{4})', String.Escape
+        yield r'\\(?:["\\/bfnrt]|u[0-9a-fA-F]{4})', String.Escape
         yield default_action, String
 
