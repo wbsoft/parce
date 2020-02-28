@@ -128,6 +128,8 @@ methods are implemented as properties, so you don't have to write parentheses.
     :attr:`~Query.ancestors`,
     :attr:`~Query.next`,
     :attr:`~Query.previous`,
+    :attr:`~Query.forward`,
+    :attr:`~Query.backward`,
     :attr:`~Query.right`,
     :attr:`~Query.left`,
     :attr:`~Query.right_siblings`,
@@ -432,6 +434,18 @@ class Query:
             t = n.previous_token()
             if t:
                 yield t
+
+    @pquery
+    def forward(self):
+        """Yield Tokens in forward direction."""
+        for n in self:
+            yield from n.forward()
+
+    @pquery
+    def backward(self):
+        """Yield Tokens in backward direction."""
+        for n in self:
+            yield from n.backward()
 
     @pquery
     def right(self):
