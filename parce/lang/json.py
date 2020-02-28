@@ -48,13 +48,14 @@ class Json(Language):
 
     @lexicon
     def key(cls):
-        yield '"', String, cls.string
+        yield from cls.values()
         yield ":", Delimiter, -1, cls.value
 
     @lexicon
     def value(cls):
         yield from cls.values()
         yield ",", Delimiter, -1
+        yield r"\}", Delimiter, -2
 
     @lexicon
     def array(cls):
