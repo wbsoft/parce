@@ -39,6 +39,7 @@ RE_LILYPOND_ID = r"[^\W\d_]+(?:[_-][^\W\d_]+)*"
 RE_LILYPOND_VARIABLE = RE_LILYPOND_ID + RE_LILYPOND_ID_RIGHT_BOUND
 RE_LILYPOND_COMMAND = r"\\(" + RE_LILYPOND_ID + ")" + RE_LILYPOND_ID_RIGHT_BOUND
 RE_LILYPOND_MARKUP_TEXT = r'[^{}"\\\s#%]+'
+RE_LILYPOND_SYMBOL = r"[^\W\d]+"    # a string without quotes
 
 RE_LILYPOND_DYNAMIC = (
     r"\\[<!>]|"
@@ -265,6 +266,7 @@ class LilyPond(Language):
         yield SKIP_WHITESPACE
         yield words(lilypond_words.contexts), Context
         yield "=", Operator.Assignment
+        yield RE_LILYPOND_SYMBOL, Name.Symbol
         yield r"(\\with)\s*(\{)", bygroup(Keyword, Delimiter.OpenBrace), -1, cls.layout_context
         yield from cls.common()
         yield default_target, -1
