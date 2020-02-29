@@ -347,6 +347,7 @@ class LilyPond(Language):
     def lyricsto(cls):
         """Find the argument of a \\lyricsto command."""
         yield from cls.base()
+        yield RE_LILYPOND_SYMBOL, Name.Symbol
         yield r"\\s(sequential|imultaneous)\b", Keyword
         yield r"\{|<<", Delimiter.OpenBrace, -1, cls.lyricmode
         yield SKIP_WHITESPACE
