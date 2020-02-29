@@ -165,6 +165,15 @@ you can write::
 
 which is more efficient, because the predicate is evaluated only once.
 
+In fact, the functions :func:`~parce.bymatch`, :func:`~parce.bytext` and also
+:func:`~parce.ifgroup` return ``DynamicRuleItem`` instances, which are replaced
+with the actions or targets they yield, before the Lexicon even knows which
+objects are actions and which are targets. The only item that is replaced
+later, during the lexing stage, is the ``DynamicAction`` instance returned by
+the :func:`~parce.bygroup` function, which only should yield actions, and which
+causes one Token to be generated for every non-empty subgroup in the match
+object.
+
 A target is always executed after adding the token(s) that were generated to
 the current context. The newly created context can be seen as the "target" of
 the token that switched to it. If the match object did not contain actual
