@@ -106,9 +106,8 @@ information.
 
 """
 
-from . import action, pattern, lexer
+from . import action, document, lexer, pattern, rule, treebuilder, treedocument
 from . import lexicon as lexicon_
-from . import treebuilder, document, treedocument
 from .document import Cursor
 from .language import Language
 from .pkginfo import version, version_string
@@ -190,7 +189,7 @@ def bymatch(predicate, *itemlists):
     at the same time.
 
     """
-    return lexicon_.MatchRuleItem(predicate, *itemlists)
+    return rule.MatchRuleItem(predicate, *itemlists)
 
 
 def bytext(predicate, *itemlists):
@@ -204,7 +203,7 @@ def bytext(predicate, *itemlists):
     at the same time.
 
     """
-    return lexicon_.TextRuleItem(predicate, *itemlists)
+    return rule.TextRuleItem(predicate, *itemlists)
 
 
 def ifgroup(n, itemlist, else_itemlist=()):

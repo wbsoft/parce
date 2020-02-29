@@ -32,27 +32,16 @@ rules it creates are cached.
 
 This makes it possible to inherit from a Language class and only re-implement
 some lexicons, the others keep working as in the base class.
-
-When in a pattern rule an object that inherits from ``DynamicRuleItem`` is
-encountered, its ``bymatch()`` method is called with the match object, which
-should return a list of items the DynamicRuleItem should be replaced with. This
-list is again checked for DynamicRuleItem objects,
-
-In most cases a DynamicRuleItem will be instantiated with a predicate and lists
-of replacement objects. The predicate should return an integer index value (or
-True or False, which count as 1 and 0, respectively), which determines the list
-of replacement values to use.
-
 """
 
 import itertools
 import re
 import threading
 
-import parce.action
 import parce.pattern
 import parce.regex
-from parce.target import TargetFactory
+from .target import TargetFactory
+from .rule import DynamicItem, DynamicRuleItem
 
 
 class LexiconDescriptor:
@@ -279,52 +268,5 @@ class Lexicon:
                 for m in rx.finditer(text, pos):
                     yield token(m)
         return parse
-
-
-class DynamicItem:
-    """Base class for all items from rules that are replaced."""
-
-
-class DynamicRuleItem(DynamicItem):
-    """Base class for items that are already replaced by the lexicon."""
-    def __init__(self, predicate, *itemlists):
-        self.predicate = predicate
-        self.itemlists = [i if isinstance(i, (tuple, list)) else (i,)
-                          for i in itemlists]
-
-    def replace(self, text, match):
-        """Return one of the itemlists.
-
-        Based on either text or match (depending on implementation) one
-        is chosen.
-
-        """
-        raise NotImplementedError()
-
-
-class TextRuleItem(DynamicRuleItem):
-    """Calls the predicate with the matched text.
-
-    The predicate should return the index of the itemlists to return.
-    A TextRuleItem is preferable instantiated using the
-    :func:`parce.bytext` function.
-
-    """
-    def replace(self, text, match):
-        index = self.predicate(text)
-        return self.itemlists[index]
-
-
-class MatchRuleItem(DynamicRuleItem):
-    """Calls the predicate with the match object.
-
-    The predicate should return the index of the itemlists to return.
-    A MatchRuleItem is preferable instantiated using the
-    :func:`parce.bymatch` function.
-
-    """
-    def replace(self, text, match):
-        index = self.predicate(match)
-        return self.itemlists[index]
 
 
