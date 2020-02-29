@@ -549,13 +549,3 @@ class LilyPond(Language):
         yield r'$', Comment, -1
 
 
-def ifgroup(n, *target):
-    """Return a dynamic target that only is followed if group n in the match is not empty."""
-    def predicate(m):
-        if m.group(m.lastindex + n):
-            return 1
-        else:
-            return 0
-    return bymatch(predicate, 0, target)
-
-

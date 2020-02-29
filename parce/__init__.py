@@ -207,6 +207,16 @@ def bytext(predicate, *itemlists):
     return lexicon_.TextRuleItem(predicate, *itemlists)
 
 
+def ifgroup(n, itemlist, else_itemlist=()):
+    """Return a MatchRuleItem that yields ``itemlist`` if group n in the match is not empty.
+
+    If group n in the match object is empty, ``else_itemlist`` is yielded.
+
+    """
+    predicate = lambda m: not m.group(m.lastindex + n)
+    return bymatch(predicate, itemlist, else_itemlist)
+
+
 def lexicon(rules_func=None, **kwargs):
     """Lexicon factory decorator.
 
