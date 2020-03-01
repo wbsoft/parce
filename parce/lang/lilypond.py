@@ -493,9 +493,7 @@ class LilyPond(Language):
     @classmethod
     def get_markup_action(cls):
         """Get the action for a command in \markup { }."""
-        test = lambda text: text in lilypond_words.markupcommands
-        return bytext(test, Name.Function, Name.Function.Markup)
-
+        return ifmember(lilypond_words.markupcommands, Name.Function.Markup, Name.Function)
 
     # -------------- Scheme ---------------------
     @classmethod

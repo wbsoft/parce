@@ -68,11 +68,8 @@ class Scheme(Language):
     @classmethod
     def get_word_action(cls):
         """Return a dynamic action that is chosen based on the text."""
-        def test(text):
-            from . import scheme_words
-            return text in scheme_words.keywords
-        return bytext(test, Name, Keyword)
-
+        from . import scheme_words
+        return ifmember(scheme_words.keywords, Keyword, Name)
 
     # -------------- String ---------------------
     @lexicon
