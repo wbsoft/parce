@@ -216,6 +216,28 @@ def ifgroup(n, itemlist, else_itemlist=()):
     return bymatch(predicate, itemlist, else_itemlist)
 
 
+def ifmember(sequence, itemlist, else_itemlist=()):
+    """Return a TextRuleItem that yields ``itemlist`` if the text is in sequence.
+
+    If text is not in sequence, ``else_itemlist`` is yielded.
+
+    """
+    def predicate(text):
+        return text in sequence
+    return rule.TextRuleItem(predicate, else_itemlist, itemlist)
+
+
+def ifgroupmember(n, sequence, itemlist, else_itemlist=()):
+    """Return a MatchRuleItem that yields ``itemlist`` if group ``n`` is in sequence.
+
+    If group ``n`` is not in sequence, ``else_itemlist`` is yielded.
+
+    """
+    def predicate(m):
+        return m.group(m.lastindex + n) in sequence
+    return rule.MatchRuleItem(predicate, else_itemlist, itemlist)
+
+
 def _get_items_map(dictionary, default):
     """Map dictionary items to itemlists, and put their indexes in a new dict.
 
