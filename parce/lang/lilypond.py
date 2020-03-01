@@ -278,8 +278,7 @@ class LilyPond(Language):
         yield words(lilypond_words.contexts), Context
         yield r'[.,]', Delimiter
         yield "(=)(?:\s*("+RE_FRACTION+"|\d+))?", bygroup(Operator.Assignment, Number)
-        yield RE_LILYPOND_VARIABLE + "(?=\s*([,.=])?)", Name.Variable, bymatch(
-            (lambda m: bool(m.group(m.lastindex + 1))), -1, 0)
+        yield RE_LILYPOND_VARIABLE + "(?=\s*([,.=])?)", Name.Variable, ifgroup(1, (), -1)
         yield default_target, -1
 
     @lexicon
@@ -290,8 +289,7 @@ class LilyPond(Language):
         yield words(lilypond_words.grobs), Grob
         yield r'[.,]', Delimiter
         yield "(=)(?:\s*("+RE_FRACTION+"|\d+))?", bygroup(Operator.Assignment, Number)
-        yield RE_LILYPOND_VARIABLE + "(?=\s*([,.=])?)", Name.Variable, bymatch(
-            (lambda m: bool(m.group(m.lastindex + 1))), -1, 0)
+        yield RE_LILYPOND_VARIABLE + "(?=\s*([,.=])?)", Name.Variable, ifgroup(1, (), -1)
         yield default_target, -1
 
     # ------------------ script -------------------------
@@ -338,8 +336,11 @@ class LilyPond(Language):
         yield from cls.common()
         yield r">>|\}", Delimiter.CloseBrace, -1
         yield r"<<|\{", Delimiter.OpenBrace, 1
-        yield r"[^\\\s\d{}$#]+", maptext(
-            {"--": LyricHyphen, "__": LyricExtender, "_": LyricSkip}, LyricText)
+        yield r"[^\\\s\d{}$#]+", maptext({
+                "--": LyricHyphen,
+                "__": LyricExtender,
+                "_": LyricSkip,
+            }, LyricText)
         yield RE_FRACTION, Number
         yield RE_LILYPOND_DURATION, Duration, cls.duration_dots
         yield from cls.commands()
@@ -370,13 +371,11 @@ class LilyPond(Language):
     @classmethod
     def notemode_rule(cls):
         """Yield the rule for \\notemode / \\notes."""
-        def music_predicate(m):
-            brace = m.group(m.lastindex + 2)
-            return 0 if brace == "{" else \
-                   1 if brace == "<<" else \
-                   2
         yield r"(\\note(?:s|mode))\b\s*(\{|<<)?", bygroup(Keyword, Delimiter.OpenBrace), \
-            bymatch(music_predicate, (cls.notemode, cls.sequential), (cls.notemode, cls.simultaneous), 0)
+            mapgroup(2, {
+                "{": (cls.notemode, cls.sequential),
+                "<<": (cls.notemode, cls.simultaneous),
+            })
 
     # ---------------------- drummode ---------------------
     @lexicon
@@ -406,14 +405,11 @@ class LilyPond(Language):
     @classmethod
     def drummode_rule(cls):
         """Yield the rule for \\drummode / \\drums."""
-        def predicate(m):
-            brace = m.group(m.lastindex + 2)
-            return 0 if brace == "{" else \
-                   1 if brace == "<<" else \
-                   2
         yield r"(\\drum(?:s|mode))\b\s*(\{|<<)?", bygroup(Keyword.Drum, Delimiter.OpenBrace), \
-            bymatch(predicate, (cls.drummode, cls.drummode_sequential),
-                               (cls.drummode, cls.drummode_simultaneous), 0)
+            mapgroup(2, {
+                "{": (cls.drummode, cls.drummode_sequential),
+                "<<": (cls.drummode, cls.drummode_simultaneous),
+            })
 
     # ---------------------- chordmode ---------------------
     @lexicon
