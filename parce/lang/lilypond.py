@@ -338,7 +338,8 @@ class LilyPond(Language):
         yield from cls.common()
         yield r">>|\}", Delimiter.CloseBrace, -1
         yield r"<<|\{", Delimiter.OpenBrace, 1
-        yield r"[^\\\s\d{}$#]+", cls.lyricstext_action()
+        yield r"[^\\\s\d{}$#]+", maptext(
+            {"--": LyricHyphen, "__": LyricExtender, "_": LyricSkip}, LyricText)
         yield RE_FRACTION, Number
         yield RE_LILYPOND_DURATION, Duration, cls.duration_dots
         yield from cls.commands()
@@ -352,21 +353,6 @@ class LilyPond(Language):
         yield r"\{|<<", Delimiter.OpenBrace, -1, cls.lyricmode
         yield SKIP_WHITESPACE
         yield default_target, -1
-
-    @classmethod
-    def lyricstext_action(cls):
-        """Return a dynamic action for Lyric objects.
-
-        Most times the text will be LyricText but it can be LyricHyphen,
-        LyricExtender or LyricSkip.
-
-        """
-        def predicate(text):
-            try:
-                return ["--", "__", "_"].index(text)
-            except ValueError:
-                return 3
-        return bytext(predicate, LyricHyphen, LyricExtender, LyricSkip, LyricText)
 
     @classmethod
     def lyricmode_rules(cls):

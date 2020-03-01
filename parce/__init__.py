@@ -216,6 +216,45 @@ def ifgroup(n, itemlist, else_itemlist=()):
     return bymatch(predicate, itemlist, else_itemlist)
 
 
+def _get_items_map(dictionary, default):
+    """Map dictionary items to itemlists, and put their indexes in a new dict.
+
+    Returns a ``get(text)`` callable returning an index for the text and the
+    itemlists.
+
+    """
+    itemlists = [default]
+    d = {}
+    for i, (key, value) in enumerate(dictionary.items(), 1):
+        d[key] = i
+        itemlists.append(value)
+    return (lambda t: d.get(t, 0)), itemlists
+
+
+def maptext(dictionary, default=()):
+    """Return a TextRuleItem that yields the itemlist from the dictionary,
+    using the text as key.
+
+    If the dict does not contain the key, the default value is yielded.
+
+    """
+    predicate, itemlists = _get_items_map(dictionary, default)
+    return rule.TextRuleItem(predicate, *itemlists)
+
+
+def mapgroup(n, dictionary, default=()):
+    """Return a MatchRuleItem that yields the itemlist from the dictionary,
+    using the specified match group as key.
+
+    If the dict does not contain the key, the default value is yielded.
+
+    """
+    get, itemlists = _get_items_map(dictionary, default)
+    def predicate(m):
+        return get(m.group(m.lastindex + n))
+    return rule.MatchRuleItem(predicate, *itemlists)
+
+
 def lexicon(rules_func=None, **kwargs):
     """Lexicon factory decorator.
 
