@@ -36,11 +36,10 @@ RE_FRACTION = r"\d+/\d+"
 
 RE_LILYPOND_ID_RIGHT_BOUND = r"(?![_-]?[^\W\d])"
 RE_LILYPOND_ID = r"[^\W\d_]+(?:[_-][^\W\d_]+)*"
-RE_LILYPOND_VARIABLE = RE_LILYPOND_ID + RE_LILYPOND_ID_RIGHT_BOUND
+RE_LILYPOND_SYMBOL = RE_LILYPOND_ID + RE_LILYPOND_ID_RIGHT_BOUND
 RE_LILYPOND_COMMAND = r"\\(" + RE_LILYPOND_ID + ")" + RE_LILYPOND_ID_RIGHT_BOUND
-RE_LILYPOND_MARKUP_TEXT = r'[^{}"\\\s#%]+'
-RE_LILYPOND_SYMBOL = r"[^\W\d]+"    # a string without quotes
-
+RE_LILYPOND_MARKUP_TEXT = r'[^{}"\\\s$#]+'
+RE_LILYPOND_LYRIC_TEXT = r'[^{}"\\\s$#\d]+'
 RE_LILYPOND_DYNAMIC = (
     r"\\[<!>]|"
     r"\\(f{1,5}|p{1,5}"
@@ -92,7 +91,7 @@ class LilyPond(Language):
     def root(cls):
         """Toplevel LilyPond document."""
         yield from cls.blocks()
-        yield RE_LILYPOND_VARIABLE, Name.Variable
+        yield RE_LILYPOND_SYMBOL, Name.Variable
         yield "[,.]", Delimiter
         yield "=", Operator.Assignment
         yield r"\\version\b", Keyword
@@ -123,7 +122,7 @@ class LilyPond(Language):
     @lexicon
     def header(cls):
         yield r'\}', Delimiter.CloseBrace, -1
-        yield RE_LILYPOND_VARIABLE, Name.Variable
+        yield RE_LILYPOND_SYMBOL, Name.Variable
         yield "[,.]", Delimiter
         yield "=", Operator.Assignment
         yield from cls.common()
@@ -131,7 +130,7 @@ class LilyPond(Language):
     @lexicon
     def paper(cls):
         yield r'\}', Delimiter.CloseBrace, -1
-        yield RE_LILYPOND_VARIABLE, Name.Variable
+        yield RE_LILYPOND_SYMBOL, Name.Variable
         yield "[,.]", Delimiter
         yield "=", Operator.Assignment
         yield RE_FRACTION + r"|\d+", Number
@@ -157,7 +156,7 @@ class LilyPond(Language):
         yield words(lilypond_words.contexts, prefix=r"\\", suffix=r"\b"), Context
         yield words(lilypond_words.grobs), Grob
         yield words(lilypond_words.keywords, prefix=r"\\", suffix=r"(?![^\W\d])"), Keyword
-        yield RE_LILYPOND_VARIABLE, Name.Variable, cls.varname
+        yield RE_LILYPOND_SYMBOL, Name.Variable, cls.varname
         yield "(=)(?:\s*("+RE_FRACTION+"|\d+))?", bygroup(Operator.Assignment, Number)
         yield from cls.common()
         yield from cls.commands()
@@ -255,6 +254,7 @@ class LilyPond(Language):
         """Find content after a tempo command."""
         yield SKIP_WHITESPACE
         yield from cls.common() # markup, scheme, string, comment
+        yield RE_LILYPOND_SYMBOL, Name.Symbol
         yield RE_LILYPOND_DURATION, Duration, cls.duration_dots
         yield r"(=)\s*(?:(\d+)(?:\s*(-)\s*(\d+))?)?", bygroup(
             Operator.Assignment, Number, Operator, Number), -1
@@ -278,7 +278,7 @@ class LilyPond(Language):
         yield words(lilypond_words.contexts), Context
         yield r'[.,]', Delimiter
         yield "(=)(?:\s*("+RE_FRACTION+"|\d+))?", bygroup(Operator.Assignment, Number)
-        yield RE_LILYPOND_VARIABLE + "(?=\s*([,.=])?)", Name.Variable, ifgroup(1, (), -1)
+        yield RE_LILYPOND_SYMBOL + "(?=\s*([,.=])?)", Name.Variable, ifgroup(1, (), -1)
         yield default_target, -1
 
     @lexicon
@@ -289,7 +289,7 @@ class LilyPond(Language):
         yield words(lilypond_words.grobs), Grob
         yield r'[.,]', Delimiter
         yield "(=)(?:\s*("+RE_FRACTION+"|\d+))?", bygroup(Operator.Assignment, Number)
-        yield RE_LILYPOND_VARIABLE + "(?=\s*([,.=])?)", Name.Variable, ifgroup(1, (), -1)
+        yield RE_LILYPOND_SYMBOL + "(?=\s*([,.=])?)", Name.Variable, ifgroup(1, (), -1)
         yield default_target, -1
 
     # ------------------ script -------------------------
@@ -341,7 +341,7 @@ class LilyPond(Language):
         yield from cls.common()
         yield r">>|\}", Delimiter.CloseBrace, -1
         yield r"<<|\{", Delimiter.OpenBrace, 1
-        yield r"[^\\\s\d{}$#]+", maptext({
+        yield RE_LILYPOND_LYRIC_TEXT, maptext({
                 "--": LyricHyphen,
                 "__": LyricExtender,
                 "_": LyricSkip,
@@ -451,7 +451,7 @@ class LilyPond(Language):
     @lexicon
     def varname(cls):
         """bla.bla.bla syntax."""
-        yield r'\s*(\.)\s*(' + RE_LILYPOND_VARIABLE + ')', bygroup(Delimiter.Dot, Name.Variable)
+        yield r'\s*(\.)\s*(' + RE_LILYPOND_SYMBOL + ')', bygroup(Delimiter.Dot, Name.Variable)
         yield default_target, -1
 
     # -------------------- markup --------------------
