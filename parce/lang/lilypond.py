@@ -394,6 +394,7 @@ class LilyPond(Language):
         yield r"\{", Delimiter.OpenBrace, cls.drummode_sequential
         yield r"<<", Delimiter.OpenBrace, cls.drummode_simultaneous
         yield r"\}|>>", Delimiter.CloseBrace, -1
+        yield RE_LILYPOND_REST, Rest
         yield RE_LILYPOND_PITCHWORD, ifmember(lilypond_words.drum_pitchnames_set, Pitch.Drum, Name.Symbol)
         yield from cls.music()
 
