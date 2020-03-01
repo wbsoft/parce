@@ -166,7 +166,7 @@ class LilyPond(Language):
     @classmethod
     def commands(cls):
         """Yield commands that can occur in all input modes."""
-        pitch = bytext(cls.is_pitch, Name.Symbol, Pitch)
+        pitch = cls.ifpitch()
         yield RE_LILYPOND_DYNAMIC, Dynamic
         yield r"(\\repeat)\b(?:\s+([a-z]+)\s*(\d+)?)?", bygroup(Keyword, Name.Symbol, Number)
         yield r"\\(?:un)?set(?![^\W\d])", Keyword, cls.set_unset
@@ -221,7 +221,7 @@ class LilyPond(Language):
         yield r"[-_^]", Direction, cls.script
         yield r"q(?![^\W\d])", Pitch
         yield RE_LILYPOND_REST, Rest
-        yield RE_LILYPOND_PITCHWORD, bytext(cls.is_pitch, (Name.Symbol,), (Pitch, cls.pitch))
+        yield RE_LILYPOND_PITCHWORD, cls.ifpitch((Pitch, cls.pitch))
         yield words(lilypond_words.contexts), Context
         yield words(lilypond_words.grobs), Grob
         yield r'[.,]', Delimiter
@@ -301,8 +301,13 @@ class LilyPond(Language):
 
     # ------------------ pitch --------------------------
     @classmethod
-    def is_pitch(cls, text):
-        return text in lilypond_words.all_pitchnames
+    def ifpitch(cls, itemlist=None, else_itemlist=None):
+        """Return a TextRuleItem that by default yields Name.Pitch for a pitch, else Name.Symbol."""
+        if itemlist is None:
+            itemlist = Name.Pitch
+        if else_itemlist is None:
+            else_itemlist = Name.Symbol
+        return ifmember(lilypond_words.all_pitchnames, itemlist, else_itemlist)
 
     @lexicon
     def pitch(cls):
@@ -425,8 +430,7 @@ class LilyPond(Language):
         yield r"(\d+)([-+])?", bygroup(Number, Operator.Alteration)
         yield r"\.", Delimiter
         yield r"/\+?", Delimiter.ChordSeparator
-        pitch = bytext(cls.is_pitch, Name.Symbol, Pitch)
-        yield RE_LILYPOND_PITCHWORD, pitch
+        yield RE_LILYPOND_PITCHWORD, cls.ifpitch()
         yield default_target, -1
 
     # -------------------- base stuff --------------------
