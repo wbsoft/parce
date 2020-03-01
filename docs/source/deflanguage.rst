@@ -60,6 +60,11 @@ in the ``root`` lexicon of the above example:
 See for more information about regular expressions the documentation
 of the Python :mod:`re` module.
 
+Python's regular expression engine picks the first pattern that matches, even
+if a later rule would produce a longer match. So if you for example want to
+look for keywords such as ``else`` and ``elseif``, be sure to either put the
+longer one first, or use a boundary matching sequence such as ``\b``.
+
 When using a Pattern instance, `parce` obtains the regular expression by
 calling its :meth:`~parce.pattern.Pattern.build` method. You can use a Pattern
 object where manually writing a regular expression is too tedious.
