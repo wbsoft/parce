@@ -195,10 +195,12 @@ Dynamic actions and targets
 After the pattern, one action and zero or more target items are expected to be
 in a normal rule. When you put items in a rule that inherit from
 :class:`~parce.rule.DynamicItem`, those are replaced during parsing by the
-lexicon, based on the match object or the matched text.
+lexicon, based on the match object or the matched text. This is done
+by supplying a predicate function that chooses the replacement(s) from
+a given set of itemlists (which can contain zero or more items).
 
-One dynamic rule item can yield multiple items, e.g. an action and a target.
-Dynamic items can be nested.
+So one dynamic rule item can yield multiple items, for example an action and a
+target. Dynamic items can be nested.
 
 There are a few convenient functions to create dynamic actions and/or targets:
 
@@ -207,6 +209,16 @@ There are a few convenient functions to create dynamic actions and/or targets:
 
     .. autofunction:: parce.bytext
         :noindex:
+
+(You might wonder why the predicate functions used by :func:`~parce.bymatch`
+and :func:`~parce.bytext` would not directly return the action or target(s).
+This is done to be able to know all actions and/or targets beforehand, and to
+be able to translate actions using a mapping before parsing, and not each time
+when parsing a document. So the actions are not hardwired even if they appear
+verbatim in the lexicon's rules.)
+
+The following functions all use the same mechanism under the hood, but they
+also create the predicate function for you:
 
     .. autofunction:: parce.ifgroup
         :noindex:
@@ -223,15 +235,9 @@ There are a few convenient functions to create dynamic actions and/or targets:
     .. autofunction:: parce.mapgroup
         :noindex:
 
-(You might wonder why the predicate functions used by :func:`~parce.bymatch`
-and :func:`~parce.bytext` would not directly return the action or target(s).
-This is done to be able to know all actions and/or targets beforehand, and to
-be able to translate actions using a mapping before parsing, and not each time
-when parsing a document. So the actions are not hardwired even if they appear
-verbatim in the lexicon's rules.)
-
-These functions can also be used for mapping an action *and* target based on
-the text or match object at the same time. So instead of::
+Instead of a list or tuple of items, a single action or target item can also be
+given. These functions can also be used for mapping an action *and* target
+based on the text or match object at the same time. So instead of::
 
     predicate = lambda m: m.group() in some_list
     yield "pattern", bymatch(predicate, action1, action2), bymatch(predicate, target1, target2)
@@ -244,17 +250,25 @@ you can write::
 which is more efficient, because the predicate is evaluated only once. See for
 more information the documentation of the :mod:`~parce.rule` module.
 
+
+Dynamic actions
+---------------
+
+Besides the general dynamic rule items, there is a special category of dynamic
+actions, which only create Actions, and in this way influence the number of
+Tokens generated from a single regular expression match.
+
 The function :func:`~parce.bygroup` can be used to yield zero or more actions,
-and it yields a Token for every non-empty match in a group:
+yielding a Token for every non-empty match in a group:
 
     .. autofunction:: parce.bygroup
         :noindex:
 
-There exists a special DynamicAction in the ``skip`` object, it's an instance
-of :class:`~parce.action.SkipAction` and it yields no actions, so in effect
-creating no Tokens. Use it if you want to match text, but do not need the
-tokens. See for more information the documentation of the :mod:`~parce.action`
-module.
+Finally, there exists a special :class:`~parce.action.DynamicAction` in the
+``skip`` object, it's an instance of :class:`~parce.action.SkipAction` and it
+yields no actions, so in effect creating no Tokens. Use it if you want to match
+text, but do not need the tokens. See for more information the documentation of
+the :mod:`~parce.action` module.
 
 
 Lexicon parameters

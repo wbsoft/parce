@@ -163,24 +163,11 @@ def char(chars, positive=True):
     return pattern.Char(chars, positive)
 
 
-def bygroup(*actions):
-    """Return a SubgroupAction that yields tokens for each subgroup in a regular expression.
-
-    This action uses capturing subgroups in the regular expression pattern
-    and creates a Token for every subgroup, with that action. You should
-    provide the same number of actions as there are capturing subgroups in
-    the pattern. Use non-capturing subgroups for the parts you're not
-    interested in, or the special ``skip`` action.
-
-    """
-    return action.SubgroupAction(*actions)
-
-
 def bymatch(predicate, *itemlists):
     """Return a MatchRuleItem that chooses its output based on the match object.
 
     The returned MatchRuleItem calls the predicate function with the match
-    object as argument. The function should return the index of the itemslist
+    object as argument. The function should return the index of the itemlist
     to choose. If you provide two possible actions, the predicate function
     may also return True or False, in which case True chooses the second
     itemlist and False the first.
@@ -207,9 +194,20 @@ def bytext(predicate, *itemlists):
 
 
 def ifgroup(n, itemlist, else_itemlist=()):
-    """Return a MatchRuleItem that yields ``itemlist`` if group n in the match is not empty.
+    r"""Return a MatchRuleItem that yields ``itemlist`` if group n in the match is not empty.
 
-    If group n in the match object is empty, ``else_itemlist`` is yielded.
+    If group ``n`` in the match object is empty, ``else_itemlist`` is yielded.
+
+    An example rule::
+
+        yield r"\b([a-z]+)\b([(])?", bygroup(Keyword, Delimiter), ifgroup(2, cls.function)
+
+    This rule matches a word with or without an opening parenthesis after it.
+    The words gets the action Keyword, and the parenthesis, if there, gets the
+    action Delimiter. If there *is* an opening parenthesis, parsing switches
+    to the ``function`` lexicon of the same language.
+
+    (See also :func:`bygroup`.)
 
     """
     predicate = lambda m: not m.group(m.lastindex + n)
@@ -217,9 +215,18 @@ def ifgroup(n, itemlist, else_itemlist=()):
 
 
 def ifmember(sequence, itemlist, else_itemlist=()):
-    """Return a TextRuleItem that yields ``itemlist`` if the text is in sequence.
+    r"""Return a TextRuleItem that yields ``itemlist`` if the text is in sequence.
 
     If text is not in sequence, ``else_itemlist`` is yielded.
+
+    An example rule::
+
+        keywords = ['foo', 'bar' ,'baz' ,'quux']
+        yield r"\b[a-z]+\b", ifmember(keywords, (Keyword, cls.keyword), Name.Variable)
+
+    This rule matches any lowercase word, but marks words in the keywords list
+    with the Keyword action, and only for those, switches to the
+    ``cls.keyword`` lexicon. Other words get the Name.Variable action.
 
     """
     def predicate(text):
@@ -254,10 +261,21 @@ def _get_items_map(dictionary, default):
 
 
 def maptext(dictionary, default=()):
-    """Return a TextRuleItem that yields the itemlist from the dictionary,
+    r"""Return a TextRuleItem that yields the itemlist from the dictionary,
     using the text as key.
 
     If the dict does not contain the key, the default value is yielded.
+
+    An example from the LilyPond music language definition::
+
+        RE_LILYPOND_LYRIC_TEXT = r'[^{}"\\\s$#\d]+'
+        yield RE_LILYPOND_LYRIC_TEXT, maptext({
+            "--": LyricHyphen,
+            "__": LyricExtender,
+            "_": LyricSkip,
+        }, LyricText)
+
+    This matches any text blob, but some text items get their own action.
 
     """
     predicate, itemlists = _get_items_map(dictionary, default)
@@ -275,6 +293,26 @@ def mapgroup(n, dictionary, default=()):
     def predicate(m):
         return get(m.group(m.lastindex + n))
     return rule.MatchRuleItem(predicate, *itemlists)
+
+
+def bygroup(*actions):
+    r"""Return a SubgroupAction that yields tokens for each subgroup in a regular expression.
+
+    This action uses capturing subgroups in the regular expression pattern
+    and creates a Token for every subgroup, with that action. You should
+    provide the same number of actions as there are capturing subgroups in
+    the pattern. Use non-capturing subgroups for the parts you're not
+    interested in, or the special ``skip`` action.
+
+    An example from the CSS language definition::
+
+        yield r"(url)(\()", bygroup(Name, Delimiter), cls.url_function
+
+    If this rule matches, it generates two tokens, one for "url" and the other
+    for the opening parenthesis, each with their own action.
+
+    """
+    return action.SubgroupAction(*actions)
 
 
 def lexicon(rules_func=None, **kwargs):
