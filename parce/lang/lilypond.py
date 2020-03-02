@@ -157,7 +157,7 @@ class LilyPond(Language):
         yield words(lilypond_words.grobs), Grob
         yield words(lilypond_words.keywords, prefix=r"\\", suffix=r"(?![^\W\d])"), Keyword
         yield RE_LILYPOND_SYMBOL, Name.Variable, cls.varname
-        yield "(=)(?:\s*("+RE_FRACTION+"|\d+))?", bygroup(Operator.Assignment, Number)
+        yield r"(=)(?:\s*(" + RE_FRACTION + r"|\d+))?", bygroup(Operator.Assignment, Number)
         yield from cls.common()
         yield from cls.commands()
 
@@ -175,7 +175,7 @@ class LilyPond(Language):
         yield r"(\\relative)(?![^\W\d])(?:\s+" + RE_LILYPOND_PITCH_OCT + ")?", \
             bygroup(Keyword, pitch, Octave)
         yield (r"(\\transpose)(?![^\W\d])(?:\s+" + RE_LILYPOND_PITCH_OCT + ")?"
-               "(?:\s*" + RE_LILYPOND_PITCH_OCT + ")?"), \
+               r"(?:\s*" + RE_LILYPOND_PITCH_OCT + ")?"), \
                bygroup(Keyword, pitch, Octave, pitch, Octave)
         yield r"\\tempo(?![^\W\d])", Keyword, cls.tempo
         yield r"(\\chord(?:s|mode))\b\s*(\{)?", bygroup(Keyword, Delimiter.OpenBrace), \
@@ -277,20 +277,15 @@ class LilyPond(Language):
         yield SKIP_WHITESPACE
         yield words(lilypond_words.contexts), Context
         yield r'[.,]', Delimiter
-        yield "(=)(?:\s*("+RE_FRACTION+"|\d+))?", bygroup(Operator.Assignment, Number)
-        yield RE_LILYPOND_SYMBOL + "(?=\s*([,.=])?)", Name.Variable, ifgroup(1, (), -1)
+        yield r"(=)(?:\s*(" + RE_FRACTION + r"|\d+))?", bygroup(Operator.Assignment, Number)
+        yield RE_LILYPOND_SYMBOL + r"(?=\s*([,.=])?)", Name.Variable, ifgroup(1, (), -1)
         yield default_target, -1
 
     @lexicon
     def override(cls):
         """\\override, \\revert."""
-        yield SKIP_WHITESPACE
-        yield words(lilypond_words.contexts), Context
         yield words(lilypond_words.grobs), Grob
-        yield r'[.,]', Delimiter
-        yield "(=)(?:\s*("+RE_FRACTION+"|\d+))?", bygroup(Operator.Assignment, Number)
-        yield RE_LILYPOND_SYMBOL + "(?=\s*([,.=])?)", Name.Variable, ifgroup(1, (), -1)
-        yield default_target, -1
+        yield from cls.set_unset()
 
     # ------------------ script -------------------------
     @lexicon
@@ -492,7 +487,7 @@ class LilyPond(Language):
 
     @classmethod
     def get_markup_action(cls):
-        """Get the action for a command in \markup { }."""
+        r"""Get the action for a command in \markup { }."""
         return ifmember(lilypond_words.markupcommands, Name.Function.Markup, Name.Function)
 
     # -------------- Scheme ---------------------
