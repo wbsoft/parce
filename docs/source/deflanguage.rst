@@ -84,7 +84,7 @@ There are, however, two action types provided by `parce`:
 1. a standard action type. A standard action looks like ``String``, etc. and
    is a singleton object that is either created using the
    :class:`~parce.action.StandardAction` class or by accessing a nonexistent
-   attribute of an existing standard action. This concept is borrowed of the
+   attribute of an existing standard action. This concept is borrowed from the
    `pygments` module. A standard action defined in the latter way can be seen as
    a "child" of the action it was created from.
 
@@ -103,23 +103,20 @@ There are, however, two action types provided by `parce`:
 The target
 ----------
 
-Third and following items in a normal rule are zero or more targets.
-A target causes the parser to switch to another lexicon, and thereby
-causes a new Context to be created for that lexicon.
+Third and following items in a normal rule are zero or more targets. A target
+causes the parser to switch to another lexicon, thereby creating a new Context
+for that lexicon.
 
-In a rule, a target is specified using zero or more items after the pattern
-and the action of the rule.
+When a target list is non-empty, the target items contained therein are
+processed as follows:
 
-When a target list is non-empty, the targets contained therein are processed
-as follows:
-
-* if a single target is a lexicon, that lexicon is pushed on the stack
+* if a target is a lexicon, that lexicon is pushed on the stack
   and parsing continues there.
 
-* if a single target is a positive integer, the current lexicon is pushed
+* if a target is a positive integer, the current lexicon is pushed
   that many times onto the stack, and parsing continues.
 
-* if a single target is a negative integer, that many lexicons are popped
+* if a target is a negative integer, that many lexicons are popped
   off the stack, and parsing continues in a previous lexicon, adding tokens
   to a Context that already exists. The root context is never popped of the
   stack.
@@ -149,6 +146,26 @@ to match, but induce other behaviour:
     none of the normal rules match. This can be seen as a "fallthrough"
     possibility to check for some text, but just go one somewhere else
     in case the text is not there.
+
+    An example::
+
+        class MyLang(Language):
+            @lexicon
+            def root(cls):
+                yield r"\bnumbers:", cls.numbers
+
+            @lexicon
+            def numbers(cls):
+                """Collect numbers, skipping white space until something else is
+                   encountered.
+                """
+                yield r"\d+", Number
+                yield r"\s+", skip
+                yield default_target, -1
+
+    In this example, the text "``numbers:``" causes the parser to switch to the
+    ``MyLang.numbers`` lexicon, which collects Number tokens and skips
+    whitespace, but pops back to ``root`` on any other text.
 
 
 Dynamic patterns
