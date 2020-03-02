@@ -66,19 +66,10 @@ look for keywords such as ``else`` and ``elseif``, be sure to either put the
 longer one first, or use a boundary matching sequence such as ``\b``.
 
 When using a Pattern instance, `parce` obtains the regular expression by
-calling its :meth:`~parce.pattern.Pattern.build` method. You can use a Pattern
-object where manually writing a regular expression is too tedious.
-
-There are convenient functions for creating some types of Pattern instances:
-
-    .. autofunction:: parce.words
-        :noindex:
-
-    .. autofunction:: parce.char
-        :noindex:
-
-See for more information about Pattern objects the documentation of the
-:mod:`~parce.pattern` module.
+calling its :meth:`~parce.pattern.Pattern.build` method, which only happens one
+time, when the lexicon is first used for parsing. You can use a Pattern object
+where manually writing a regular expression is too tedious. More information
+below under `Dynamic patterns`_.
 
 
 The action
@@ -105,31 +96,8 @@ There are, however, two action types provided by `parce`:
 
 2. Dynamic actions. These actions are created dynamically when a rule's
    pattern has matched, and they can create zero or more Token instances with
-   action based on the match object or text.
-
-   There are a few convenient functions to create dynamic actions:
-
-    .. autofunction:: parce.bygroup
-        :noindex:
-
-    .. autofunction:: parce.bymatch
-        :noindex:
-
-    .. autofunction:: parce.bytext
-        :noindex:
-
-(You might wonder why the predicate functions would not directly return the
-action. This is done to be able to know all actions beforehand, and to be
-able to translate actions using a mapping before parsing, and not each time
-when parsing a document. So the actions are not hardwired even if they appear
-verbatim in the lexicon's rules.)
-
-There also exists a special DynamicAction in the ``skip`` object, it's an
-instance of :class:`~parce.action.SkipAction` and it yields no actions, so in
-effect creating no Tokens. Use it if you want to match text, but do not need
-the tokens.
-
-See for more information the documentation of the :mod:`~parce.action` module.
+   action based on the match object or text. See for more information below under
+   `Dynamic actions and targets`_.
 
 
 The target
@@ -149,35 +117,16 @@ as follows:
   and parsing continues there.
 
 * if a single target is a positive integer, the current lexicon is pushed
-  that many times onto the stack. and parsing continues.
+  that many times onto the stack, and parsing continues.
 
 * if a single target is a negative integer, that many lexicons are popped
   off the stack, and parsing continues in a previous lexicon, adding tokens
   to a Context that already exists. The root context is never popped of the
   stack.
 
-The functions :func:`~parce.bymatch` and :func:`~parce.bytext` can
-also be used for mapping a *target* based on the text or match object, or
-even action and targets at the same time. So instead of::
-
-    predicate = lambda m: m.group() in some_list
-    yield "pattern", bymatch(predicate, Action1, Action2), bymatch(predicate, target1, target2)
-
-you can write::
-
-    predicate = lambda m: m.group() in some_list
-    yield "pattern", bymatch(predicate, (Action1, target1), (Action2, target2))
-
-which is more efficient, because the predicate is evaluated only once.
-
-In fact, the functions :func:`~parce.bymatch`, :func:`~parce.bytext` and also
-:func:`~parce.ifgroup` return ``DynamicRuleItem`` instances, which are replaced
-with the actions or targets they yield, before the Lexicon even knows which
-objects are actions and which are targets. The only item that is replaced
-later, during the lexing stage, is the ``DynamicAction`` instance returned by
-the :func:`~parce.bygroup` function, which only should yield actions, and which
-causes one Token to be generated for every non-empty subgroup in the match
-object.
+Actions and targets share a mechanism to choose them dynamically based on the
+matched text. See for more information below under `Dynamic actions and
+targets`_.
 
 A target is always executed after adding the token(s) that were generated to
 the current context. The newly created context can be seen as the "target" of
@@ -200,6 +149,96 @@ to match, but induce other behaviour:
     none of the normal rules match. This can be seen as a "fallthrough"
     possibility to check for some text, but just go one somewhere else
     in case the text is not there.
+
+
+Dynamic patterns
+----------------
+
+A Pattern instance can be used where manually writing a regular expression is
+too difficult or cumbersome. You can also construct the regular expression in
+your lexicon code body, just before yielding it, but the advantage of a Pattern
+object is that is is only created when the lexicon is used for parsing for the
+first time.
+
+There are convenient functions for creating some types of Pattern instances:
+
+    .. autofunction:: parce.words
+        :noindex:
+
+    .. autofunction:: parce.char
+        :noindex:
+
+See for more information about Pattern objects the documentation of the
+:mod:`~parce.pattern` module.
+
+
+Dynamic actions and targets
+---------------------------
+
+After the pattern, one action and zero or more target items are expected to be
+in a normal rule. When you put items in a rule that inherit from
+:class:`~parce.rule.DynamicItem`, those are replaced during parsing by the
+lexicon, based on the match object or the matched text.
+
+One dynamic rule item can yield multiple items, e.g. an action and a target.
+Dynamic items can be nested.
+
+There are a few convenient functions to create dynamic actions and/or targets:
+
+    .. autofunction:: parce.bymatch
+        :noindex:
+
+    .. autofunction:: parce.bytext
+        :noindex:
+
+    .. autofunction:: parce.ifgroup
+        :noindex:
+
+    .. autofunction:: parce.ifmember
+        :noindex:
+
+    .. autofunction:: parce.ifgroupmember
+        :noindex:
+
+    .. autofunction:: parce.maptext
+        :noindex:
+
+    .. autofunction:: parce.mapgroup
+        :noindex:
+
+(You might wonder why the predicate functions used by :func:`~parce.bymatch`
+and :func:`~parce.bytext` would not directly return the action or target(s).
+This is done to be able to know all actions and/or targets beforehand, and to
+be able to translate actions using a mapping before parsing, and not each time
+when parsing a document. So the actions are not hardwired even if they appear
+verbatim in the lexicon's rules.)
+
+The function :func:`~parce.bygroup` can only be used to yield zero or more
+actions, and it yields a Token for every non-empty match in a group:
+
+    .. autofunction:: parce.bygroup
+        :noindex:
+
+There exists a special DynamicAction in the ``skip`` object, it's an instance
+of :class:`~parce.action.SkipAction` and it yields no actions, so in effect
+creating no Tokens. Use it if you want to match text, but do not need the
+tokens. See for more information the documentation of the :mod:`~parce.action`
+module.
+
+The functions :func:`~parce.bymatch` and :func:`~parce.bytext` can also be used
+for mapping an action *and* target based on the text or match object at the
+same time. So instead of::
+
+    predicate = lambda m: m.group() in some_list
+    yield "pattern", bymatch(predicate, Action1, Action2), bymatch(predicate, target1, target2)
+
+you can write::
+
+    predicate = lambda m: m.group() in some_list
+    yield "pattern", bymatch(predicate, (Action1, target1), (Action2, target2))
+
+which is more efficient, because the predicate is evaluated only once. See for
+more information the documentation of the :mod:`~parce.rule` module.
 
 
 Lexicon parameters

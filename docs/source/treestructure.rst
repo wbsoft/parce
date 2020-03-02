@@ -342,6 +342,8 @@ Here is a list of all the queries that navigate:
     :attr:`~Query.ancestors`,
     :attr:`~Query.next`,
     :attr:`~Query.previous`,
+    :attr:`~Query.forward`,
+    :attr:`~Query.backward`,
     :attr:`~Query.right`,
     :attr:`~Query.left`,
     :attr:`~Query.right_siblings`,
