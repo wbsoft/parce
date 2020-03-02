@@ -22,8 +22,9 @@ import collections
 import re
 
 import parce
-from parce.lexicon import DynamicRuleItem, LexiconDescriptor, Lexicon
-from parce.pattern import Pattern
+from .lexicon import LexiconDescriptor, Lexicon
+from .pattern import Pattern
+from .rule import DynamicRuleItem
 from . import util
 
 
