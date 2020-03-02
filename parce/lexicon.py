@@ -149,8 +149,10 @@ class Lexicon:
             else:
                 if isinstance(pattern, parce.pattern.Pattern):
                     pattern = pattern.build()
-                patterns.append(pattern)
-                rules.append(rule)
+                # skip rule when the pattern is already seen
+                if pattern not in patterns:
+                    patterns.append(pattern)
+                    rules.append(rule)
 
         # handle the empty lexicon case
         if not patterns:

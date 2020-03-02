@@ -109,7 +109,7 @@ class LexiconValidator:
                     pattern = pattern.build()
                 self.validate_pattern(pattern)
                 if pattern in patterns:
-                    self.warning("repeating same pattern: {}".format(util.abbreviate_repr(pattern)))
+                    self.warning("repeated pattern {}; will be skipped".format(util.abbreviate_repr(pattern)))
                 patterns.add(pattern)
                 self.validate_rule(rule)
 
