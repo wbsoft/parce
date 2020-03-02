@@ -213,8 +213,22 @@ be able to translate actions using a mapping before parsing, and not each time
 when parsing a document. So the actions are not hardwired even if they appear
 verbatim in the lexicon's rules.)
 
-The function :func:`~parce.bygroup` can only be used to yield zero or more
-actions, and it yields a Token for every non-empty match in a group:
+These functions can also be used for mapping an action *and* target based on
+the text or match object at the same time. So instead of::
+
+    predicate = lambda m: m.group() in some_list
+    yield "pattern", bymatch(predicate, action1, action2), bymatch(predicate, target1, target2)
+
+you can write::
+
+    predicate = lambda m: m.group() in some_list
+    yield "pattern", bymatch(predicate, (action1, target1), (action2, target2))
+
+which is more efficient, because the predicate is evaluated only once. See for
+more information the documentation of the :mod:`~parce.rule` module.
+
+The function :func:`~parce.bygroup` can be used to yield zero or more actions,
+and it yields a Token for every non-empty match in a group:
 
     .. autofunction:: parce.bygroup
         :noindex:
@@ -224,21 +238,6 @@ of :class:`~parce.action.SkipAction` and it yields no actions, so in effect
 creating no Tokens. Use it if you want to match text, but do not need the
 tokens. See for more information the documentation of the :mod:`~parce.action`
 module.
-
-The functions :func:`~parce.bymatch` and :func:`~parce.bytext` can also be used
-for mapping an action *and* target based on the text or match object at the
-same time. So instead of::
-
-    predicate = lambda m: m.group() in some_list
-    yield "pattern", bymatch(predicate, Action1, Action2), bymatch(predicate, target1, target2)
-
-you can write::
-
-    predicate = lambda m: m.group() in some_list
-    yield "pattern", bymatch(predicate, (Action1, target1), (Action2, target2))
-
-which is more efficient, because the predicate is evaluated only once. See for
-more information the documentation of the :mod:`~parce.rule` module.
 
 
 Lexicon parameters
