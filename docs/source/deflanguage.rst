@@ -128,7 +128,7 @@ targets`_.
 A target is always executed after adding the token(s) that were generated to
 the current context. The newly created context can be seen as the "target" of
 the token that switched to it. If the match object did not contain actual
-text, no Token is generated, but the target *is* handled of course.
+text, no token is generated, but the target *is* handled of course.
 
 
 Special rules
@@ -197,7 +197,7 @@ in a normal rule. When you put items in a rule that inherit from
 :class:`~parce.rule.DynamicItem`, those are replaced during parsing by the
 lexicon, based on the match object or the matched text. This is done
 by supplying a predicate function that chooses the replacement(s) from
-a given set of itemlists (which can contain zero or more items).
+given itemlists (lists or tuples which can contain zero or more items).
 
 So one dynamic rule item can yield multiple items, for example an action and a
 target. Dynamic items can be nested.
@@ -255,18 +255,18 @@ Dynamic actions
 ---------------
 
 Besides the general dynamic rule items, there is a special category of dynamic
-actions, which only create Actions, and in this way influence the number of
-Tokens generated from a single regular expression match.
+actions, which only create actions, and in this way influence the number of
+tokens generated from a single regular expression match.
 
 The function :func:`~parce.bygroup` can be used to yield zero or more actions,
-yielding a Token for every non-empty match in a group:
+yielding a token for every non-empty match in a group:
 
     .. autofunction:: parce.bygroup
         :noindex:
 
 Finally, there exists a special :class:`~parce.action.DynamicAction` in the
 ``skip`` object, it's an instance of :class:`~parce.action.SkipAction` and it
-yields no actions, so in effect creating no Tokens. Use it if you want to match
+yields no actions, so in effect creating no tokens. Use it if you want to match
 text, but do not need the tokens. See for more information the documentation of
 the :mod:`~parce.action` module.
 

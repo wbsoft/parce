@@ -200,7 +200,7 @@ def ifgroup(n, itemlist, else_itemlist=()):
 
     An example rule::
 
-        yield r"\b([a-z]+)\b([(])?", bygroup(Keyword, Delimiter), ifgroup(2, cls.function)
+        yield r"\b([a-z]+)\b(\()?", bygroup(Keyword, Delimiter), ifgroup(2, cls.function)
 
     This rule matches a word with or without an opening parenthesis after it.
     The words gets the action Keyword, and the parenthesis, if there, gets the
