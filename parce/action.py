@@ -202,7 +202,7 @@ class DynamicAction(DynamicItem):
     def __init__(self, *actions):
         self.actions = actions
 
-    def filter_actions(self, builder, pos, text, match):
+    def filter_actions(self, lexer, pos, text, match):
         raise NotImplementedError
 
 
@@ -213,13 +213,13 @@ class SubgroupAction(DynamicAction):
     there are action attributes given to __init__().
 
     """
-    def filter_actions(self, builder, pos, text, match):
+    def filter_actions(self, lexer, pos, text, match):
         for i, action in enumerate(self.actions, match.lastindex + 1):
-            yield from builder.filter_actions(action, match.start(i), match.group(i), match)
+            yield from lexer.filter_actions(action, match.start(i), match.group(i), match)
 
 
 class SkipAction(DynamicAction):
     """A DynamicAction that yields nothing."""
-    def filter_actions(self, builder, pos, text, match):
+    def filter_actions(self, lexer, pos, text, match):
         yield from ()
 
