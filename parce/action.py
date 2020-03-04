@@ -141,7 +141,7 @@ to silently ignore the matched text.
 import threading
 
 
-from .lexicon import DynamicItem
+from .rule import DynamicItem
 
 
 # we use a global lock for standardaction creation, it seems overkill
