@@ -90,7 +90,7 @@ And here's how the same text would translate to a tree structure::
 import collections
 
 from .action import DynamicAction
-from .lexicon import DynamicItem
+from .rule import DynamicItem
 from .target import TargetFactory, Target
 
 
