@@ -282,7 +282,7 @@ class Lexicon:
 
 
 class LexiconVariant(Lexicon):
-    """This is a lexicon created by calling the rules func with arguments."""
+    """A Lexicon created by calling the rules func with an argument."""
     __slots__ = ('arg',)
     def __init__(self, lexicon, arg):
         super().__init__(lexicon.lexicon, lexicon.language)
@@ -295,4 +295,8 @@ class LexiconVariant(Lexicon):
     def __iter__(self):
         """Yield the rules."""
         return self.lexicon.rules_func(self.language, self.arg) or ()
+
+    def __repr__(self):
+        return super().__repr__() + '*'
+
 
