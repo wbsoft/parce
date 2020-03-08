@@ -158,8 +158,8 @@ class Lexicon:
             else:
                 if isinstance(pattern, parce.pattern.Pattern):
                     pattern = pattern.build()
-                # skip rule when the pattern is already seen
-                if pattern not in patterns:
+                # skip rule when the pattern is None or already seen
+                if pattern is not None and pattern not in patterns:
                     patterns.append(pattern)
                     rules.append(rule)
 
