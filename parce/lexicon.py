@@ -88,16 +88,31 @@ class Lexicon:
     This function is created as soon as it is called for the first time.
 
     """
-    __slots__ = ('lexicon', 'language', 'parse', '_lock')
+    __slots__ = ('lexicon', 'language', 'parse', '_lock', '_variants')
 
     def __init__(self, lexicon, language):
         self.lexicon = lexicon
         self.language = language
-        # lock is used once when creating the parse() instance function
+        self._variants = {}
+        # lock is used when creating a variant and/or the parse() instance function
         self._lock = threading.Lock()
 
-    def __call__(self):
-        """Call the original function, yielding the rules."""
+    def __call__(self, arg=None):
+        """Create a Lexicon variant with arg, or just return self if no arg."""
+        if arg is None:
+            return self
+        try:
+            return self._variants[arg]
+        except KeyError:
+            with self._lock:
+                try:
+                    lexicon = self._variants[arg]
+                except KeyError:
+                    lexicon = self._variants[arg] = LexiconVariant(self, arg)
+            return lexicon
+
+    def __iter__(self):
+        """Yield the rules."""
         return self.lexicon.rules_func(self.language) or ()
 
     def __repr__(self):
@@ -114,18 +129,12 @@ class Lexicon:
         variable, so __getattr__ is not called again.
 
         """
-        try:
-            lock = object.__getattribute__(self, "_lock")
-        except AttributeError:
-            pass # the lock was already deleted, meaning parse is in place already
-        else:
-            with lock:
-                if name == "parse":
-                    try:
-                        return object.__getattribute__(self, name)
-                    except AttributeError:
-                        self.parse = self._get_parser_func()
-                    del self._lock
+        if name == "parse":
+            with self._lock:
+                try:
+                    return object.__getattribute__(self, name)
+                except AttributeError:
+                    self.parse = self._get_parser_func()
                     return self.parse
         return object.__getattribute__(self, name)
 
@@ -141,7 +150,7 @@ class Lexicon:
         default_action = None
         default_target = None
         # make lists of pattern, action and possible targets
-        for pattern, *rule in self():
+        for pattern, *rule in self:
             if pattern is parce.default_action:
                 default_action = rule[0]
             elif pattern is parce.default_target:
@@ -271,4 +280,19 @@ class Lexicon:
                     yield token(m)
         return parse
 
+
+class LexiconVariant(Lexicon):
+    """This is a lexicon created by calling the rules func with arguments."""
+    __slots__ = ('arg',)
+    def __init__(self, lexicon, arg):
+        super().__init__(lexicon.lexicon, lexicon.language)
+        self.arg = arg
+
+    def __call__(self, args=None):
+        """Always return self."""
+        return self
+
+    def __iter__(self):
+        """Yield the rules."""
+        return self.lexicon.rules_func(self.language, self.arg) or ()
 
