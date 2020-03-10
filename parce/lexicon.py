@@ -90,6 +90,8 @@ class Lexicon:
     """
     __slots__ = ('lexicon', 'language', 'parse', '_lock', '_variants')
 
+    arg = None
+
     def __init__(self, lexicon, language):
         self.lexicon = lexicon
         self.language = language
@@ -151,17 +153,16 @@ class Lexicon:
         default_target = None
         # make lists of pattern, action and possible targets
         for pattern, *rule in self:
+            while isinstance(pattern, parce.pattern.Pattern):
+                pattern = pattern.build(self.arg)
             if pattern is parce.default_action:
                 default_action = rule[0]
             elif pattern is parce.default_target:
                 default_target = TargetFactory.make(self, rule)
-            else:
-                if isinstance(pattern, parce.pattern.Pattern):
-                    pattern = pattern.build()
+            elif pattern is not None and pattern not in patterns:
                 # skip rule when the pattern is None or already seen
-                if pattern is not None and pattern not in patterns:
-                    patterns.append(pattern)
-                    rules.append(rule)
+                patterns.append(pattern)
+                rules.append(rule)
 
         # handle the empty lexicon case
         if not patterns:
