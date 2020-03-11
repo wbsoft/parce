@@ -113,6 +113,12 @@ class Lexicon:
                     lexicon = self._variants[arg] = LexiconVariant(self, arg)
             return lexicon
 
+    def __eq__(self, other):
+        return self.lexicon is other.lexicon and self.language is other.language
+
+    def __ne__(self, other):
+        return self.lexicon is not other.lexicon or self.language is not other.language
+
     def __iter__(self):
         """Yield the rules."""
         return self.lexicon.rules_func(self.language) or ()

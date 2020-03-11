@@ -83,3 +83,22 @@ class MatchRuleItem(DynamicRuleItem):
         return self.itemlists[index]
 
 
+class LexiconWithText(DynamicRuleItem):
+    """Return a LexiconVariant by calling a Lexicon with an argument.
+
+    The argument is the text of the specified match group, optionally
+    mapped by a specified mapping. When the text is not in the mapping,
+    the argument is set to None, so that the vanilla lexicon is returned.
+
+    """
+    def __init__(self, group, lexicon, mapping=None):
+        self.group = group
+        self.itemlists = [[lexicon]]
+        self.mapping = mapping
+
+    def replace(self, text, match):
+        arg = match.group(self.group)
+        if self.mapping:
+            arg = self.mapping.get(arg)
+        return self.itemlists[0][0](arg),
+

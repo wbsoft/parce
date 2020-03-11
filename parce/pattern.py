@@ -65,3 +65,16 @@ class Char(Pattern):
         return '[' + negate + regex.make_charclass(set(self.chars)) + ']'
 
 
+class PredicatePattern(Pattern):
+    """Uses a predicate function that builds the regular expression.
+
+    The predicate function gets the lexicon argument.
+
+    """
+    def __init__(self, predicate):
+        self.predicate = predicate
+
+    def build(self, arg=None):
+        return self.predicate(arg)
+
+

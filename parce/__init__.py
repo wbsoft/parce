@@ -106,6 +106,7 @@ information.
 
 """
 
+
 from . import action, document, lexer, pattern, rule, treebuilder, treedocument
 from . import lexicon as lexicon_
 from .document import Cursor
@@ -161,6 +162,40 @@ def char(chars, positive=True):
 
     """
     return pattern.Char(chars, positive)
+
+
+def arg(escaped=True, prefix="", suffix=""):
+    r"""Return a Pattern that contains the argument the current Lexicon was
+    called with.
+
+    If there is no argument in the current lexicon, this Pattern yields None,
+    resulting in the rule being skipped.
+
+    When there is an argument, it is escaped using re.escape, and if given,
+    prefix is prepended and suffix is appended.
+
+    """
+    import re
+    def predicate(arg):
+        if isinstance(arg, str):
+            if escaped:
+                arg = re.escape(arg)
+            return prefix + arg + suffix
+    return pattern.PredicatePattern(predicate)
+
+
+def ifarg(pattern, else_pattern=None):
+    r"""Return a Pattern that only yields the specified regular expression
+    pattern (or nested Pattern instance) if the lexicon was called with
+    an argument.
+
+    If there is no argument in the current lexicon, ``else_pattern`` is
+    yielded, which is None by default, resulting in the rule being skipped.
+
+    """
+    def predicate(arg):
+        return pattern if arg is not None else else_pattern
+    return pattern.PredicatePattern(predicate)
 
 
 def bymatch(predicate, *itemlists):
@@ -313,6 +348,18 @@ def bygroup(*actions):
 
     """
     return action.SubgroupAction(*actions)
+
+
+def lexiconwithgroup(n, lexicon, mapping=None):
+    r"""Return a LexiconWithText rule item that calls the lexicon with
+    the matched text from group n.
+
+    If a mapping is specified, the matched text from group n is used as key,
+    and the result of the mapping (None if not present) gives the argument to
+    call the lexicon with.
+
+    """
+    return rule.LexiconWithText(n, lexicon, mapping)
 
 
 def lexicon(rules_func=None, **kwargs):
