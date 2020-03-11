@@ -26,7 +26,6 @@ sys.path.insert(0, '.')
 
 from parce import *
 
-
 class MyLang(Language):
     @lexicon
     def root(cls):

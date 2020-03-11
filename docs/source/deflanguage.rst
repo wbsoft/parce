@@ -284,6 +284,68 @@ See for more information the documentation of the :mod:`~parce.lexicon`
 module.
 
 
+Lexicon arguments, derived Lexicon
+----------------------------------
+
+Although the lexicon function itself never uses any more arguments than
+the first ``cls`` argument, it is possible to call an exising Lexicon with
+an argument, which then must be a simple hashable item like an integer, string
+or standard action. In most use cases it will be a string value.
+
+Calling a Lexicon with such an argument creates a derived Lexicon, which behaves
+just as the normal Lexicon, but which has the specified argument in the ``arg``
+attribute. The derived Lexicon is cached as well.
+
+It is then possible to access the argument using
+:class:`~parce.rule.ArgRuleItem` objects. This way it is possible to change
+anything in a rule based on the argument of the derived lexicon. An example,
+taken from the tests directory::
+
+    from parce import *
+
+    class MyLang(Language):
+        @lexicon
+        def root(cls):
+            yield r"@([a-z]+)@", Name, lexiconwithgroup(1, cls.here)
+            yield r"\w+", Text
+
+        @lexicon
+        def here(cls):
+            yield arg(prefix=r"\b", suffix=r"\b"), Name, -1
+            yield r"\w+", Text
+
+
+    text = """ text @mark@ bla bla mark bla bla """
+
+    >>> tree = root(MyLang.root, text)
+    >>> tree.dump()
+    <Context MyLang.root at 1-33 (5 children)>
+     ├╴<Token 'text' at 1:5 (Text)>
+     ├╴<Token '@mark@' at 6:12 (Name)>
+     ├╴<Context MyLang.here* at 13-25 (3 children)>
+     │  ├╴<Token 'bla' at 13:16 (Text)>
+     │  ├╴<Token 'bla' at 17:20 (Text)>
+     │  ╰╴<Token 'mark' at 21:25 (Name)>
+     ├╴<Token 'bla' at 26:29 (Text)>
+     ╰╴<Token 'bla' at 30:33 (Text)>
+
+What happens: the :func:`~parce.lexiconwithgroup` helper switches to the
+``here`` lexicon when the text ``@mark@`` is encountered. The part ``mark`` is
+captured in the match group 1, and given as argument to the ``here`` lexicon.
+The :func:`~parce:arg` parce built-in yields the argument (``"mark"``) as a
+regular expression pattern, with word boundaries, which causes the lexer to pop
+back to the root context.
+
+Note that the asterisk after the ``here`` lexicon name in the dump reveals that
+it is a derived Lexicon.
+
+(Why didn't we simply use arguments to the Lexicon function itself? This isn't
+done because then we could simply hide rules with ``if``-constructs, but that
+would obfuscate the possibility to access all rule items, actions and targets
+etcetera beforehand, before parsing, which would break all language validation
+possibilities and future logic to replace items in rules before parsing.)
+
+
 Validating a Language
 ---------------------
 

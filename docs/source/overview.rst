@@ -44,12 +44,18 @@ that does this for applications based on the Qt5 library (using PyQt5).
 
 A difference with a beautiful package like `pygments` is that emphasis in
 `parce` lies on live updating and interactive usage of the token tree, which
-means that parsing is always sequential. For example, it is not supported
-that first a large chunk of text is matched and then tokenized by another
-lexer. But is is very easy to switch language, because lexicons are not tied
-to a particular language; you can switch to them from any other language or
-incorporate its rules in your own lexicon. You can also use lookahead
-patterns to switch lexicon before generating tokens if it is really needed.
+means that parsing is always sequential. For example, it is not supported that
+first a large chunk of text is matched by one, and then tokenized by another
+lexer. But is is very easy to switch language, because lexicons are not tied to
+a particular language; you can switch to them from any other language or
+incorporate its rules in your own lexicon. You can also use lookahead patterns
+to switch lexicon before generating tokens if it is really needed.
+
+Using dynamic patterns it is possible to switch to a parsing context giving an
+argument that is determined at parse time, e.g. a specific pattern that causes
+the parser to pop back to the previous context. This can be useful to parse
+things like "here documents", which are well-known in languages like Bash and
+Ruby.
 
 A parser does not keep any state information, and that's why `parce` can so
 easily update only a small part of a large token tree: it can start parsing
