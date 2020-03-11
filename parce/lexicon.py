@@ -182,7 +182,6 @@ class Lexicon:
         default_action = None
         default_target = None
 
-
         # make lists of pattern, action and possible targets
         for pattern, *rule in self:
             while isinstance(pattern, parce.pattern.Pattern):
