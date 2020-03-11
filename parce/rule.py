@@ -116,6 +116,7 @@ class LexiconWithText(DynamicRuleItem):
         self.mapping = mapping
 
     def replace(self, text, match):
+        """Yield the vanilla or derived Lexicon."""
         arg = match.group(match.lastindex + self.group)
         if self.mapping:
             arg = self.mapping.get(arg)
