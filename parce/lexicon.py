@@ -126,7 +126,7 @@ class Lexicon:
                 try:
                     lexicon = self._variants[arg]
                 except KeyError:
-                    lexicon = self._variants[arg] = LexiconVariant(self, arg)
+                    lexicon = self._variants[arg] = LexiconDerivate(self, arg)
             return lexicon
 
     def __eq__(self, other):
@@ -339,10 +339,6 @@ class LexiconDerivate(Lexicon):
     def __call__(self, arg=None):
         """Always return self."""
         return self
-
-    def __iter__(self):
-        """Yield the rules."""
-        return self.lexicon.rules_func(self.language, self.arg) or ()
 
     def __repr__(self):
         return super().__repr__() + '*'

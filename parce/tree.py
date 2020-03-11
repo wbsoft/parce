@@ -577,7 +577,7 @@ class Context(list, Node):
         pos, end = self.pos, self.end
         if pos is None:
             pos = end = "?"
-        name = self.lexicon and self.lexicon.name()
+        name = self.lexicon and repr(self.lexicon)
         return "<Context {} at {}-{} ({} children)>".format(
             name, pos, end, len(self))
 
@@ -586,12 +586,12 @@ class Context(list, Node):
 
     def __eq__(self, other):
         if isinstance(other, Lexicon):
-            return other is self.lexicon
+            return other == self.lexicon
         return other is self
 
     def __ne__(self, other):
         if isinstance(other, Lexicon):
-            return other is self.lexicon
+            return other == self.lexicon
         return other is not self
 
     def dump(self, depth=0):
