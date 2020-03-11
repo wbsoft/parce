@@ -332,7 +332,7 @@ taken from the tests directory::
 What happens: the :func:`~parce.lexiconwithgroup` helper switches to the
 ``here`` lexicon when the text ``@mark@`` is encountered. The part ``mark`` is
 captured in the match group 1, and given as argument to the ``here`` lexicon.
-The :func:`~parce:arg` parce built-in yields the argument (``"mark"``) as a
+The :func:`~parce.arg` parce built-in yields the argument (``"mark"``) as a
 regular expression pattern, with word boundaries, which causes the lexer to pop
 back to the root context.
 
