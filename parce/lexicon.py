@@ -88,19 +88,18 @@ class Lexicon:
     This function is created as soon as it is called for the first time.
 
     """
-    __slots__ = ('lexicon', 'language', 'parse', '_lock', '_variants')
+    __slots__ = ('lexicon', 'language', 'arg', 'parse', '_lock', '_variants')
 
-    arg = None
-
-    def __init__(self, lexicon, language):
+    def __init__(self, lexicon, language, arg=None):
         self.lexicon = lexicon
         self.language = language
+        self.arg = arg
         self._variants = {}
         # lock is used when creating a variant and/or the parse() instance function
         self._lock = threading.Lock()
 
     def __call__(self, arg=None):
-        """Create a LexiconDerivate with argument ``arg``.
+        """Create a derived Lexicon with argument ``arg``.
 
         The argument should be a simple, hashable singleton object, such as a
         string, an integer or a standard action. The created LexiconDerivate
@@ -117,7 +116,7 @@ class Lexicon:
         If arg is None, self is returned.
 
         """
-        if arg is None:
+        if arg is None or self.arg is not None:
             return self
         try:
             return self._variants[arg]
@@ -126,7 +125,7 @@ class Lexicon:
                 try:
                     lexicon = self._variants[arg]
                 except KeyError:
-                    lexicon = self._variants[arg] = LexiconDerivate(self, arg)
+                    lexicon = self._variants[arg] = Lexicon(self.lexicon, self.language, arg)
             return lexicon
 
     def equals(self, other):
@@ -148,7 +147,10 @@ class Lexicon:
             yield list(replace_arg_items(rule))
 
     def __repr__(self):
-        return self.name()
+        s = self.name()
+        if self.arg is not None:
+            s += '*'
+        return s
 
     def name(self):
         """Return the 'Language.lexicon' name of this bound lexicon."""
@@ -311,30 +313,5 @@ class Lexicon:
                 for m in rx.finditer(text, pos):
                     yield token(m)
         return parse
-
-
-class LexiconDerivate(Lexicon):
-    """A Lexicon created by calling a normal Lexicon with an argument.
-
-    The argument is stored in the ``arg`` attibute, which is None for a normal
-    Lexicon.
-
-    There exist special Pattern and rule item types that make the ``arg``
-    attribute accessible, so you can make rules dependent on the argument,
-    which is useful to parse e.g. here documents and other content types where
-    you want to inject values at parse time in the rules set.
-
-    """
-    __slots__ = ('arg',)
-    def __init__(self, lexicon, arg):
-        super().__init__(lexicon.lexicon, lexicon.language)
-        self.arg = arg
-
-    def __call__(self, arg=None):
-        """Always return self."""
-        return self
-
-    def __repr__(self):
-        return super().__repr__() + '*'
 
 

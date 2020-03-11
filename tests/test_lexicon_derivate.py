@@ -18,7 +18,7 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 """
-Test the LexiconDerivate stuff
+Test the derived Lexicon(arg) stuff
 """
 
 import sys

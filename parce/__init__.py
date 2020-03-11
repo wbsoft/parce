@@ -164,15 +164,17 @@ def char(chars, positive=True):
     return pattern.Char(chars, positive)
 
 
-def arg(escape=True, prefix="", suffix=""):
+def arg(escape=True, prefix="", suffix="", default=None):
     r"""Return a Pattern that contains the argument the current Lexicon was
     called with.
 
-    If there is no argument in the current lexicon, this Pattern yields None,
-    resulting in the rule being skipped.
+    If there is no argument in the current lexicon, this Pattern yields the
+    default value, which is by default None, resulting in the rule being
+    skipped.
 
     When there is an argument, it is escaped using re.escape, and if given,
-    prefix is prepended and suffix is appended.
+    prefix is prepended and suffix is appended. When the default value is used,
+    prefix and suffix are not used.
 
     """
     import re
@@ -181,6 +183,7 @@ def arg(escape=True, prefix="", suffix=""):
             if escape:
                 arg = re.escape(arg)
             return prefix + arg + suffix
+        return default
     return pattern.PredicatePattern(predicate)
 
 
@@ -364,9 +367,14 @@ def lexiconwithgroup(n, lexicon, mapping=None):
     r"""Return a LexiconWithText rule item that calls the lexicon with
     the matched text from group n.
 
-    If a mapping is specified, the matched text from group n is used as key,
-    and the result of the mapping (None if not present) gives the argument to
-    call the lexicon with.
+    Calling a Lexicon creates a derived Lexicon, i.e. one that has the same set
+    of rules and the same name, but the patterns and/or rules may differ by
+    using ArgRuleItem instances in the rule, which base their replacement
+    output on the argument the initial Lexicon was called with.
+
+    If a ``mapping`` dictionary is specified, the matched text from group ``n``
+    is used as key, and the result of the mapping (None if not present) gives
+    the argument to call the lexicon with.
 
     """
     return rule.LexiconWithText(n, lexicon, mapping)
