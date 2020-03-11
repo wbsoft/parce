@@ -54,4 +54,5 @@ tree.dump()
 assert tree.query.all("mark").pick().is_last()
 assert tree.query.all(MyLang.here).pick()
 
-
+from parce.validate import validate_language
+assert validate_language(MyLang)

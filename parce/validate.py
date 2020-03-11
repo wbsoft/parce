@@ -23,7 +23,7 @@ import re
 
 import parce
 from .lexicon import LexiconDescriptor, Lexicon
-from .pattern import Pattern
+from .pattern import Pattern, PredicatePattern
 from .rule import DynamicRuleItem
 from . import util
 
@@ -83,7 +83,7 @@ class LexiconValidator:
         self.warnings.clear()
         default_act, default_tg = None, None
         patterns = set()
-        for rule in self.lexicon():
+        for rule in self.lexicon:
             if not isinstance(rule, (tuple, list)):
                 self.error("invalid rule; should be tuple or list")
                 continue
@@ -105,12 +105,15 @@ class LexiconValidator:
                     default_tg = rule
                     self.check_default_target(default_tg)
             else:
-                if isinstance(pattern, Pattern):
+                while isinstance(pattern, Pattern):
                     pattern = pattern.build()
-                self.validate_pattern(pattern)
-                if pattern in patterns:
-                    self.warning("repeated pattern {}; will be skipped".format(util.abbreviate_repr(pattern)))
-                patterns.add(pattern)
+                if pattern is None:
+                    self.warning("pattern is None; rule will be skipped")
+                else:
+                    self.validate_pattern(pattern)
+                    if pattern in patterns:
+                        self.warning("repeated pattern {}; will be skipped".format(util.abbreviate_repr(pattern)))
+                    patterns.add(pattern)
                 self.validate_rule(rule)
 
         if default_act and default_tg:
@@ -121,7 +124,7 @@ class LexiconValidator:
         """Validate a regular expression pattern."""
         try:
             rx = re.compile(pattern, self.lexicon.re_flags)
-        except re.error as e:
+        except (TypeError, re.error) as e:
             self.error("regular expression {} error:\n  {}".format(repr(pattern), e))
         else:
             if rx.match(''):

@@ -586,12 +586,12 @@ class Context(list, Node):
 
     def __eq__(self, other):
         if isinstance(other, Lexicon):
-            return other == self.lexicon
+            return other.equals(self.lexicon)
         return other is self
 
     def __ne__(self, other):
         if isinstance(other, Lexicon):
-            return other == self.lexicon
+            return not other.equals(self.lexicon)
         return other is not self
 
     def dump(self, depth=0):

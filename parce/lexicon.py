@@ -110,9 +110,9 @@ class Lexicon:
         here documents, where you only get to know the end token after the
         start token has been found.
 
-        When comparing Lexicons with '==', a derivative lexicon compares equal
-        with the Lexicon that created them, although they co-exist as separate
-        objects.
+        When comparing Lexicons with ``equals()``, a derivative lexicon
+        compares equal with the Lexicon that created them, although they
+        co-exist as separate objects.
 
         If arg is None, self is returned.
 
@@ -129,19 +129,23 @@ class Lexicon:
                     lexicon = self._variants[arg] = LexiconDerivate(self, arg)
             return lexicon
 
-    def __eq__(self, other):
-        if isinstance(other, Lexicon):
-            return self.lexicon is other.lexicon and self.language is other.language
-        return super().__eq__(other)
-
-    def __ne__(self, other):
-        if isinstance(other, Lexicon):
-            return self.lexicon is not other.lexicon or self.language is not other.language
-        return super().__ne__(other)
+    def equals(self, other):
+        """Return True if we are the same lexicon or a derivate from the same."""
+        return self.lexicon is other.lexicon and self.language is other.language
 
     def __iter__(self):
-        """Yield the rules."""
-        return self.lexicon.rules_func(self.language) or ()
+        """Yield the rules, replacing the ArgRuleItem instances."""
+        def replace_arg_items(items):
+            """Replace ArgRuleItem instances."""
+            for i in items:
+                if isinstance(i, ArgRuleItem):
+                    yield from replace_arg_items(i.replace(self.arg))
+                else:
+                    if isinstance(i, DynamicItem):
+                        i.itemlists = [list(replace_arg_items(l)) for l in i.itemlists]
+                    yield i
+        for rule in self.lexicon.rules_func(self.language) or ():
+            yield list(replace_arg_items(rule))
 
     def __repr__(self):
         return self.name()
@@ -177,28 +181,19 @@ class Lexicon:
         rules = []
         default_action = None
         default_target = None
+
+
         # make lists of pattern, action and possible targets
         for pattern, *rule in self:
             while isinstance(pattern, parce.pattern.Pattern):
-                pattern = pattern.build(self.arg)
+                pattern = pattern.build()
             if pattern is parce.default_action:
                 default_action = rule[0]
             elif pattern is parce.default_target:
                 default_target = TargetFactory.make(self, rule)
-            elif pattern is not None and pattern not in patterns:
+            elif rule and pattern is not None and pattern not in patterns:
                 # skip rule when the pattern is None or already seen
                 patterns.append(pattern)
-                # recursively replace ArgRuleItem instances
-                def replace_arg_items(items):
-                    for i in items:
-                        if isinstance(i, ArgRuleItem):
-                            yield from replace_arg_items(i.replace(self.arg))
-                        elif isinstance(i, DynamicRuleItem):
-                            i.itemlists = [list(replace_arg_items(l)) for l in i.itemlists]
-                            yield i
-                        else:
-                            yield i
-                rule = list(replace_arg_items(rule))
                 rules.append(rule)
 
         # handle the empty lexicon case

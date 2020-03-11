@@ -38,23 +38,25 @@ of replacement values to use.
 
 class DynamicItem:
     """Base class for all items from rules that are replaced."""
+    def __init__(self, *itemlists):
+        self.itemlists = [i if isinstance(i, (tuple, list)) else (i,)
+                          for i in itemlists]
+
+    def replace(self, *args):
+        """Return one of the itemlists.
+
+        Based on text, match or arg (depending on implementation) one or more
+        are chosen.
+
+        """
+        raise NotImplementedError()
 
 
 class DynamicRuleItem(DynamicItem):
     """Base class for items that are already replaced by the lexicon."""
     def __init__(self, predicate, *itemlists):
         self.predicate = predicate
-        self.itemlists = [i if isinstance(i, (tuple, list)) else (i,)
-                          for i in itemlists]
-
-    def replace(self, text, match):
-        """Return one of the itemlists.
-
-        Based on either text or match (depending on implementation) one
-        is chosen.
-
-        """
-        raise NotImplementedError()
+        super().__init__(*itemlists)
 
 
 class ArgRuleItem(DynamicRuleItem):

@@ -23,10 +23,12 @@ Helper objects to construct regular expressions.
 
 """
 
+from . import rule
+
 
 class Pattern:
     """Base class for objects that build a regular expression."""
-    def build(self, arg=None):
+    def build(self):
         """Create and return the regular expression string."""
         raise NotImplementedError
 
@@ -38,7 +40,7 @@ class Words(Pattern):
         self.prefix = prefix
         self.suffix = suffix
 
-    def build(self, arg=None):
+    def build(self):
         """Return an optimized regular expression string from the words list."""
         from . import regex
         expr = regex.words2regexp(self.words)
@@ -58,23 +60,20 @@ class Char(Pattern):
         self.chars = chars
         self.positive = positive
 
-    def build(self, arg=None):
+    def build(self):
         """Return an optimized regular expression string for the characters."""
         from . import regex
         negate = "" if self.positive else "^"
         return '[' + negate + regex.make_charclass(set(self.chars)) + ']'
 
 
-class PredicatePattern(Pattern):
+class PredicatePattern(rule.ArgRuleItem):
     """Uses a predicate function that builds the regular expression.
 
     The predicate function gets the lexicon argument.
 
     """
-    def __init__(self, predicate):
-        self.predicate = predicate
-
-    def build(self, arg=None):
-        return self.predicate(arg)
+    def replace(self, arg):
+        return self.predicate(arg),
 
 

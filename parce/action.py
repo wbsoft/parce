@@ -196,11 +196,12 @@ class StandardAction:
 class DynamicAction(DynamicItem):
     """Base class for dynamic action objects.
 
-    All actions a DynamicAction object can yield are in the actions attribute.
+    All actions a DynamicAction object can yield are in the first item
+    of the ``itemlists`` attribute.
 
     """
     def __init__(self, *actions):
-        self.actions = actions
+        super().__init__(actions)
 
     def filter_actions(self, lexer, pos, text, match):
         raise NotImplementedError
@@ -214,7 +215,7 @@ class SubgroupAction(DynamicAction):
 
     """
     def filter_actions(self, lexer, pos, text, match):
-        for i, action in enumerate(self.actions, match.lastindex + 1):
+        for i, action in enumerate(self.itemlists[0], match.lastindex + 1):
             yield from lexer.filter_actions(action, match.start(i), match.group(i), match)
 
 
