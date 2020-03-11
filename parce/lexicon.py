@@ -41,7 +41,7 @@ import threading
 import parce.pattern
 import parce.regex
 from .target import TargetFactory
-from .rule import DynamicItem, DynamicRuleItem
+from .rule import DynamicItem, DynamicRuleItem, ArgRuleItem
 
 
 class LexiconDescriptor:
@@ -100,7 +100,23 @@ class Lexicon:
         self._lock = threading.Lock()
 
     def __call__(self, arg=None):
-        """Create a Lexicon variant with arg, or just return self if no arg."""
+        """Create a LexiconDerivate with argument ``arg``.
+
+        The argument should be a simple, hashable singleton object, such as a
+        string, an integer or a standard action. The created LexiconDerivate
+        is cached. The argument is accessible using special pattern and rule
+        item types, so a LexiconDerivate can parse text based on rules
+        that are defined at parse time, which is useful for things like
+        here documents, where you only get to know the end token after the
+        start token has been found.
+
+        When comparing Lexicons with '==', a derivative lexicon compares equal
+        with the Lexicon that created them, although they co-exist as separate
+        objects.
+
+        If arg is None, self is returned.
+
+        """
         if arg is None:
             return self
         try:
@@ -114,10 +130,14 @@ class Lexicon:
             return lexicon
 
     def __eq__(self, other):
-        return self.lexicon is other.lexicon and self.language is other.language
+        if isinstance(other, Lexicon):
+            return self.lexicon is other.lexicon and self.language is other.language
+        return super().__eq__(other)
 
     def __ne__(self, other):
-        return self.lexicon is not other.lexicon or self.language is not other.language
+        if isinstance(other, Lexicon):
+            return self.lexicon is not other.lexicon or self.language is not other.language
+        return super().__ne__(other)
 
     def __iter__(self):
         """Yield the rules."""
@@ -168,6 +188,17 @@ class Lexicon:
             elif pattern is not None and pattern not in patterns:
                 # skip rule when the pattern is None or already seen
                 patterns.append(pattern)
+                # recursively replace ArgRuleItem instances
+                def replace_arg_items(items):
+                    for i in items:
+                        if isinstance(i, ArgRuleItem):
+                            yield from replace_arg_items(i.replace(self.arg))
+                        elif isinstance(i, DynamicRuleItem):
+                            i.itemlists = [list(replace_arg_items(l)) for l in i.itemlists]
+                            yield i
+                        else:
+                            yield i
+                rule = list(replace_arg_items(rule))
                 rules.append(rule)
 
         # handle the empty lexicon case
@@ -288,14 +319,24 @@ class Lexicon:
         return parse
 
 
-class LexiconVariant(Lexicon):
-    """A Lexicon created by calling the rules func with an argument."""
+class LexiconDerivate(Lexicon):
+    """A Lexicon created by calling a normal Lexicon with an argument.
+
+    The argument is stored in the ``arg`` attibute, which is None for a normal
+    Lexicon.
+
+    There exist special Pattern and rule item types that make the ``arg``
+    attribute accessible, so you can make rules dependent on the argument,
+    which is useful to parse e.g. here documents and other content types where
+    you want to inject values at parse time in the rules set.
+
+    """
     __slots__ = ('arg',)
     def __init__(self, lexicon, arg):
         super().__init__(lexicon.lexicon, lexicon.language)
         self.arg = arg
 
-    def __call__(self, args=None):
+    def __call__(self, arg=None):
         """Always return self."""
         return self
 

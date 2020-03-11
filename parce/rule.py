@@ -57,11 +57,28 @@ class DynamicRuleItem(DynamicItem):
         raise NotImplementedError()
 
 
+class ArgRuleItem(DynamicRuleItem):
+    """Chooses the itemlist based on a predicate that gets the lexicon argument.
+
+    This rule item is handled once, before parsing.
+
+    """
+    def replace(self, arg):
+        """Return one of the itemlists.
+
+        The predicate is called with the lexicon argument, and should return
+        the index of the itemlist to choose.
+
+        """
+        index = self.predicate(arg)
+        return self.itemlists[index]
+
+
 class TextRuleItem(DynamicRuleItem):
     """Calls the predicate with the matched text.
 
     The predicate should return the index of the itemlists to return.
-    A TextRuleItem is preferable instantiated using the
+    The preferred way to create a TextRuleItem is using the
     :func:`parce.bytext` function.
 
     """
@@ -74,7 +91,7 @@ class MatchRuleItem(DynamicRuleItem):
     """Calls the predicate with the match object.
 
     The predicate should return the index of the itemlists to return.
-    A MatchRuleItem is preferable instantiated using the
+    The preferred way to create a MatchRuleItem is using the
     :func:`parce.bymatch` function.
 
     """

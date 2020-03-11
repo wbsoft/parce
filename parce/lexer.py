@@ -90,7 +90,7 @@ And here's how the same text would translate to a tree structure::
 import collections
 
 from .action import DynamicAction
-from .rule import DynamicItem
+from .rule import DynamicItem, ArgRuleItem
 from .target import TargetFactory, Target
 
 
@@ -156,7 +156,11 @@ class Lexer:
             if isinstance(action, DynamicAction):
                 yield from action.filter_actions(self, pos, text, match)
             else:
-                for action in action.replace(text, match):
+                if isinstance(action, ArgRuleItem):
+                    replaced = action.replace(self.lexicons[-1].arg)
+                else:
+                    replaced = action.replace(text, match)
+                for action in replaced:
                     yield from self.filter_actions(action, pos, text, match)
         elif text:
             yield pos, text, action

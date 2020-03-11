@@ -164,7 +164,7 @@ def char(chars, positive=True):
     return pattern.Char(chars, positive)
 
 
-def arg(escaped=True, prefix="", suffix=""):
+def arg(escape=True, prefix="", suffix=""):
     r"""Return a Pattern that contains the argument the current Lexicon was
     called with.
 
@@ -178,7 +178,7 @@ def arg(escaped=True, prefix="", suffix=""):
     import re
     def predicate(arg):
         if isinstance(arg, str):
-            if escaped:
+            if escape:
                 arg = re.escape(arg)
             return prefix + arg + suffix
     return pattern.PredicatePattern(predicate)
@@ -196,6 +196,16 @@ def ifarg(pattern, else_pattern=None):
     def predicate(arg):
         return pattern if arg is not None else else_pattern
     return pattern.PredicatePattern(predicate)
+
+
+def byarg(predicate, *itemlists):
+    """Return an ArgRuleItem that chooses its output based on the lexicon argument.
+
+    The predicate is called with the lexicon argument (which is None for a
+    normal Lexicon, but can have another value for a derivative Lexicon.
+
+    """
+    return rule.ArgRuleItem(predicate, *itemlists)
 
 
 def bymatch(predicate, *itemlists):
