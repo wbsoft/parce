@@ -141,7 +141,7 @@ def events(root_lexicon, text):
 
 
 def words(words, prefix="", suffix=""):
-    r"""Return a Pattern matching any of the words.
+    r"""Return a :class:`~parce.pattern.Pattern` matching any of the words.
 
     The returned Pattern builds an optimized regular expression matching any of
     the words contained in the `words` list.
@@ -155,7 +155,8 @@ def words(words, prefix="", suffix=""):
 
 
 def char(chars, positive=True):
-    """Return a Pattern matching one of the characters in the specified string.
+    """Return a :class:`~parce.pattern.Pattern` matching one of the characters
+    in the specified string.
 
     If `positive` is False, the set of characters is complemented, i.e. the
     Pattern matches any single character that is not in the specified string.
@@ -165,16 +166,17 @@ def char(chars, positive=True):
 
 
 def arg(escape=True, prefix="", suffix="", default=None):
-    r"""Return a Pattern that contains the argument the current Lexicon was
-    called with.
+    r"""Return a :class:`~parce.pattern.Pattern` that contains the argument the
+    current Lexicon was called with.
 
     If there is no argument in the current lexicon, this Pattern yields the
     default value, which is by default None, resulting in the rule being
     skipped.
 
-    When there is an argument, it is escaped using re.escape, and if given,
-    prefix is prepended and suffix is appended. When the default value is used,
-    prefix and suffix are not used.
+    When there is an argument, it is escaped using :func:`re.escape` (when
+    ``escape`` was set to True), and if given, ``prefix`` is prepended and
+    ``suffix`` is appended. When the default value is used, ``prefix`` and
+    ``suffix`` are not used.
 
     """
     import re
@@ -188,9 +190,9 @@ def arg(escape=True, prefix="", suffix="", default=None):
 
 
 def ifarg(pattern, else_pattern=None):
-    r"""Return a Pattern that only yields the specified regular expression
-    pattern (or nested Pattern instance) if the lexicon was called with
-    an argument.
+    r"""Return a :class:`~parce.pattern.Pattern` that only yields the specified
+    regular expression pattern (or nested Pattern instance) if the lexicon was
+    called with an argument.
 
     If there is no argument in the current lexicon, ``else_pattern`` is
     yielded, which is None by default, resulting in the rule being skipped.
@@ -202,7 +204,8 @@ def ifarg(pattern, else_pattern=None):
 
 
 def byarg(predicate, *itemlists):
-    """Return an ArgRuleItem that chooses its output based on the lexicon argument.
+    """Return an :class:`~parce.rule.ArgRuleItem` that chooses its output based
+    on the lexicon argument.
 
     The predicate is called with the lexicon argument (which is None for a
     normal Lexicon, but can have another value for a derivative Lexicon.
@@ -212,7 +215,8 @@ def byarg(predicate, *itemlists):
 
 
 def bymatch(predicate, *itemlists):
-    """Return a MatchRuleItem that chooses its output based on the match object.
+    """Return a :class:`~parce.rule.MatchRuleItem` that chooses its output
+    based on the match object.
 
     The returned MatchRuleItem calls the predicate function with the match
     object as argument. The function should return the index of the itemlist
@@ -228,7 +232,8 @@ def bymatch(predicate, *itemlists):
 
 
 def bytext(predicate, *itemlists):
-    """Return a TextRuleItem that chooses the itemlist based on the text.
+    """Return a :class:`~parce.rule.TextRuleItem` that chooses the itemlist
+    based on the text.
 
     The returned TextRuleItem calls the predicate function with the matched
     text as argument.  The function should return the index of the itemlist
@@ -242,7 +247,8 @@ def bytext(predicate, *itemlists):
 
 
 def ifgroup(n, itemlist, else_itemlist=()):
-    r"""Return a MatchRuleItem that yields ``itemlist`` if group n in the match is not empty.
+    r"""Return a :class:`~parce.rule.MatchRuleItem` that yields ``itemlist`` if
+    group n in the match is not empty.
 
     If group ``n`` in the match object is empty, ``else_itemlist`` is yielded.
 
@@ -263,7 +269,8 @@ def ifgroup(n, itemlist, else_itemlist=()):
 
 
 def ifmember(sequence, itemlist, else_itemlist=()):
-    r"""Return a TextRuleItem that yields ``itemlist`` if the text is in sequence.
+    r"""Return a :class:`~parce.rule.TextRuleItem` that yields ``itemlist`` if
+    the text is in sequence.
 
     If text is not in sequence, ``else_itemlist`` is yielded.
 
@@ -283,7 +290,8 @@ def ifmember(sequence, itemlist, else_itemlist=()):
 
 
 def ifgroupmember(n, sequence, itemlist, else_itemlist=()):
-    """Return a MatchRuleItem that yields ``itemlist`` if group ``n`` is in sequence.
+    """Return a :class:`~parce.rule.MatchRuleItem` that yields ``itemlist`` if
+    group ``n`` is in sequence.
 
     If group ``n`` is not in sequence, ``else_itemlist`` is yielded.
 
@@ -309,8 +317,8 @@ def _get_items_map(dictionary, default):
 
 
 def maptext(dictionary, default=()):
-    r"""Return a TextRuleItem that yields the itemlist from the dictionary,
-    using the text as key.
+    r"""Return a :class:`~parce.rule.TextRuleItem` that yields the itemlist
+    from the dictionary, using the text as key.
 
     If the dict does not contain the key, the default value is yielded.
 
@@ -331,8 +339,8 @@ def maptext(dictionary, default=()):
 
 
 def mapgroup(n, dictionary, default=()):
-    """Return a MatchRuleItem that yields the itemlist from the dictionary,
-    using the specified match group as key.
+    """Return a :class:`~parce.rule.MatchRuleItem` that yields the itemlist
+    from the dictionary, using the specified match group as key.
 
     If the dict does not contain the key, the default value is yielded.
 
@@ -344,7 +352,8 @@ def mapgroup(n, dictionary, default=()):
 
 
 def bygroup(*actions):
-    r"""Return a SubgroupAction that yields tokens for each subgroup in a regular expression.
+    r"""Return a :class:`~parce.action.SubgroupAction` that yields tokens for
+    each subgroup in a regular expression.
 
     This action uses capturing subgroups in the regular expression pattern
     and creates a Token for every subgroup, with that action. You should
@@ -364,8 +373,8 @@ def bygroup(*actions):
 
 
 def lexiconwithgroup(n, lexicon, mapping=None):
-    r"""Return a LexiconWithText rule item that calls the lexicon with
-    the matched text from group n.
+    r"""Return a :class:`~parce.rule.LexiconWithText` rule item that calls the
+    ``lexicon`` with the matched text from group ``n``.
 
     Calling a Lexicon creates a derived Lexicon, i.e. one that has the same set
     of rules and the same name, but the patterns and/or rules may differ by

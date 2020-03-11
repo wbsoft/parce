@@ -110,30 +110,9 @@ to be present; and such actions can't be used as default action, or inside
 subgroup_actions.
 
 A DynamicAction object always holds all actions it is able to return in the
-actions attribute. This is done so that it is possible to know all actions a
+itemlists attribute. This is done so that it is possible to know all actions a
 Language can generate beforehand, and e.g. translate all the actions in a
 Language to other objects, which could even be methods or functions.
-
-SubgroupAction
---------------
-
-A SubgroupAction looks at subgroups in the regular expression match and
-returns the same amount of tokens as there are subgroups, using the specified
-action for every subgroup.
-
-For example, the rule::
-
-    "(0x)([0-9a-f]+)", SubgroupAction(Number.Prefix, Number.Hexadecimal)
-
-yields two tokens in case of a match, one for "0x" and the other for the
-other group of the match.
-
-
-skip
-----
-
-A SkipAction() is stored in the module variable ``skip`` and causes the rule
-to silently ignore the matched text.
 
 """
 
@@ -210,6 +189,17 @@ class DynamicAction(DynamicItem):
 class SubgroupAction(DynamicAction):
     """Yield actions from subgroups in a match.
 
+    A SubgroupAction looks at subgroups in the regular expression match and
+    returns the same amount of tokens as there are subgroups, using the specified
+    action for every subgroup.
+
+    For example, the rule::
+
+        "(0x)([0-9a-f]+)", SubgroupAction(Number.Prefix, Number.Hexadecimal)
+
+    yields two tokens in case of a match, one for "0x" and the other for the
+    other group of the match.
+
     There should be the same number of subgroups in the regular expression as
     there are action attributes given to __init__().
 
@@ -220,7 +210,12 @@ class SubgroupAction(DynamicAction):
 
 
 class SkipAction(DynamicAction):
-    """A DynamicAction that yields nothing."""
+    """A DynamicAction that yields nothing.
+
+    A SkipAction() is stored in the module variable ``skip`` and causes the rule
+    to silently ignore the matched text.
+
+    """
     def filter_actions(self, lexer, pos, text, match):
         yield from ()
 

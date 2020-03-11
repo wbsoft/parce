@@ -103,11 +103,11 @@ class MatchRuleItem(DynamicRuleItem):
 
 
 class LexiconWithText(DynamicRuleItem):
-    """Return a LexiconVariant by calling a Lexicon with an argument.
+    """Return a derived Lexicon by calling a Lexicon with an argument.
 
-    The argument is the text of the specified match group, optionally
-    mapped by a specified mapping. When the text is not in the mapping,
-    the argument is set to None, so that the vanilla lexicon is returned.
+    The argument is the text of the specified match group, optionally mapped by
+    a specified mapping. In that case, when the text is not in the mapping, the
+    argument is set to None, so that the vanilla lexicon is returned.
 
     """
     def __init__(self, group, lexicon, mapping=None):
