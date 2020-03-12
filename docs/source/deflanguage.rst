@@ -288,7 +288,7 @@ Lexicon arguments, derived Lexicon
 ----------------------------------
 
 Although the lexicon function itself never uses any more arguments than
-the first ``cls`` argument, it is possible to call an exising Lexicon with
+the first ``cls`` argument, it is possible to call an existing Lexicon with
 an argument, which then must be a simple hashable item like an integer, string
 or standard action. In most use cases it will be a string value.
 
