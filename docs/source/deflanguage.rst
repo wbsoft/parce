@@ -152,7 +152,7 @@ to match, but induce other behaviour:
         class MyLang(Language):
             @lexicon
             def root(cls):
-                yield r"\bnumbers:", cls.numbers
+                yield r"\bnumbers:", Text, cls.numbers
 
             @lexicon
             def numbers(cls):
