@@ -306,7 +306,7 @@ taken from the tests directory::
     class MyLang(Language):
         @lexicon
         def root(cls):
-            yield r"@([a-z]+)@", Name, lexiconwithgroup(1, cls.here)
+            yield r"@([a-z]+)@", Name, withgroup(1, cls.here)
             yield r"\w+", Text
 
         @lexicon
@@ -329,12 +329,12 @@ taken from the tests directory::
      ├╴<Token 'bla' at 26:29 (Text)>
      ╰╴<Token 'bla' at 30:33 (Text)>
 
-What happens: the :func:`~parce.lexiconwithgroup` helper switches to the
-``here`` lexicon when the text ``@mark@`` is encountered. The part ``mark`` is
-captured in the match group 1, and given as argument to the ``here`` lexicon.
-The :func:`~parce.arg` parce built-in yields the argument (``"mark"``) as a
-regular expression pattern, with word boundaries, which causes the lexer to pop
-back to the root context.
+What happens: the :func:`~parce.withgroup` helper switches to the ``here``
+lexicon when the text ``@mark@`` is encountered. The part ``mark`` is captured
+in the match group 1, and given as argument to the ``here`` lexicon. The
+:func:`~parce.arg` parce built-in yields the argument (``"mark"``) as a regular
+expression pattern, with word boundaries, which causes the lexer to pop back to
+the root context.
 
 Note that the asterisk after the ``here`` lexicon name in the dump reveals that
 it is a derived Lexicon.

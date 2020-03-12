@@ -372,8 +372,8 @@ def bygroup(*actions):
     return action.SubgroupAction(*actions)
 
 
-def lexiconwithgroup(n, lexicon, mapping=None):
-    r"""Return a :class:`~parce.rule.LexiconWithText` rule item that calls the
+def withgroup(n, lexicon, mapping=None):
+    r"""Return a :class:`~parce.rule.LexiconWithGroup` rule item that calls the
     ``lexicon`` with the matched text from group ``n``.
 
     Calling a Lexicon creates a derived Lexicon, i.e. one that has the same set
@@ -386,7 +386,24 @@ def lexiconwithgroup(n, lexicon, mapping=None):
     the argument to call the lexicon with.
 
     """
-    return rule.LexiconWithText(n, lexicon, mapping)
+    return rule.LexiconWithGroup(n, lexicon, mapping)
+
+
+def withtext(lexicon, mapping=None):
+    r"""Return a :class:`~parce.rule.LexiconWithText` rule item that calls the
+    ``lexicon`` with the matched text.
+
+    Calling a Lexicon creates a derived Lexicon, i.e. one that has the same set
+    of rules and the same name, but the patterns and/or rules may differ by
+    using ArgRuleItem instances in the rule, which base their replacement
+    output on the argument the initial Lexicon was called with.
+
+    If a ``mapping`` dictionary is specified, the matched text is used as key,
+    and the result of the mapping (None if not present) gives the argument to
+    call the lexicon with.
+
+    """
+    return rule.LexiconWithText(lexicon, mapping)
 
 
 def lexicon(rules_func=None, **kwargs):

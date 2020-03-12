@@ -102,7 +102,7 @@ class MatchRuleItem(DynamicRuleItem):
         return self.itemlists[index]
 
 
-class LexiconWithText(DynamicRuleItem):
+class LexiconWithGroup(DynamicRuleItem):
     """Return a derived Lexicon by calling a Lexicon with an argument.
 
     The argument is the text of the specified match group, optionally mapped by
@@ -118,6 +118,26 @@ class LexiconWithText(DynamicRuleItem):
     def replace(self, text, match):
         """Yield the vanilla or derived Lexicon."""
         arg = match.group(match.lastindex + self.group)
+        if self.mapping:
+            arg = self.mapping.get(arg)
+        return self.itemlists[0][0](arg),
+
+
+class LexiconWithText(DynamicRuleItem):
+    """Return a derived Lexicon by calling a Lexicon with an argument.
+
+    The argument is the matched text, optionally mapped by a specified mapping.
+    In that case, when the text is not in the mapping, the argument is set to
+    None, so that the vanilla lexicon is returned.
+
+    """
+    def __init__(self, lexicon, mapping=None):
+        self.itemlists = [[lexicon]]
+        self.mapping = mapping
+
+    def replace(self, text, match):
+        """Yield the vanilla or derived Lexicon."""
+        arg = text
         if self.mapping:
             arg = self.mapping.get(arg)
         return self.itemlists[0][0](arg),

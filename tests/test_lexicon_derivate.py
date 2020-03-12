@@ -29,7 +29,7 @@ from parce import *
 class MyLang(Language):
     @lexicon
     def root(cls):
-        yield r"@([a-z]+)@", Name, lexiconwithgroup(1, cls.here)
+        yield r"@([a-z]+)@", Name, withgroup(1, cls.here)
         yield r"\w+", Text
 
     @lexicon
