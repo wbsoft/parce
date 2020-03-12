@@ -88,26 +88,25 @@ class Lexicon:
     This function is created as soon as it is called for the first time.
 
     """
-    __slots__ = ('lexicon', 'language', 'arg', 'parse', '_lock', '_variants')
+    __slots__ = ('lexicon', 'language', 'arg', 'parse', '_lock', '_derived')
 
     def __init__(self, lexicon, language, arg=None):
         self.lexicon = lexicon
         self.language = language
         self.arg = arg
-        self._variants = {}
-        # lock is used when creating a variant and/or the parse() instance function
+        self._derived = {}
+        # lock is used when creating a derivate and/or the parse() instance function
         self._lock = threading.Lock()
 
     def __call__(self, arg=None):
         """Create a derived Lexicon with argument ``arg``.
 
         The argument should be a simple, hashable singleton object, such as a
-        string, an integer or a standard action. The created LexiconDerivate
-        is cached. The argument is accessible using special pattern and rule
-        item types, so a LexiconDerivate can parse text based on rules
-        that are defined at parse time, which is useful for things like
-        here documents, where you only get to know the end token after the
-        start token has been found.
+        string, an integer or a standard action. The created Lexicon is cached.
+        The argument is accessible using special pattern and rule item types,
+        so a derived Lexicon can parse text based on rules that are defined at
+        parse time, which is useful for things like here documents, where you
+        only get to know the end token after the start token has been found.
 
         When comparing Lexicons with ``equals()``, a derivative lexicon
         compares equal with the Lexicon that created them, although they
@@ -119,13 +118,13 @@ class Lexicon:
         if arg is None or self.arg is not None:
             return self
         try:
-            return self._variants[arg]
+            return self._derived[arg]
         except KeyError:
             with self._lock:
                 try:
-                    lexicon = self._variants[arg]
+                    lexicon = self._derived[arg]
                 except KeyError:
-                    lexicon = self._variants[arg] = Lexicon(self.lexicon, self.language, arg)
+                    lexicon = self._derived[arg] = Lexicon(self.lexicon, self.language, arg)
             return lexicon
 
     def equals(self, other):
