@@ -18,7 +18,9 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 
-import parce.action
+import parce
+from parce.action import StandardAction
+from parce.rule import DynamicItem
 from parce.lexicon import LexiconDescriptor, Lexicon
 
 
@@ -52,19 +54,18 @@ def standardactions(lang):
     Does not follow targets to other languages.
 
     """
-    def std_actions(a):
-        if isinstance(a, parce.action.DynamicAction):
-            for a in a.actions:
-                yield from std_actions(a)
-        elif isinstance(a, parce.action.StandardAction):
-            yield a
+    def std_actions(items):
+        for i in items:
+            if isinstance(i, DynamicItem):
+                for l in i.itemlists:
+                    yield from std_actions(l)
+            elif isinstance(i, StandardAction):
+                yield i
 
     def get_actions():
-        for lex in lexicons(lang):
-            for pattern, action, *rest in lex():
-                if pattern is parce.default_target:
-                    continue
-                yield from std_actions(action)
+        for lexicon in lexicons(lang):
+            for rule in lexicon:
+                yield from std_actions(rule)
     return set(get_actions())
 
 
