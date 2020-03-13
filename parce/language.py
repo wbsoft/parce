@@ -48,25 +48,27 @@ def lexicons(lang):
     return lexicons
 
 
+def rule_items(lang):
+    """Yield all rule items in a language, flattening all DynamicItem instances."""
+    def flatten(items):
+        for i in items:
+            if isinstance(i, DynamicItem):
+                for l in i.itemlists:
+                    yield from flatten(l)
+            else:
+                yield i
+    for lexicon in lexicons(lang):
+        for rule in lexicon:
+            yield from flatten(rule)
+
+
 def standardactions(lang):
     """Return the set of all the StandardAction instances in the language.
 
     Does not follow targets to other languages.
 
     """
-    def std_actions(items):
-        for i in items:
-            if isinstance(i, DynamicItem):
-                for l in i.itemlists:
-                    yield from std_actions(l)
-            elif isinstance(i, StandardAction):
-                yield i
-
-    def get_actions():
-        for lexicon in lexicons(lang):
-            for rule in lexicon:
-                yield from std_actions(rule)
-    return set(get_actions())
+    return set(i for i in rule_items(lang) if isinstance(i, StandardAction))
 
 
 def languages(lang):
@@ -75,21 +77,7 @@ def languages(lang):
     Does not follow targets from languages that are referred to.
 
     """
-    langs = set()
-    def target_lexicons(target):
-        for t in target:
-            if isinstance(t, Lexicon):
-                yield t
-            elif isinstance(t, parce.target.DynamicTarget):
-                for target in t.targets:
-                    yield from target_lexicons(target)
-
-    for lex in lexicons(lang):
-        for pattern, action, *target in lex():
-            if pattern is parce.default_target:
-                target = (action, *target)
-            for lx in target_lexicons(target):
-                if lx.language is not lang:
-                    langs.add(lx.language)
-    return langs
+    return set(i.language
+        for i in rule_items(lang)
+            if isinstance(i, Lexicon) and i.language is not lang)
 
