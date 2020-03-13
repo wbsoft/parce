@@ -371,8 +371,8 @@ Of course it is also possible to target a lexicon with an argument directly::
     class MyLang(Language):
         @lexicon
         def root(cls):
-            yield r"{", Delimiter, cls.nested("}")
-            yield r"[", Delimiter, cls.nested("]")
+            yield r"\{", Delimiter, cls.nested("}")
+            yield r"\[", Delimiter, cls.nested("]")
             yield r"\w+", Text
 
         @lexicon
