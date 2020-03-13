@@ -355,7 +355,7 @@ of the lexicon argument:
         :noindex:
 
 And there are three helper functions that create a target lexicon using an
-argument from (matched) text:
+argument:
 
     .. autofunction:: parce.withgroup
         :noindex:
