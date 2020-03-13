@@ -345,6 +345,41 @@ would obfuscate the possibility to access all rule items, actions and targets
 etcetera beforehand, before parsing, which would break all language validation
 possibilities and future logic to replace items in rules before parsing.)
 
+There are two helper functions that create the Pattern based on the contents
+of the lexicon argument:
+
+    .. autofunction:: parce.arg
+        :noindex:
+
+    .. autofunction:: parce.ifarg
+        :noindex:
+
+And there are three helper functions that create a target lexicon using an
+argument from (matched) text:
+
+    .. autofunction:: parce.withgroup
+        :noindex:
+
+    .. autofunction:: parce.withtext
+        :noindex:
+
+    .. autofunction:: parce.witharg
+        :noindex:
+
+Of course it is also possible to target a lexicon with an argument directly::
+
+    class MyLang(Language):
+        @lexicon
+        def root(cls):
+            yield r"{", Delimiter, cls.nested("}")
+            yield r"[", Delimiter, cls.nested("]")
+            yield r"\w+", Text
+
+        @lexicon
+        def nested(cls):
+            yield arg(), Delimiter, -1
+            yield from cls.root
+
 
 Validating a Language
 ---------------------

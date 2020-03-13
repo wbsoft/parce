@@ -393,17 +393,20 @@ def withtext(lexicon, mapping=None):
     r"""Return a :class:`~parce.rule.LexiconWithText` rule item that calls the
     ``lexicon`` with the matched text.
 
-    Calling a Lexicon creates a derived Lexicon, i.e. one that has the same set
-    of rules and the same name, but the patterns and/or rules may differ by
-    using ArgRuleItem instances in the rule, which base their replacement
-    output on the argument the initial Lexicon was called with.
-
     If a ``mapping`` dictionary is specified, the matched text is used as key,
     and the result of the mapping (None if not present) gives the argument to
     call the lexicon with.
 
     """
     return rule.LexiconWithText(lexicon, mapping)
+
+
+def witharg(lexicon):
+    r"""Return a :class:`~parce.rule.LexiconWithArg` rule item that calls the
+    ``lexicon`` with the same argument as the current lexicon.
+
+    """
+    return rule.LexiconWithArg(lexicon)
 
 
 def lexicon(rules_func=None, **kwargs):

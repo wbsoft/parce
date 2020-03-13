@@ -142,3 +142,14 @@ class LexiconWithText(DynamicRuleItem):
             arg = self.mapping.get(arg)
         return self.itemlists[0][0](arg),
 
+
+class LexiconWithArg(ArgRuleItem):
+    """Return a derived Lexicon with the same argument as the current Lexicon."""
+    def __init__(self, lexicon):
+        self.itemlists = [[lexicon]]
+
+    def replace(self, arg):
+        """Yield the derived Lexicon with the same argument as the current Lexicon."""
+        return self.itemlists[0][0](arg),
+
+
