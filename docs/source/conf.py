@@ -111,6 +111,7 @@ html_theme = 'alabaster'
 # documentation.
 #
 html_theme_options = {
+    'logo': 'parce-logo.png',
     'fixed_sidebar': 'true',
     'github_user': 'wbsoft',
     'github_repo': 'parce',

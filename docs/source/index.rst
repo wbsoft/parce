@@ -27,6 +27,7 @@ This manual documents version |release|.
 | Download: https://pypi.org/project/parce/
 | Documentation: https://parce.info
 
+The logo is a public domain tree image with the name in the Gentium italic font.
 Why the name? It's short, sounds like 'parse', and has the meaning of
 "friend", "buddy", "bro." :-)
 
