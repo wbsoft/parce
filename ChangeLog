@@ -2,7 +2,7 @@ ChangeLog of the Python parce package
 =====================================
 
 
-current:
+2020-03-14: parce-0.7.0
 
 - bytext() and bymatch() are now generic "replacables", they can be used
   to specify an alternative action, target or both in one go. tomatch() was not
