@@ -399,8 +399,7 @@ performed:
 
 * The regular expression pattern should be valid and compilable
 
-* Targets should be valid, either integers or lexicons; and when
-  a DynamicTarget is used, there should not be other target items
+* Targets should be valid, either integers or lexicons
 
 * Circular default targets are detected.
 
