@@ -7,6 +7,14 @@ current:
 - bytext() and bymatch() are now generic "replacables", they can be used
   to specify an alternative action, target or both in one go. tomatch() was not
   needed anymore and is gone.
+- much more replacables, all replacable items now inherit from DynamicItem,
+  (except for Pattern)
+- make it possible to create derived lexicons, e.g. to parse here documents
+- improved LilyPond and Scheme parser
+- added JSON parser
+- lexer resurrected, now generates an event stream, which is used by the tree
+  builder
+- documentation improvements, more examples in doc strings
 
 
 2020-02-16: parce-0.6.0
