@@ -252,7 +252,7 @@ which is a generator initially yielding just that Token or Context::
     ...
     <Context Nonsense.root at 1-108 (19 children)>
 
-But the Query object has poweful methods that modify the stream of nodes
+But the Query object has powerful methods that modify the stream of nodes
 yielded by the generator. All these methods return a new Query object, so
 queries can be chained in an XPath-like fashion. For example::
 
