@@ -284,7 +284,7 @@ class Query:
         """Delete all selected nodes from their parents.
 
         Internally calls ``uniq`` and ``remove_descendants``, so that no
-        unnessary deletes are done. If a context would become empty, that
+        unnecessary deletes are done. If a context would become empty, that
         context itself is deleted instead of all its children (except for the
         root of course). Returns the number of nodes that were deleted.
 
