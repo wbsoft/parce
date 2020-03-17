@@ -21,30 +21,15 @@
 Validates all languages with pytest.
 """
 
-import importlib
-import os
-import glob
 import sys
 
 sys.path.insert(0, ".")
 
-import parce.lang
+import parce.language
 import parce.validate
 
-def get_all_languages():
-    filenames = [
-        os.path.splitext(os.path.basename(filename))[0]
-        for filename in glob.glob(os.path.join(parce.lang.__path__[0], "*.py"))]
 
-    for f in filenames:
-        modname = 'parce.lang.' + f
-        mod = importlib.import_module(modname)
-        for name, obj in mod.__dict__.items():
-            if isinstance(obj, type) and issubclass(obj, parce.Language) and obj.__module__ == modname:
-                yield obj
-
-
-for lang in get_all_languages():
+for lang in parce.language.get_all_languages():
     assert parce.validate.validate_language(lang) is True
 
 

@@ -18,7 +18,12 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 
+import importlib
+import glob
+import os
+
 import parce
+import parce.lang
 from parce.action import StandardAction
 from parce.rule import DynamicItem
 from parce.lexicon import LexiconDescriptor, Lexicon
@@ -80,4 +85,21 @@ def languages(lang):
     return set(i.language
         for i in rule_items(lang)
             if isinstance(i, Lexicon) and i.language is not lang)
+
+
+def get_all_languages():
+    """Import all modules in ``parce.lang`` and yield all defined classes
+    that inherit from :class:`Language`.
+
+    """
+    filenames = [
+        os.path.splitext(os.path.basename(filename))[0]
+        for filename in glob.glob(os.path.join(parce.lang.__path__[0], "*.py"))]
+    modnames = ['parce.lang.' + name for name in filenames if not name.startswith('_')]
+    for modname in modnames:
+        mod = importlib.import_module(modname)
+        for name, obj in mod.__dict__.items():
+            if (isinstance(obj, type) and issubclass(obj, parce.Language)
+                   and obj is not parce.Language and obj.__module__ == modname):
+                yield obj
 
