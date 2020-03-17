@@ -1,11 +1,8 @@
-Languages bundled with parce
+Bundled language definitions
 ============================
 
-.. toctree::
-   :hidden:
-   :glob:
-
-   lang/*
+This is a listing of the modules in ``parce.lang`` and the Language classes
+they define:
 
 | :mod:`~parce.lang.css`:     :class:`~parce.lang.css.Css`
 | :mod:`~parce.lang.json`:    :class:`~parce.lang.json.Json`
