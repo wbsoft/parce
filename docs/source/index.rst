@@ -42,8 +42,10 @@ Why the name? It's short, sounds like 'parse', and has the meaning of
    treestructure.rst
    building.rst
    doc.rst
-
    modoverview.rst
+
+   langs.rst
+
 
 Indices and tables
 ==================
