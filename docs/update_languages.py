@@ -59,10 +59,10 @@ def main():
     with open("source/langs.inc", "w") as f:
         f.write(LANGS_INC_HEADER)
         for name in get_all_modules():
-            make_stub(name)
             clss = ", ".join(":class:`~parce.lang.{0}.{1}`".format(name, c.__name__)
                 for c in get_languages(name))
             if clss:
+                make_stub(name)
                 f.write("   * - :mod:`~parce.lang.{0}`\n".format(name))
                 f.write("     - {0}\n\n".format(clss))
 
