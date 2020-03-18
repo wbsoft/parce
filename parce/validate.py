@@ -24,7 +24,7 @@ import re
 import parce
 from .lexicon import LexiconDescriptor, Lexicon
 from .pattern import Pattern, PredicatePattern
-from .rule import DynamicRuleItem
+from .rule import DynamicRuleItem, variations
 from . import util
 
 
@@ -137,21 +137,8 @@ class LexiconValidator:
         valid (either an integer or a Lexicon).
 
         """
-        # find all possible permutations of the rule when there are DynamicRuleItems
-        def future(items):
-            items = list(items)
-            for i, item in enumerate(items):
-                if isinstance(item, DynamicRuleItem):
-                    prefix = items[:i]
-                    for suffix in future(items[i+1:]):
-                        for itemlist in item.itemlists:
-                            for l in future(itemlist):
-                                yield prefix + l + suffix
-                    break
-            else:
-                yield items
         # all possible rule paths
-        for path in future(rule):
+        for path in variations(rule):
             for target in path[1:]:     # the first item always is the action
                 if not isinstance(target, (int, Lexicon)):
                     self.error("invalid target: {}".format(target))

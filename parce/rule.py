@@ -153,3 +153,24 @@ class LexiconWithArg(ArgRuleItem):
         return self.itemlists[0][0](arg),
 
 
+def variations(rule):
+    """Yield lists with all possible variations on the rule.
+
+    Every DynamicRuleItem is recursively replaced with all of its alternatives.
+    Note that DynamicAction is a DynamicItem subclass, and that is not
+    unfolded.
+
+    """
+    items = list(rule)
+    for i, item in enumerate(items):
+        if isinstance(item, DynamicRuleItem):
+            prefix = items[:i]
+            for suffix in variations(items[i+1:]):
+                for itemlist in item.itemlists:
+                    for l in variations(itemlist):
+                        yield prefix + l + suffix
+            break
+    else:
+        yield items
+
+
