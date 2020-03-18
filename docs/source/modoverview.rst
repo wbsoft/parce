@@ -26,10 +26,3 @@ Overview of all modules
    util.rst
    validate.rst
 
-
-Language modules in the ``parce.lang`` package:
-
-.. toctree::
-   :glob:
-
-   lang/*
