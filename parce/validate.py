@@ -83,24 +83,24 @@ class LexiconValidator:
         self.warnings.clear()
         default_act, default_tg = None, None
         patterns = set()
-        for rule in self.lexicon:
+        for n, rule in enumerate(self.lexicon, 1):
             if not isinstance(rule, (tuple, list)):
-                self.error("invalid rule; should be tuple or list")
+                self.error("rule #{}: invalid rule; should be tuple or list".format(n))
                 continue
             elif len(rule) < 2:
-                self.error("invalid rule; pattern and action should be there")
+                self.error("rule #{}: invalid rule; pattern and action should be there".format(n))
                 continue
             pattern, *rule = rule
             if pattern is parce.default_action:
                 if default_act:
-                    self.error("conflicting default actions")
+                    self.error("rule #{}: conflicting default actions".format(n))
                 else:
                     default_act = rule[0]
                     if isinstance(default_act, DynamicRuleItem):
-                        self.warning("dynamic default_action; will not be replaced!")
+                        self.warning("rule #{}: dynamic default_action; will not be replaced!".format(n))
             elif pattern is parce.default_target:
                 if default_tg:
-                    self.error("conflicting default targets")
+                    self.error("rule #{}: conflicting default targets".format(n))
                 else:
                     default_tg = rule
                     self.check_default_target(default_tg)
@@ -108,29 +108,29 @@ class LexiconValidator:
                 while isinstance(pattern, Pattern):
                     pattern = pattern.build()
                 if pattern is None:
-                    self.warning("pattern is None; rule will be skipped")
+                    self.warning("rule #{}: pattern is None; rule will be skipped".format(n))
                 else:
-                    self.validate_pattern(pattern)
+                    self.validate_pattern(pattern, n)
                     if pattern in patterns:
-                        self.warning("repeated pattern {}; will be skipped".format(util.abbreviate_repr(pattern)))
+                        self.warning("rule #{0}: repeated pattern {1}; will be skipped".format(n, util.abbreviate_repr(pattern)))
                     patterns.add(pattern)
-                self.validate_rule(rule)
+                self.validate_rule(rule, n)
 
         if default_act and default_tg:
             self.error("can't have both default_action and default_target")
         return not self.errors
 
-    def validate_pattern(self, pattern):
+    def validate_pattern(self, pattern, n):
         """Validate a regular expression pattern."""
         try:
             rx = re.compile(pattern, self.lexicon.re_flags)
         except (TypeError, re.error) as e:
-            self.error("regular expression {} error:\n  {}".format(repr(pattern), e))
+            self.error("rule #{0}: regular expression {1} error:\n  {2}".format(n, repr(pattern), e))
         else:
             if rx.match(''):
-                self.warning("pattern {} matches the empty string".format(repr(pattern)))
+                self.warning("rule #{0}: pattern {1} matches the empty string".format(n, repr(pattern)))
 
-    def validate_rule(self, rule):
+    def validate_rule(self, rule, n):
         """Validate a rule, which should be action, target[, target, ...].
 
         Does not look at the action, but checks whether all the targets are
@@ -141,7 +141,7 @@ class LexiconValidator:
         for path in variations(rule):
             for target in path[1:]:     # the first item always is the action
                 if not isinstance(target, (int, Lexicon)):
-                    self.error("invalid target: {}".format(target))
+                    self.error("rule #{0}: invalid target: {1}".format(n, target))
 
     def check_default_target(self, target):
         """Check whether this default target could lead to circular references.
