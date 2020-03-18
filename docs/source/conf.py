@@ -28,7 +28,8 @@ from sphinx.ext.autodoc import ClassLevelDocumenter
 from sphinx.util.inspect import getdoc
 from sphinx.util.docstrings import prepare_docstring
 class LexiconDocumenter(ClassLevelDocumenter):
-    objtype = 'attribute'
+    objtype = 'lexicon'
+    directivetype = 'attribute'
     priority = 100
     @classmethod
     def can_document_member(cls, member, membername, isattr, parent):
