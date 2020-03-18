@@ -16,6 +16,7 @@ help:
 
 
 update_languages:
+	@mkdir -p source/lang
 	python3 ./update_languages.py
 
 html: update_languages
