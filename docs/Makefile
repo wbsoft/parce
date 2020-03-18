@@ -4,7 +4,7 @@
 # You can set these variables from the command line.
 SPHINXOPTS    =
 SPHINXBUILD   = sphinx-build
-SPHINXPROJ    = livelex
+SPHINXPROJ    = parce
 SOURCEDIR     = source
 BUILDDIR      = build
 
@@ -14,6 +14,11 @@ help:
 
 .PHONY: help Makefile
 
+
+update_languages:
+	python3 ./update_languages.py
+
+html: update_languages
 
 # Upload (added by WB)
 upload: html
