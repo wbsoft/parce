@@ -25,6 +25,8 @@ import parce.pkginfo
 
 ### begin custom Lexicon documenter
 from sphinx.ext.autodoc import ClassLevelDocumenter
+from sphinx.util.inspect import getdoc
+from sphinx.util.docstrings import prepare_docstring
 class LexiconDocumenter(ClassLevelDocumenter):
     objtype = 'lexicon'
     directivetype = 'attribute'
@@ -33,6 +35,11 @@ class LexiconDocumenter(ClassLevelDocumenter):
     @classmethod
     def can_document_member(cls, member, membername, isattr, parent):
         return isinstance(member, parce.lexicon_.Lexicon)
+
+    def get_doc(self, encoding=None, ignore=1):
+        docstring = getdoc(self.object.lexicon.rules_func, self.get_attr,
+                           self.env.config.autodoc_inherit_docstrings)
+        return [prepare_docstring(docstring, ignore)] if docstring else []
 
     def document_members(self, all_members = False):
         pass
