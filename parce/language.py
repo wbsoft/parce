@@ -87,19 +87,42 @@ def languages(lang):
             if isinstance(i, Lexicon) and i.language is not lang)
 
 
+def get_all_modules():
+    """Return the sorted list of module names in ``parce.lang``.
+
+    Modules that start with an underscore are skipped.
+
+    """
+    names = []
+    for filename in glob.glob(os.path.join(parce.lang.__path__[0], "*.py")):
+        name = os.path.splitext(os.path.basename(filename))[0]
+        if not name.startswith('_'):
+            names.append(name)
+    names.sort()
+    return names
+
+
+def get_languages(name):
+    """Yield the Language subclasses defined in the module ``name``.
+
+    The module name must be one of the modules returned by
+    :meth:``get_all_modules``.
+
+    """
+    modname = 'parce.lang.' + name
+    mod = importlib.import_module(modname)
+    for name, obj in mod.__dict__.items():
+        if (isinstance(obj, type) and issubclass(obj, parce.Language)
+               and obj is not parce.Language and obj.__module__ == modname):
+            yield obj
+
+
 def get_all_languages():
     """Import all modules in ``parce.lang`` and yield all defined classes
     that inherit from :class:`Language`.
 
     """
-    filenames = [
-        os.path.splitext(os.path.basename(filename))[0]
-        for filename in glob.glob(os.path.join(parce.lang.__path__[0], "*.py"))]
-    modnames = ['parce.lang.' + name for name in filenames if not name.startswith('_')]
-    for modname in modnames:
-        mod = importlib.import_module(modname)
-        for name, obj in mod.__dict__.items():
-            if (isinstance(obj, type) and issubclass(obj, parce.Language)
-                   and obj is not parce.Language and obj.__module__ == modname):
-                yield obj
+    for name in get_all_modules():
+        yield from get_languages(name)
+
 
