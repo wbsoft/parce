@@ -53,7 +53,7 @@ maintainer = "Wilbert Berendsen"
 maintainer_email = "info@wilbertberendsen.nl"
 
 #: homepage
-url = "https://github.com/wbsoft/parce"
+url = "https://parce.info/"
 
 #: license
 license = "GPL"
