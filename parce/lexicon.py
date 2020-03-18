@@ -88,12 +88,11 @@ class Lexicon:
     This function is created as soon as it is called for the first time.
 
     """
-    __slots__ = ('lexicon', 'language', 'arg', 'parse', '_lock', '_derived')
-
     def __init__(self, lexicon, language, arg=None):
         self.lexicon = lexicon
         self.language = language
         self.arg = arg
+        self.__doc__ = lexicon.rules_func.__doc__
         self._derived = {}
         # lock is used when creating a derivate and/or the parse() instance function
         self._lock = threading.Lock()
