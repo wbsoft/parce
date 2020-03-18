@@ -65,14 +65,14 @@ class Node:
     is_token = False
     is_context = False
 
-    def dump(self, depth=0):
+    def dump(self, file=None, depth=0):
         """Display a graphical representation of the node and its contents."""
         prefix = (" ╰╴" if self.is_last() else " ├╴") if depth else ""
         node = self
         for i in range(depth - 1):
             node = node.parent
             prefix = ("   " if node.is_last() else " │ ") + prefix
-        print(prefix + repr(self))
+        print(prefix + repr(self), file=file)
 
     def parent_index(self):
         """Return our index in the parent.
@@ -594,11 +594,11 @@ class Context(list, Node):
             return not other.equals(self.lexicon)
         return other is not self
 
-    def dump(self, depth=0):
+    def dump(self, file=None, depth=0):
         """Prints a nice graphical representation, for debugging purposes."""
-        super().dump(depth)
+        super().dump(file, depth)
         for n in self:
-            n.dump(depth + 1)
+            n.dump(file, depth + 1)
 
     @property
     def pos(self):

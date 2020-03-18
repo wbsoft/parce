@@ -241,10 +241,10 @@ class Query:
         """Compute the length of the iterable."""
         return sum(1 for _ in self)
 
-    def dump(self):
-        """Dump the current selection to the console."""
+    def dump(self, file=None):
+        """Dump the current selection to the console (or to file)."""
         for n in self:
-            n.dump()
+            n.dump(file)
 
     def list(self):
         """Return the current selection as a list. Mainly for debugging."""
