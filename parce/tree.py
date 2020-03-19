@@ -578,8 +578,9 @@ class Context(list, Node):
         if pos is None:
             pos = end = "?"
         name = self.lexicon and repr(self.lexicon)
-        return "<Context {} at {}-{} ({} children)>".format(
-            name, pos, end, len(self))
+        children = "child" if len(self) == 1 else "children"
+        return "<Context {} at {}-{} ({} {})>".format(
+            name, pos, end, len(self), children)
 
     def __hash__(self):
         return Node.__hash__(self)

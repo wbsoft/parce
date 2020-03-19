@@ -24,7 +24,7 @@ Let's look at the generated token tree of the simple example of the
      ├╴<Token 'and' at 69:72 (Text)>
      ├╴<Token '1' at 73:74 (Literal.Number)>
      ├╴<Token '%' at 75:76 (Comment)>
-     ├╴<Context Nonsense.comment at 76-89 (1 children)>
+     ├╴<Context Nonsense.comment at 76-89 (1 child)>
      │  ╰╴<Token ' comment that' at 76:89 (Comment)>
      ├╴<Token 'ends' at 90:94 (Text)>
      ├╴<Token 'on' at 95:97 (Text)>
@@ -284,7 +284,7 @@ all children of every node::
     <Token 'and' at 69:72 (Text)>
     <Token '1' at 73:74 (Literal.Number)>
     <Token '%' at 75:76 (Comment)>
-    <Context Nonsense.comment at 76-89 (1 children)>
+    <Context Nonsense.comment at 76-89 (1 child)>
     <Token 'ends' at 90:94 (Text)>
     <Token 'on' at 95:97 (Text)>
     <Token 'a' at 98:99 (Text)>

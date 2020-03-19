@@ -68,7 +68,7 @@ Now we feed it the unfinished string::
     <Context Nonsense.root at 0-21 (3 children)>
      ├╴<Token 'an' at 0:2 (Text)>
      ├╴<Token '"' at 3:4 (Literal.String)>
-     ╰╴<Context Nonsense.string at 4-21 (1 children)>
+     ╰╴<Context Nonsense.string at 4-21 (1 child)>
         ╰╴<Token 'unfinished string' at 4:21 (Literal.String)>
 
 Now we instruct the TreeBuilder that we want to append 1 character at position

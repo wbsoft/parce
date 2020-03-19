@@ -20,10 +20,10 @@
 
 """A CSS parser.
 
-CSS3 Syntax: https://www.w3.org/TR/css-syntax-3/
-Selector syntax: https://www.w3.org/TR/selectors-4/
+| CSS3 Syntax:     https://www.w3.org/TR/css-syntax-3/
+| Selector syntax: https://www.w3.org/TR/selectors-4/
 
-We want also to use this parser inside parce, to be able to store default
+We also use this parser inside parce, to be able to store default
 highlighting formats in css files.
 
 """

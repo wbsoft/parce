@@ -21,5 +21,11 @@
 from parce.lang.css import Css
 
 def examples():
-    yield Css.root, "h1 { color: red; }\n"
+    yield Css.root, \
+r"""h1.main {
+    color: red;
+    background: grey url(bla.png);
+}
+"""
+
 
