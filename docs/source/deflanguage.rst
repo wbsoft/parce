@@ -51,14 +51,15 @@ containing a regular expression, or an object inheriting from
 :class:`~parce.pattern.Pattern`. Some simple regular expressions can be seen
 in the ``root`` lexicon of the above example:
 
-    ``r'\d+'``
+    :regexp:`\d+`
         matches one or more decimal digits (0 - 9)
-    ``r'\w+'``
+    :regexp:`\w+`
         matches one or more "word" characters (i.e. non-whitespace,
         non-puctuation)
 
-See for more information about regular expressions the documentation
-of the Python :mod:`re` module.
+It is a good convention to wrap a regular expressions in a raw (``r`` prefixed)
+string. See for more information about regular expressions the documentation of
+the Python :mod:`re` module.
 
 Python's regular expression engine picks the first pattern that matches, even
 if a later rule would produce a longer match. So if you for example want to

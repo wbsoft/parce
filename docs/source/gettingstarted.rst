@@ -1,7 +1,7 @@
 Getting started
 ===============
 
-We describe how ``parce`` works by creating a language definition and using it.
+We describe how `parce` works by creating a language definition and using it.
 Start with::
 
     import parce
