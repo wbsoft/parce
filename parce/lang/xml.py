@@ -17,6 +17,10 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+"""
+Parse XML.
+
+"""
 
 import re
 
@@ -31,7 +35,6 @@ PI = Comment.PI
 
 
 class Xml(Language):
-    """Parse XML."""
     @lexicon(re_flags=re.IGNORECASE)
     def root(cls):
         yield r'<!--', Comment.Start, cls.comment

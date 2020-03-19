@@ -22,9 +22,12 @@
 Updates the language stub files in source/lang and the listing in source/langs.inc
 """
 
+import io
 import sys
+import importlib
 sys.path.insert(0, "..")
 
+import parce
 from parce.language import get_all_modules, get_languages
 
 STUB = r"""{0}
@@ -34,6 +37,21 @@ STUB = r"""{0}
     :members:
     :undoc-members:
     :show-inheritance:
+
+"""
+
+EXAMPLE_STUB = r"""
+
+Root lexicon ``{0}`` and text:
+
+.. code-block:: {1}
+
+{2}
+
+Result tree::
+
+{3}
+
 
 """
 
@@ -49,10 +67,35 @@ LANGS_INC_HEADER = r"""
 
 """
 
+def indent(text, indent=4):
+    """Indent text."""
+    return '\n'.join(' ' * indent + line for line in text.splitlines())
+
+
 def make_stub(name):
     text = STUB.format(name, '=' * len(name))
     with open("source/lang/{0}.rst".format(name), "w") as f:
         f.write(text)
+
+        try:
+            mod = importlib.import_module('tests.lang.' + name)
+        except ImportError:
+            return
+        examples = list(mod.examples())
+        if not examples:
+            return
+
+        if len(examples) > 1:
+            f.write("Examples:\n---------")
+        else:
+            f.write("Example:\n--------")
+
+        for root_lexicon, text in examples:
+            tree = parce.root(root_lexicon, text)
+            buf = io.StringIO()
+            tree.dump(buf)
+            f.write(EXAMPLE_STUB.format(root_lexicon, name, indent(text),
+                                        indent(buf.getvalue())))
 
 
 def main():

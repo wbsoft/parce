@@ -17,6 +17,17 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+"""
+JavaScript Object Notation parser.
+
+Numbers become Number tokens, ``true``, ``false`` and ``null`` become
+Name.Constant tokens, strings are yielded in ``string`` contexts, with String
+tokens and possibily String.Escape tokens for escaped characters.
+
+Objects (``{ ... }``) become ``object`` contexts with alternating ``key`` and
+``value`` child contexts. Arrays (``[ ... ]``) become ``array`` contexts.
+
+"""
 
 import re
 
@@ -25,7 +36,6 @@ from parce import *
 
 
 class Json(Language):
-    """JavaScript Object Notation parser."""
     @lexicon
     def root(cls):
         yield from cls.values()
