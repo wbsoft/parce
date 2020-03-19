@@ -16,7 +16,8 @@ one of the supplied language definitions in the ``lang`` directory, or
 building your own language definitions and parse text using them.
 
 The `parce` module is designed to be very fast, while being written in pure
-Python, using native data structures as much as possible.
+Python, using native data structures as much as possible. Parsing can be done
+in a background thread.
 
 A powerful feature of parce is that you can retokenize only modified parts of a
 text if you already have tokenized it. This makes parce suitable for text
