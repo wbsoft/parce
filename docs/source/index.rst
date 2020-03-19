@@ -1,5 +1,7 @@
 .. include:: ../../README.rst
 
+This manual documents `parce` version |release|.
+
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
@@ -19,6 +21,5 @@ Indices and tables
 * :doc:`langs`
 * :ref:`genindex`
 * :ref:`modindex`
-* :ref:`search`
 * :doc:`changelog`
 * :doc:`license`
