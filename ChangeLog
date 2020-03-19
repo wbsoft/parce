@@ -5,6 +5,7 @@ ChangeLog of the Python parce package
 current:
 
 - added documentation with examples for bundled languages
+- added ini file parser
 
 
 2020-03-14: parce-0.7.0
