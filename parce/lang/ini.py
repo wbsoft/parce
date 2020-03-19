@@ -20,6 +20,8 @@
 """
 INI file format parsers.
 
+The base parser supports escaped characters and line continuations for values.
+
 """
 
 import re
@@ -38,26 +40,30 @@ class Ini(Language):
 
     @lexicon
     def section(cls):
+        """Parse text between [ ... ]."""
         yield r'\]', Delimiter.Section, -1
         yield default_action, Name.Namespace.Section
 
     @lexicon
     def key(cls):
-        yield from cls.values()
+        """Yield a Name.Identifier until a '=' (if present)."""
+        yield from cls.values(Name.Identifier)
 
     @lexicon
     def value(cls):
-        yield from cls.values()
+        """Yield a Value until line end (or continuation line)."""
+        yield from cls.values(Value)
 
-    @lexicon
-    def values(cls):
-        yield r"""\\[\n\\'"0abtrn;#=:]""", Escape
-        yield r"\\x[0-9a-fA-F]{4}", Escape
-        yield r"[^\[\\\n;=#:]+", Name
+    @classmethod
+    def values(cls, action):
+        """Yield name or value contents and give it the specified action."""
+        yield r"""\\(?:[\n\\'"0abtrn;#=:]|x[0-9a-fA-F]{4})""", Escape
+        yield r"[^\[\\\n;=#:]+", action
         yield default_target, -1
 
     @lexicon(re_flags=re.MULTILINE)
     def comment(cls):
+        """Yield a Comment til the end of the line."""
         yield r'$', Comment, -1
         yield from cls.comment_common()
         yield default_action, Comment

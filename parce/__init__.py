@@ -497,6 +497,7 @@ Name.Variable
 # Actions that derive from Literal:
 
 Verbatim = Literal.Verbatim
+Value = Literal.Value
 String = Literal.String
 Number = Literal.Number
 Boolean = Literal.Boolean
