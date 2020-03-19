@@ -14,12 +14,12 @@ This manual documents `parce` version |release|.
    doc.rst
 
    modoverview.rst
+   langs.rst
 
 
 Indices and tables
 ==================
 
-* :doc:`langs`
 * :ref:`genindex`
 * :ref:`modindex`
 * :doc:`changelog`

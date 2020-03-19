@@ -1,5 +1,3 @@
-:orphan:
-
 Bundled language definitions
 ============================
 
