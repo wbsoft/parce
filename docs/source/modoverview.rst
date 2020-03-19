@@ -1,5 +1,3 @@
-:orphan:
-
 Overview of all modules
 =======================
 
