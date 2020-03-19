@@ -40,20 +40,22 @@ class Scheme(Language):
         yield from cls.common()
 
     @classmethod
-    def common(cls):
+    def common(cls, go_back=0):
+        """Yield common stuff. ``go_back`` can be set to -1 for one-arg mode."""
         yield r"['`,]", Delimiter.Scheme.Quote
-        yield r"\(", Delimiter.OpenParen, cls.list
-        yield r"#\(", Delimiter.OpenVector, cls.vector
-        yield r'"', String, cls.string
-        yield r';', Comment, cls.singleline_comment
-        yield r'#!', Comment, cls.multiline_comment
-        yield RE_SCHEME_FRACTION, Number.Fraction
-        yield RE_SCHEME_FLOAT, Number.Float
-        yield RE_SCHEME_NUMBER, Number
-        yield r"\.(?!\S)", Delimiter.Dot
-        yield r"#[tf]\b", Boolean
-        yield r"#\\([a-z]+|.)", Char
-        yield r'[^()"{}\s]+', cls.get_word_action()
+        yield r"\(", Delimiter.OpenParen, go_back, cls.list
+        yield r"#\(", Delimiter.OpenVector, go_back, cls.vector
+        yield r'"', String, go_back, cls.string
+        yield r';', Comment, go_back, cls.singleline_comment
+        yield r'#!', Comment, go_back, cls.multiline_comment
+        yield RE_SCHEME_FRACTION, Number.Fraction, go_back
+        yield RE_SCHEME_FLOAT, Number.Float, go_back
+        yield RE_SCHEME_NUMBER, Number, go_back
+        if go_back == 0:
+            yield r"\.(?!\S)", Delimiter.Dot
+        yield r"#[tf]\b", Boolean, go_back
+        yield r"#\\([a-z]+|.)", Char, go_back
+        yield r'[^()"{}\s]+', cls.get_word_action(), go_back
 
     @lexicon
     def list(cls):
@@ -99,23 +101,12 @@ class SchemeLily(Scheme):
     @lexicon
     def one_arg(cls):
         """Pick one thing and pop back."""
-        yield r"['`,]", Delimiter.Scheme.Quote
-        yield r"\(", Delimiter.OpenParen, -1, cls.list
-        yield r"#\(", Delimiter.OpenVector, -1, cls.vector
-        yield r'"', String, -1, cls.string
-        yield r';', Comment, -1, cls.singleline_comment
-        yield r'#!', Comment, -1, cls.multiline_comment
-        yield RE_SCHEME_FRACTION, Number.Fraction, -1
-        yield RE_SCHEME_FLOAT, Number.Float, -1
-        yield RE_SCHEME_NUMBER, Number, -1
-        yield r"#[tf]\b", Boolean, -1
-        yield r"#\\([a-z]+|.)", Char, -1
-        yield r'[^()"{}\s]+', cls.get_word_action(), -1
+        yield from cls.common(-1)
         yield default_target, -1
 
     @classmethod
-    def common(cls):
+    def common(cls, go_back=0):
         from . import lilypond
-        yield r"#{", Delimiter.LilyPond, lilypond.LilyPond.schemelily
-        yield from super().common()
+        yield r"#{", Delimiter.LilyPond, go_back, lilypond.LilyPond.schemelily
+        yield from super().common(go_back)
 
