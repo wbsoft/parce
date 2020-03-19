@@ -10,16 +10,15 @@
    treestructure.rst
    building.rst
    doc.rst
-   modoverview.rst
-
-   langs.rst
-   changelog.rst
-   license.rst
 
 
 Indices and tables
 ==================
 
+* :doc:`modoverview`
+* :doc:`langs`
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
+* :doc:`changelog`
+* :doc:`license`

@@ -5,6 +5,12 @@ The parce module
 
    import parce
 
+`Homepage       <https://parce.info>`_                          •
+`Development    <https://github.com/wbsoft/parce>`_             •
+`Download       <https://pypi.org/project/parce/>`_             •
+`Documentation  <https://parce.info>`_                          •
+`License        <https://www.gnu.org/licenses/gpl-3.0>`_
+
 This Python package, `parce`, can be used for parsing text into tokens using
 one of the supplied language definitions in the :file:`lang` directory, or
 building your own language definitions and parse text using them.
@@ -18,12 +24,6 @@ The module is written and maintained by Wilbert Berendsen.
 Python 3.5 and higher is supported.
 Testing is done by running :command:`pytest-3` in the root directory.
 This manual documents version |release|.
-
-| Homepage: https://parce.info
-| Development: https://github.com/wbsoft/parce
-| Download: https://pypi.org/project/parce/
-| Documentation: https://parce.info
-| License: GPL-3 https://www.gnu.org/licenses/gpl-3.0
 
 The logo is a public domain tree image with the name in the Gentium italic font.
 Why the name? It's short, sounds like 'parse', and has the meaning of
