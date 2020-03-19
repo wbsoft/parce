@@ -1,31 +1,30 @@
-The parce Python module
-=======================
+The parce module
+================
 
 ::
 
-    import parce
+   import parce
 
-This module parses text into tokens, and is able to reparse only modified parts
-of the text, using the earlier generated tokens. Tokenized text lives in a tree
-structure with powerful quering methods for finding tokens and contexts.
+This Python package, `parce`, can be used for parsing text into tokens using
+one of the supplied language definitions in the :file:`lang` directory, or
+building your own language definitions and parse text using them.
 
-The parce module is designed to be fast, and can tokenize in a background
-thread, so that even when using very large documents, GUI applications that
-need to be responsive do not grind to a halt.
+A powerful feature of parce is that you can retokenize only modified parts
+of a text if you already have tokenized it. This makes parce suitable for
+text editors etc. that need to keep a tokenized structure of the text up-to-date
+e.g. to support syntax highlighting as you type.
 
-Main use case: syntax highlighting in text editors, but also understanding the
-meaning of text to be able to provided context sensitive editing features.
-
-The parce module is written and maintained by Wilbert Berendsen.
+The module is written and maintained by Wilbert Berendsen.
+Python 3.5 and higher is supported.
+Testing is done by running :command:`pytest-3` in the root directory.
+This manual documents version |release|.
 
 | Homepage: https://parce.info
 | Development: https://github.com/wbsoft/parce
 | Download: https://pypi.org/project/parce/
 | Documentation: https://parce.info
+| License: GPL-3 https://www.gnu.org/licenses/gpl-3.0
 
+The logo is a public domain tree image with the name in the Gentium italic font.
 Why the name? It's short, sounds like 'parse', and has the meaning of
 "friend", "buddy", "bro." :-)
-
-The parce package requires Python 3.5+ and is released under the General Public
-License version 3. Testing is done using ``pytest-3`` in the base directory.
-Test files can be added to the ``tests/`` directory.

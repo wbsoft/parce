@@ -16,7 +16,8 @@ taylor them to your own needs. This documentation helps you going, see
 Features
 ^^^^^^^^
 
-* parse text to a tree structure of `tokens`, according to a language definition
+* parse text to a stream of `events` or a tree structure of `tokens`, according
+  to a language definition
 * examine and query the generated tree structure
 * apply changes to the text, and only update the needed part of a tree
 * provides a Document (mutable string) that can be modified and that keeps
