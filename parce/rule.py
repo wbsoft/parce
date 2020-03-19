@@ -19,6 +19,8 @@
 
 
 """
+Replacable rule item objects.
+
 This module holds a few simple replacable objects that can be put in a rule
 and are replaced by other objects depending on the match object of the matched
 rule's pattern.

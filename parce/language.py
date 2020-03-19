@@ -17,6 +17,14 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+"""
+This module provides the Language class, which serves as the base class
+for all language definitions.
+
+Additionally, there are some utility functions to manage and query built-in
+language definitions.
+
+"""
 
 import importlib
 import glob

@@ -19,8 +19,7 @@
 
 
 r"""
-Querying the tree using the `query` property.
----------------------------------------------
+Query the tree using the `query` property.
 
 Using this module you can query the token tree to find tokens and contexts,
 based on lexicons and/or actions and text contents. You can chain calls

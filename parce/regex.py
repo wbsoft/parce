@@ -19,30 +19,7 @@
 
 
 """
-This module contains some smart functions to build or manipulate regular
-expressions:
-
-    ``words2regexp()``
-        builds an optimized regular expression from a list of words.
-
-    ``common_suffix()``
-        returns the common suffix of the words, if any.
-
-    ``make_trie()``
-        makes a dict-based radix tree structure from a list of words.
-
-    ``trie_to_regexp_tuple()``
-        converts a trie structure to a regexp tuple.
-
-    ``build_regexp()``
-        converts a tuple to a real regular expression.
-
-    ``make_charclass()``
-        turns a list of characters into a sensible [a-z] expression.
-
-    ``to_string()``
-        to convert a regexp to a normal search string if possible.
-
+Utility module with functions to construct or manipulate regular expressions.
 """
 
 
@@ -50,13 +27,161 @@ import re
 
 
 def words2regexp(words):
-    """Convert the word list to an optimized regular expression."""
+    """Convert the word list to an optimized regular expression.
+
+    Example::
+
+        >>> import parce.regex
+        >>> parce.regex.words2regexp(['opa', 'oma', 'mama', 'papa'])
+        '(?:mam|pap|o[mp])a'
+        >>> parce.regex.words2regexp(['car', 'cdr', 'caar', 'cadr', 'cdar', 'cddr'])
+        'c[ad]{1,2}r'
+
+    """
     words, suffix = common_suffix(words)
     root = make_trie(words)
     r = trie_to_regexp_tuple(root)
     if suffix:
         r += (suffix,)
     return build_regexp(r)
+
+
+def make_charclass(chars):
+    """Return a string with adjacent characters grouped.
+
+    Example::
+
+        >>> parce.regex.make_charclass(('a', 'd', 'b', 'f', 'c'))
+        'a-df'
+
+    Special characters are properly escaped.
+
+    """
+    buf = []
+    for c in sorted(map(ord, chars)):
+        if buf and buf[-1][1] == c - 1:
+            buf[-1][1] = c
+        else:
+            buf.append([c, c])
+    return ''.join(re.escape(chr(a)) if a == b else
+                   re.escape(chr(a) + chr(b)) if a == b - 1 else
+                   re.escape(chr(a)) + '-' + re.escape(chr(b))
+                   for a, b in buf)
+
+
+def common_suffix(words):
+    """Return (words, suffix), where suffix is the common suffix.
+
+    If there is no common suffix, words is returned unchanged, and suffix is an
+    empty string. If there is a common suffix, that is chopped of the returned
+    words. Example::
+
+        >>> parce.regex.common_suffix(['opa', 'oma', 'mama', 'papa'])
+        (['op', 'om', 'mam', 'pap'], 'a')
+
+    """
+    suffix = []
+    for s in map(set, zip(*map(reversed, words))):
+        if len(s) != 1:
+            break
+        suffix.append(s.pop())
+    suffix = ''.join(reversed(suffix))
+    if suffix:
+        i = -len(suffix)
+        words = [word[:i] for word in words]
+    return words, suffix
+
+
+def to_string(expr):
+    r"""Convert an unambiguous regexp to a plain string.
+
+    If the regular expression is unambiguous and can be converted to a plain
+    string, return it. Otherwise, None is returned.
+
+    The returned string can be used with :code:`"".find()`, which would be
+    faster than using :code:`re.search()`. Examples::
+
+        >>> parce.regex.to_string(r"a.e")
+        >>> parce.regex.to_string(r"a\.e")
+        'a.e'
+        >>> parce.regex.to_string(r"a\ne")
+        'a\ne'
+
+    The first returns None, because the dot can match multiple characters.
+
+    """
+    if set(re.sub(r'\\.', '', expr)) & set("^$|.()[]{}+*?"):
+        return  # there are unescaped special characters like (, [, ? etc.
+    # handle all escapes, there may be fails, in that case we can't use the expr as string
+    pat = (r'\\(?:'
+        r'x([0-9a-fA-F]{2})'    # 1 hex
+        r'|([afnrtv])'          # 2 normal escaped character like \n
+        r'|(\d{1,3})'           # 3 octal , or fail if back ref
+        r'|u([0-9a-fA-F]{4})'   # 4 \uxxxx
+        r'|U([0-9a-fA-F]{8})'   # 5 \Uxxxxxxxx
+        r'|([\^\$\|\.\(\)\[\]\{\}\+\*\?\\])'  # special re char that was escaped
+        r'|)')
+    def replace_escapes(m):
+        if m.group(1):
+            return chr(int(m.group(1), 16))
+        elif m.group(2):
+            return chr({'a':7, 'f':12, 'n':10, 'r':13, 't':9, 'v':11}[m.group(2)])
+        elif m.group(3):
+            if 0 < int(m.group(3)) <= 99 and not m.group(3).startswith("0"):
+                raise ValueError
+            return chr(int(m.group(3), 8))  # can also raise ValueError
+        elif m.group(4):
+            return chr(int(m.group(4), 16))
+        elif m.group(5):
+            return chr(int(m.group(5), 16))
+        elif m.group(6):
+            return m.group(6)
+        raise ValueError
+    try:
+        s = re.sub(pat, replace_escapes, expr)
+    except ValueError:
+        return
+    assert re.fullmatch(expr, s)
+    return s
+
+
+def make_trie(words, reverse=False):
+    """Return a dict-based radix trie structure from a list of words.
+
+    If reverse is set to True, the trie is made in backward direction,
+    from the end of the words.
+
+    """
+    if reverse:
+        chars = lambda word: word[::-1]
+        add = lambda k1, k2: k2 + k1
+    else:
+        chars = lambda word: word
+        add = lambda k1, k2: k1 + k2
+
+    root = {}
+    for w in words:
+        d = root
+        for c in chars(w):
+            d = d.setdefault(c, {})
+        d[None] = True  # end
+
+    # merge characters that are the only child with their parents
+    def merge(node):
+        for key, node in node.items():
+            if key:
+                while len(node) == 1:
+                    k, n = next(iter(node.items()))
+                    if k:
+                        key = add(key, k)
+                        node = n
+                    else:
+                        break
+                else:
+                    node = dict(merge(node))
+            yield key, node
+
+    return dict(merge(root))
 
 
 def trie_to_regexp_tuple(node, reverse=False):
@@ -236,125 +361,5 @@ def build_regexp(r):
             rx = '(?:' + rx + ')'
         result.append(rx + qualifier)
     return ''.join(result)
-
-
-def make_charclass(chars):
-    """Return a string with adjacent characters grouped.
-
-    eg ('a', 'b', 'c', 'd', 'f') is turned into 'a-df'.
-    Special characters are properly escaped.
-
-    """
-    buf = []
-    for c in sorted(map(ord, chars)):
-        if buf and buf[-1][1] == c - 1:
-            buf[-1][1] = c
-        else:
-            buf.append([c, c])
-    return ''.join(re.escape(chr(a)) if a == b else
-                   re.escape(chr(a) + chr(b)) if a == b - 1 else
-                   re.escape(chr(a)) + '-' + re.escape(chr(b))
-                   for a, b in buf)
-
-
-def make_trie(words, reverse=False):
-    """Return a dict-based radix trie structure from a list of words.
-
-    If reverse is set to True, the trie is made in backward direction,
-    from the end of the words.
-
-    """
-    if reverse:
-        chars = lambda word: word[::-1]
-        add = lambda k1, k2: k2 + k1
-    else:
-        chars = lambda word: word
-        add = lambda k1, k2: k1 + k2
-
-    root = {}
-    for w in words:
-        d = root
-        for c in chars(w):
-            d = d.setdefault(c, {})
-        d[None] = True  # end
-
-    # merge characters that are the only child with their parents
-    def merge(node):
-        for key, node in node.items():
-            if key:
-                while len(node) == 1:
-                    k, n = next(iter(node.items()))
-                    if k:
-                        key = add(key, k)
-                        node = n
-                    else:
-                        break
-                else:
-                    node = dict(merge(node))
-            yield key, node
-
-    return dict(merge(root))
-
-
-def common_suffix(words):
-    """Return (words, suffix), where suffix is the common suffix.
-
-    If there is no common suffix, words is unchanged, and suffix is an
-    empty string. If there is a common suffix, that is chopped of the returned
-    words.
-
-    """
-    suffix = []
-    for s in map(set, zip(*map(reversed, words))):
-        if len(s) != 1:
-            break
-        suffix.append(s.pop())
-    suffix = ''.join(reversed(suffix))
-    if suffix:
-        i = -len(suffix)
-        words = [word[:i] for word in words]
-    return words, suffix
-
-
-def to_string(expr):
-    """If the regular expression can be converted to a simple string, return it.
-
-    Otherwise, None is returned. The returned string can be used with
-    "".find(), which would be faster than using re.search().
-
-    """
-    if set(re.sub(r'\\.', '', expr)) & set("^$|.()[]{}+*?"):
-        return  # there are unescaped special characters like (, [, ? etc.
-    # handle all escapes, there may be fails, in that case we can't use the expr as string
-    pat = (r'\\(?:'
-        r'x([0-9a-fA-F]{2})'    # 1 hex
-        r'|([afnrtv])'          # 2 normal escaped character like \n
-        r'|(\d{1,3})'           # 3 octal , or fail if back ref
-        r'|u([0-9a-fA-F]{4})'   # 4 \uxxxx
-        r'|U([0-9a-fA-F]{8})'   # 5 \Uxxxxxxxx
-        r'|([\^\$\|\.\(\)\[\]\{\}\+\*\?\\])'  # special re char that was escaped
-        r'|)')
-    def replace_escapes(m):
-        if m.group(1):
-            return chr(int(m.group(1), 16))
-        elif m.group(2):
-            return chr({'a':7, 'f':12, 'n':10, 'r':13, 't':9, 'v':11}[m.group(2)])
-        elif m.group(3):
-            if 0 < int(m.group(3)) <= 99 and not m.group(3).startswith("0"):
-                raise ValueError
-            return chr(int(m.group(3), 8))  # can also raise ValueError
-        elif m.group(4):
-            return chr(int(m.group(4), 16))
-        elif m.group(5):
-            return chr(int(m.group(5), 16))
-        elif m.group(6):
-            return m.group(6)
-        raise ValueError
-    try:
-        s = re.sub(pat, replace_escapes, expr)
-    except ValueError:
-        return
-    assert re.fullmatch(expr, s)
-    return s
 
 
