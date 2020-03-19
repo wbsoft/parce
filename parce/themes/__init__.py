@@ -25,6 +25,7 @@ See the :doc:`theme <theme>` module for the supporting code.
 """
 
 
+import glob
 import os
 
 
@@ -36,4 +37,21 @@ def filename(name):
 
     """
     return os.path.join(__path__[0], name + '.css')
+
+
+def get_all_themes():
+    """Return the sorted list of CSS theme names in ``parce.themes``.
+
+    Only the names are returned, without the '.css' extension.
+    Files that start with an underscore are skipped.
+
+    """
+    names = []
+    for filename in glob.glob(os.path.join(__path__[0], "*.css")):
+        name = os.path.splitext(os.path.basename(filename))[0]
+        if not name.startswith('_'):
+            names.append(name)
+    names.sort()
+    return names
+
 
