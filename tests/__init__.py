@@ -17,3 +17,11 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+"""
+This directory contains test files, that should be run from the parent
+directory.
+
+Run ``pytest-3`` in the parent (project root) directory to run them all
+with pytest.
+
+"""

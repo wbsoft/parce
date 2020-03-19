@@ -17,3 +17,13 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+"""
+This package contains small modules with the name corresponding
+to the language definition in the parce.lang module.
+
+Every module defines one function, ``examples()``, that yields
+tuples (root_lexicon, text).
+
+Those can be used to show short examples of text and the tree that
+results from parsing that text with that root lexicon.
+"""
