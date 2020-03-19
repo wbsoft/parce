@@ -18,9 +18,11 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 """
-Validates all languages with pytest.
+Test proper functioning of all examples in the ./lang directory.
 """
 
+import importlib
+import os
 import sys
 
 sys.path.insert(0, ".")
@@ -29,8 +31,15 @@ import parce.language
 import parce.validate
 
 def main():
-    for lang in parce.language.get_all_languages():
-        assert parce.validate.validate_language(lang) is True
+    for name in parce.language.get_all_modules():
+        try:
+            mod = importlib.import_module('tests.lang.' + name)
+        except ImportError:
+            continue
+        print("Running examples from {}:".format(name))
+        for n, (root_lexicon, text) in enumerate(mod.examples(), 1):
+            print("Example #{}:".format(n))
+            parce.root(root_lexicon, text).dump()
 
 
 if __name__ == "__main__":

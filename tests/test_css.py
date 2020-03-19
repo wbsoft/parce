@@ -28,21 +28,25 @@ sys.path.insert(0, ".")
 from parce import *
 from parce.lang.css import *
 
-css = r"""
-h1[attribute="value"] + p {
-    width: 500px;
-    height: 90%;
-    color: white;
-    background: url(www.image.org/image.png);
-    text-decoration: underline !important;
-}
-"""
+def main():
+    css = r"""
+    h1[attribute="value"] + p {
+        width: 500px;
+        height: 90%;
+        color: white;
+        background: url(www.image.org/image.png);
+        text-decoration: underline !important;
+    }
+    """
 
-tree = root(Css.root, css)
+    tree = root(Css.root, css)
 
-assert len(tree) == 2   # prelude and rule
-assert tree[0][0][2][0][0].action is Name.Attribute
-assert tree.query.all.action(Number).pick().pos == 40
-assert tree.query.all(Css.declaration)[0][0].list() == [
-    'width', 'height', 'color', 'background','text-decoration']
-assert tree.query.all.action(Name.Property)("color").next.next.pick() == "white"
+    assert len(tree) == 2   # prelude and rule
+    assert tree[0][0][2][0][0].action is Name.Attribute
+    assert tree.query.all.action(Number).pick().pos == 40
+    assert tree.query.all(Css.declaration)[0][0].list() == [
+        'width', 'height', 'color', 'background','text-decoration']
+    assert tree.query.all.action(Name.Property)("color").next.next.pick() == "white"
+
+if __name__ == "__main__":
+    main()

@@ -38,20 +38,18 @@ class MyLang(Language):
         yield r"\w+", Text
 
 
-text = r"""
-text
-@mark@
-bla
-bla
-mark
-bla
-bla
-"""
+def main():
+    text = r""" text @mark@ bla bla mark bla bla """
 
-tree = root(MyLang.root, text)
-tree.dump()
-assert tree.query.all("mark").pick().is_last()
-assert tree.query.all(MyLang.here).pick()
+    tree = root(MyLang.root, text)
+    tree.dump()
+    assert tree.query.all("mark").pick().is_last()
+    assert tree.query.all(MyLang.here).pick()
 
-from parce.validate import validate_language
-assert validate_language(MyLang)
+    from parce.validate import validate_language
+    assert validate_language(MyLang)
+
+
+if __name__ == "__main__":
+    main()
+
