@@ -346,10 +346,13 @@ class BackgroundTreeBuilder(TreeBuilder):
 
     def process_changes(self):
         """Process changes as long as they are added. Called in the background."""
-        c = self.get_changes()
+        self.lock.acquire()
+        c = self.changes
         start = -1
         end = -1
         while c and c.has_changes():
+            self.changes = None
+            self.lock.release()
             if c.root_lexicon != False and c.root_lexicon != self.root.lexicon:
                 self.root.lexicon = c.root_lexicon
                 self.build(c.text)
@@ -357,7 +360,8 @@ class BackgroundTreeBuilder(TreeBuilder):
                 self.rebuild(c.text, c.position, c.removed, c.added)
             start = self.start if start == -1 else min(start, self.start)
             end = self.end if end == -1 else max(c.new_position(end), self.end)
-            c = self.get_changes()
+            self.lock.acquire()
+            c = self.changes
         if start != -1:
             self.start = start
         if end != -1:
@@ -370,15 +374,8 @@ class BackgroundTreeBuilder(TreeBuilder):
         in the GUI thread.
 
         """
-        with self.lock:
-            self.job = None
-        # this happens when still changes were added.
-        c = self.changes
-        if c and c.has_changes():
-            start, end = self.start, self.end
-            self.process_changes()
-            self.start = min(start, self.start)
-            self.end = max(c.new_position(end), self.end)
+        self.job = None
+        self.lock.release()
         self.build_updated()
         while self.finished_callbacks:
             callback, args, kwargs = self.finished_callbacks.pop()
