@@ -9,3 +9,9 @@ div.sphinxsidebar ul li.toctree-l1 > a {
 div.sphinxsidebar ul li.toctree-l2 > a {
   font-size: 90%;
 }
+
+/* make sidebar contents scrollable */
+div.sphinxsidebar {
+  max-height: 100%;
+  overflow-y: auto;
+}
