@@ -35,7 +35,6 @@ background thread.
 """
 
 
-import sys
 import contextlib
 import itertools
 import threading
@@ -163,7 +162,7 @@ class TreeBuilder:
             else:
                 tail = False
 
-        lowest_start = sys.maxsize
+        lowest_start = start
         restart = True
         while restart:
             restart = False
@@ -224,7 +223,6 @@ class TreeBuilder:
                     for p, i in token.ancestors_with_index():
                         del p[i+1:]
                 else:
-                    lowest_start = 0
                     head = False
             if not head:
                 lexer = Lexer([self.root.lexicon])
@@ -234,6 +232,7 @@ class TreeBuilder:
                 start = 0
 
             # start parsing
+            lowest_start = min(start, lowest_start)
             for e in events:
                 if e.target:
                     for _ in range(e.target.pop, 0):
@@ -303,7 +302,7 @@ class TreeBuilder:
                 # we ran till the end, pick the open lexicons
                 self.lexicons = lexer.lexicons[1:]
                 end = len(text)
-        self.start, self.end = min(start, lowest_start), end
+        self.start, self.end = lowest_start, end
 
     def root_lexicon(self):
         """Return the root lexicon.
