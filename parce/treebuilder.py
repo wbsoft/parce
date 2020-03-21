@@ -19,17 +19,18 @@
 
 
 """
-This module defines the TreeBuilder, which is used to build() a tree structure
-from a text, using a root lexicon.
+This module defines the :class:`TreeBuilder`, which is used to
+:meth:`~TreeBuilder.build()` a tree structure from a text, using a root
+lexicon.
 
-Using the rebuild() method, TreeBuilder is also capable of regenerating only
-part of an existing tree, e.g. when part of a long text is modified through a
-text editor. It is smart enough to recognize whether existing tokens before and
-after the modified region can be reused or not, and it reuses tokens as much as
-possible.
+Using the :meth:`~TreeBuilder.rebuild()` method, :class:`TreeBuilder` is also
+capable of regenerating only part of an existing tree, e.g. when part of a long
+text is modified through a text editor. It is smart enough to recognize whether
+existing tokens before and after the modified region can be reused or not, and
+it reuses tokens as much as possible.
 
-BackgroundTreeBuilder can be used to tokenize a text into a tree in a background
-thread.
+:class:`BackgroundTreeBuilder` can be used to tokenize a text into a tree in a
+background thread.
 
 """
 
@@ -50,35 +51,48 @@ class TreeBuilder:
 
     The root node of the tree is in the ``root`` instance attribute.
 
-    After calling ``build()`` or ``rebuild()``, three instance variables are set:
+    After calling :meth:`build()` or :meth:`rebuild()`, three instance
+    variables are set:
 
-        ``start``, ``end``:
-            indicate the region the tokens were changed. After build(), start
-            is always 0 and end = len(text), but after rebuild(), these values
-            indicate the range that was actually re-tokenized.
+    ``start``, ``end``:
+        indicate the region the tokens were changed. After build(), start is
+        always 0 and end = len(text), but after rebuild(), these values
+        indicate the range that was actually re-tokenized.
 
-        ``lexicons``:
-            the list of open lexicons (excluding the root lexicon) at the end
-            of the document. This way you can see in which lexicon parsing
-            ended.
+    ``lexicons``:
+        the list of open lexicons (excluding the root lexicon) at the end of
+        the document. This way you can see in which lexicon parsing ended.
 
-            If a tree was rebuilt, and old tail tokens were reused, the
-            lexicons variable is not set, meaning that the old value is still
-            valid. If the TreeBuilder was not used before, lexicons is then
-            None.
+        If a tree was rebuilt, and old tail tokens were reused, the lexicons
+        variable is not set, meaning that the old value is still valid. If the
+        TreeBuilder was not used before, lexicons is then None.
 
     No other variables or state are kept, so if you don't need the above
     information anymore, you can throw away the TreeBuilder after use.
 
-    """
-    changes = None
+    You can also use :meth:`change_text()` and :meth:`change_root_lexicon()` to
+    trigger a rebuild. And when you use a TreeBuilder in a :keyword:`with`
+    context, you can record multiple change requests using those methods, and
+    have the changes processed in one go as soon as the context is exited.
 
+    """
     start = 0
     end = 0
     lexicons = None
 
     def __init__(self, root_lexicon=None):
+        self._incontext = 0
+        self.changes = []
         self.root = Context(root_lexicon, None)
+
+    def __enter__(self):
+        self._incontext += 1
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self._incontext -= 1
+        if self._incontext == 0:
+            self.start_processing()
 
     def tree(self, text):
         """Convenience method returning the tree with all tokens."""
@@ -291,20 +305,105 @@ class TreeBuilder:
                 end = len(text)
         self.start, self.end = min(start, lowest_start), end
 
+    def root_lexicon(self):
+        """Return the root lexicon.
+
+        If a change is recorded, the last set lexicon is returned.
+
+        """
+        for request, *args in reversed(self.changes):
+            if request == "lexicon":
+                return args[-1]
+        return self.root.lexicon
+
+    def change_root_lexicon(self, text, lexicon):
+        """Record a request to change the root lexicon.
+
+        Because TreeBuilder does not store the text, we should also give the
+        text. If we are not in a :keyword:`with` context,
+        :meth:`start_processing()` is called immediately.
+
+        """
+        self.changes.append(("lexicon", text, lexicon))
+        if self._incontext == 0:
+            self.start_processing()
+
+    def change_text(self, text, position=0, removed=None, added=None):
+        """Record a request to change the text.
+
+        If we are not in a :keyword:`with` context, :meth:`start_processing()`
+        is called immediately.
+
+        """
+        self.changes.append(("text", text, position, removed, added))
+        if self._incontext == 0:
+            self.start_processing()
+
+    def get_changes(self):
+        """Get and combine the stored change requests in a Changes object.
+
+        This may only be called from the same thread that also performs the
+        :meth:`rebuild()`.
+
+        """
+        c = Changes()
+        while self.changes:
+            request, *args = self.changes.pop(0)
+            c.change_root_lexicon(*args) if request == "lexicon" else c.change_contents(*args)
+        return c
+
+    def start_processing(self):
+        """Called when there are recorded changes to process.
+
+        Calls, as long as there are changes, :meth:`process_changes()` and
+        after that :meth:`finish_processing()`; may be reimplemented to call
+        :meth:`process_changes()` in a background thread.
+
+        """
+        while self.changes:
+            self.process_changes()
+            self.finish_processing()
+
+    def process_changes(self):
+        """Processes the recorded change requests."""
+        c = self.get_changes()
+        start = -1
+        end = -1
+        while c and c.has_changes():
+            if c.root_lexicon != False and c.root_lexicon != self.root.lexicon:
+                self.root.lexicon = c.root_lexicon
+                self.build(c.text)
+            else:
+                self.rebuild(c.text, c.position, c.removed, c.added)
+            start = self.start if start == -1 else min(start, self.start)
+            end = self.end if end == -1 else max(c.new_position(end), self.end)
+            c = self.get_changes()
+        if start != -1:
+            self.start = start
+        if end != -1:
+            self.end = end
+
+    def finish_processing(self):
+        """Called by :meth:`check_start()` when :meth:`process_changes()` has finished.
+
+        The default implementation does nothing.
+
+        """
+        pass
+
 
 class BackgroundTreeBuilder(TreeBuilder):
     """A TreeBuilder that can tokenize a text in a background thread.
 
-    BackgroundTreeBuilder supports tokenizing in a background thread. You
-    must specify changes to the document using the Changes object returned by
-    the ``change()`` context manager method::
+    In BackgroundTreeBuilder, :meth:`change_text()` and
+    :meth:`change_root_lexicon()` return immediately, because
+    :meth:`check_start()` has been reimplemented to call
+    :meth:`process_changes()` in a background thread.
 
-        with builder.change() as c:
-            c.change_text("new text", position, removed, added)
+    You can continue adding changes while previous changes are processed;
+    the tree builder will immediately adapt to the new changes.
 
-    Tokenizing then starts in the background. During tokenizing it is still
-    possible to add new changes using ``change()``. You can add callbacks to
-    the ``updated_callbacks`` attribute (using
+    You can add callbacks to the ``updated_callbacks`` attribute (using
     ``add_build_updated_callback()``) that are called everytime the whole
     document is tokenized.
 
@@ -318,54 +417,14 @@ class BackgroundTreeBuilder(TreeBuilder):
     def __init__(self, root_lexicon=None):
         super().__init__(root_lexicon)
         self.job = None
-        self.changes = None
-        self.lock = threading.Lock()
         self.updated_callbacks = []
         self.finished_callbacks = []
-
-    @contextlib.contextmanager
-    def change(self):
-        """Return a Changes object and start a context to add changes."""
-        with self.lock:
-            c = self.changes or Changes()
-            yield c
-            if c.has_changes():
-                self.changes = c
-                self.start_processing()
 
     def start_processing(self):
         """Start a background job if needed."""
         if not self.job:
-            self.job = threading.Thread(target=self.process_and_finish)
+            self.job = threading.Thread(target=super().start_processing)
             self.job.start()
-
-    def process_and_finish(self):
-        """Call process_changes() and then finish_processing()."""
-        self.process_changes()
-        self.finish_processing()
-
-    def process_changes(self):
-        """Process changes as long as they are added. Called in the background."""
-        self.lock.acquire()
-        c = self.changes
-        start = -1
-        end = -1
-        while c and c.has_changes():
-            self.changes = None
-            self.lock.release()
-            if c.root_lexicon != False and c.root_lexicon != self.root.lexicon:
-                self.root.lexicon = c.root_lexicon
-                self.build(c.text)
-            else:
-                self.rebuild(c.text, c.position, c.removed, c.added)
-            start = self.start if start == -1 else min(start, self.start)
-            end = self.end if end == -1 else max(c.new_position(end), self.end)
-            self.lock.acquire()
-            c = self.changes
-        if start != -1:
-            self.start = start
-        if end != -1:
-            self.end = end
 
     def finish_processing(self):
         """Called when process_changes() quits. Calls oneshot callbacks.
@@ -375,17 +434,10 @@ class BackgroundTreeBuilder(TreeBuilder):
 
         """
         self.job = None
-        self.lock.release()
         self.build_updated()
         while self.finished_callbacks:
             callback, args, kwargs = self.finished_callbacks.pop()
             callback(*args, **kwargs)
-
-    def get_changes(self):
-        """Get the changes once. To be used from within the thread."""
-        with self.lock:
-            c, self.changes = self.changes, None
-            return c
 
     def wait(self):
         """Wait for completion if a background job is running."""
@@ -411,12 +463,10 @@ class BackgroundTreeBuilder(TreeBuilder):
         complete and fully intact tree.
 
         """
-        with self.lock:
-            job = self.job
-            if not job:
-                return self.root
-            if callback:
-                self.add_finished_callback(callback, args, kwargs)
+        if not self.job:
+            return self.root
+        if callback:
+            self.add_finished_callback(callback, args, kwargs)
         if wait:
             self.wait()
             return self.root
@@ -476,10 +526,9 @@ class BackgroundTreeBuilder(TreeBuilder):
 class Changes:
     """Store changes that have to be made to a tree.
 
-    This object is used through ``TreeBuilder.change()``.
-    Calling ``change_contents()`` merges new changes with the existing changes.
-    Calling ``change_root_lexicon()`` stores a root lexicon change.
-    On init and ``clear()`` the changes are reset.
+    This object is used by :meth:`TreeBuilder.get_changes()`. Calling
+    :meth:`change_contents()` merges new changes with the existing changes.
+    Calling :meth:`change_root_lexicon()` stores a root lexicon change.
 
     """
     __slots__ = "root_lexicon", "text", "position", "added", "removed"
