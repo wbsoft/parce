@@ -390,6 +390,30 @@ class TreeBuilder:
         """
         pass
 
+    def updated_slices(self):
+        """Yield (context, slice) tuples denoting the last update.
+
+        All Contexts that might have been touched are yielded, not skipping
+        empty slices.
+
+        """
+        start_token = self.root.find_token_before(self.start)
+        start = start_token.pos if start_token else 0
+        end_token = self.root.find_token_after(self.end)
+        end = end_token.end if end_token else None
+        context, start_trail, end_trail = self.root.context_trails(start, end)
+        if context:
+            slices = list(context.slices(start_trail, end_trail, False))
+            if slices:
+                if start > 0:
+                    first = slices[0][1]
+                    slices[0] = (slices[0][0], slice(first.start + 1, first.stop))
+                if end is not None:
+                    last = slices[-1][1]
+                    if last.stop is not None:
+                        slices[-1] = (slices[-1][0], slice(last.start, last.stop - 1))
+                yield from slices
+
 
 class BackgroundTreeBuilder(TreeBuilder):
     """A TreeBuilder that can tokenize a text in a background thread.
