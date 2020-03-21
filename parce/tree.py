@@ -785,20 +785,21 @@ class Context(list, Node):
             start_trail = []
         return context, start_trail, end_trail
 
-    def slices(self, start_trail, end_trail, target_factory=None):
+    def slices(self, start_trail, end_trail, skip_empty=True, target_factory=None):
         """Yield from the current context (context, slice) tuples.
 
         ``start_trail`` and ``end_trail`` both are lists of indices that
         point to descendant tokens of this context. The yielded slices
         include these tokens.
 
-        The yielded slices will never be empty, in that case this method
-        will skip them.
+        If ``skip_empty`` is True (the default), the yielded slices will never
+        be empty, in that case this method will skip them.
 
         If you specify a ``target_factory``, it should be a TargetFactory
         object, and it will be updated along with the yielded slices.
 
         """
+        yield_empty = not skip_empty
         if start_trail:
             start = start_trail[0]
             if len(start_trail) > 1:
@@ -811,7 +812,7 @@ class Context(list, Node):
                 for p, i in ancestors[-2::-1]:
                     if target_factory:
                         target_factory.pop()
-                    if i < len(p) - 1:
+                    if yield_empty or i < len(p) - 1:
                         yield p, slice(i + 1, None)
                 if target_factory:
                     target_factory.pop()
@@ -823,19 +824,19 @@ class Context(list, Node):
             if len(end_trail) == 1:
                 yield self, slice(start, end + 1)    # include end token
             else:
-                if start < end:
+                if yield_empty or start < end:
                     yield self, slice(start, end)
                 n = self[end]
                 for end in end_trail[1:-1]:
                     if target_factory:
                         target_factory.push(n.lexicon)
-                    if end:
+                    if yield_empty or end:
                         yield n, slice(end)
                     n = n[end]
                 if target_factory:
                     target_factory.push(n.lexicon)
                 yield n, slice(end_trail[-1] + 1)   # include end token
-        elif start < len(self):
+        elif yield_empty or start < len(self):
             yield self, slice(start, None)
 
     def source(self):
@@ -874,7 +875,7 @@ class Context(list, Node):
                     target.push(n.lexicon)
                     yield from events(n)
                     target.pop()
-        for context, slice_ in self.slices(start_trail, end_trail, target):
+        for context, slice_ in self.slices(start_trail, end_trail, True, target):
             yield from events(context[slice_])
 
 
