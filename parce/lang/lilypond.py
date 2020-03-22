@@ -318,13 +318,14 @@ class LilyPond(Language):
         """ zero or more dots after a duration. """
         yield SKIP_WHITESPACE
         yield r'\.', Duration.Dot
+        #yield from cls.comments()
         yield default_target, cls.duration_scaling
 
     @lexicon
     def duration_scaling(cls):
         """ * n / m after a duration. """
         yield SKIP_WHITESPACE
-        yield from cls.comments()
+        #yield from cls.comments()
         yield r"(\*)\s*(\d+(?:/\d+)?)", bygroup(Duration, Duration.Scaling)
         yield default_target, -2
 
