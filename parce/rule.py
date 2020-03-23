@@ -104,45 +104,30 @@ class MatchRuleItem(DynamicRuleItem):
         return self.itemlists[index]
 
 
-class LexiconWithGroup(DynamicRuleItem):
-    """Return a derived Lexicon by calling a Lexicon with an argument.
+class LexiconMatchRuleItem(DynamicRuleItem):
+    """Return a derived Lexicon by calling a Lexicon with the result of a predicate.
 
-    The argument is the text of the specified match group, optionally mapped by
-    a specified mapping. In that case, when the text is not in the mapping, the
-    argument is set to None, so that the vanilla lexicon is returned.
-
-    """
-    def __init__(self, group, lexicon, mapping=None):
-        super(DynamicRuleItem, self).__init__(lexicon)
-        self.group = group
-        self.mapping = mapping
-
-    def replace(self, text, match):
-        """Yield the vanilla or derived Lexicon."""
-        arg = match.group(match.lastindex + self.group)
-        if self.mapping:
-            arg = self.mapping.get(arg)
-        return self.itemlists[0][0](arg),
-
-
-class LexiconWithText(DynamicRuleItem):
-    """Return a derived Lexicon by calling a Lexicon with an argument.
-
-    The argument is the matched text, optionally mapped by a specified mapping.
-    In that case, when the text is not in the mapping, the argument is set to
-    None, so that the vanilla lexicon is returned.
+    The predicate is called with the match object. The lexicon is the first
+    item in the first itemlist, there should not be other items.
 
     """
-    def __init__(self, lexicon, mapping=None):
-        super(DynamicRuleItem, self).__init__(lexicon)
-        self.mapping = mapping
-
     def replace(self, text, match):
-        """Yield the vanilla or derived Lexicon."""
-        arg = text
-        if self.mapping:
-            arg = self.mapping.get(arg)
-        return self.itemlists[0][0](arg),
+        """Yield the derived lexicon with the result of predicate(match)."""
+        result = self.predicate(match)
+        return self.itemlists[0][0](result),
+
+
+class LexiconTextRuleItem(DynamicRuleItem):
+    """Return a derived Lexicon by calling a Lexicon with the result of a predicate.
+
+    The predicate is called with the matched text. The lexicon is the first
+    item in the first itemlist, there should not be other items.
+
+    """
+    def replace(self, text, match):
+        """Yield the derived lexicon with the result of predicate(text)."""
+        result = self.predicate(text)
+        return self.itemlists[0][0](result),
 
 
 class LexiconWithArg(ArgRuleItem):
