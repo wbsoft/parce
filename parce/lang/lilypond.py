@@ -112,6 +112,7 @@ class LilyPond(Language):
         yield r'\}', Delimiter.CloseBrace, -1
         yield from cls.common()
         yield from cls.blocks()
+        yield from cls.music()
 
     @lexicon
     def score(cls):
@@ -165,7 +166,6 @@ class LilyPond(Language):
     @classmethod
     def commands(cls):
         """Yield commands that can occur in all input modes."""
-        pitch = cls.ifpitch()
         yield RE_LILYPOND_DYNAMIC, Dynamic
         yield r"(\\repeat)\b(?:\s+([a-z]+)\s*(\d+)?)?", bygroup(Keyword, Name.Symbol, Number)
         yield r"\\(?:un)?set(?![^\W\d])", Keyword, cls.set_unset
@@ -173,10 +173,10 @@ class LilyPond(Language):
         yield r"\\(?:new|change|context)(?![^\W\d])", Keyword, cls.context
         yield r"(\\with)\s*(\{)", bygroup(Keyword, Delimiter.OpenBrace), cls.layout_context
         yield r"(\\relative)(?![^\W\d])(?:\s+" + RE_LILYPOND_PITCH_OCT + ")?", \
-            bygroup(Keyword, pitch, Octave)
+            bygroup(Keyword, cls.ifpitch(), Octave)
         yield (r"(\\transpose)(?![^\W\d])(?:\s+" + RE_LILYPOND_PITCH_OCT + ")?"
                r"(?:\s*" + RE_LILYPOND_PITCH_OCT + ")?"), \
-               bygroup(Keyword, pitch, Octave, pitch, Octave)
+               bygroup(Keyword, cls.ifpitch(), Octave, cls.ifpitch(), Octave)
         yield r"\\tempo(?![^\W\d])", Keyword, cls.tempo
         yield r"(\\chord(?:s|mode))\b\s*(\{)?", bygroup(Keyword, Delimiter.OpenBrace), \
             ifgroup(2, cls.chordmode)
