@@ -113,8 +113,8 @@ class LexiconWithGroup(DynamicRuleItem):
 
     """
     def __init__(self, group, lexicon, mapping=None):
+        super(DynamicRuleItem, self).__init__(lexicon)
         self.group = group
-        self.itemlists = [[lexicon]]
         self.mapping = mapping
 
     def replace(self, text, match):
@@ -134,7 +134,7 @@ class LexiconWithText(DynamicRuleItem):
 
     """
     def __init__(self, lexicon, mapping=None):
-        self.itemlists = [[lexicon]]
+        super(DynamicRuleItem, self).__init__(lexicon)
         self.mapping = mapping
 
     def replace(self, text, match):
@@ -147,9 +147,6 @@ class LexiconWithText(DynamicRuleItem):
 
 class LexiconWithArg(ArgRuleItem):
     """Return a derived Lexicon with the same argument as the current Lexicon."""
-    def __init__(self, lexicon):
-        self.itemlists = [[lexicon]]
-
     def replace(self, arg):
         """Yield the derived Lexicon with the same argument as the current Lexicon."""
         return self.itemlists[0][0](arg),
