@@ -169,6 +169,10 @@ class Node:
             if n in ancestors:
                 return n
 
+    def depth(self):
+        """Return the number of ancestors."""
+        return sum(1 for n in self.ancestors())
+
     def left_sibling(self):
         """Return the left sibling of this node, if any.
 
@@ -612,6 +616,10 @@ class Context(list, Node):
         """Return the end position or our last token. Returns None if empty."""
         for t in self.tokens_bw():
             return t.end
+
+    def height(self):
+        """Return the height of the tree (the longest distance to a descendant)."""
+        return max(n.height() + 1 if n.is_context else 1 for n in self) if self else 0
 
     def tokens(self, start=0, end=None):
         """Yield all tokens (that completely fill this text range if specified).
