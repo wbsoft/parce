@@ -131,7 +131,12 @@ class LexiconTextRuleItem(DynamicRuleItem):
 
 
 class LexiconWithArg(ArgRuleItem):
-    """Return a derived Lexicon with the same argument as the current Lexicon."""
+    """Return a derived Lexicon with the same argument as the current Lexicon.
+
+    The lexicon is the first item in the first itemlist, there should not be
+    other items.
+
+    """
     def replace(self, arg):
         """Yield the derived Lexicon with the same argument as the current Lexicon."""
         return self.itemlists[0][0](arg),
