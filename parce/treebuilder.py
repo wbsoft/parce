@@ -39,9 +39,7 @@ import contextlib
 import itertools
 import threading
 
-from parce.action import DynamicAction
 from parce.lexer import Lexer
-from parce.lexicon import DynamicItem, DynamicRuleItem
 from parce.tree import Context, Token, _GroupToken
 
 

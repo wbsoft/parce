@@ -24,7 +24,7 @@ import re
 import parce
 from .lexicon import LexiconDescriptor, Lexicon
 from .pattern import Pattern, PredicatePattern
-from .rule import DynamicRuleItem, variations
+from .rule import Item, variations
 from . import util
 
 
@@ -96,7 +96,7 @@ class LexiconValidator:
                     self.error("rule #{}: conflicting default actions".format(n))
                 else:
                     default_act = rule[0]
-                    if isinstance(default_act, DynamicRuleItem):
+                    if isinstance(default_act, Item):
                         self.warning("rule #{}: dynamic default_action; will not be replaced!".format(n))
             elif pattern is parce.default_target:
                 if default_tg:

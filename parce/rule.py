@@ -21,52 +21,116 @@
 """
 Replacable rule item objects.
 
-This module holds a few simple replacable objects that can be put in a rule
-and are replaced by other objects depending on the match object of the matched
-rule's pattern.
+Normally a rule consists of pattern, action and zero or more target objects,
+where the pattern is a regular expression string or a Pattern object; the
+action can be any object and the targets are integers or lexicons.
 
-When in a pattern rule an object that inherits from ``DynamicRuleItem`` is
-encountered, its ``bymatch()`` method is called with the match object, which
-should return a list of items the DynamicRuleItem should be replaced with. This
-list is again checked for DynamicRuleItem objects,
+But it is also possible to have replacable rule items, which are then replaced
+before the rule is used.
 
-In most cases a DynamicRuleItem will be instantiated with a predicate and lists
-of replacement objects. The predicate should return an integer index value (or
-True or False, which count as 1 and 0, respectively), which determines the list
-of replacement values to use.
+There are three types of replacable rule item objects (all descending from
+RuleItem). All items use the ``replace()`` method to do the replacement work,
+but in slightly different ways.
+
+``ArgItem``
+
+    These items are replaced by the lexicon when used for the first time,
+    before any parsing occurs, in the :meth:`~parce.lexicon.__iter__` method of
+    :class:`~parce.lexicon.Lexicon`. The ``replace()`` method is called with
+    the lexicon's argument or None. Replacement lists may consist of patterns,
+    action and/or targets. (Although ultimately, for a normal rule, the first
+    rule item must be the pattern and the second the action or ActionItem.)
+
+``DynamicItem``
+
+    These items are replaced by the lexicon during parsing. The ``replace()``
+    method is called with both the matched text and the match object (if
+    available).
+
+``ActionItem``
+
+    These items are replaced by the lexer, after parsing. The ``replace()``
+    method is called with lexer, position, text and match values and should
+    yield (pos, text, action) tuples to create tokens from.
+
+``DynamicItem`` and ``ActionItem`` must have their possible replacement values
+in lists in their ``itemlists`` atttribute. These attributes are scanned before
+the items are used in parsing, and so all ``ArgItem`` instances that are in the
+itemlists are replaced as soon as a Lexicon is used for the first time.
+
+And when the lexer replaces ``ActionItem`` objects, the replacement objects
+are scanned for Dynamic items as well.
+
+Most dynamic and action item types then use a predicate function that returns
+the index of the ``itemlists`` to choose.
 
 """
 
 
-class DynamicItem:
-    """Base class for all items from rules that are replaced."""
+### abstract base classes
+
+class Item:
+    """Abstract base class for all items from rules that are replaced.
+
+    Don't inherit from Item directly; use ArgItem, DynamicItem, or ActionItem.
+
+    """
+    def replace(self, *args):
+        """Called to get the replacement."""
+        raise NotImplementedError()
+
+
+class ItemListMixin:
+    """Mixin class providing ``itemlists`` handling."""
     def __init__(self, *itemlists):
         self.itemlists = [i if isinstance(i, (tuple, list)) else (i,)
                           for i in itemlists]
 
-    def replace(self, *args):
-        """Return one of the itemlists.
 
-        Based on text, match or arg (depending on implementation) one or more
-        are chosen.
+class PredicateItemListMixin(ItemListMixin):
+    """Mixin class providing ``predicate`` and ``itemlists`` handling."""
+    def __init__(self, predicate, *itemlists):
+        super().__init__(*itemlists)
+        self.predicate = predicate
 
-        """
+
+class ArgItem(Item):
+    """Abstract base class for items replaced before parsing.
+
+    These items are replaced by the Lexicon in the :meth:`__iter__` method,
+    when yielding the rules, before constructing the Lexicons's :meth:`parse`
+    method.
+
+    """
+    def replace(self, arg):
+        """Called to get the replacement based on lexicon argument."""
         raise NotImplementedError()
 
 
-class DynamicRuleItem(DynamicItem):
-    """Base class for items that are already replaced by the lexicon."""
-    def __init__(self, predicate, *itemlists):
-        self.predicate = predicate
-        super().__init__(*itemlists)
+class DynamicItem(ItemListMixin, Item):
+    """Abstract base class for items replaced during parsing.
 
-
-class ArgRuleItem(DynamicRuleItem):
-    """Chooses the itemlist based on a predicate that gets the lexicon argument.
-
-    This rule item type is handled once, before parsing.
+    These items are replaced by the Lexicon in the :meth:`parse` method.
 
     """
+    def replace(self, text, match):
+        """Called to get the replacement based on text and/or match object."""
+        raise NotImplementedError()
+
+
+class ActionItem(ItemListMixin, Item):
+    """Abstract base class for items replaced after parsing.
+
+    :class:`~parce.action.DynamicAction` inherits from this class. Dynamic
+    actions are replaced by the lexer. See the :mod:`~parce.lexer` module.
+
+    """
+
+
+### argument items
+
+class PredArgItem(PredicateItemListMixin, ArgItem):
+    """Chooses the itemlist based on a predicate that gets the lexicon argument."""
     def replace(self, arg):
         """Return one of the itemlists.
 
@@ -78,11 +142,23 @@ class ArgRuleItem(DynamicRuleItem):
         return self.itemlists[index]
 
 
-class TextRuleItem(DynamicRuleItem):
+class LexiconWithArg(ArgItem):
+    """Return a derived Lexicon with the same argument as the current Lexicon."""
+    def __init__(self, lexicon):
+        self.lexicon = lexicon
+
+    def replace(self, arg):
+        """Yield the derived Lexicon with the same argument as the current Lexicon."""
+        return self.lexicon(arg),
+
+
+### dynamic items
+
+class TextItem(PredicateItemListMixin, DynamicItem):
     """Calls the predicate with the matched text.
 
     The predicate should return the index of the itemlists to return.
-    The preferred way to create a TextRuleItem is using the
+    The preferred way to create a TextItem is using the
     :func:`parce.bytext` function.
 
     """
@@ -91,11 +167,11 @@ class TextRuleItem(DynamicRuleItem):
         return self.itemlists[index]
 
 
-class MatchRuleItem(DynamicRuleItem):
+class MatchItem(PredicateItemListMixin, DynamicItem):
     """Calls the predicate with the match object.
 
     The predicate should return the index of the itemlists to return.
-    The preferred way to create a MatchRuleItem is using the
+    The preferred way to create a MatchItem is using the
     :func:`parce.bymatch` function.
 
     """
@@ -104,24 +180,10 @@ class MatchRuleItem(DynamicRuleItem):
         return self.itemlists[index]
 
 
-class LexiconMatchRuleItem(DynamicRuleItem):
+class LexiconTextItem(TextItem):
     """Return a derived Lexicon using the result of a predicate.
 
-    The predicate is called with the match object. The lexicon is the called
-    with the result of the predicate, yielding a derived Lexicon. The lexicon
-    is the first item in the first itemlist, there should not be other items.
-
-    """
-    def replace(self, text, match):
-        """Yield the derived lexicon with the result of predicate(match)."""
-        result = self.predicate(match)
-        return self.itemlists[0][0](result),
-
-
-class LexiconTextRuleItem(DynamicRuleItem):
-    """Return a derived Lexicon using the result of a predicate.
-
-    The predicate is called with the matched text. The lexicon is the called
+    The predicate is called with the matched text. The lexicon is then called
     with the result of the predicate, yielding a derived Lexicon. The lexicon
     is the first item in the first itemlist, there should not be other items.
 
@@ -132,29 +194,31 @@ class LexiconTextRuleItem(DynamicRuleItem):
         return self.itemlists[0][0](result),
 
 
-class LexiconWithArg(ArgRuleItem):
-    """Return a derived Lexicon with the same argument as the current Lexicon.
+class LexiconMatchItem(MatchItem):
+    """Return a derived Lexicon using the result of a predicate.
 
-    The lexicon is the first item in the first itemlist, there should not be
-    other items.
+    The predicate is called with the match object. The lexicon is then called
+    with the result of the predicate, yielding a derived Lexicon. The lexicon
+    is the first item in the first itemlist, there should not be other items.
 
     """
-    def replace(self, arg):
-        """Yield the derived Lexicon with the same argument as the current Lexicon."""
-        return self.itemlists[0][0](arg),
+    def replace(self, text, match):
+        """Yield the derived lexicon with the result of predicate(match)."""
+        result = self.predicate(match)
+        return self.itemlists[0][0](result),
 
 
 def variations(rule):
     """Yield lists with all possible variations on the rule.
 
-    Every DynamicRuleItem is recursively replaced with all of its alternatives.
-    Note that DynamicAction is a DynamicItem subclass, and that is not
+    Every DynamicItem is recursively replaced with all of its alternatives.
+    Note that DynamicAction is an ActionItem subclass, and that is not
     unfolded.
 
     """
     items = list(rule)
     for i, item in enumerate(items):
-        if isinstance(item, DynamicRuleItem):
+        if isinstance(item, DynamicItem):
             prefix = items[:i]
             for suffix in variations(items[i+1:]):
                 for itemlist in item.itemlists:

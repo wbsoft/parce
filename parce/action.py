@@ -120,7 +120,7 @@ Language to other objects, which could even be methods or functions.
 import threading
 
 
-from .rule import DynamicItem
+from .rule import ActionItem
 
 
 # we use a global lock for standardaction creation, it seems overkill
@@ -172,7 +172,7 @@ class StandardAction:
         return self
 
 
-class DynamicAction(DynamicItem):
+class DynamicAction(ActionItem):
     """Base class for dynamic action objects.
 
     All actions a DynamicAction object can yield are in the first item
@@ -182,8 +182,8 @@ class DynamicAction(DynamicItem):
     def __init__(self, *actions):
         super().__init__(actions)
 
-    def filter_actions(self, lexer, pos, text, match):
-        raise NotImplementedError
+    def replace(self, lexer, pos, text, match):
+        raise NotImplementedError()
 
 
 class SubgroupAction(DynamicAction):
@@ -204,7 +204,7 @@ class SubgroupAction(DynamicAction):
     there are action attributes given to __init__().
 
     """
-    def filter_actions(self, lexer, pos, text, match):
+    def replace(self, lexer, pos, text, match):
         for i, action in enumerate(self.itemlists[0], match.lastindex + 1):
             yield from lexer.filter_actions(action, match.start(i), match.group(i), match)
 
@@ -216,6 +216,6 @@ class SkipAction(DynamicAction):
     to silently ignore the matched text.
 
     """
-    def filter_actions(self, lexer, pos, text, match):
+    def replace(self, lexer, pos, text, match):
         yield from ()
 

@@ -41,7 +41,7 @@ import threading
 import parce.pattern
 import parce.regex
 from .target import TargetFactory
-from .rule import DynamicItem, DynamicRuleItem, ArgRuleItem
+from .rule import Item, ArgItem, DynamicItem
 
 
 class LexiconDescriptor:
@@ -135,10 +135,10 @@ class Lexicon:
         def replace_arg_items(items):
             """Replace ArgRuleItem instances."""
             for i in items:
-                if isinstance(i, ArgRuleItem):
+                if isinstance(i, ArgItem):
                     yield from replace_arg_items(i.replace(self.arg))
                 else:
-                    if isinstance(i, DynamicItem):
+                    if isinstance(i, Item):
                         i.itemlists = [list(replace_arg_items(l)) for l in i.itemlists]
                     yield i
         for rule in self.lexicon.rules_func(self.language) or ():
@@ -212,7 +212,7 @@ class Lexicon:
 
         # if there is only one pattern, and no dynamic action or target,
         # see if the pattern is simple enough to just use str.find
-        if len(patterns) == 1 and not any(isinstance(item, DynamicItem)
+        if len(patterns) == 1 and not any(isinstance(item, Item)
                                           for item in rules[0]):
             needle = parce.regex.to_string(patterns[0])
             if needle:
@@ -255,12 +255,12 @@ class Lexicon:
         rx = re.compile("|".join("(?P<g_{0}>{1})".format(i, pattern)
             for i, pattern in enumerate(patterns)), self.re_flags)
         # make a fast mapping list from matchObj.lastindex to the rules.
-        # rules that contain DynamicRuleItem instances are put in the dynamic index
+        # rules that contain Item instances are put in the dynamic index
         indices = sorted(v for k, v in rx.groupindex.items() if k.startswith('g_'))
         static = [None] * (indices[-1] + 1)
         dynamic = [None] * (indices[-1] + 1)
         for i, rule in zip(indices, rules):
-            if any(isinstance(item, DynamicRuleItem) for item in rule):
+            if any(isinstance(item, Item) for item in rule):
                 dynamic[i] = rule
             else:
                 action, *target = rule
@@ -276,7 +276,7 @@ class Lexicon:
             """Recursively replace dynamic rule items in the rule pointed to by match object."""
             def inner_replace(items):
                 for i in items:
-                    if isinstance(i, DynamicRuleItem):
+                    if isinstance(i, DynamicItem):
                         yield from inner_replace(i.replace(m.group(), m))
                     else:
                         yield i

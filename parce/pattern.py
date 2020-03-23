@@ -67,7 +67,7 @@ class Char(Pattern):
         return '[' + negate + regex.make_charclass(set(self.chars)) + ']'
 
 
-class PredicatePattern(rule.ArgRuleItem):
+class PredicatePattern(rule.ArgItem):
     """Uses a predicate function that builds the regular expression.
 
     The predicate function gets the lexicon argument.

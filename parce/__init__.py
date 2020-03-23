@@ -204,50 +204,50 @@ def ifarg(pattern, else_pattern=None):
 
 
 def byarg(predicate, *itemlists):
-    """Return an :class:`~parce.rule.ArgRuleItem` that chooses its output based
+    """Return an :class:`~parce.rule.PredArgItem` that chooses its output based
     on the lexicon argument.
 
     The predicate is called with the lexicon argument (which is None for a
     normal Lexicon, but can have another value for a derivative Lexicon.
 
     """
-    return rule.ArgRuleItem(predicate, *itemlists)
+    return rule.PredArgItem(predicate, *itemlists)
 
 
 def bymatch(predicate, *itemlists):
-    """Return a :class:`~parce.rule.MatchRuleItem` that chooses its output
+    """Return a :class:`~parce.rule.MatchItem` that chooses its output
     based on the match object.
 
-    The returned MatchRuleItem calls the predicate function with the match
-    object as argument. The function should return the index of the itemlist
-    to choose. If you provide two possible actions, the predicate function
-    may also return True or False, in which case True chooses the second
-    itemlist and False the first.
+    The returned MatchItem calls the predicate function with the match object
+    as argument. The function should return the index of the itemlist to
+    choose. If you provide two possible actions, the predicate function may
+    also return True or False, in which case True chooses the second itemlist
+    and False the first.
 
     This helper can be used both for action and target objects, or both
     at the same time.
 
     """
-    return rule.MatchRuleItem(predicate, *itemlists)
+    return rule.MatchItem(predicate, *itemlists)
 
 
 def bytext(predicate, *itemlists):
-    """Return a :class:`~parce.rule.TextRuleItem` that chooses the itemlist
+    """Return a :class:`~parce.rule.TextItem` that chooses the itemlist
     based on the text.
 
-    The returned TextRuleItem calls the predicate function with the matched
-    text as argument.  The function should return the index of the itemlist
-    to choose, in the same way as with :func:`~parce.bymatch`.
+    The returned TextItem calls the predicate function with the matched text as
+    argument.  The function should return the index of the itemlist to choose,
+    in the same way as with :func:`~parce.bymatch`.
 
     This helper can be used both for action and target objects, or both
     at the same time.
 
     """
-    return rule.TextRuleItem(predicate, *itemlists)
+    return rule.TextItem(predicate, *itemlists)
 
 
 def ifgroup(n, itemlist, else_itemlist=()):
-    r"""Return a :class:`~parce.rule.MatchRuleItem` that yields ``itemlist`` if
+    r"""Return a :class:`~parce.rule.MatchItem` that yields ``itemlist`` if
     group n in the match is not empty.
 
     If group ``n`` in the match object is empty, ``else_itemlist`` is yielded.
@@ -269,7 +269,7 @@ def ifgroup(n, itemlist, else_itemlist=()):
 
 
 def ifmember(sequence, itemlist, else_itemlist=()):
-    r"""Return a :class:`~parce.rule.TextRuleItem` that yields ``itemlist`` if
+    r"""Return a :class:`~parce.rule.TextItem` that yields ``itemlist`` if
     the text is in sequence.
 
     If text is not in sequence, ``else_itemlist`` is yielded.
@@ -286,11 +286,11 @@ def ifmember(sequence, itemlist, else_itemlist=()):
     """
     def predicate(text):
         return text in sequence
-    return rule.TextRuleItem(predicate, else_itemlist, itemlist)
+    return bytext(predicate, else_itemlist, itemlist)
 
 
 def ifgroupmember(n, sequence, itemlist, else_itemlist=()):
-    """Return a :class:`~parce.rule.MatchRuleItem` that yields ``itemlist`` if
+    """Return a :class:`~parce.rule.MatchItem` that yields ``itemlist`` if
     group ``n`` is in sequence.
 
     If group ``n`` is not in sequence, ``else_itemlist`` is yielded.
@@ -298,7 +298,7 @@ def ifgroupmember(n, sequence, itemlist, else_itemlist=()):
     """
     def predicate(m):
         return m.group(m.lastindex + n) in sequence
-    return rule.MatchRuleItem(predicate, else_itemlist, itemlist)
+    return bymatch(predicate, else_itemlist, itemlist)
 
 
 def _get_items_map(dictionary, default):
@@ -317,7 +317,7 @@ def _get_items_map(dictionary, default):
 
 
 def maptext(dictionary, default=()):
-    r"""Return a :class:`~parce.rule.TextRuleItem` that yields the itemlist
+    r"""Return a :class:`~parce.rule.TextItem` that yields the itemlist
     from the dictionary, using the text as key.
 
     If the dict does not contain the key, the default value is yielded.
@@ -335,11 +335,11 @@ def maptext(dictionary, default=()):
 
     """
     predicate, itemlists = _get_items_map(dictionary, default)
-    return rule.TextRuleItem(predicate, *itemlists)
+    return bytext(predicate, *itemlists)
 
 
 def mapgroup(n, dictionary, default=()):
-    """Return a :class:`~parce.rule.MatchRuleItem` that yields the itemlist
+    """Return a :class:`~parce.rule.MatchItem` that yields the itemlist
     from the dictionary, using the specified match group as key.
 
     If the dict does not contain the key, the default value is yielded.
@@ -348,7 +348,7 @@ def mapgroup(n, dictionary, default=()):
     get, itemlists = _get_items_map(dictionary, default)
     def predicate(m):
         return get(m.group(m.lastindex + n))
-    return rule.MatchRuleItem(predicate, *itemlists)
+    return bymatch(predicate, *itemlists)
 
 
 def bygroup(*actions):
