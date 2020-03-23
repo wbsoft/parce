@@ -64,7 +64,7 @@ class DynamicRuleItem(DynamicItem):
 class ArgRuleItem(DynamicRuleItem):
     """Chooses the itemlist based on a predicate that gets the lexicon argument.
 
-    This rule item is handled once, before parsing.
+    This rule item type is handled once, before parsing.
 
     """
     def replace(self, arg):
@@ -105,10 +105,11 @@ class MatchRuleItem(DynamicRuleItem):
 
 
 class LexiconMatchRuleItem(DynamicRuleItem):
-    """Return a derived Lexicon by calling a Lexicon with the result of a predicate.
+    """Return a derived Lexicon using the result of a predicate.
 
-    The predicate is called with the match object. The lexicon is the first
-    item in the first itemlist, there should not be other items.
+    The predicate is called with the match object. The lexicon is the called
+    with the result of the predicate, yielding a derived Lexicon. The lexicon
+    is the first item in the first itemlist, there should not be other items.
 
     """
     def replace(self, text, match):
@@ -118,10 +119,11 @@ class LexiconMatchRuleItem(DynamicRuleItem):
 
 
 class LexiconTextRuleItem(DynamicRuleItem):
-    """Return a derived Lexicon by calling a Lexicon with the result of a predicate.
+    """Return a derived Lexicon using the result of a predicate.
 
-    The predicate is called with the matched text. The lexicon is the first
-    item in the first itemlist, there should not be other items.
+    The predicate is called with the matched text. The lexicon is the called
+    with the result of the predicate, yielding a derived Lexicon. The lexicon
+    is the first item in the first itemlist, there should not be other items.
 
     """
     def replace(self, text, match):
