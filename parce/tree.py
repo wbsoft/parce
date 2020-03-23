@@ -850,7 +850,7 @@ class Context(list, Node):
             return token
 
     def events(self, start_trail=None, end_trail=None):
-        """Yield Events for all or specified child nodes.
+        r"""Yield Events for all or specified child nodes.
 
         Using ``start_trail`` and ``end_trail`` the range of tokens can be
         specified; a trail is a list of indices to follow to get to a specific
