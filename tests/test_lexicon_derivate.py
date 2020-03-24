@@ -38,7 +38,7 @@ class MyLang(Language):
         yield r"\w+", Text
 
 
-def main():
+def test_main():
     text = r""" text @mark@ bla bla mark bla bla """
 
     tree = root(MyLang.root, text)
@@ -51,5 +51,5 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    test_main()
 

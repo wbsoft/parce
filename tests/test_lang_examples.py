@@ -30,7 +30,7 @@ sys.path.insert(0, ".")
 import parce.language
 import parce.validate
 
-def main():
+def test_main():
     for name in parce.language.get_all_modules():
         try:
             mod = importlib.import_module('tests.lang.' + name)
@@ -43,4 +43,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    test_main()

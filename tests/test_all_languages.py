@@ -28,10 +28,10 @@ sys.path.insert(0, ".")
 import parce.language
 import parce.validate
 
-def main():
+def test_main():
     for lang in parce.language.get_all_languages():
         assert parce.validate.validate_language(lang) is True
 
 
 if __name__ == "__main__":
-    main()
+    test_main()

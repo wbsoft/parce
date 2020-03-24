@@ -28,15 +28,15 @@ sys.path.insert(0, ".")
 from parce import *
 from parce.lang.css import *
 
-def main():
+def test_main():
     css = r"""
-    h1[attribute="value"] + p {
-        width: 500px;
-        height: 90%;
-        color: white;
-        background: url(www.image.org/image.png);
-        text-decoration: underline !important;
-    }
+h1[attribute="value"] + p {
+    width: 500px;
+    height: 90%;
+    color: white;
+    background: url(www.image.org/image.png);
+    text-decoration: underline !important;
+}
     """
 
     tree = root(Css.root, css)
@@ -49,4 +49,4 @@ def main():
     assert tree.query.all.action(Name.Property)("color").next.next.pick() == "white"
 
 if __name__ == "__main__":
-    main()
+    test_main()
