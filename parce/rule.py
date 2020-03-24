@@ -32,7 +32,7 @@ be used in a rule, and which generate other objects, ultimately resulting in a
 normal rule.
 
 These replacable objects can be used to define actions and targets. (For
-generated patterns, the :class:`~parce.pattern.Pattern` from the
+generated patterns, the :class:`~parce.pattern.Pattern` class from the
 :mod:`~parce.pattern` module must be used.)
 
 There are four moments when replaceable rule items are processed:
@@ -58,8 +58,8 @@ There are four moments when replaceable rule items are processed:
    or to skip some types of text. This is done by the
    :class:`~parce.lexer.Lexer` from the :mod:`~parce.lexer` module.
 
-    When the lexer replaces ``ActionItem`` objects, the replacement objects
-    are scanned for ``DynamicItem`` instances as well.
+   When the lexer replaces ``ActionItem`` objects, the replacement objects
+   are scanned for ``DynamicItem`` instances as well.
 
 All three Item subclasses, :class:`ArgItem`, :class:`DynamicItem` and
 :class:`ActionItem` have their possible replacement objects in their

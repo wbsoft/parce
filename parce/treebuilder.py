@@ -381,7 +381,7 @@ class TreeBuilder:
             self.end = end
 
     def finish_processing(self):
-        """Called by :meth:`check_start()` when :meth:`process_changes()` has finished.
+        """Called by :meth:`start_processing()` when :meth:`process_changes()` has finished.
 
         The default implementation does nothing.
 
