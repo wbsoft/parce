@@ -129,9 +129,12 @@ class Lexer:
                 if target:
                     if target.pop:
                         # never pop off root
-                        if -target.pop >= len(lexicons):
+                        if -target.pop < len(lexicons):
+                            del lexicons[target.pop:]
+                        else:
                             target = Target(1 - len(lexicons), target.push)
-                        del lexicons[target.pop:]
+                            if target.pop:
+                                del lexicons[target.pop:]
                     if target.push:
                         if not txt:
                             state = (pos, len(lexicons), len(target.push))
