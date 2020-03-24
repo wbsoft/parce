@@ -66,6 +66,5 @@ class Ini(Language):
         """Yield a Comment til the end of the line."""
         yield r'$', Comment, -1
         yield from cls.comment_common()
-        yield default_action, Comment
 
 
