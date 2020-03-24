@@ -297,10 +297,9 @@ Calling a Lexicon with such an argument creates a derived Lexicon, which behaves
 just as the normal Lexicon, but which has the specified argument in the ``arg``
 attribute. The derived Lexicon is cached as well.
 
-It is then possible to access the argument using
-:class:`~parce.rule.ArgRuleItem` objects. This way it is possible to change
-anything in a rule based on the argument of the derived lexicon. An example,
-taken from the tests directory::
+It is then possible to access the argument using :class:`~parce.rule.ArgItem`
+objects. This way it is possible to change anything in a rule based on the
+argument of the derived lexicon. An example, taken from the tests directory::
 
     from parce import *
 
@@ -355,7 +354,7 @@ of the lexicon argument:
     .. autofunction:: parce.ifarg
         :noindex:
 
-And there are three helper functions that create a target lexicon using an
+There are two helper functions that create a target lexicon using an
 argument:
 
     .. autofunction:: parce.withgroup
@@ -364,7 +363,16 @@ argument:
     .. autofunction:: parce.withtext
         :noindex:
 
+And there are three helper functions that call a predicate to choose or create
+generic rule items:
+
+    .. autofunction:: parce.byarg
+        :noindex:
+
     .. autofunction:: parce.witharg
+        :noindex:
+
+    .. autofunction:: parce.withargs
         :noindex:
 
 Of course it is also possible to target a lexicon with an argument directly::

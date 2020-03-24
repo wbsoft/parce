@@ -166,8 +166,8 @@ def char(chars, positive=True):
 
 
 def arg(escape=True, prefix="", suffix="", default=None):
-    r"""Return a :class:`~parce.pattern.Pattern` that contains the argument the
-    current Lexicon was called with.
+    r"""Return a pattern that contains the argument the current Lexicon was
+    called with.
 
     If there is no argument in the current lexicon, this Pattern yields the
     default value, which is by default None, resulting in the rule being
@@ -186,13 +186,12 @@ def arg(escape=True, prefix="", suffix="", default=None):
                 arg = re.escape(arg)
             return prefix + arg + suffix
         return default
-    return pattern.PredicatePattern(predicate)
+    return rule.SingleArgItem(predicate)
 
 
 def ifarg(pattern, else_pattern=None):
-    r"""Return a :class:`~parce.pattern.Pattern` that only yields the specified
-    regular expression pattern (or nested Pattern instance) if the lexicon was
-    called with an argument.
+    r"""Return the specified regular expression pattern (or nested Pattern
+    instance) if the lexicon was called with an argument.
 
     If there is no argument in the current lexicon, ``else_pattern`` is
     yielded, which is None by default, resulting in the rule being skipped.
@@ -200,7 +199,7 @@ def ifarg(pattern, else_pattern=None):
     """
     def predicate(arg):
         return pattern if arg is not None else else_pattern
-    return pattern.PredicatePattern(predicate)
+    return rule.SingleArgItem(predicate)
 
 
 def byarg(predicate, *itemlists):
@@ -373,7 +372,7 @@ def bygroup(*actions):
 
 
 def withgroup(n, lexicon, mapping=None):
-    r"""Return a :class:`~parce.rule.LexiconMatchRuleItem` rule item that calls
+    r"""Return a :class:`~parce.rule.LexiconMatchItem` rule item that calls
     the ``lexicon`` with the matched text from group ``n``.
 
     Calling a Lexicon creates a derived Lexicon, i.e. one that has the same set
@@ -392,11 +391,11 @@ def withgroup(n, lexicon, mapping=None):
     else:
         def predicate(match):
             return match.group(match.lastindex + n)
-    return rule.LexiconMatchRuleItem(predicate, lexicon)
+    return rule.LexiconMatchItem(predicate, lexicon)
 
 
 def withtext(lexicon, mapping=None):
-    r"""Return a :class:`~parce.rule.LexiconTextRuleItem` rule item that calls
+    r"""Return a :class:`~parce.rule.LexiconTextItem` rule item that calls
     the ``lexicon`` with the matched text.
 
     If a ``mapping`` dictionary is specified, the matched text is used as key,
@@ -405,15 +404,29 @@ def withtext(lexicon, mapping=None):
 
     """
     predicate = mapping.get if mapping else lambda t: t
-    return rule.LexiconTextRuleItem(predicate, lexicon)
+    return rule.LexiconTextItem(predicate, lexicon)
 
 
-def witharg(lexicon):
-    r"""Return a :class:`~parce.rule.LexiconWithArg` rule item that calls the
-    ``lexicon`` with the same argument as the current lexicon.
+def witharg(predicate):
+    r"""Return a :class:`~parce.rule.SingleArgItem` rule item that calls the
+    ``predicate`` with the current lexicon's argument.
+
+    The predicate's return value is wrapped in a 1-length tuple. You can also
+    use this to get a derived lexicon with the same argument as the current by
+    using a lexicon as predicate.
 
     """
-    return rule.LexiconWithArg(lexicon)
+    return rule.SingleArgItem(predicate)
+
+
+def withargs(predicate):
+    r"""Return a :class:`~parce.rule.MultiArgItem` rule item that calls the
+    ``predicate`` with the current lexicon's argument.
+
+    The predicate should return a tuple of zero or more rule items.
+
+    """
+    return rule.MultiArgItem(predicate)
 
 
 def lexicon(rules_func=None, **kwargs):

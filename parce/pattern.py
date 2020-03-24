@@ -23,8 +23,6 @@ Helper objects to construct regular expressions.
 
 """
 
-from . import rule
-
 
 class Pattern:
     """Base class for objects that build a regular expression."""
@@ -65,15 +63,4 @@ class Char(Pattern):
         from . import regex
         negate = "" if self.positive else "^"
         return '[' + negate + regex.make_charclass(set(self.chars)) + ']'
-
-
-class PredicatePattern(rule.ArgItem):
-    """Uses a predicate function that builds the regular expression.
-
-    The predicate function gets the lexicon argument.
-
-    """
-    def replace(self, arg):
-        return self.predicate(arg),
-
 

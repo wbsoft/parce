@@ -142,14 +142,19 @@ class PredArgItem(PredicateItemListMixin, ArgItem):
         return self.itemlists[index]
 
 
-class LexiconWithArg(ArgItem):
-    """Return a derived Lexicon with the same argument as the current Lexicon."""
-    def __init__(self, lexicon):
-        self.lexicon = lexicon
+class SingleArgItem(ArgItem):
+    """Calls predicate with lexicon argument and returns its result in a 1-tuple."""
+    def __init__(self, predicate):
+        self.predicate = predicate
 
     def replace(self, arg):
-        """Yield the derived Lexicon with the same argument as the current Lexicon."""
-        return self.lexicon(arg),
+        return self.predicate(arg),
+
+
+class MultiArgItem(SingleArgItem):
+    """Calls predicate with lexicon argument and returns its result as-is."""
+    def replace(self, arg):
+        return self.predicate(arg)
 
 
 ### dynamic items
