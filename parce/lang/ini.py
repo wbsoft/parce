@@ -34,7 +34,7 @@ class Ini(Language):
     @lexicon
     def root(cls):
         yield r'\[', Delimiter.Section, cls.section
-        yield r';', Comment, cls.comment
+        yield r'[;#]', Comment, cls.comment
         yield r'=', Operator.Assignment, cls.value
         yield default_target, cls.key
 
