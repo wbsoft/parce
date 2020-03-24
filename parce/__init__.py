@@ -141,7 +141,8 @@ def events(root_lexicon, text):
 
 
 def words(words, prefix="", suffix=""):
-    r"""Return a :class:`~parce.pattern.Pattern` matching any of the words.
+    r"""Return a :class:`~parce.pattern.Words` pattern matching any of the
+    words.
 
     The returned Pattern builds an optimized regular expression matching any of
     the words contained in the `words` list.
@@ -155,8 +156,8 @@ def words(words, prefix="", suffix=""):
 
 
 def char(chars, positive=True):
-    """Return a :class:`~parce.pattern.Pattern` matching one of the characters
-    in the specified string.
+    """Return a :class:`~parce.pattern.Char` pattern matching one of the
+    characters in the specified string.
 
     If `positive` is False, the set of characters is complemented, i.e. the
     Pattern matches any single character that is not in the specified string.
@@ -166,8 +167,8 @@ def char(chars, positive=True):
 
 
 def arg(escape=True, prefix="", suffix="", default=None):
-    r"""Return a pattern that contains the argument the current Lexicon was
-    called with.
+    r"""Return an :class:`~parce.pattern.Arg` pattern that contains the
+    argument the current Lexicon was called with.
 
     If there is no argument in the current lexicon, this Pattern yields the
     default value, which is by default None, resulting in the rule being
@@ -179,14 +180,7 @@ def arg(escape=True, prefix="", suffix="", default=None):
     ``suffix`` are not used.
 
     """
-    import re
-    def predicate(arg):
-        if isinstance(arg, str):
-            if escape:
-                arg = re.escape(arg)
-            return prefix + arg + suffix
-        return default
-    return rule.SingleArgItem(predicate)
+    return pattern.Arg(escape, prefix, suffix, default)
 
 
 def ifarg(pattern, else_pattern=None):
@@ -197,9 +191,7 @@ def ifarg(pattern, else_pattern=None):
     yielded, which is None by default, resulting in the rule being skipped.
 
     """
-    def predicate(arg):
-        return pattern if arg is not None else else_pattern
-    return rule.SingleArgItem(predicate)
+    return pattern.IfArg(pattern, else_pattern)
 
 
 def byarg(predicate, *itemlists):

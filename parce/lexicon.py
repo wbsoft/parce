@@ -38,8 +38,8 @@ import itertools
 import re
 import threading
 
-import parce.pattern
 import parce.regex
+from .pattern import Pattern
 from .target import TargetFactory
 from .rule import Item, ArgItem, DynamicItem
 
@@ -131,7 +131,7 @@ class Lexicon:
         return self.lexicon is other.lexicon and self.language is other.language
 
     def __iter__(self):
-        """Yield the rules, replacing the ArgRuleItem instances."""
+        """Yield the rules, replacing the ArgItem instances."""
         def replace_arg_items(items):
             """Replace ArgRuleItem instances."""
             for i in items:
@@ -184,8 +184,8 @@ class Lexicon:
 
         # make lists of pattern, action and possible targets
         for pattern, *rule in self:
-            while isinstance(pattern, parce.pattern.Pattern):
-                pattern = pattern.build()
+            while isinstance(pattern, Pattern):
+                pattern = pattern.build(self.arg)
             if pattern is parce.default_action:
                 default_action = rule[0]
             elif pattern is parce.default_target:
