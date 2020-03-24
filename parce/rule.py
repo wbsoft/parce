@@ -21,48 +21,51 @@
 """
 Replacable rule item objects.
 
-Normally a rule consists of pattern, action and zero or more target objects,
-where the pattern is a regular expression string or a Pattern object; the
-action can be any object and the targets are integers or lexicons.
+A normal rule consists of a pattern, action and zero or more targets.
 
-But it is also possible to have replacable rule items, which are then replaced
-before the rule is used.
+An action may be any object, a target is either an integer or a lexicon. The
+lexicon may be a derived lexicon (i.e. created by calling a vanilla lexicon
+with an argument).
 
-There are three types of replacable rule item objects (all descending from
-RuleItem). All items use the ``replace()`` method to do the replacement work,
-but in slightly different ways.
+This module defines some classes for replacable rule item objects, which can
+be used in a rule, and which generate other objects, ultimately resulting in a
+normal rule.
 
-``ArgItem``
+These replacable objects can be used to define actions and targets. (For
+generated patterns, the :class:`~parce.pattern.Pattern` from the
+:mod:`~parce.pattern` module must be used.)
 
-    These items are replaced by the lexicon when used for the first time,
-    before any parsing occurs, in the :meth:`~parce.lexicon.__iter__` method of
-    :class:`~parce.lexicon.Lexicon`. The ``replace()`` method is called with
-    the lexicon's argument or None. Replacement lists may consist of patterns,
-    action and/or targets. (Although ultimately, for a normal rule, the first
-    rule item must be the pattern and the second the action or ActionItem.)
+There are four moments when replaceable rule items are processed:
 
-``DynamicItem``
+1. when yielding the rules of the lexicon, in the
+   :meth:`~parce.lexicon.__iter__` method of :class:`~parce.lexicon.Lexicon`.
 
-    These items are replaced by the lexicon during parsing. The ``replace()``
-    method is called with both the matched text and the match object (if
-    available).
+   At this stage, :class:`ArgItem` instances are replaced, by calling their
+   ``replace()`` method with the lexicon argument (which is None for a vanilla
+   lexicon).
 
-``ActionItem``
+2. when constructing the :meth:`parse` method of the Lexicon, just before
+   the first parsing. At this stage, :class:`~parce.pattern.Pattern` objects
+   are built by the lexicon.
 
-    These items are replaced by the lexer, after parsing. The ``replace()``
-    method is called with lexer, position, text and match values and should
-    yield (pos, text, action) tuples to create tokens from.
+3. while parsing, when a rule's pattern matches the text. At this moment,
+   :class:`DynamicItem` instances are replaced by calling their ``replace()``
+   method with both the matched text and the match object (if available).
 
-``DynamicItem`` and ``ActionItem`` must have their possible replacement values
-in lists in their ``itemlists`` atttribute. These attributes are scanned before
-the items are used in parsing, and so all ``ArgItem`` instances that are in the
-itemlists are replaced as soon as a Lexicon is used for the first time.
+4. after parsing, :class:`ActionItem` instances are processed. A normal action
+   is just paired with the matched text to form a token, but an ActionItem can
+   create zero or more tokens, e.g. to match subgroups in a regular expression,
+   or to skip some types of text. This is done by the
+   :class:`~parce.lexer.Lexer` from the :mod:`~parce.lexer` module.
 
-And when the lexer replaces ``ActionItem`` objects, the replacement objects
-are scanned for Dynamic items as well.
+    When the lexer replaces ``ActionItem`` objects, the replacement objects
+    are scanned for ``DynamicItem`` instances as well.
 
-Most dynamic and action item types then use a predicate function that returns
-the index of the ``itemlists`` to choose.
+All three Item subclasses, :class:`ArgItem`, :class:`DynamicItem` and
+:class:`ActionItem` have their possible replacement objects in their
+``itemlists`` attribute. So there are never unexpected objects in a rule, and
+rules can always be validated, and e.g. all possible actions can be determined
+beforehand.
 
 """
 
@@ -75,20 +78,17 @@ class Item:
     Don't inherit from Item directly; use ArgItem, DynamicItem, or ActionItem.
 
     """
+    def __init__(self, *itemlists):
+        self.itemlists = [i if isinstance(i, (tuple, list)) else (i,)
+                          for i in itemlists]
+
     def replace(self, *args):
         """Called to get the replacement."""
         raise NotImplementedError()
 
 
-class ItemListMixin:
-    """Mixin class providing ``itemlists`` handling."""
-    def __init__(self, *itemlists):
-        self.itemlists = [i if isinstance(i, (tuple, list)) else (i,)
-                          for i in itemlists]
-
-
-class PredicateItemListMixin(ItemListMixin):
-    """Mixin class providing ``predicate`` and ``itemlists`` handling."""
+class PredicateMixin:
+    """Mixin class providing ``predicate`` handling."""
     def __init__(self, predicate, *itemlists):
         super().__init__(*itemlists)
         self.predicate = predicate
@@ -107,7 +107,7 @@ class ArgItem(Item):
         raise NotImplementedError()
 
 
-class DynamicItem(ItemListMixin, Item):
+class DynamicItem(Item):
     """Abstract base class for items replaced during parsing.
 
     These items are replaced by the Lexicon in the :meth:`parse` method.
@@ -118,7 +118,7 @@ class DynamicItem(ItemListMixin, Item):
         raise NotImplementedError()
 
 
-class ActionItem(ItemListMixin, Item):
+class ActionItem(Item):
     """Abstract base class for items replaced after parsing.
 
     :class:`~parce.action.DynamicAction` inherits from this class. Dynamic
@@ -129,42 +129,34 @@ class ActionItem(ItemListMixin, Item):
 
 ### argument items
 
-class PredArgItem(PredicateItemListMixin, ArgItem):
-    """Chooses the itemlist based on a predicate that gets the lexicon argument."""
+class LexiconArgItem(ArgItem):
+    """Return a derived Lexicon with the same argument as the current lexicon.
+
+    The lexicon is the first item in the first itemlist, there should not be
+    other items.
+
+    """
     def replace(self, arg):
-        """Return one of the itemlists.
+        return self.itemlists[0][0](arg),
 
-        The predicate is called with the lexicon argument, and should return
-        the index of the itemlist to choose.
 
-        """
+class PredicateArgItem(PredicateMixin, ArgItem):
+    """Calls the predicate with the lexicon argument.
+
+    The predicate should return the index of the itemlists to return.
+
+    """
+    def replace(self, arg):
         index = self.predicate(arg)
         return self.itemlists[index]
 
 
-class SingleArgItem(ArgItem):
-    """Calls predicate with lexicon argument and returns its result in a 1-tuple."""
-    def __init__(self, predicate):
-        self.predicate = predicate
-
-    def replace(self, arg):
-        return self.predicate(arg),
-
-
-class MultiArgItem(SingleArgItem):
-    """Calls predicate with lexicon argument and returns its result as-is."""
-    def replace(self, arg):
-        return self.predicate(arg)
-
-
 ### dynamic items
 
-class TextItem(PredicateItemListMixin, DynamicItem):
+class TextItem(PredicateMixin, DynamicItem):
     """Calls the predicate with the matched text.
 
     The predicate should return the index of the itemlists to return.
-    The preferred way to create a TextItem is using the
-    :func:`parce.bytext` function.
 
     """
     def replace(self, text, match):
@@ -172,12 +164,10 @@ class TextItem(PredicateItemListMixin, DynamicItem):
         return self.itemlists[index]
 
 
-class MatchItem(PredicateItemListMixin, DynamicItem):
+class MatchItem(PredicateMixin, DynamicItem):
     """Calls the predicate with the match object.
 
     The predicate should return the index of the itemlists to return.
-    The preferred way to create a MatchItem is using the
-    :func:`parce.bymatch` function.
 
     """
     def replace(self, text, match):

@@ -354,7 +354,7 @@ of the lexicon argument:
     .. autofunction:: parce.ifarg
         :noindex:
 
-There are two helper functions that create a target lexicon using an
+There are three helper functions that create a target lexicon using an
 argument:
 
     .. autofunction:: parce.withgroup
@@ -363,16 +363,13 @@ argument:
     .. autofunction:: parce.withtext
         :noindex:
 
-And there are three helper functions that call a predicate to choose or create
-generic rule items:
-
-    .. autofunction:: parce.byarg
-        :noindex:
-
     .. autofunction:: parce.witharg
         :noindex:
 
-    .. autofunction:: parce.withargs
+And there is a helper function that calls a predicate with the lexicon argument
+to choose rule items:
+
+    .. autofunction:: parce.byarg
         :noindex:
 
 Of course it is also possible to target a lexicon with an argument directly::

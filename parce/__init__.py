@@ -184,8 +184,9 @@ def arg(escape=True, prefix="", suffix="", default=None):
 
 
 def ifarg(pattern, else_pattern=None):
-    r"""Return the specified regular expression pattern (or nested Pattern
-    instance) if the lexicon was called with an argument.
+    r"""Return an :class:`~parce.pattern.IfArg` pattern yielding the specified
+    regular expression pattern (or nested Pattern instance) if the lexicon was
+    called with an argument.
 
     If there is no argument in the current lexicon, ``else_pattern`` is
     yielded, which is None by default, resulting in the rule being skipped.
@@ -195,14 +196,14 @@ def ifarg(pattern, else_pattern=None):
 
 
 def byarg(predicate, *itemlists):
-    """Return an :class:`~parce.rule.PredArgItem` that chooses its output based
-    on the lexicon argument.
+    """Return an :class:`~parce.rule.PredicateArgItem` that chooses its output
+    based on the lexicon argument.
 
     The predicate is called with the lexicon argument (which is None for a
     normal Lexicon, but can have another value for a derivative Lexicon.
 
     """
-    return rule.PredArgItem(predicate, *itemlists)
+    return rule.PredicateArgItem(predicate, *itemlists)
 
 
 def bymatch(predicate, *itemlists):
@@ -399,26 +400,15 @@ def withtext(lexicon, mapping=None):
     return rule.LexiconTextItem(predicate, lexicon)
 
 
-def witharg(predicate):
-    r"""Return a :class:`~parce.rule.SingleArgItem` rule item that calls the
-    ``predicate`` with the current lexicon's argument.
+def witharg(lexicon):
+    r"""Return a :class:`~parce.rule.LexiconArgItem` rule item that calls the
+    ``lexicon`` with the current lexicon's argument.
 
-    The predicate's return value is wrapped in a 1-length tuple. You can also
-    use this to get a derived lexicon with the same argument as the current by
-    using a lexicon as predicate.
-
-    """
-    return rule.SingleArgItem(predicate)
-
-
-def withargs(predicate):
-    r"""Return a :class:`~parce.rule.MultiArgItem` rule item that calls the
-    ``predicate`` with the current lexicon's argument.
-
-    The predicate should return a tuple of zero or more rule items.
+    Use this to get a derived lexicon with the same argument as the current
+    lexicon.
 
     """
-    return rule.MultiArgItem(predicate)
+    return rule.LexiconArgItem(lexicon)
 
 
 def lexicon(rules_func=None, **kwargs):
