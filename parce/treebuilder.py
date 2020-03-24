@@ -64,6 +64,9 @@ class TreeBuilder:
         variable is not set, meaning that the old value is still valid. If the
         TreeBuilder was not used before, lexicons is then None.
 
+    While tree building is in progress, the ``busy`` attribute is set to True,
+    the tree can then be in an inconsistent state.
+
     No other variables or state are kept, so if you don't need the above
     information anymore, you can throw away the TreeBuilder after use.
 
@@ -75,11 +78,12 @@ class TreeBuilder:
     """
     start = 0
     end = 0
+    busy = False
     lexicons = None
 
     def __init__(self, root_lexicon=None):
         self._incontext = 0
-        self._busy = False
+        self.busy = False
         self.changes = []
         self.root = Context(root_lexicon, None)
 
@@ -89,7 +93,7 @@ class TreeBuilder:
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self._incontext -= 1
-        if self._incontext == 0 and not self._busy:
+        if self._incontext == 0 and not self.busy:
             self.start_processing()
 
     def tree(self, text):
@@ -323,7 +327,7 @@ class TreeBuilder:
 
         """
         self.changes.append(("lexicon", text, lexicon))
-        if self._incontext == 0 and not self._busy:
+        if self._incontext == 0 and not self.busy:
             self.start_processing()
 
     def change_text(self, text, position=0, removed=None, added=None):
@@ -334,7 +338,7 @@ class TreeBuilder:
 
         """
         self.changes.append(("text", text, position, removed, added))
-        if self._incontext == 0 and not self._busy:
+        if self._incontext == 0 and not self.busy:
             self.start_processing()
 
     def get_changes(self):
@@ -352,7 +356,7 @@ class TreeBuilder:
 
     def start_processing(self):
         """Initialize and start processing if needed."""
-        self._busy = True
+        self.busy = True
         self.start = self.end = -1
         self.process_started()
         self.do_processing()
@@ -392,7 +396,7 @@ class TreeBuilder:
         if self.changes:
             self.do_processing()
             return
-        self._busy = False
+        self.busy = False
         self.process_finished()
 
     def process_started(self):
@@ -484,7 +488,7 @@ class BackgroundTreeBuilder(TreeBuilder):
             job = self.job
             if job:
                 job.join()
-                if self._busy:
+                if self.busy:
                     continue
             break
 
