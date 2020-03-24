@@ -79,6 +79,7 @@ class TreeBuilder:
 
     def __init__(self, root_lexicon=None):
         self._incontext = 0
+        self._busy = False
         self.changes = []
         self.root = Context(root_lexicon, None)
 
@@ -88,7 +89,7 @@ class TreeBuilder:
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self._incontext -= 1
-        if self._incontext == 0:
+        if self._incontext == 0 and not self._busy:
             self.start_processing()
 
     def tree(self, text):
@@ -322,7 +323,7 @@ class TreeBuilder:
 
         """
         self.changes.append(("lexicon", text, lexicon))
-        if self._incontext == 0:
+        if self._incontext == 0 and not self._busy:
             self.start_processing()
 
     def change_text(self, text, position=0, removed=None, added=None):
@@ -333,7 +334,7 @@ class TreeBuilder:
 
         """
         self.changes.append(("text", text, position, removed, added))
-        if self._incontext == 0:
+        if self._incontext == 0 and not self._busy:
             self.start_processing()
 
     def get_changes(self):
@@ -350,22 +351,28 @@ class TreeBuilder:
         return c
 
     def start_processing(self):
+        """Initialize and start processing if needed."""
+        self._busy = True
+        self.start = self.end = -1
+        self.process_started()
+        self.do_processing()
+
+    def do_processing(self):
         """Called when there are recorded changes to process.
 
-        Calls, as long as there are changes, :meth:`process_changes()` and
-        after that :meth:`finish_processing()`; may be reimplemented to call
+        Calls, :meth:`process_changes()` and after that
+        :meth:`finish_processing()`; may be reimplemented to call
         :meth:`process_changes()` in a background thread.
 
         """
-        while self.changes:
-            self.process_changes()
-            self.finish_processing()
+        self.process_changes()
+        self.finish_processing()
 
     def process_changes(self):
         """Processes the recorded change requests."""
         c = self.get_changes()
-        start = -1
-        end = -1
+        start = self.start
+        end = self.end
         while c and c.has_changes():
             if c.root_lexicon != False and c.root_lexicon != self.root.lexicon:
                 self.root.lexicon = c.root_lexicon
@@ -381,9 +388,25 @@ class TreeBuilder:
             self.end = end
 
     def finish_processing(self):
-        """Called by :meth:`start_processing()` when :meth:`process_changes()` has finished.
+        """Called by :meth:`do_processing()` when :meth:`process_changes()` has finished."""
+        if self.changes:
+            self.do_processing()
+            return
+        self._busy = False
+        self.process_finished()
 
-        The default implementation does nothing.
+    def process_started(self):
+        """Called when ``start()`` has been called to update the tree.
+
+        Does nothing by default.
+
+        """
+        pass
+
+    def process_finished(self):
+        """Called when tree building is done.
+
+        Does nothing by default.
 
         """
         pass
@@ -418,7 +441,7 @@ class BackgroundTreeBuilder(TreeBuilder):
 
     In BackgroundTreeBuilder, :meth:`change_text()` and
     :meth:`change_root_lexicon()` return immediately, because
-    :meth:`check_start()` has been reimplemented to call
+    :meth:`do_processing()` has been reimplemented to call
     :meth:`process_changes()` in a background thread.
 
     You can continue adding changes while previous changes are processed;
@@ -441,30 +464,29 @@ class BackgroundTreeBuilder(TreeBuilder):
         self.updated_callbacks = []
         self.finished_callbacks = []
 
-    def start_processing(self):
+    def do_processing(self):
         """Start a background job if needed."""
-        if not self.job:
-            self.job = threading.Thread(target=super().start_processing)
-            self.job.start()
+        self.job = threading.Thread(target=super().do_processing)
+        self.job.start()
 
-    def finish_processing(self):
-        """Called when process_changes() quits. Calls oneshot callbacks.
-
-        In GUI applications, this method should run when the job has finished,
-        in the GUI thread.
-
-        """
+    def process_finished(self):
+        """Reimplemented to clear the job attribute and call the callbacks."""
         self.job = None
-        self.build_updated()
+        for cb in self.updated_callbacks:
+            cb(self.start, self.end)
         while self.finished_callbacks:
             callback, args, kwargs = self.finished_callbacks.pop()
             callback(*args, **kwargs)
 
     def wait(self):
         """Wait for completion if a background job is running."""
-        job = self.job
-        if job:
-            job.join()
+        while True:
+            job = self.job
+            if job:
+                job.join()
+                if self._busy:
+                    continue
+            break
 
     def get_root(self, wait=False, callback=None, args=None, kwargs=None):
         """Get the root element of the completed tree.
@@ -491,17 +513,6 @@ class BackgroundTreeBuilder(TreeBuilder):
         if wait:
             self.wait()
             return self.root
-
-    def build_updated(self):
-        """Called when a build() or rebuild() finished and the tree is complete.
-
-        The default implementation calls all callbacks in the
-        `updated_callbacks` attribute, with the (start, end) arguments. (The
-        same values are also accessible in the `start` and `end` attributes.)
-
-        """
-        for cb in self.updated_callbacks:
-            cb(self.start, self.end)
 
     def add_build_updated_callback(self, callback):
         """Add a callback to be called when the whole text is tokenized.
