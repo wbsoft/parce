@@ -3,7 +3,7 @@ Anatomy of a Language
 
 In this chapter we'll cover all the details of how a language can be defined.
 
-To ``parce``, a :class:`~parce.language.Language` is currently just a grouping
+To ``parce``, a :class:`~parce.language.Language` is simply a grouping
 container for lexicons, which group rules, and rules consist of a pattern, an
 action and zero or more targets.
 

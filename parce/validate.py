@@ -23,7 +23,7 @@ import re
 
 import parce
 from .lexicon import LexiconDescriptor, Lexicon
-from .pattern import Pattern, PredicatePattern
+from .pattern import Pattern
 from .rule import Item, variations
 from . import util
 
