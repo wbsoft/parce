@@ -74,7 +74,7 @@ class BasicTreeBuilder:
 
     def __init__(self, root_lexicon=None):
         self.root = Context(root_lexicon, None)
-        self. changes = None # keep "if self.changes" in rebuild() from complaining
+        self.changes = False # keep "if self.changes" in rebuild() from complaining
 
     def tree(self, text):
         """Convenience method returning the tree with all tokens."""
