@@ -608,7 +608,7 @@ class Context(list, Node):
     @property
     def pos(self):
         """Return the position or our first token. Returns None if empty."""
-        for t in self.tokens():
+        for t in tokens(self):
             return t.pos
 
     @property
@@ -636,7 +636,7 @@ class Context(list, Node):
 
     def first_token(self):
         """Return our first Token."""
-        for t in self.tokens():
+        for t in tokens(self):
             return t
 
     def last_token(self):
