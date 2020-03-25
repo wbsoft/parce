@@ -182,6 +182,8 @@ class Lexicon:
         default_action = None
         default_target = None
 
+        make_target = TargetFactory.make
+
         # make lists of pattern, action and possible targets
         for pattern, *rule in self:
             while isinstance(pattern, Pattern):
@@ -189,7 +191,7 @@ class Lexicon:
             if pattern is parce.default_action:
                 default_action = rule[0]
             elif pattern is parce.default_target:
-                default_target = TargetFactory.make(self, rule)
+                default_target = make_target(self, rule)
             elif rule and pattern is not None and pattern not in patterns:
                 # skip rule when the pattern is None or already seen
                 patterns.append(pattern)
@@ -218,7 +220,7 @@ class Lexicon:
             if needle:
                 l= len(needle)
                 action, *rule = rules[0]
-                target = TargetFactory.make(self, rule)
+                target = make_target(self, rule)
                 if default_action:
                     def parse(text, pos):
                         """Parse text, using a default action for unknown text."""
@@ -264,7 +266,7 @@ class Lexicon:
                 dynamic[i] = rule
             else:
                 action, *target = rule
-                static[i] = (action, TargetFactory.make(self, target))
+                static[i] = (action, make_target(self, target))
 
         # for rule containing no dynamic stuff, static has the rule, otherwise
         # falls back to dynamic, which is then immediately executed
@@ -281,12 +283,13 @@ class Lexicon:
                     else:
                         yield i
             action, *target = inner_replace(dynamic[m.lastindex])
-            return action, TargetFactory.make(self, target)
+            return action, make_target(self, target)
 
         if default_action:
+            finditer = rx.finditer
             def parse(text, pos):
                 """Parse text, using a default action for unknown text."""
-                for m in rx.finditer(text, pos):
+                for m in finditer(text, pos):
                     if m.start() > pos:
                         yield pos, text[pos:m.start()], None, default_action, None
                     yield token(m)
@@ -294,10 +297,11 @@ class Lexicon:
                 if pos < len(text):
                     yield pos, text[pos:], None, default_action, None
         elif default_target:
+            match = rx.match
             def parse(text, pos):
                 """Parse text, stopping with the default target at unknown text."""
                 while True:
-                    m = rx.match(text, pos)
+                    m = match(text, pos)
                     if m:
                         yield token(m)
                         pos = m.end()
@@ -306,10 +310,10 @@ class Lexicon:
                             yield pos, "", None, None, default_target
                         break
         else:
+            finditer = rx.finditer
             def parse(text, pos):
                 """Parse text, skipping unknown text."""
-                for m in rx.finditer(text, pos):
-                    yield token(m)
+                return map(token, finditer(text, pos))
         return parse
 
 
