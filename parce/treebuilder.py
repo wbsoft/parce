@@ -441,7 +441,7 @@ class TreeBuilder:
 
 
 class BackgroundTreeBuilder(TreeBuilder):
-    """A TreeBuilder that can tokenize a text in a background thread.
+    """A TreeBuilder that can tokenize a text in a Python thread.
 
     In BackgroundTreeBuilder, :meth:`change_text()` and
     :meth:`change_root_lexicon()` return immediately, because
@@ -465,13 +465,56 @@ class BackgroundTreeBuilder(TreeBuilder):
     def __init__(self, root_lexicon=None):
         super().__init__(root_lexicon)
         self.job = None
+        self.lock = threading.Lock()
         self.updated_callbacks = []
         self.finished_callbacks = []
+
+    def change_root_lexicon(self, text, lexicon):
+        """Reimplemented to add locking."""
+        with self.lock:
+            self.changes.append(("lexicon", text, lexicon))
+        if self._incontext == 0 and not self.busy:
+            self.start_processing()
+
+    def change_text(self, text, position=0, removed=None, added=None):
+        """Reimplemented to add locking."""
+        with self.lock:
+            self.changes.append(("text", text, position, removed, added))
+        if self._incontext == 0 and not self.busy:
+            self.start_processing()
 
     def do_processing(self):
         """Start a background job if needed."""
         self.job = threading.Thread(target=super().do_processing)
         self.job.start()
+
+    def process_changes(self):
+        """Reimplemented to add locking."""
+        self.lock.acquire()
+        c = self.get_changes()
+        start = self.start
+        end = self.end
+        while c and c.has_changes():
+            self.lock.release()
+            if c.root_lexicon != False and c.root_lexicon != self.root.lexicon:
+                self.root.lexicon = c.root_lexicon
+                self.build(c.text)
+            else:
+                self.rebuild(c.text, c.position, c.removed, c.added)
+            start = self.start if start == -1 else min(start, self.start)
+            end = self.end if end == -1 else max(c.new_position(end), self.end)
+            self.lock.acquire()
+            c = self.get_changes()
+        if start != -1:
+            self.start = start
+        if end != -1:
+            self.end = end
+
+    def finish_processing(self):
+        """Called by :meth:`do_processing()` when :meth:`process_changes()` has finished."""
+        self.busy = False
+        self.process_finished()
+        self.lock.release()
 
     def process_finished(self):
         """Reimplemented to clear the job attribute and call the callbacks."""
