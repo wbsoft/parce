@@ -126,7 +126,7 @@ class Document(treedocument.TreeDocumentMixin, document.Document):
 
 def root(root_lexicon, text):
     """Return the root context of the tree structure of all tokens from text."""
-    return treebuilder.TreeBuilder(root_lexicon).tree(text)
+    return treebuilder.BasicTreeBuilder(root_lexicon).tree(text)
 
 
 def tokens(root_lexicon, text):

@@ -43,7 +43,7 @@ from parce.lexer import Lexer
 from parce.tree import Context, Token, _GroupToken
 
 
-class TreeBuilder:
+class BasicTreeBuilder:
     """Build a tree directly from parsing the text.
 
     The root node of the tree is in the ``root`` instance attribute.
@@ -64,37 +64,17 @@ class TreeBuilder:
         variable is not set, meaning that the old value is still valid. If the
         TreeBuilder was not used before, lexicons is then None.
 
-    While tree building is in progress, the ``busy`` attribute is set to True,
-    the tree can then be in an inconsistent state.
-
     No other variables or state are kept, so if you don't need the above
     information anymore, you can throw away the TreeBuilder after use.
-
-    You can also use :meth:`change_text()` and :meth:`change_root_lexicon()` to
-    trigger a rebuild. And when you use a TreeBuilder in a :keyword:`with`
-    context, you can record multiple change requests using those methods, and
-    have the changes processed in one go as soon as the context is exited.
 
     """
     start = 0
     end = 0
-    busy = False
     lexicons = None
 
     def __init__(self, root_lexicon=None):
-        self._incontext = 0
-        self.busy = False
-        self.changes = []
         self.root = Context(root_lexicon, None)
-
-    def __enter__(self):
-        self._incontext += 1
-        return self
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        self._incontext -= 1
-        if self._incontext == 0 and not self.busy:
-            self.start_processing()
+        self. changes = None # keep "if self.changes" in rebuild() from complaining
 
     def tree(self, text):
         """Convenience method returning the tree with all tokens."""
@@ -306,6 +286,43 @@ class TreeBuilder:
                 self.lexicons = lexer.lexicons[1:]
                 end = len(text)
         self.start, self.end = lowest_start, end
+
+
+class TreeBuilder(BasicTreeBuilder):
+    """TreeBuilder extends BasicTreeBuilder with change management functions.
+
+    Instead of calling :meth:`build()` or :meth:`rebuild()`, you can call
+    :meth:`change_text` and/or :meth:`change_root_lexicon`, which will trigger
+    a rebuild. If you call these methods within a :keyword:`with` context,
+    changes are stored and applied as soon as the context exits.
+
+    You can inherit from this class and call :meth:`process_changes` from a
+    background thread to move tokenizing to a background thread. See
+    :class:`BackgroundTreeBuilder` for an example that uses Python threads.
+
+    While tree building is in progress, the ``busy`` attribute is set to True,
+    the tree can then be in an inconsistent state. During background
+    tokenizing, new changes can be submitted and will immediately be acted
+    upon; the ``rebuild()`` method can interrupt itself and adjust tokenizing
+    to the new changes.
+
+    """
+    busy = False
+
+    def __init__(self, root_lexicon=None):
+        super().__init__(root_lexicon)
+        self._incontext = 0
+        self.busy = False
+        self.changes = []
+
+    def __enter__(self):
+        self._incontext += 1
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self._incontext -= 1
+        if self._incontext == 0 and not self.busy:
+            self.start_processing()
 
     def root_lexicon(self):
         """Return the root lexicon.
