@@ -145,6 +145,7 @@ class BasicTreeBuilder:
             else:
                 tail = False
 
+        changes = self.changes
         lowest_start = start
         restart = True
         while restart:
@@ -230,14 +231,14 @@ class BasicTreeBuilder:
                 else:
                     tokens = Token(context, *e.tokens[0]),
                 if tail:
-                    if tokens[0].pos > tail_pos:
+                    pos = tokens[0].pos
+                    if pos > tail_pos:
                         for tail_token, tail_pos in tail_gen:
-                            if tail_pos >= tokens[0].pos:
+                            if tail_pos >= pos:
                                 break
                         else:
                             tail = False
-                    if (tokens[0].pos == tail_pos
-                            and tokens[0].state_matches(tail_token)):
+                    if (pos == tail_pos and tokens[0].state_matches(tail_token)):
                         # we can attach the tail here.
                         if offset:
                             # adjust the pos of the old tail tokens.
@@ -255,7 +256,7 @@ class BasicTreeBuilder:
                 context.extend(tokens)
                 # we check for new changes here, so we always have tokens
                 # in the current context
-                if self.changes:
+                if changes:
                     c = self.get_changes()
                     if c:
                         # break out and adjust the current tokenizing process
