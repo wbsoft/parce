@@ -195,10 +195,10 @@ class BasicTreeBuilder:
                         # break out and adjust the current tokenizing process
                         text = c.text
                         start = c.position
-                        head = start > 0
                         if c.root_lexicon != False:
                             self.root.lexicon = c.root_lexicon
-                            head = tail = False
+                            start = 0
+                            tail = False
                         elif tail:
                             # reuse old tail?
                             new_tail_pos = start + c.added
