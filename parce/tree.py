@@ -861,7 +861,9 @@ class Context(list, Node):
         token, such as returned by the various ``find_\*_with_trail`` methods.
 
         """
+        islice = itertools.islice
         target = TargetFactory()
+        get, push, pop = target.get, target.push, target.pop
         def events(context):
             nodes = iter(context)
             for n in nodes:
@@ -870,12 +872,12 @@ class Context(list, Node):
                     if n.group:
                         rest = len(n.group) - n.group.index(n) - 1
                         tokens += tuple((t.pos, t.text, t.action)
-                            for t in itertools.islice(nodes, rest))
-                    yield Event(target.get(), tokens)
+                            for t in islice(nodes, rest))
+                    yield Event(get(), tokens)
                 else:
-                    target.push(n.lexicon)
+                    push(n.lexicon)
                     yield from events(n)
-                    target.pop()
+                    pop()
         for context, slice_ in self.slices(start_trail, end_trail, target):
             yield from events(context[slice_])
 
