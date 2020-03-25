@@ -249,28 +249,23 @@ class BasicTreeBuilder:
                 prev = None
                 for old, new in zip(old_events, events):
                     if new != old:
-                        if prev is None:
-                            # go back further
-                            start = old.tokens[0][0] if start_token.previous_token() else 0
-                            return self.get_start_context_events(start, text)
                         # push back the new event
                         events = itertools.chain((new,), events)
-                        pos, txt = prev.tokens[-1][:2]
-                        start = pos + len(txt)
-                        for n, o in zip(new.tokens, old.tokens):
-                            if n != o:
-                                break
-                            start = o[0] + len(o[1])
                         break
                     prev = new
-                else:
+                if prev:
                     pos, txt = prev.tokens[-1][:2]
                     start = pos + len(txt)
-                pos = prev.tokens[-1][0]
-                token = self.root.find_token(pos)
-                for p, i in token.ancestors_with_index():
-                    del p[i+1:]
-                return start, token.parent, lexer, events
+                    for n, o in zip(new.tokens, old.tokens):
+                        if n != o:
+                            break
+                        start = o[0] + len(o[1])
+                    token = self.root.find_token(pos)
+                    for p, i in token.ancestors_with_index():
+                        del p[i+1:]
+                    return start, token.parent, lexer, events
+                if start_token.previous_token():
+                    return self.get_start_context_events(start_token.pos, text)
         self.root.clear()
         lexer = Lexer([self.root.lexicon])
         return 0, self.root, lexer, lexer.events(text)
