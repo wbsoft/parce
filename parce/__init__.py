@@ -121,8 +121,7 @@ class Document(treedocument.TreeDocumentMixin, document.Document):
         builder = treebuilder.BackgroundTreeBuilder(root_lexicon)
         treedocument.TreeDocumentMixin.__init__(self, builder)
         if text:
-            with builder.change() as c:
-                c.change_contents(text)
+            builder.change_text(text)
 
 
 def root(root_lexicon, text):
