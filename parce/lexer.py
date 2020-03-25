@@ -116,6 +116,8 @@ class Lexer:
         """Get the events from parsing text from the specified position."""
         lexicons = self.lexicons
         target_factory = TargetFactory()
+        get_target = target_factory.get # access methods directly (faster)
+        add_target = target_factory.add
         circular = set()
         while True:
             for pos, txt, match, action, target in lexicons[-1].parse(text, pos):
@@ -123,9 +125,9 @@ class Lexer:
                     if isinstance(action, DynamicAction):
                         tokens = tuple(action.replace(self, pos, txt, match))
                         if tokens:
-                            yield Event(target_factory.get(), tokens)
+                            yield Event(get_target(), tokens)
                     else:
-                        yield Event(target_factory.get(), ((pos, txt, action),))
+                        yield Event(get_target(), ((pos, txt, action),))
                 if target:
                     if target.pop:
                         # never pop off root
@@ -147,7 +149,7 @@ class Lexer:
                         else:
                             circular.clear()
                         lexicons.extend(target.push)
-                    target_factory.add(target)
+                    add_target(target)
                     pos += len(txt)
                     break   # continue with new lexicon
             else:
