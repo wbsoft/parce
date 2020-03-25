@@ -621,18 +621,13 @@ class Context(list, Node):
         """Return the height of the tree (the longest distance to a descendant)."""
         return max(n.height() + 1 if n.is_context else 1 for n in self) if self else 0
 
-    def tokens(self, start=0, end=None):
-        """Yield all tokens (that completely fill this text range if specified).
-
-        The first and last tokens may overlap with the start and end positions.
-
-        """
-        for context, slice_ in self.context_slices(start, end):
-            yield from tokens(context[slice_])
+    def tokens(self):
+        """Yield all Tokens, descending into nested Contexts."""
+        return tokens(self)
 
     def tokens_bw(self):
         """Yield all Tokens, descending into nested Contexts, in backward direction."""
-        yield from tokens_bw(self[::-1])
+        return tokens_bw(self[::-1])
 
     def first_token(self):
         """Return our first Token."""
@@ -746,6 +741,15 @@ class Context(list, Node):
         if i > 0:
             i -= 1
             return self[i].find_token_before(pos) if self[i].is_context else self[i]
+
+    def tokens_range(self, start=0, end=None):
+        """Yield all tokens (that completely fill this text range if specified).
+
+        The first and last tokens may overlap with the start and end positions.
+
+        """
+        for context, slice_ in self.context_slices(start, end):
+            yield from tokens(context[slice_])
 
     def context_slices(self, start=0, end=None):
         """Yield (context, slice) tuples to yield tokens from.
