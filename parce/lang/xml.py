@@ -65,6 +65,7 @@ class Xml(Language):
     def pi(cls):
         yield r'(\w+(?:[:.-]\w+)*)\s*?(=)(?=\s*?")', bygroup(Name.Attribute, Operator)
         yield r'"', String, cls.dqstring
+        yield r"'", String, cls.sqstring
         yield default_action, PI
         yield r'\?>', PI.End, -1
 
