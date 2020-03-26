@@ -168,7 +168,7 @@ class BasicTreeBuilder:
                                 break
                         else:
                             tail = False
-                    if (pos == tail_pos and tokens[0].state_matches(tail_token)):
+                    if (pos == tail_pos and tokens[0].equals(tail_token)):
                         # we can attach the tail here.
                         if offset:
                             # adjust the pos of the old tail tokens.

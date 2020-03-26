@@ -349,13 +349,14 @@ class Token(Node):
         self.action = action
 
     def equals(self, other):
-        """Return True if the other Token has the same ``pos``, ``text`` and
-        ``action`` attributes and the same context ancestry (see
+        """Return True if the other Token has the same ``text`` and ``action``
+        attributes and the same context ancestry (see also
         :meth:`state_matches`).
 
+        Note that the ``pos`` attribute is not compared.
+
         """
-        return (self.pos == other.pos
-                and self.text == other.text
+        return (self.text == other.text
                 and self.action == other.action
                 and self.state_matches(other))
 
