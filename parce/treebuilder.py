@@ -227,7 +227,7 @@ class BasicTreeBuilder:
         The old tree is reused as much as possible.
 
         """
-        if start:
+        while start:
             # find the last token before the modified part, we will start parsing
             # before that token. If there are no tokens, we just start at 0.
             last_token = start_token = self.root.find_token_before(start)
@@ -241,11 +241,15 @@ class BasicTreeBuilder:
 
                 # while parsing we'll see whether we can still use the
                 # old tokens from start_token till last_token.
+                start = start_token.pos
+                # reconstruct the lexicons state, so we can start parsing
+                # in the current context
                 lexicons = [p.lexicon for p in start_token.ancestors()]
                 lexicons.reverse()
                 lexer = Lexer(lexicons)
-                events = lexer.events(text, start_token.pos)
+                events = lexer.events(text, start)
                 old_events = start_token.events_until_including(last_token)
+                # compare new events with old
                 prev = None
                 for old, new in zip(old_events, events):
                     if new != old:
@@ -254,18 +258,25 @@ class BasicTreeBuilder:
                         break
                     prev = new
                 if prev:
+                    # until and including prev, the events were the same.
+                    # maybe part of the different events is the same, pick
+                    # start at the first different place
                     pos, txt = prev.tokens[-1][:2]
                     start = pos + len(txt)
                     for n, o in zip(new.tokens, old.tokens):
                         if n != o:
                             break
                         start = o[0] + len(o[1])
+                    # throw away the old tree next to the last token we'll reuse
                     token = self.root.find_token(pos)
                     for p, i in token.ancestors_with_index():
                         del p[i+1:]
                     return start, token.parent, lexer, events
-                if start_token.previous_token():
-                    return self.get_start_context_events(start_token.pos, text)
+                # there were no corresponding events, go back further if
+                # that would make sense
+                if not start_token.previous_token():
+                    break
+        # clear the whole tree and start parsing from the beginning
         self.root.clear()
         lexer = Lexer([self.root.lexicon])
         return 0, self.root, lexer, lexer.events(text)
