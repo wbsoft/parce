@@ -224,7 +224,7 @@ class BasicTreeBuilder:
         The old tree is reused as much as possible.
 
         """
-        while start:
+        if start:
             # find the last token before the modified part, we will start parsing
             # before that token. If there are no tokens, we just start at 0.
             last_token = start_token = self.root.find_token_before(start)
@@ -271,8 +271,8 @@ class BasicTreeBuilder:
                     return start, token.parent, lexer, events
                 # there were no corresponding events, go back further if
                 # that would make sense
-                if not start_token.previous_token():
-                    break
+                if start_token.previous_token():
+                    return self.get_start_context_events(start, text)
         # clear the whole tree and start parsing from the beginning
         self.root.clear()
         lexer = Lexer([self.root.lexicon])
