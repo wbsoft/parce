@@ -118,14 +118,14 @@ class BasicTreeBuilder:
 
         # manage end, and record if there is text after the modified part (tail)
         end = start + removed
-        tail = start + added < len(text)
 
-        # record the position change for tail tokens that maybe are reused
+        # record the position change for tail tokens that may be reused
         offset = added - removed
 
         # If there remains text after the modified part,
         # we try to reuse the old tokens
-        if tail:
+        tail = False
+        if start + added < len(text):
             # find the first token after the modified part
             end_token = self.root.find_token_after(end)
             if end_token:
@@ -136,11 +136,8 @@ class BasicTreeBuilder:
                         if not t.group or (t.group and t is t.group[0]))
                 # store the new position the first tail token would get
                 for tail_token, tail_pos in tail_gen:
+                    tail = True
                     break
-                else:
-                    tail = False
-            else:
-                tail = False
 
         changes = self.changes
         lowest_start = start
