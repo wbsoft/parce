@@ -76,7 +76,12 @@ class Node:
     is_context = False
 
     def dump(self, file=None, style=None, depth=0):
-        """Display a graphical representation of the node and its contents."""
+        """Display a graphical representation of the node and its contents.
+
+        The file object defaults to stdout, and the style to "round". You can
+        choose any style that's in the ``DUMP_STYLES`` dictionary.
+
+        """
         i = 2
         d = DUMP_STYLES[style or DUMP_STYLE_DEFAULT]
         prefix = []
@@ -614,7 +619,6 @@ class Context(list, Node):
         return other is not self
 
     def dump(self, file=None, style=None, depth=0):
-        """Prints a nice graphical representation, for debugging purposes."""
         super().dump(file, style, depth)
         for n in self:
             n.dump(file, style, depth + 1)
