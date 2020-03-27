@@ -63,6 +63,7 @@ DUMP_STYLES = {
     "square":  (" │ ", "   ", " ├╴", " └╴"),
     "double":  (" ║ ", "   ", " ╠═", " ╚═"),
     "thick":   (" ┃ ", "   ", " ┣╸", " ┗╸"),
+    "flat":    ("│", " ", "├", "╰"),
 }
 
 DUMP_STYLE_DEFAULT = "round"
@@ -91,6 +92,9 @@ class Node:
             node = node.parent
             i = 0
         print("".join(reversed(prefix)) + repr(self), file=file)
+        if self.is_context:
+            for n in self:
+                n.dump(file, style, depth + 1)
 
     def parent_index(self):
         """Return our index in the parent.
@@ -617,11 +621,6 @@ class Context(list, Node):
         if isinstance(other, Lexicon):
             return not other.equals(self.lexicon)
         return other is not self
-
-    def dump(self, file=None, style=None, depth=0):
-        super().dump(file, style, depth)
-        for n in self:
-            n.dump(file, style, depth + 1)
 
     @property
     def pos(self):
