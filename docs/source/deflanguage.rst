@@ -93,7 +93,7 @@ There are, however, two action types provided by `parce`:
    match contained text).
 
    Language definitions included in `parce` use these standard actions.
-   A list of pre-defined standard actions is in the :mod:`parce` module.
+   For a list of pre-defined standard actions see :doc:`stdactions`.
 
 2. Dynamic actions. These actions are created dynamically when a rule's
    pattern has matched, and they can create zero or more Token instances with
