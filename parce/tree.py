@@ -580,7 +580,7 @@ class Context(list, Node):
 
     def __repr__(self):
         pos, end = self.pos, self.end
-        if pos is None:
+        if pos == end:
             pos = end = "?"
         name = self.lexicon and repr(self.lexicon)
         children = "child" if len(self) == 1 else "children"
@@ -608,15 +608,17 @@ class Context(list, Node):
 
     @property
     def pos(self):
-        """Return the position or our first token. Returns None if empty."""
+        """Return the position or our first token. Returns 0 if empty."""
         for t in tokens(self):
             return t.pos
+        return 0
 
     @property
     def end(self):
-        """Return the end position or our last token. Returns None if empty."""
+        """Return the end position or our last token. Returns 0 if empty."""
         for t in self.tokens_bw():
             return t.end
+        return 0
 
     def height(self):
         """Return the height of the tree (the longest distance to a descendant)."""
