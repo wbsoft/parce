@@ -61,55 +61,51 @@ Iteration yields the instance ifself and then the parents::
     Literal.String
     Literal
 
-And the `in` operator returns True when a standard action belongs to another
-one, i.e. the other one is one of the ancestors of the current action::
+And the :keyword:`in` operator returns True when a standard action belongs to
+another one, i.e. the other one is one of the ancestors of the current action::
 
     >>> String.DoubleQuotedString in String
     True
     >>> Literal in String
     False
 
-Finally, the `&` operator returns the common ancestor, if any.
+The :keyword:`in` operator also works with a string::
 
-This module defines the following pre-defined standard actions::
+    >>> 'String' in Literal.String.DoubleQuoted
+    True
+    >>> 'Literal' in String
+    True
 
-    Whitespace = action.StandardAction("Whitespace")
-    Text = action.StandardAction("Text")
+The last one could be surprising, but String is defined as ``Literal.String``::
 
-    Escape = action.StandardAction("Escape")
-    Keyword = action.StandardAction("Keyword")
-    Name = action.StandardAction("Name")
-    Literal = action.StandardAction("Literal")
-    Delimiter = action.StandardAction("Delimiter")
-    Comment = action.StandardAction("Comment")
-    Error = action.StandardAction("Error")
+    >>> String
+    Literal.String
 
-    Verbatim = Literal.Verbatim
-    String = Literal.String
-    Number = Literal.Number
-    Boolean = Literal.Boolean
-    Char = Literal.Char
-    Operator = Delimiter.Operator
-    Builtin = Name.Builtin
-    Function = Name.Function
-    Variable = Name.Variable
+Finally, the `&` operator returns the common ancestor, if any::
 
-(This list may be out of date, see __init__.py for the exact list.)
+    >>> String & Number
+    Literal
+    >>> String & Text
+    >>>
+
+
+The full list of pre-defined standard actions is in the :mod:`parce` module.
 
 
 DynamicAction
 =============
 
-If an instance of DynamicAction is encountered in a rule, its filter_actions()
-method is called to yield a (pos, text action) tuple. Normally the
-filter_actions() method simply calls back the filter_actions() method of the
-treebuilder with the new action, which could again be an Action instance.
+If an instance of DynamicAction is encountered in a rule, its replace()
+method is called to yield a (pos, text action) tuple. Sometimes the
+replace() method simply calls back the filter_actions() method of the
+lexer with the new action, which could again be a DynamicAction instance or
+another dynamic rule item.
 
 Nesting is possible in most cases, only some actions require the match object
 to be present; and such actions can't be used as default action, or inside
-subgroup_actions.
+subgroup actions.
 
-A DynamicAction object always holds all actions it is able to return in the
+A DynamicAction object always holds all actions it is able to return in its
 itemlists attribute. This is done so that it is possible to know all actions a
 Language can generate beforehand, and e.g. translate all the actions in a
 Language to other objects, which could even be methods or functions.
@@ -157,6 +153,8 @@ class StandardAction:
             node = node._parent
 
     def __contains__(self, other):
+        if isinstance(other, str):
+            return any(t._name == other for t in self)
         return any(t is self for t in other)
 
     def __and__(self, other):
