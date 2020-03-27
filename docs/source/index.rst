@@ -13,8 +13,9 @@ This manual documents `parce` version |release|.
    building.rst
    doc.rst
 
-   modoverview.rst
    langs.rst
+   stdactions.rst
+   modoverview.rst
 
 
 Indices and tables

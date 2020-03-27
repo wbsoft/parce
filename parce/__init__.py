@@ -34,79 +34,9 @@ is sufficient. Inside a language definition, it is easier to just use::
 
 to get easy access to all the actions and the helper functions.
 
-Besides the classes and functions below, the following standard actions are
-defined here. See the :py:mod:`action <parce.action>` module for more
-explanation abount standard actions.
-
-Generic actions:
-
-    .. py:data:: Whitespace
-    .. py:data:: Text
-
-Base actions:
-
-    .. py:data:: Comment
-    .. py:data:: Delimiter
-    .. py:data:: Error
-    .. py:data:: Escape
-    .. py:data:: Keyword
-    .. py:data:: Literal
-    .. py:data:: Name
-    .. py:data:: Pseudo
-    .. py:data:: Template
-
-Actions that derive from :py:data:`Name`:
-
-    .. py:data:: Name.Attribute
-    .. py:data:: Name.Builtin
-    .. py:data:: Name.Class
-    .. py:data:: Name.Command
-    .. py:data:: Name.Constant
-    .. py:data:: Name.Decorator
-    .. py:data:: Name.Exception
-    .. py:data:: Name.Function
-    .. py:data:: Name.Identifier
-    .. py:data:: Name.Macro
-    .. py:data:: Name.Method
-    .. py:data:: Name.Namespace
-    .. py:data:: Name.Object
-    .. py:data:: Name.Property
-    .. py:data:: Name.Symbol
-    .. py:data:: Name.Tag
-    .. py:data:: Name.Variable
-
-Actions that derive from :py:data:`Literal`:
-
-    .. py:data:: Verbatim (= Literal.Verbatim)
-    .. py:data:: String (= Literal.String)
-    .. py:data:: Number (= Literal.Number)
-    .. py:data:: Boolean (= Literal.Boolean)
-    .. py:data:: Char (= Literal.Char)
-    .. py:data:: Literal.Color
-    .. py:data:: Literal.Email
-    .. py:data:: Literal.Url
-
-Actions that derive from :py:data:`Literal.String`:
-
-    .. py:data:: String.Double
-    .. py:data:: String.Single
-    .. py:data:: String.Escape
-
-Other derived actions:
-
-    .. py:data:: Comment.Alert
-    .. py:data:: Operator (= Delimiter.Operator)
-    .. py:data:: Template.Preprocessed
-    .. py:data:: Text.Deleted
-    .. py:data:: Text.Inserted
-
-
-If you reference a non-existing sub-action, it is created.
-
-When highlighting, a standard action maps to a list of CSS classes with all the
-names lowercased. So String.Double maps to the ("literal", "string", "double")
-CSS classes. See the :py:mod:`theme <parce.theme>` module for more
-information.
+Besides the classes and functions below, a large amount of *standard actions* is
+also imported to the ``parce`` module namespace. See for the full list
+the :mod:`~parce.stdactions` module.
 
 """
 
@@ -116,7 +46,7 @@ from . import lexicon as lexicon_
 from .document import Cursor
 from .language import Language
 from .pkginfo import version, version_string
-
+from .stdactions import *
 
 class Document(treedocument.TreeDocumentMixin, document.Document):
     """A Document that automatically keeps its contents tokenized."""
@@ -463,65 +393,4 @@ default_target = object()   #: denotes a default target when no text matches
 
 #: used to suppress generating a token
 skip = action.SkipAction()
-
-# predefined standard actions
-# keep these in sync with the list above in the doc string.
-Whitespace = action.StandardAction("Whitespace")
-Text = action.StandardAction("Text")
-
-Comment = action.StandardAction("Comment")
-Delimiter = action.StandardAction("Delimiter")
-Error = action.StandardAction("Error")
-Escape = action.StandardAction("Escape")
-Keyword = action.StandardAction("Keyword")
-Literal = action.StandardAction("Literal")
-Name = action.StandardAction("Name")
-Pseudo = action.StandardAction("Pseudo")
-Template = action.StandardAction("Template")
-
-# Actions that derive from Name
-
-Name.Attribute
-Name.Builtin
-Name.Class
-Name.Command
-Name.Constant
-Name.Decorator
-Name.Exception
-Name.Function
-Name.Identifier
-Name.Macro
-Name.Method
-Name.Namespace
-Name.Object
-Name.Property
-Name.Symbol
-Name.Tag
-Name.Variable
-
-# Actions that derive from Literal:
-
-Verbatim = Literal.Verbatim
-Value = Literal.Value
-String = Literal.String
-Number = Literal.Number
-Boolean = Literal.Boolean
-Char = Literal.Char
-Literal.Color
-Literal.Email
-Literal.Url
-
-# Actions that derive from String:
-
-String.Double
-String.Single
-String.Escape
-
-# Other derived actions:
-
-Comment.Alert
-Operator = Delimiter.Operator
-Template.Preprocessed
-Text.Deleted
-Text.Inserted
 
