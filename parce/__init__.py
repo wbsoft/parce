@@ -35,8 +35,8 @@ is sufficient. Inside a language definition, it is easier to just use::
 to get easy access to all the actions and the helper functions.
 
 Besides the classes and functions below, a large amount of *standard actions* is
-also imported to the ``parce`` module namespace. See for the full list
-the :mod:`~parce.stdactions` module.
+also available in the ``parce`` module namespace. See for the full list
+:doc:`stdactions`.
 
 """
 
@@ -47,6 +47,7 @@ from .document import Cursor
 from .language import Language
 from .pkginfo import version, version_string
 from .stdactions import *
+
 
 class Document(treedocument.TreeDocumentMixin, document.Document):
     """A Document that automatically keeps its contents tokenized."""

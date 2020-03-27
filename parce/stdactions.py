@@ -28,6 +28,8 @@ from . import action
 # ------------------------------------------------------------------------
 
 
+# Base actions:
+
 Whitespace = action.StandardAction("Whitespace")
 Text = action.StandardAction("Text")
 
@@ -41,7 +43,7 @@ Name = action.StandardAction("Name")
 Pseudo = action.StandardAction("Pseudo")
 Template = action.StandardAction("Template")
 
-# Actions that derive from Name
+# Actions that derive from Name:
 
 Name.Attribute
 Name.Builtin
