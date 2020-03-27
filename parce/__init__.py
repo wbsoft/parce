@@ -77,25 +77,29 @@ Actions that derive from :py:data:`Name`:
 
 Actions that derive from :py:data:`Literal`:
 
-    .. py:data:: Verbatim( = Literal.Verbatim)
-    .. py:data:: String( = Literal.String)
-    .. py:data:: Number( = Literal.Number)
-    .. py:data:: Boolean( = Literal.Boolean)
-    .. py:data:: Char( = Literal.Char)
+    .. py:data:: Verbatim (= Literal.Verbatim)
+    .. py:data:: String (= Literal.String)
+    .. py:data:: Number (= Literal.Number)
+    .. py:data:: Boolean (= Literal.Boolean)
+    .. py:data:: Char (= Literal.Char)
+    .. py:data:: Literal.Color
+    .. py:data:: Literal.Email
+    .. py:data:: Literal.Url
+
+Actions that derive from :py:data:`Literal.String`:
+
+    .. py:data:: String.Double
+    .. py:data:: String.Single
+    .. py:data:: String.Escape
 
 Other derived actions:
 
     .. py:data:: Comment.Alert
-    .. py:data:: Literal.Color
-    .. py:data:: Literal.Email
-    .. py:data:: Literal.Url
-    .. py:data:: Operator(= Delimiter.Operator)
-    .. py:data:: String.Double
-    .. py:data:: String.Single
-    .. py:data:: String.Escape
+    .. py:data:: Operator (= Delimiter.Operator)
     .. py:data:: Template.Preprocessed
     .. py:data:: Text.Deleted
     .. py:data:: Text.Inserted
+
 
 If you reference a non-existing sub-action, it is created.
 
@@ -503,19 +507,21 @@ String = Literal.String
 Number = Literal.Number
 Boolean = Literal.Boolean
 Char = Literal.Char
+Literal.Color
+Literal.Email
+Literal.Url
+
+# Actions that derive from String:
+
+String.Double
+String.Single
+String.Escape
 
 # Other derived actions:
 
 Comment.Alert
-Literal.Color
-Literal.Email
-Literal.Url
 Operator = Delimiter.Operator
-String.Double
-String.Single
-String.Escape
 Template.Preprocessed
 Text.Deleted
 Text.Inserted
-
 
