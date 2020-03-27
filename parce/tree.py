@@ -48,7 +48,6 @@ See also the documentation for Token and Context.
 """
 
 
-import sys
 import itertools
 
 from parce import util
@@ -58,6 +57,17 @@ from parce.lexer import Event
 from parce.target import TargetFactory
 
 
+DUMP_STYLES = {
+    "ascii":   (" | ", "   ", " |-", " `-"),
+    "round":   (" │ ", "   ", " ├╴", " ╰╴"),
+    "square":  (" │ ", "   ", " ├╴", " └╴"),
+    "double":  (" ║ ", "   ", " ╠═", " ╚═"),
+    "thick":   (" ┃ ", "   ", " ┣╸", " ┗╸"),
+}
+
+DUMP_STYLE_DEFAULT = "round"
+
+
 class Node:
     """Methods that are shared by Token and Context."""
     __slots__ = ()
@@ -65,14 +75,17 @@ class Node:
     is_token = False
     is_context = False
 
-    def dump(self, file=None, depth=0):
+    def dump(self, file=None, style=None, depth=0):
         """Display a graphical representation of the node and its contents."""
-        prefix = (" ╰╴" if self.is_last() else " ├╴") if depth else ""
+        i = 2
+        d = DUMP_STYLES[style or DUMP_STYLE_DEFAULT]
+        prefix = []
         node = self
-        for i in range(depth - 1):
+        for _ in range(depth):
+            prefix.append(d[i + int(node.is_last())])
             node = node.parent
-            prefix = ("   " if node.is_last() else " │ ") + prefix
-        print(prefix + repr(self), file=file)
+            i = 0
+        print("".join(reversed(prefix)) + repr(self), file=file)
 
     def parent_index(self):
         """Return our index in the parent.
@@ -600,11 +613,11 @@ class Context(list, Node):
             return not other.equals(self.lexicon)
         return other is not self
 
-    def dump(self, file=None, depth=0):
+    def dump(self, file=None, style=None, depth=0):
         """Prints a nice graphical representation, for debugging purposes."""
-        super().dump(file, depth)
+        super().dump(file, style, depth)
         for n in self:
-            n.dump(file, depth + 1)
+            n.dump(file, style, depth + 1)
 
     @property
     def pos(self):
