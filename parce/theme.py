@@ -166,7 +166,7 @@ class Theme:
     @util.cached_method
     def textformat(self, action):
         """Return the TextFormat for the specified action."""
-        classes = css_classes(action)
+        classes = repr(action).lower().split('.')
         return self.TextFormat(self.style.select_class(*classes).properties())
 
     def tokens(self, theme_context, slices):
@@ -610,10 +610,5 @@ class TextFormat:
             if self.font_weight is None:
                 self.font_weight = numvalues[0][0]
             self.font_size, self.font_size_unit = numvalues[1]
-
-
-def css_classes(action):
-    """Return a tuple of lower-case CSS class names for the specified standard action."""
-    return tuple(a._name.lower() for a in action)
 
 
