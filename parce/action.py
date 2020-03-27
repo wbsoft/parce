@@ -88,8 +88,7 @@ Finally, the `&` operator returns the common ancestor, if any::
     >>> String & Text
     >>>
 
-
-The full list of pre-defined standard actions is in the :mod:`parce` module.
+See for the full list of pre-defined standard actions :doc:`stdactions`.
 
 
 DynamicAction
