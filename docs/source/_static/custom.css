@@ -8,12 +8,14 @@ div.body > div.highlight {
 }
 
 /* add extra spacing above class and function definitions */
-div.section > dl.class {
-    padding-top: 28px;
-}
+@media screen {
+    div.section > dl.class {
+        margin-top: 40px;
+    }
 
-div.section > dl.function {
-    padding-top: 18px;
+    div.section > dl.function {
+        margin-top: 30px;
+    }
 }
 
 /* decrease font size in sidebar */
