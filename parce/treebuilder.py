@@ -43,6 +43,91 @@ from parce.lexer import Lexer
 from parce.tree import Context, Token, _GroupToken
 
 
+def build_tree(root_lexicon, text, pos=0):
+    """Build and return a tree in one go."""
+    root = context = Context(root_lexicon, None)
+    lexer = Lexer([root_lexicon])
+    for e in lexer.events(text, pos):
+        if e.target:
+            for _ in range(e.target.pop, 0):
+                context = context.parent
+            for lexicon in e.target.push:
+                context = Context(lexicon, context)
+                context.parent.append(context)
+        if len(e.tokens) > 1:
+            tokens = tuple(_GroupToken(context, *t) for t in e.tokens)
+            for t in tokens:
+                t.group = tokens
+        else:
+            tokens = Token(context, *e.tokens[0]),
+        context.extend(tokens)
+    return root
+
+
+def find_insert_position(tree, text, start):
+    """Return the position (will be < start) where new tokens should be inserted.
+
+    If the returned position is 0, you can start parsing from the beginning
+    using an empty root context.
+
+    If the returned position > 0, there are tokens to the left of the position
+    that can remain. You should start parsing at the left of the last remaining
+    token, to get the correct target for the next token, for example::
+
+        start = find_insert_position(tree, text, start)
+        if start:
+            token = tree.find_token_before(start)
+            if token.group:
+                token = token.group[0]
+            start = token.pos
+        # Start parsing at start.
+
+    """
+    while start:
+        last_token = start_token = tree.find_token_before(start)
+        if last_token:
+            # go back at most 10 tokens, to the beginning of a group; if we
+            # are at the first token just return 0.
+            for start_token in itertools.islice(last_token.backward(), 10):
+                pass
+            if start_token.group:
+                start_token = start_token.group[0]
+            start = start_token.pos if start_token.previous_token() else 0
+            lexer = get_lexer(start_token) if start else Lexer([tree.lexicon])
+            events = lexer.events(text, start)
+            # compare the new events with the old tokens; at least one
+            # should be the same; if not, go back further if possible
+            old_events = start_token.events_until_including(last_token)
+            one = False
+            for old, new in zip(old_events, events):
+                if old != new:
+                    if one or not start:
+                        return old.tokens[0][0]
+                    break
+                one = True                  # at least one is the same
+            if one:
+                return last_token.end       # all events were the same
+    return 0
+
+
+def get_lexer(token):
+    """Get a Lexer initialized at the token's ancestry."""
+    lexicons = [p.lexicon for p in token.ancestors()]
+    lexicons.reverse()
+    return Lexer(lexicons)
+
+
+def new_tree(token):
+    """Return an empty context with the same ancestry as the token's."""
+    c = context = Context(token.parent.lexicon, None)
+    for p in token.parent.ancestors():
+        n = Context(p.lexicon, None)
+        c.parent = n
+        n.append(c)
+        c = n
+    return context
+
+
 class BasicTreeBuilder:
     """Build a tree directly from parsing the text.
 
