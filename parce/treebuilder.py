@@ -40,7 +40,7 @@ import itertools
 import threading
 
 from parce.lexer import Lexer
-from parce.tree import Context, Token, _GroupToken
+from parce.tree import Context, Token, _GroupToken, tokens
 
 
 def build_tree(root_lexicon, text, pos=0):
@@ -322,13 +322,9 @@ class BasicTreeBuilder:
         raise RuntimeError("shouldn't come here")
 
     def replacement_tree(self, tree, start, end, lexicons):
-        """Return context to insert, start_trail, end_trail, new tree, offset."""
-        t = tree.last_token()
-        pos = t.group[0].pos if t.group() else t.pos
-        offset = pos - end
-
+        """Return context to insert, start_trail, end_trail, new tree."""
         if start == 0 and lexicons is not None:
-            return self.root, [], [], tree, offset
+            return self.root, [], [], tree
         if start:
             start_trail = self.root.find_token_left_with_trail(start)[1]
         else:
@@ -347,12 +343,72 @@ class BasicTreeBuilder:
                 tree = tree[0]
             else:
                 break
-        return context, start_trail[i:], end_trail[i:], tree, offset
+        return context, start_trail[i:], end_trail[i:], tree
 
-    def updated_operations(self, context, start_trail, end_trail, tree, offset):
-        """Return a list of operations to perform the update of the tree."""
-        # TODO implement
+    def update(self, text, start, removed, added):
+        """TEMP text replacement function for rebuild()."""
+        tree, start, end, lexicons = self.build_new(text, start, removed, added)
+        context, start_trail, end_trail, tree = self.replacement_tree(tree, start, end, lexicons)
 
+        # compute offset
+        t = tree.last_token()
+        pos = t.group[0].pos if t.group else t.pos
+        offset = pos - end
+        end = pos   # new end pos + offset
+
+        if end_trail:
+            # remove last token (group) in the new tree
+            if t.group:
+                del t.parent[-len(t.group):]
+            else:
+                del t.parent[-1]
+            # join stuff after end_trail with tree
+            c = context
+            t = tree
+            end_trail[-1] -= 1
+            for i in end_trail:
+                l = len(t) - 1
+                t.extend(c[i+1:])
+                for n in c[i+1:]:
+                    n.parent = t
+                if offset:
+                    for n in tokens(c[i+1:]):
+                        n.pos += offset
+                t = t[l]
+                c = c[i]
+
+        if start_trail:
+            # remove first token (group) in new tree
+            t = tree.first_token()
+            if t.group:
+                del t.parent[:len(t.group)]
+            else:
+                del t.parent[0]
+            # replace stuff after start_trail with tree
+            c = context
+            t = tree
+            for i in start_trail[:-1]:
+                c[i+1:] = t[1:]
+                for n in t[1:]:
+                    n.parent = c
+                t = t[0]
+                c = c[i]
+            i = start_trail[-1]
+            c[i:] = t
+            for n in t:
+                n.parent = c
+        else:
+            context[:] = tree
+
+        if offset:
+            for p, i in context.ancestors_with_index():
+                for t in tokens(p[i+1:]):
+                    t.pos += offset
+
+        self.start = start
+        self.end = end
+        if lexicons is not None:
+            self.lexicons = lexicons
 
     def rebuild(self, text, start, removed, added):
         """Tokenize the modified part of the text again and update the tree.
