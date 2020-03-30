@@ -325,22 +325,22 @@ class BasicTreeBuilder:
         if start == 0 and lexicons is not None:
             return self.root, [], [], tree
         if start:
-            start_trail = []
-        else:
             start_trail = self.root.find_token_left_with_trail(start)[1]
             start_trail[-1] += 1    # do not include the token that remains
-        if lexicons is not None:
-            end_trail = []
         else:
+            start_trail = []
+        if lexicons is None:
             end_trail = self.root.find_token_with_trail(end)[1]
+        else:
+            end_trail = []
 
         # find the first context that changes, adjust trails
         context = self.root
+        i = 0
         for i, (s, e) in enumerate(zip(start_trail, end_trail)):
-            if s == e:
+            if s == e and tree.is_context and len(tree) == 1:
                 context = context[s]
                 tree = tree[0]
-                assert tree.is_context and len(tree.parent) == 1
             else:
                 break
         return context, start_trail[i:], end_trail[i:], tree
