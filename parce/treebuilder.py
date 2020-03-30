@@ -177,6 +177,69 @@ class BasicTreeBuilder:
         """
         self.rebuild(text, 0, 0, len(text))
 
+    def build_new(self, text, start, removed, added):
+        """Build a new tree without yet modifying the current tree.
+
+        Returns tree, start, end, lexicons. If lexicons is None,
+        the old list of open lexicons is still relevant.
+
+        start and end are the insert positions in the old tree.
+
+        """
+        # manage end, and record if there is text after the modified part (tail)
+        end = start + removed
+
+        # record the position change for tail tokens that may be reused
+        offset = added - removed
+
+        if not self.root.lexicon:
+            return Context(self.root.lexicon, None), start, start + added, None
+
+        # If there remains text after the modified part,
+        # we try to reuse the old tokens
+        tail = False
+        if start + added < len(text):
+            # find the first token after the modified part
+            end_token = self.root.find_token_after(end)
+            if end_token:
+                tail_gen = (t for t in end_token.forward_including())
+                        if not t.group or (t.group and t is t.group[0])
+                # store the new position the first tail token would get
+                for tail_token, tail_pos in tail_gen:
+                    tail = True
+                    break
+
+        lowest_start = start
+        while True:
+            start = find_insert_position(self.root, text, start)
+            if start:
+                token = tree.find_token_before(start)
+                if token.group:
+                    token = token.group[0]
+                start = token.pos
+                context = new_tree(token)
+                lexer = get_lexer(token)
+            else:
+                context = Context(self.root.lexicon, None)
+                lexer = Lexer([self.root.lexicon])
+        ##TODO tail
+            for e in lexer.events(text, pos):
+                if e.target:
+                    for _ in range(e.target.pop, 0):
+                        context = context.parent
+                    for lexicon in e.target.push:
+                        context = Context(lexicon, context)
+                        context.parent.append(context)
+                if len(e.tokens) > 1:
+                    tokens = tuple(_GroupToken(context, *t) for t in e.tokens)
+                    for t in tokens:
+                        t.group = tokens
+                else:
+                    tokens = Token(context, *e.tokens[0]),
+                context.extend(tokens)
+
+
+
     def rebuild(self, text, start, removed, added):
         """Tokenize the modified part of the text again and update the tree.
 
