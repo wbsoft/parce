@@ -257,10 +257,11 @@ class BasicTreeBuilder:
                     lexer = get_lexer(token)
                     pos = token.pos
                     tree = context.root()
+                    lowest_start = min(lowest_start, token.end)
                 else:
                     tree = context = Context(self.root.lexicon, None)
                     lexer = Lexer([self.root.lexicon])
-                    pos = 0
+                    pos = lowest_start = 0
             # start parsing
             for e in lexer.events(text, pos):
                 if e.target:
@@ -287,7 +288,7 @@ class BasicTreeBuilder:
                             tail = False
                     if (pos == tail.pos and tokens[0].equals(tail)):
                         # we can reuse the tail from tail_pos
-                        return tree, start, tail.pos, None
+                        return tree, lowest_start, tail.pos, None
                 if changes:
                     # handle changes
                     c = self.get_changes()
@@ -316,8 +317,33 @@ class BasicTreeBuilder:
                         break # break the for loop to restart at new start pos
             else:
                 # we ran till the end, also return the open lexicons
-                return tree, start, len(text), lexer.lexicons[1:]
+                return tree, lowest_start, len(text), lexer.lexicons[1:]
         raise RuntimeError("shouldn't come here")
+
+    def replacement_tree(self, tree, start, end, lexicons):
+        """Return context to insert, start_trail, end_trail, new tree."""
+        if start == 0 and lexicons is not None:
+            return self.root, [], [], tree
+        if start:
+            start_trail = []
+        else:
+            start_trail = self.root.find_token_left_with_trail(start)[1]
+            start_trail[-1] += 1    # do not include the token that remains
+        if lexicons is not None:
+            end_trail = []
+        else:
+            end_trail = self.root.find_token_with_trail(end)[1]
+
+        # find the first context that changes, adjust trails
+        context = self.root
+        for i, (s, e) in enumerate(zip(start_trail, end_trail)):
+            if s == e:
+                context = context[s]
+                tree = tree[0]
+                assert tree.is_context and len(tree.parent) == 1
+            else:
+                break
+        return context, start_trail[i:], end_trail[i:], tree
 
     def rebuild(self, text, start, removed, added):
         """Tokenize the modified part of the text again and update the tree.
