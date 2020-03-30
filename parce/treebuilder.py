@@ -85,28 +85,29 @@ def find_insert_position(tree, text, start):
     """
     while start:
         last_token = start_token = tree.find_token_before(start)
-        if last_token:
-            # go back at most 10 tokens, to the beginning of a group; if we
-            # are at the first token just return 0.
-            for start_token in itertools.islice(last_token.backward(), 10):
-                pass
-            if start_token.group:
-                start_token = start_token.group[0]
-            start = start_token.pos if start_token.previous_token() else 0
-            lexer = get_lexer(start_token) if start else Lexer([tree.lexicon])
-            events = lexer.events(text, start)
-            # compare the new events with the old tokens; at least one
-            # should be the same; if not, go back further if possible
-            old_events = start_token.events_until_including(last_token)
-            one = False
-            for old, new in zip(old_events, events):
-                if old != new:
-                    if one or not start:
-                        return old.tokens[0][0]
-                    break
-                one = True                  # at least one is the same
-            if one:
-                return last_token.end       # all events were the same
+        if not last_token:
+            return 0
+        # go back at most 10 tokens, to the beginning of a group; if we
+        # are at the first token just return 0.
+        for start_token in itertools.islice(last_token.backward(), 10):
+            pass
+        if start_token.group:
+            start_token = start_token.group[0]
+        start = start_token.pos if start_token.previous_token() else 0
+        lexer = get_lexer(start_token) if start else Lexer([tree.lexicon])
+        events = lexer.events(text, start)
+        # compare the new events with the old tokens; at least one
+        # should be the same; if not, go back further if possible
+        old_events = start_token.events_until_including(last_token)
+        one = False
+        for old, new in zip(old_events, events):
+            if old != new:
+                if one or not start:
+                    return old.tokens[0][0]
+                break
+            one = True                  # at least one is the same
+        if one:
+            return last_token.end       # all events were the same
     return 0
 
 
