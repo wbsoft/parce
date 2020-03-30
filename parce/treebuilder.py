@@ -190,17 +190,22 @@ class BasicTreeBuilder:
     def build_new(self, text, start, removed, added):
         """Build a new tree without yet modifying the current tree.
 
-        Returns tree, start, end, lexicons.
+        Returns ``tree``, ``start``, ``end``, ``lexicons``; ``start`` and
+        ``end`` are the insert positions in the old tree.
 
-        start and end are the insert positions in the old tree.
+        The new ``tree`` is intended to replace a part of, or the whole old
+        tree. If ``start`` == 0 and ``lexicons`` is not None; the whole tree
+        can be replaced. (In this case; check the root lexicon of the returned
+        tree, it might have changed.)
 
-        If start > 0, tokens in the old tree before start are to
-        be preserved, and the first token (group) in the new tree can be discarded (it
-        is the same as the last token (group) before start in the old tree).
+        If ``start`` > 0, tokens in the old tree before start are to be
+        preserved, and the first token (group) in the new tree can be discarded
+        (it is the same as the last token (group) before start in the old
+        tree).
 
-        If lexicons is None, old tail (tokens right of end) must be reused, and
-        the old list of open lexicons is still relevant. In this case, the last
-        token (group) in the new tree can be discarded, and the returned
+        If ``lexicons`` is None, old tail (tokens right of end) must be reused,
+        and the old list of open lexicons is still relevant. In this case, the
+        last token (group) in the new tree can be discarded, and the returned
         ``end`` position is the position of the first token (group) in the old
         tree that can be reused. (The new end pos is the position of the last
         token (group) in the new tree.)
@@ -222,20 +227,17 @@ class BasicTreeBuilder:
             # find the first token after the modified part
             end_token = self.root.find_token_after(end)
             if end_token:
-                tail_gen = (t for t in end_token.forward_including())
-                        if not t.group or (t.group and t is t.group[0])
+                tail_gen = (t for t in end_token.forward_including()
+                        if not t.group or (t.group and t is t.group[0]))
                 # store the new position the first tail token would get
-                for tail_token, tail_pos in tail_gen:
-                    tail = True
+                for tail in tail_gen:
                     break
 
         lowest_start = start
         changes = self.changes
         tree = None
-        busy = True
-        while busy:
-
-            ## when restarting, see if we can reuse (part of) the new tree
+        while True:
+            # when restarting, see if we can reuse (part of) the new tree
             if tree:
                 token = find_insert_token(tree, text, start)
                 if token:
@@ -247,9 +249,10 @@ class BasicTreeBuilder:
                     del context[-1]
                 else:
                     tree = None
-            ## find insertion spot in old tree
+            # find insertion spot in old tree
             if not tree:
                 token = find_insert_token(self.root, text, start)
+                if token:
                     context = new_tree(token)
                     lexer = get_lexer(token)
                     pos = token.pos
@@ -258,7 +261,7 @@ class BasicTreeBuilder:
                     tree = context = Context(self.root.lexicon, None)
                     lexer = Lexer([self.root.lexicon])
                     pos = 0
-            ## start parsing
+            # start parsing
             for e in lexer.events(text, pos):
                 if e.target:
                     for _ in range(e.target.pop, 0):
@@ -274,24 +277,47 @@ class BasicTreeBuilder:
                     tokens = Token(context, *e.tokens[0]),
                 context.extend(tokens)
                 if tail:
+                    # handle tail
                     pos = tokens[0].pos - offset
-                    if pos > tail_pos:
-                        for tail_token, tail_pos in tail_gen:
-                            if tail_pos >= pos:
+                    if pos > tail.pos:
+                        for tail in tail_gen:
+                            if tail.pos >= pos:
                                 break
                         else:
                             tail = False
-                    if (pos == tail_pos and tokens[0].equals(tail_token)):
+                    if (pos == tail.pos and tokens[0].equals(tail)):
                         # we can reuse the tail from tail_pos
-                        return tree, start, tail_pos, None
+                        return tree, start, tail.pos, None
                 if changes:
-                    pass ### handle changes
-
+                    # handle changes
+                    c = self.get_changes()
+                    if c:
+                        # break out and adjust the current tokenizing process
+                        text = c.text
+                        start = c.position
+                        if c.root_lexicon != False:
+                            tree.lexicon = c.root_lexicon
+                            start = 0
+                            tail = False
+                        elif tail:
+                            # reuse old tail?
+                            new_tail_pos = start + c.added
+                            if new_tail_pos >= len(text):
+                                tail = False
+                            else:
+                                offset += c.added - c.removed
+                                new_tail_pos -= offset
+                                if new_tail_pos > tail.pos:
+                                    for tail in tail_gen:
+                                        if tail.pos >= new_tail_pos:
+                                            break
+                                    else:
+                                        tail = False
+                        break # break the for loop to restart at new start pos
             else:
                 # we ran till the end, also return the open lexicons
                 return tree, start, len(text), lexer.lexicons[1:]
-        return tree, start, end, None
-
+        raise RuntimeError("shouldn't come here")
 
     def rebuild(self, text, start, removed, added):
         """Tokenize the modified part of the text again and update the tree.
