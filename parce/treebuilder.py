@@ -116,9 +116,10 @@ def find_insert_token(tree, text, start):
     start = find_insert_position(tree, text, start)
     if start:
         token = tree.find_token_before(start)
-        if token.group:
-            token = token.group[0]
-        return token
+        if token:
+            if token.group:
+                token = token.group[0]
+            return token
 
 
 def get_lexer(token):
@@ -348,20 +349,34 @@ class BasicTreeBuilder:
     def update(self, text, start, removed, added):
         """TEMP text replacement function for rebuild()."""
         tree, start, end, lexicons = self.build_new(text, start, removed, added)
+        print("NEW");tree.dump()
         context, start_trail, end_trail, tree = self.replacement_tree(tree, start, end, lexicons)
-
-        # compute offset
-        t = tree.last_token()
-        pos = t.group[0].pos if t.group else t.pos
-        offset = pos - end
-        end = pos   # new end pos + offset
-
-        if end_trail:
+        print("NEW2");tree.dump()
+        if lexicons is None:
+            # compute offset
+            t = tree.last_token()
+            pos = t.group[0].pos if t.group else t.pos
+            offset = pos - end
+            end = pos   # new end pos + offset
             # remove last token (group) in the new tree
             if t.group:
                 del t.parent[-len(t.group):]
             else:
                 del t.parent[-1]
+        else:
+            offset = 0
+
+        if start:
+            # remove first token (group) in new tree
+            t = tree.first_token()
+            if t.group:
+                del t.parent[:len(t.group)]
+            else:
+                del t.parent[0]
+
+        print("NEW3");tree.dump()
+
+        if end_trail:
             # join stuff after end_trail with tree
             c = context
             t = tree
@@ -377,13 +392,9 @@ class BasicTreeBuilder:
                 t = t[l]
                 c = c[i]
 
+        print("NEW4");tree.dump()
+
         if start_trail:
-            # remove first token (group) in new tree
-            t = tree.first_token()
-            if t.group:
-                del t.parent[:len(t.group)]
-            else:
-                del t.parent[0]
             # replace stuff after start_trail with tree
             c = context
             t = tree
@@ -394,11 +405,13 @@ class BasicTreeBuilder:
                 t = t[0]
                 c = c[i]
             i = start_trail[-1]
-            c[i:] = t
+            c[i+1:] = t
             for n in t:
                 n.parent = c
         else:
             context[:] = tree
+        print("start trail", bool(start_trail))
+        print("NEW5 (context)");context.dump()
 
         if offset:
             for p, i in context.ancestors_with_index():
