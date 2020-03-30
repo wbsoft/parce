@@ -326,7 +326,6 @@ class BasicTreeBuilder:
             return self.root, [], [], tree
         if start:
             start_trail = self.root.find_token_left_with_trail(start)[1]
-            start_trail[-1] += 1    # do not include the token that remains
         else:
             start_trail = []
         if lexicons is None:
@@ -344,6 +343,15 @@ class BasicTreeBuilder:
             else:
                 break
         return context, start_trail[i:], end_trail[i:], tree
+
+    def updated_slices(self, context, start_trail, end_trail, tree):
+        """Performs the replacement of the new tree in context along specified trails."""
+        # make a list of slices (context, remove_slice, insert_nodes)
+        slices = []
+        # TODO implement
+
+        return slices
+
 
     def rebuild(self, text, start, removed, added):
         """Tokenize the modified part of the text again and update the tree.
@@ -675,30 +683,6 @@ class TreeBuilder(BasicTreeBuilder):
 
         """
         pass
-
-    def updated_slices(self):
-        """Yield (context, slice) tuples denoting the last update.
-
-        All Contexts that might have been touched are yielded, not skipping
-        empty slices.
-
-        """
-        start_token = self.root.find_token_before(self.start)
-        start = start_token.pos if start_token else 0
-        end_token = self.root.find_token_after(self.end)
-        end = end_token.end if end_token else None
-        context, start_trail, end_trail = self.root.context_trails(start, end)
-        if context:
-            slices = list(context.slices(start_trail, end_trail, False))
-            if slices:
-                if start > 0:
-                    first = slices[0][1]
-                    slices[0] = (slices[0][0], slice(first.start + 1, first.stop))
-                if end is not None:
-                    last = slices[-1][1]
-                    if last.stop is not None:
-                        slices[-1] = (slices[-1][0], slice(last.start, last.stop - 1))
-                yield from slices
 
 
 class BackgroundTreeBuilder(TreeBuilder):
