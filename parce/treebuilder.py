@@ -322,9 +322,13 @@ class BasicTreeBuilder:
         raise RuntimeError("shouldn't come here")
 
     def replacement_tree(self, tree, start, end, lexicons):
-        """Return context to insert, start_trail, end_trail, new tree."""
+        """Return context to insert, start_trail, end_trail, new tree, offset."""
+        t = tree.last_token()
+        pos = t.group[0].pos if t.group() else t.pos
+        offset = pos - end
+
         if start == 0 and lexicons is not None:
-            return self.root, [], [], tree
+            return self.root, [], [], tree, offset
         if start:
             start_trail = self.root.find_token_left_with_trail(start)[1]
         else:
@@ -343,12 +347,11 @@ class BasicTreeBuilder:
                 tree = tree[0]
             else:
                 break
-        return context, start_trail[i:], end_trail[i:], tree
+        return context, start_trail[i:], end_trail[i:], tree, offset
 
-    def updated_operations(self, context, start_trail, end_trail, tree):
+    def updated_operations(self, context, start_trail, end_trail, tree, offset):
         """Return a list of operations to perform the update of the tree."""
         # TODO implement
-
 
 
     def rebuild(self, text, start, removed, added):
