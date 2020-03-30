@@ -344,13 +344,10 @@ class BasicTreeBuilder:
                 break
         return context, start_trail[i:], end_trail[i:], tree
 
-    def updated_slices(self, context, start_trail, end_trail, tree):
-        """Performs the replacement of the new tree in context along specified trails."""
-        # make a list of slices (context, remove_slice, insert_nodes)
-        slices = []
+    def updated_operations(self, context, start_trail, end_trail, tree):
+        """Return a list of operations to perform the update of the tree."""
         # TODO implement
 
-        return slices
 
 
     def rebuild(self, text, start, removed, added):
