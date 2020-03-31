@@ -820,5 +820,5 @@ def _find_token_before(context, pos):
     if i > 0:
         i -= 1
         n = context[i]
-        return find_token_before(n, pos) if n.is_context else n
+        return _find_token_before(n, pos) if n.is_context else n
 
