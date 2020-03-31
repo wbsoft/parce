@@ -186,7 +186,7 @@ class LilyPond(Language):
         yield RE_LILYPOND_COMMAND, mapgroupmember(1, (
             (lilypond_words.keywords, Keyword),
             (lilypond_words.music_commands, Name.Builtin),
-            (lilypond_words.articulations_set, Articulation),
+            (lilypond_words.all_articulations, Articulation),
             ), Name.Command)
 
     # ------------------ music ----------------------
@@ -289,7 +289,7 @@ class LilyPond(Language):
             itemlist = Name.Pitch
         if else_itemlist is None:
             else_itemlist = Name.Symbol
-        return ifmember(lilypond_words.all_pitchnames, itemlist, else_itemlist)
+        return ifmember(lilypond_words.all_pitch_names, itemlist, else_itemlist)
 
     @lexicon
     def pitch(cls):
@@ -378,7 +378,7 @@ class LilyPond(Language):
         yield r"<<", Delimiter.OpenBrace, cls.drummode_simultaneous
         yield r"\}|>>", Delimiter.CloseBrace, -1
         yield RE_LILYPOND_REST, Rest
-        yield RE_LILYPOND_PITCHWORD, ifmember(lilypond_words.drum_pitchnames_set, Pitch.Drum, Name.Symbol)
+        yield RE_LILYPOND_PITCHWORD, ifmember(lilypond_words.drum_pitch_names_set, Pitch.Drum, Name.Symbol)
         yield from cls.music()
 
     @lexicon
@@ -460,7 +460,7 @@ class LilyPond(Language):
     def get_markup_argument_count(cls, command):
         """Return the number of arguments the markup command (without \\) expects."""
         for i in range(5):
-            if command in lilypond_words.markupcommands_nargs[i]:
+            if command in lilypond_words.markup_commands_nargs[i]:
                 return i
         return 1    # assume a user command has no arguments
 
@@ -476,7 +476,7 @@ class LilyPond(Language):
     @classmethod
     def get_markup_action(cls):
         r"""Get the action for a command in \markup { }."""
-        return ifmember(lilypond_words.markupcommands, Name.Function.Markup, Name.Function)
+        return ifmember(lilypond_words.markup_commands, Name.Function.Markup, Name.Function)
 
     # -------------- Scheme ---------------------
     @classmethod

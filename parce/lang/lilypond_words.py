@@ -64,7 +64,7 @@ keywords = (
 )
 
 
-markupcommands_nargs = (
+markup_commands_nargs = (
 # no arguments
 (
     'doubleflat',
@@ -219,7 +219,7 @@ markupcommands_nargs = (
 ),
 )
 
-markupcommands = sum(markupcommands_nargs, ())
+markup_commands = sum(markup_commands_nargs, ())
 
 
 music_commands = (
@@ -662,16 +662,18 @@ repeat_scripts = (
 )
 
 
-articulations_set = frozenset(
-    articulations + ornaments + fermatas + instrument_scripts + repeat_scripts)
-
-
 ancient_scripts = (
     'ictus',
     'accentus',
     'circulus',
     'semicirculus',
     'signumcongruentiae',
+)
+
+
+all_articulations = (
+    articulations + ornaments + fermatas + instrument_scripts +
+    repeat_scripts + ancient_scripts
 )
 
 
@@ -877,7 +879,7 @@ SHARP           =  0.5
 THREE_Q_SHARP   =  0.75
 DOUBLE_SHARP    =  1
 
-pitchnames = {
+pitch_names = {
     "nederlands": {
         "ceses": (0, DOUBLE_FLAT),
         "ceseh": (0, THREE_Q_FLAT),
@@ -1729,14 +1731,14 @@ pitchnames = {
         "sikk": (6, DOUBLE_SHARP),
     },
 }
-pitchnames["español"] = pitchnames["espanol"]
-#pitchnames["francais"] = pitchnames["français"]
+pitch_names["español"] = pitch_names["espanol"]
+#pitch_names["francais"] = pitch_names["français"]
 
-# a set with all the pitchnames for fast membership testing
-all_pitchnames = frozenset(name for d in pitchnames.values() for name in d)
+# a set with all the pitch names for fast membership testing
+all_pitch_names = frozenset(name for d in pitch_names.values() for name in d)
 
 
-drum_pitchnames = (
+drum_pitch_names = (
     'acousticbassdrum',
     'bassdrum',
     'hisidestick',
@@ -1885,5 +1887,5 @@ drum_pitchnames = (
     'dd',
     'de',
 )
-drum_pitchnames_set = frozenset(drum_pitchnames)
+drum_pitch_names_set = frozenset(drum_pitch_names)
 
