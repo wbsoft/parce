@@ -230,7 +230,7 @@ class Css(Language):
         from .css_words import CSS3_NAMED_COLORS
         yield r"\(", Delimiter, -1, cls.function
         yield RE_CSS_ESCAPE, Escape
-        yield r"[\w-]+", bytext(lambda t: t in CSS3_NAMED_COLORS, Name, Literal.Color)
+        yield r"[\w-]+", ifmember(CSS3_NAMED_COLORS, Literal.Color, Name)
         yield default_target, -1
 
     @lexicon

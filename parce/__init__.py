@@ -209,9 +209,12 @@ def ifmember(sequence, itemlist, else_itemlist=()):
     with the Keyword action, and only for those, switches to the
     ``cls.keyword`` lexicon. Other words get the Name.Variable action.
 
+    Internally this helper function creates a frozenset of the sequence, to
+    speed up membership testing.
+
     """
-    def predicate(text):
-        return text in sequence
+    sequence_set = frozenset(sequence)
+    predicate = sequence_set.__contains__
     return bytext(predicate, else_itemlist, itemlist)
 
 
@@ -221,9 +224,13 @@ def ifgroupmember(n, sequence, itemlist, else_itemlist=()):
 
     If group ``n`` is not in sequence, ``else_itemlist`` is yielded.
 
+    Internally this helper function creates a frozenset of the sequence, to
+    speed up membership testing.
+
     """
+    sequence_set = frozenset(sequence)
     def predicate(m):
-        return m.group(m.lastindex + n) in sequence
+        return m.group(m.lastindex + n) in sequence_set
     return bymatch(predicate, else_itemlist, itemlist)
 
 
