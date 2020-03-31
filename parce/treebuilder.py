@@ -130,13 +130,12 @@ class BasicTreeBuilder:
         tail = False
         if start + added < len(text):
             # find the first token after the modified part
-            end_token = self.root.find_token_after(end)
-            if end_token:
-                tail_gen = (t for t in end_token.forward_including()
+            tail_token = self.root.find_token_after(end)
+            if tail_token:
+                tail_gen = ((t, t.pos) for t in tail_token.forward()
                         if not t.group or (t.group and t is t.group[0]))
-                # get the first tail token
-                for tail in tail_gen:
-                    break
+                tail_pos = tail_token.pos
+                tail = True
 
         lowest_start = start
         changes = self.changes
@@ -186,15 +185,15 @@ class BasicTreeBuilder:
                 if tail:
                     # handle tail
                     pos = tokens[0].pos - offset
-                    if pos > tail.pos:
-                        for tail in tail_gen:
-                            if tail.pos >= pos:
+                    if pos > tail_pos:
+                        for tail_token, tail_pos in tail_gen:
+                            if tail_pos >= pos:
                                 break
                         else:
                             tail = False
-                    if tail and pos == tail.pos and tokens[0].equals(tail):
+                    if pos == tail_pos and tokens[0].equals(tail_token):
                         # we can reuse the tail from tail_pos
-                        return Result(tree, lowest_start, tail.pos, offset, None)
+                        return Result(tree, lowest_start, tail_pos, offset, None)
                 context.extend(tokens)
                 if changes:
                     # handle changes
@@ -215,9 +214,9 @@ class BasicTreeBuilder:
                             else:
                                 offset += c.added - c.removed
                                 new_tail_pos -= offset
-                                if new_tail_pos > tail.pos:
-                                    for tail in tail_gen:
-                                        if tail.pos >= new_tail_pos:
+                                if new_tail_pos > tail_pos:
+                                    for tail_token, tail_pos in tail_gen:
+                                        if tail_pos >= new_tail_pos:
                                             break
                                     else:
                                         tail = False
