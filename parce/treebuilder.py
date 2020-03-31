@@ -44,6 +44,7 @@ from parce.lexer import Lexer
 from parce.tree import Context, Token, _GroupToken, tokens
 
 
+Build = collections.namedtuple("Build", "root_lexicon text start removed added")
 Result = collections.namedtuple("Result", "tree start end offset lexicons")
 
 
@@ -81,12 +82,12 @@ class BasicTreeBuilder:
         self.changes = False # keep "if self.changes" in rebuild() from complaining
 
     def tree(self, text):
-        """Convenience method returning the tree with all tokens."""
+        """Convenience method building and returning the tree with all tokens."""
         self.build(text)
         return self.root
 
     def build(self, text):
-        """Tokenize the full text.
+        """Convenience method building the tree with all tokens.
 
         Sets three instance variables start, end, lexicons). Start and end
         are always 0 and len(text), respectively. lexicons is a list of the
@@ -94,10 +95,41 @@ class BasicTreeBuilder:
         ended in the root context, the list is empty.)
 
         """
-        self.rebuild(text, 0, 0, len(text))
+        self.rebuild(Build(False, text, 0, 0, len(text)))
 
-    def build_new(self, text, start, removed, added):
+    def rebuild(self, build):
+        """Tokenize the modified part of the text again and update the tree.
+
+        The ``build`` argument is a five-tuple ``Build(root_lexicon, text,
+        start, removed, added)``.
+
+        Sets, just like build(), three instance variables start, end, lexicons,
+        describing the region in the thext the tokens were changed. This range
+        can be larger than (start, start + added).
+
+        If the root_lexicon is False, the current root lexicon is not changed,
+        otherwise root_lexicon is the new root lexicon (in which case the tree
+        is always rebuilt fully).
+
+        The text is the new text; start is the position where characters were
+        removed and others added. The removed and added arguments are integers,
+        describing how many characters were removed and added.
+
+        This method finds the place we can start parsing again, and when the
+        end of the modified region is reached, automatically recognizes when
+        the rest of the tokens can be reused. When old tokens at the end are
+        reused, the lexicons instance variable is not reset, the existing
+        value is still relevant in that case.
+
+        """
+        result = self.build_new(build)
+        self.replace_tree(result)
+
+    def build_new(self, build):
         """Build a new tree without yet modifying the current tree.
+
+        The ``build`` argument is a five-tuple ``Build(root_lexicon, text,
+        start, removed, added)``.
 
         Returns a ``Result`` tuple with ``tree``, ``start``, ``end``,
         ``offset`` and ``lexicons`` values ``start`` and ``end`` are the
@@ -116,14 +148,21 @@ class BasicTreeBuilder:
         gives the position change for the tokens that are reused.
 
         """
+        root_lexicon, text, start, removed, added = build
+
+        if root_lexicon is not False:
+            start, removed, added = 0, 0, len(text)
+        else:
+            root_lexicon = self.root.lexicon
+
         # manage end, and record if there is text after the modified part (tail)
         end = start + removed
 
         # record the position change for tail tokens that may be reused
         offset = added - removed
 
-        if not self.root.lexicon:
-            return Result(Context(self.root.lexicon, None), start, start + added, 0, None)
+        if not root_lexicon:
+            return Result(Context(root_lexicon, None), start, start + added, 0, None)
 
         # If there remains text after the modified part,
         # we try to reuse the old tokens
@@ -165,8 +204,8 @@ class BasicTreeBuilder:
                     start = token.group[-1].end if token.group else token.end
                     lowest_start = min(lowest_start, start)
                 else:
-                    tree = context = Context(self.root.lexicon, None)
-                    lexer = Lexer([self.root.lexicon])
+                    tree = context = Context(root_lexicon, None)
+                    lexer = Lexer([root_lexicon])
                     events = lexer.events(text)
                     lowest_start = 0
             # start parsing
@@ -232,7 +271,7 @@ class BasicTreeBuilder:
         tree, start, end, offset, lexicons = result
         start_trail = None
         context = self.root
-        if self.root.lexicon:
+        if tree.lexicon and tree.lexicon == self.root.lexicon:
             start_trail = self.root.find_token_left_with_trail(start)[1] if start else []
             end_trail = self.root.find_token_with_trail(end)[1] if lexicons is None else []
 
@@ -292,27 +331,6 @@ class BasicTreeBuilder:
         self.end = end + offset
         if lexicons is not None:
             self.lexicons = lexicons
-
-    def rebuild(self, text, start, removed, added):
-        """Tokenize the modified part of the text again and update the tree.
-
-        Sets, just like build(), three instance variables start, end, lexicons,
-        describing the region in the thext the tokens were changed. This range
-        can be larger than (start, start + added).
-
-        The text is the new text; start is the position where characters were
-        removed and others added. The removed and added arguments are integers,
-        describing how many characters were removed and added.
-
-        This method finds the place we can start parsing again, and when the
-        end of the modified region is reached, automatically recognizes when
-        the rest of the tokens can be reused. When old tokens at the end are
-        reused, the lexicons instance variable is not reset, the existing
-        value is still relevant in that case.
-
-        """
-        result = self.build_new(text, start, removed, added)
-        self.replace_tree(result)
 
 
 class TreeBuilder(BasicTreeBuilder):
@@ -411,11 +429,8 @@ class TreeBuilder(BasicTreeBuilder):
         start = self.start
         end = self.end
         while c and c.has_changes():
-            if c.root_lexicon != False:
-                self.root.lexicon = c.root_lexicon
-                self.build(c.text)
-            else:
-                self.rebuild(c.text, c.position, c.removed, c.added)
+            build = Build(c.root_lexicon, c.text, c.position, c.removed, c.added)
+            self.rebuild(build)
             start = self.start if start == -1 else min(start, self.start)
             end = self.end if end == -1 else max(c.new_position(end), self.end)
             c = self.get_changes()
