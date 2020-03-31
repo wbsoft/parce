@@ -35,6 +35,7 @@ background thread.
 """
 
 
+import collections
 import contextlib
 import itertools
 import threading
@@ -43,101 +44,7 @@ from parce.lexer import Lexer
 from parce.tree import Context, Token, _GroupToken, tokens
 
 
-def build_tree(root_lexicon, text, pos=0):
-    """Build and return a tree in one go."""
-    root = context = Context(root_lexicon, None)
-    lexer = Lexer([root_lexicon])
-    for e in lexer.events(text, pos):
-        if e.target:
-            for _ in range(e.target.pop, 0):
-                context = context.parent
-            for lexicon in e.target.push:
-                context = Context(lexicon, context)
-                context.parent.append(context)
-        if len(e.tokens) > 1:
-            tokens = tuple(_GroupToken(context, *t) for t in e.tokens)
-            for t in tokens:
-                t.group = tokens
-        else:
-            tokens = Token(context, *e.tokens[0]),
-        context.extend(tokens)
-    return root
-
-
-def find_insert_position(tree, text, start):
-    """Return the position (will be < start) where new tokens should be inserted.
-
-    If the returned position is 0, you can start parsing from the beginning
-    using an empty root context.
-
-    If the returned position > 0, there are tokens to the left of the position
-    that can remain. You should start parsing at the left of the last remaining
-    token, to get the correct target for the next token, for example::
-
-        start = find_insert_position(tree, text, start)
-        if start:
-            token = tree.find_token_before(start)
-            if token.group:
-                token = token.group[0]
-            start = token.pos
-        # Start parsing at start.
-
-    """
-    while start:
-        last_token = start_token = tree.find_token_before(start)
-        if not last_token:
-            return 0
-        # go back at most 10 tokens, to the beginning of a group; if we
-        # are at the first token just return 0.
-        for start_token in itertools.islice(last_token.backward(), 10):
-            pass
-        if start_token.group:
-            start_token = start_token.group[0]
-        start = start_token.pos if start_token.previous_token() else 0
-        lexer = get_lexer(start_token) if start else Lexer([tree.lexicon])
-        events = lexer.events(text, start)
-        # compare the new events with the old tokens; at least one
-        # should be the same; if not, go back further if possible
-        old_events = start_token.events_until_including(last_token)
-        one = False
-        for old, new in zip(old_events, events):
-            if old != new:
-                if one or not start:
-                    return old.tokens[0][0]
-                break
-            one = True                  # at least one is the same
-        if one:
-            return last_token.end       # all events were the same
-    return 0
-
-
-def find_insert_token(tree, text, start):
-    """Return the token at the position where new tokens should be inserted."""
-    start = find_insert_position(tree, text, start)
-    if start:
-        token = tree.find_token_before(start)
-        if token:
-            if token.group:
-                token = token.group[0]
-            return token
-
-
-def get_lexer(token):
-    """Get a Lexer initialized at the token's ancestry."""
-    lexicons = [p.lexicon for p in token.ancestors()]
-    lexicons.reverse()
-    return Lexer(lexicons)
-
-
-def new_tree(token):
-    """Return an empty context with the same ancestry as the token's."""
-    c = context = Context(token.parent.lexicon, None)
-    for p in token.parent.ancestors():
-        n = Context(p.lexicon, None)
-        c.parent = n
-        n.append(c)
-        c = n
-    return context
+Result = collections.namedtuple("Result", "tree start end offset lexicons")
 
 
 class BasicTreeBuilder:
@@ -192,8 +99,9 @@ class BasicTreeBuilder:
     def build_new(self, text, start, removed, added):
         """Build a new tree without yet modifying the current tree.
 
-        Returns ``tree``, ``start``, ``end``, ``lexicons``; ``start`` and
-        ``end`` are the insert positions in the old tree.
+        Returns a ``Result`` tuple with ``tree``, ``start``, ``end``,
+        ``offset`` and ``lexicons`` values ``start`` and ``end`` are the
+        insert positions in the old tree.
 
         The new ``tree`` is intended to replace a part of, or the whole old
         tree. If ``start`` == 0 and ``lexicons`` is not None; the whole tree
@@ -201,16 +109,11 @@ class BasicTreeBuilder:
         tree, it might have changed.)
 
         If ``start`` > 0, tokens in the old tree before start are to be
-        preserved, and the first token (group) in the new tree can be discarded
-        (it is the same as the last token (group) before start in the old
-        tree).
+        preserved.
 
-        If ``lexicons`` is None, old tail (tokens right of end) must be reused,
-        and the old list of open lexicons is still relevant. In this case, the
-        last token (group) in the new tree can be discarded, and the returned
-        ``end`` position is the position of the first token (group) in the old
-        tree that can be reused. (The new end pos is the position of the last
-        token (group) in the new tree.)
+        If ``lexicons`` is None, old tail tokens after ``end`` must be reused,
+        and the old list of open lexicons is still relevant. The ``offset`` then
+        gives the position change for the tokens that are reused.
 
         """
         # manage end, and record if there is text after the modified part (tail)
@@ -231,7 +134,7 @@ class BasicTreeBuilder:
             if end_token:
                 tail_gen = (t for t in end_token.forward_including()
                         if not t.group or (t.group and t is t.group[0]))
-                # store the new position the first tail token would get
+                # get the first tail token
                 for tail in tail_gen:
                     break
 
@@ -245,7 +148,7 @@ class BasicTreeBuilder:
                 if token:
                     context = token.parent
                     lexer = get_lexer(token)
-                    pos = token.pos
+                    events = lexer.events(text, token.pos)
                     for p, i in token.ancestors_with_index():
                         del p[i+1:]
                     del context[-1]
@@ -257,15 +160,17 @@ class BasicTreeBuilder:
                 if token:
                     context = new_tree(token)
                     lexer = get_lexer(token)
-                    pos = token.pos
+                    events = lexer.events(text, token.pos)
+                    next(events) # skip over the first token, we need its target
                     tree = context.root()
                     lowest_start = min(lowest_start, token.end)
                 else:
                     tree = context = Context(self.root.lexicon, None)
                     lexer = Lexer([self.root.lexicon])
-                    pos = lowest_start = 0
+                    events = lexer.events(text)
+                    lowest_start = 0
             # start parsing
-            for e in lexer.events(text, pos):
+            for e in events:
                 if e.target:
                     for _ in range(e.target.pop, 0):
                         context = context.parent
@@ -278,6 +183,18 @@ class BasicTreeBuilder:
                         t.group = tokens
                 else:
                     tokens = Token(context, *e.tokens[0]),
+                if tail:
+                    # handle tail
+                    pos = tokens[0].pos - offset
+                    if pos > tail.pos:
+                        for tail in tail_gen:
+                            if tail.pos >= pos:
+                                break
+                        else:
+                            tail = False
+                    if tail and pos == tail.pos and tokens[0].equals(tail):
+                        # we can reuse the tail from tail_pos
+                        return Result(tree, lowest_start, tail.pos, offset, None)
                 context.extend(tokens)
                 if changes:
                     # handle changes
@@ -305,26 +222,14 @@ class BasicTreeBuilder:
                                     else:
                                         tail = False
                         break # break the for loop to restart at new start pos
-                if tail:
-                    # handle tail
-                    pos = tokens[0].pos - offset
-                    if pos > tail.pos:
-                        for tail in tail_gen:
-                            if tail.pos >= pos:
-                                break
-                        else:
-                            tail = False
-                            continue
-                    if (pos == tail.pos and tokens[0].equals(tail)):
-                        # we can reuse the tail from tail_pos
-                        return tree, lowest_start, tail.pos, None
             else:
                 # we ran till the end, also return the open lexicons
-                return tree, lowest_start, len(text), lexer.lexicons[1:]
+                return Result(tree, lowest_start, len(text), 0, lexer.lexicons[1:])
         raise RuntimeError("shouldn't come here")
 
-    def replace_tree(self, tree, start, end, lexicons):
-        """Replace the range between start and end with the new tree."""
+    def replace_tree(self, result):
+        """Modify the tree using the result from build_new()."""
+        tree, start, end, offset, lexicons = result
         start_trail = self.root.find_token_left_with_trail(start)[1] if start else []
         end_trail = self.root.find_token_with_trail(end)[1] if lexicons is None else []
 
@@ -339,28 +244,6 @@ class BasicTreeBuilder:
                 break
         del start_trail[:i], end_trail[:i]
 
-        if lexicons is None:
-            # compute offset
-            t = tree.last_token()
-            pos = t.group[0].pos if t.group else t.pos
-            offset = pos - end
-            end = pos   # new end pos + offset
-            # remove last token (group) in the new tree
-            if t.group:
-                del t.parent[-len(t.group):]
-            else:
-                del t.parent[-1]
-        else:
-            offset = 0
-
-        if start:
-            # remove first token (group) in new tree
-            t = tree.first_token()
-            if t.group:
-                del t.parent[:len(t.group)]
-            else:
-                del t.parent[0]
-
         if end_trail:
             # join stuff after end_trail with tree
             c = context
@@ -368,11 +251,12 @@ class BasicTreeBuilder:
             end_trail[-1] -= 1
             for i in end_trail:
                 l = len(t) - 1
-                t.extend(c[i+1:])
-                for n in c[i+1:]:
+                s = c[i+1:]
+                t.extend(s)
+                for n in s:
                     n.parent = t
                 if offset:
-                    for n in tokens(c[i+1:]):
+                    for n in tokens(s):
                         n.pos += offset
                 t = t[l]
                 c = c[i]
@@ -395,6 +279,7 @@ class BasicTreeBuilder:
             context[:] = tree
             for n in tree:
                 n.parent = context
+            context.lexicon = tree.lexicon
 
         if offset:
             for p, i in context.ancestors_with_index():
@@ -402,7 +287,7 @@ class BasicTreeBuilder:
                     t.pos += offset
 
         self.start = start
-        self.end = end
+        self.end = end + offset
         if lexicons is not None:
             self.lexicons = lexicons
 
@@ -424,8 +309,8 @@ class BasicTreeBuilder:
         value is still relevant in that case.
 
         """
-        tree, start, end, lexicons = self.build_new(text, start, removed, added)
-        self.replace_tree(tree, start, end, lexicons)
+        result = self.build_new(text, start, removed, added)
+        self.replace_tree(result)
 
 
 class TreeBuilder(BasicTreeBuilder):
@@ -812,4 +697,101 @@ class Changes:
         elif pos < self.position + self.removed:
             return self.position + self.added
         return pos - self.removed + self.added
+
+
+def build_tree(root_lexicon, text, pos=0):
+    """Build and return a tree in one go."""
+    root = context = Context(root_lexicon, None)
+    lexer = Lexer([root_lexicon])
+    for e in lexer.events(text, pos):
+        if e.target:
+            for _ in range(e.target.pop, 0):
+                context = context.parent
+            for lexicon in e.target.push:
+                context = Context(lexicon, context)
+                context.parent.append(context)
+        if len(e.tokens) > 1:
+            tokens = tuple(_GroupToken(context, *t) for t in e.tokens)
+            for t in tokens:
+                t.group = tokens
+        else:
+            tokens = Token(context, *e.tokens[0]),
+        context.extend(tokens)
+    return root
+
+
+def find_insert_position(tree, text, start):
+    """Return the position (will be < start) where new tokens should be inserted.
+
+    If the returned position is 0, you can start parsing from the beginning
+    using an empty root context.
+
+    If the returned position > 0, there are tokens to the left of the position
+    that can remain. You should start parsing at the left of the last remaining
+    token, to get the correct target for the next token, for example::
+
+        start = find_insert_position(tree, text, start)
+        if start:
+            token = tree.find_token_before(start)
+            if token.group:
+                token = token.group[0]
+            start = token.pos
+        # Start parsing at start.
+
+    """
+    while start:
+        last_token = start_token = tree.find_token_before(start)
+        if not last_token:
+            return 0
+        # go back at most 10 tokens, to the beginning of a group; if we
+        # are at the first token just return 0.
+        for start_token in itertools.islice(last_token.backward(), 10):
+            pass
+        if start_token.group:
+            start_token = start_token.group[0]
+        start = start_token.pos if start_token.previous_token() else 0
+        lexer = get_lexer(start_token) if start else Lexer([tree.lexicon])
+        events = lexer.events(text, start)
+        # compare the new events with the old tokens; at least one
+        # should be the same; if not, go back further if possible
+        old_events = start_token.events_until_including(last_token)
+        one = False
+        for old, new in zip(old_events, events):
+            if old != new:
+                if one or not start:
+                    return old.tokens[0][0]
+                break
+            one = True                  # at least one is the same
+        if one:
+            return last_token.end       # all events were the same
+    return 0
+
+
+def find_insert_token(tree, text, start):
+    """Return the token at the position where new tokens should be inserted."""
+    start = find_insert_position(tree, text, start)
+    if start:
+        token = tree.find_token_before(start)
+        if token:
+            if token.group:
+                token = token.group[0]
+            return token
+
+
+def get_lexer(token):
+    """Get a Lexer initialized at the token's ancestry."""
+    lexicons = [p.lexicon for p in token.ancestors()]
+    lexicons.reverse()
+    return Lexer(lexicons)
+
+
+def new_tree(token):
+    """Return an empty context with the same ancestry as the token's."""
+    c = context = Context(token.parent.lexicon, None)
+    for p in token.parent.ancestors():
+        n = Context(p.lexicon, None)
+        c.parent = n
+        n.append(c)
+        c = n
+    return context
 
