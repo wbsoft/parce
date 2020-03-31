@@ -741,7 +741,7 @@ def find_insert_position(tree, text, start):
 
     """
     while start:
-        last_token = start_token = tree.find_token_before(start)
+        last_token = start_token = _find_token_before(tree, start)
         if not last_token:
             return 0
         # go back at most 10 tokens, to the beginning of a group; if we
@@ -772,7 +772,7 @@ def find_insert_token(tree, text, start):
     """Return the token at the position where new tokens should be inserted."""
     start = find_insert_position(tree, text, start)
     if start:
-        token = tree.find_token_before(start)
+        token = _find_token_before(tree, start)
         if token:
             if token.group:
                 token = token.group[0]
@@ -795,4 +795,30 @@ def new_tree(token):
         n.append(c)
         c = n
     return context
+
+
+def _find_token_before(context, pos):
+    """A version of :meth:`~parce.tree.Context.find_token_before` that can handle
+    empty contexts.
+
+    The new tree built inside :meth:`BasicTreeBuilder.build_new` can have an
+    empty context at the beginning. Returns None if there is no token left from
+    pos.
+
+    """
+    i = 0
+    hi = len(context)
+    while i < hi:
+        mid = (i + hi) // 2
+        n = context[mid]
+        if n.is_context:
+            n = n.first_token() or n    # if no first token, just n itself
+        if pos < n.end:
+            hi = mid
+        else:
+            i = mid + 1
+    if i > 0:
+        i -= 1
+        n = context[i]
+        return find_token_before(n, pos) if n.is_context else n
 
