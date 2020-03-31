@@ -183,24 +183,11 @@ class LilyPond(Language):
         yield from cls.notemode_rule()
         yield from cls.lyricmode_rules()
         yield from cls.drummode_rule()
-        yield RE_LILYPOND_COMMAND, cls.check_builtin()
-
-    @classmethod
-    def check_builtin(cls):
-        """Return a suitable action for a \\command.
-
-        When the command is a member of lilypond_keywords Keyword is returned,
-        When the command is in the music_commands, Name.Builtin is returned,
-        otherwise Name.Command.
-
-        """
-        def predicate(text):
-            text = text[1:] # skip the "\"
-            return 0 if text in lilypond_words.keywords else \
-                   1 if text in lilypond_words.music_commands_set else \
-                   2 if text in lilypond_words.articulations_set else \
-                   3
-        return bytext(predicate, Keyword, Name.Builtin, Articulation, Name.Command)
+        yield RE_LILYPOND_COMMAND, mapgroupmember(1, (
+            (lilypond_words.keywords, Keyword),
+            (lilypond_words.music_commands, Name.Builtin),
+            (lilypond_words.articulations_set, Articulation),
+            ), Name.Command)
 
     # ------------------ music ----------------------
     @classmethod

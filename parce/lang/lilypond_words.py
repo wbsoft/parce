@@ -600,8 +600,6 @@ music_commands = (
     'whiteTriangleMarkup',
     'withMusicProperty',
 )
-# for faster membership testing
-music_commands_set = frozenset(music_commands)
 
 
 articulations = (

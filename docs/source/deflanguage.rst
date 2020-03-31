@@ -236,6 +236,12 @@ also create the predicate function for you:
     .. autofunction:: parce.mapgroup
         :noindex:
 
+    .. autofunction:: parce.mapmember
+        :noindex:
+
+    .. autofunction:: parce.mapgroupmember
+        :noindex:
+
 Instead of a list or tuple of items, a single action or target item can also be
 given. These functions can also be used for mapping an action *and* target
 based on the text or match object at the same time. So instead of::

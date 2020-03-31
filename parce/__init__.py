@@ -234,6 +234,60 @@ def ifgroupmember(n, sequence, itemlist, else_itemlist=()):
     return bymatch(predicate, else_itemlist, itemlist)
 
 
+def _get_sequences_map(pairs, default):
+    """Map sequences to itemlists, with a default value.
+
+    Returns a predicate that tries to find text in sequences (the first one
+    that has a match is chosen) and the itemlists.
+
+    Optimizes by making a frozenset of each sequence.
+
+    """
+    sequences = []
+    itemlists = []
+    all_items = set()
+    for s, i in pairs:
+        s = frozenset(set(s) - all_items)
+        all_items |= s
+        sequences.append(s)
+        itemlists.append(i)
+    last = len(itemlists)
+    itemlists.append(default)
+    def predicate(text):
+        for i, sequence in enumerate(sequences):
+            if text in sequence:
+                return i
+        return last
+    return predicate, itemlists
+
+
+def mapmember(pairs, default=()):
+    r"""Return a :class:`~parce.rule.TextItem` that yields ``itemlist`` from
+    a pair's itemlist if the text is in the pair's sequence.
+
+    ``pairs`` can be a list of (sequence, itemlist) values, or a (ordered)
+    dictionary.
+
+    """
+    predicate, itemlists = _get_sequences_map(pairs, default)
+    return bytext(predicate, *itemlists)
+
+
+def mapgroupmember(n, pairs, default=()):
+    r"""Return a :class:`~parce.rule.MatchItem` that yields ``itemlist`` from
+    a pair's itemlist if the matched group is in the pair's sequence.
+
+    ``pairs`` can be a list of (sequence, itemlist) values, or a (ordered)
+    dictionary.
+
+    """
+    text_predicate, itemlists = _get_sequences_map(pairs, default)
+    def predicate(m):
+        return text_predicate(m.group(m.lastindex + n))
+    return bymatch(predicate, *itemlists)
+
+
+
 def _get_items_map(dictionary, default):
     """Map dictionary items to itemlists, and put their indexes in a new dict.
 
