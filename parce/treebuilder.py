@@ -19,18 +19,29 @@
 
 
 """
-This module defines the :class:`TreeBuilder`, which is used to
-:meth:`~TreeBuilder.build()` a tree structure from a text, using a root
-lexicon.
+This module defines classes and functions to build a tree structure using
+the events generated from a text string by the lexer.
 
-Using the :meth:`~TreeBuilder.rebuild()` method, :class:`TreeBuilder` is also
-capable of regenerating only part of an existing tree, e.g. when part of a long
-text is modified through a text editor. It is smart enough to recognize whether
-existing tokens before and after the modified region can be reused or not, and
-it reuses tokens as much as possible.
+To get the tree of tokens using a particular root lexicon from a string
+of text, use :func:`build_tree`.
 
-:class:`BackgroundTreeBuilder` can be used to tokenize a text into a tree in a
-background thread.
+A more advanced approach is using the :class:`TreeBuilder`, which can build a
+tree in one go as well, but is also capable of updating an existing tree when
+the text changes on a particular position, e.g. while typing in a text editor.
+In this case, tokens in front of the modified region are reused (carefully
+checking whether changes affect earlier regions), and also tokens at the end of
+the modified region are reused, if they have the same context ancestry.
+
+TreeBuilder also reports the start and end position of the updated region, and
+the lexicons that were left open at the end, which in some languages can mean
+that a document or a certain structure is incomplete.
+
+The TreeBuilder is designed so that it is possible to perform tokenizing in a
+background thread, and even interrupt tokenizing when changes are to be applied
+while processing previous changes.
+
+The :class:`BackgroundTreeBuilder` provides an implementation using Python
+treads.
 
 """
 
@@ -43,8 +54,10 @@ import threading
 from parce.lexer import Lexer
 from parce.tree import Context, Token, _GroupToken, tokens
 
+#: encapsulates the arguments for :meth:`TreeBuilder.build_new`
+Build = collections.namedtuple("Build", "text root_lexicon start removed added")
 
-Build = collections.namedtuple("Build", "root_lexicon text start removed added")
+#: encapsulates the return values of :meth:`TreeBuilder.build_new`
 Result = collections.namedtuple("Result", "tree start end offset lexicons")
 
 
@@ -52,9 +65,15 @@ class BasicTreeBuilder:
     """Build a tree directly from parsing the text.
 
     The root node of the tree is in the ``root`` instance attribute.
+    This root context is never replaced, although its lexicon may change and
+    of course its children.
 
-    After calling :meth:`build()` or :meth:`rebuild()`, three instance
-    variables are set:
+    Building a tree happens in :meth:`build_new` which builds a (replacement)
+    tree without making any changes yet to the current tree.
+
+    The result of :meth:`build_new` is a tuple of arguments that can be used
+    to call :meth:`replace_tree`, which integrates the updated subtree in the
+    main tree structure. This method sets three instance attributes:
 
     ``start``, ``end``:
         indicate the region the tokens were changed. After build(), start is
@@ -71,6 +90,8 @@ class BasicTreeBuilder:
 
     No other variables or state are kept, so if you don't need the above
     information anymore, you can throw away the TreeBuilder after use.
+
+    The :meth:`build` and :meth:`rebuild` methods are provided for convenience.
 
     """
     start = 0
@@ -89,44 +110,43 @@ class BasicTreeBuilder:
     def build(self, text):
         """Convenience method building the tree with all tokens.
 
-        Sets three instance variables start, end, lexicons). Start and end
-        are always 0 and len(text), respectively. lexicons is a list of the
-        lexicons that were not closed at the end of the text. (If the parser
-        ended in the root context, the list is empty.)
+        Calls :meth:`build_new` and :meth:`replace_tree` to do the work.
 
         """
-        self.rebuild(Build(False, text, 0, 0, len(text)))
+        self.rebuild(text)
 
-    def rebuild(self, build):
+    def rebuild(self, text, root_lexicon=False, start=0, removed=0, added=None):
         """Tokenize the modified part of the text again and update the tree.
 
-        The ``build`` argument is a five-tuple ``Build(root_lexicon, text,
-        start, removed, added)``.
+        Except for the ``text``, all arguments have default values:
 
-        Sets, just like build(), three instance variables start, end, lexicons,
-        describing the region in the thext the tokens were changed. This range
-        can be larger than (start, start + added).
+        ``root_lexicon``
+            False means no change; can be None or a Lexicon
 
-        If the root_lexicon is False, the current root lexicon is not changed,
-        otherwise root_lexicon is the new root lexicon (in which case the tree
-        is always rebuilt fully).
+        ``start``
+            Position of the change (default: 0)
 
-        The text is the new text; start is the position where characters were
-        removed and others added. The removed and added arguments are integers,
-        describing how many characters were removed and added.
+        ``removed``
+            The number of removed characters (default: 0)
 
-        This method finds the place we can start parsing again, and when the
-        end of the modified region is reached, automatically recognizes when
-        the rest of the tokens can be reused. When old tokens at the end are
-        reused, the lexicons instance variable is not reset, the existing
-        value is still relevant in that case.
+        ``added``
+            The number of added characters (default: None, which means
+            the length of the entire text)
+
+        Calls :meth:`build_new` and :meth:`replace_tree` to do the actual work.
 
         """
-        result = self.build_new(build)
+        if added is None:
+            added = len(text)
+        result = self.build_new(Build(text, root_lexicon, start, removed, added))
         self.replace_tree(result)
 
     def build_new(self, build):
         """Build a new tree without yet modifying the current tree.
+
+        Tokens from the current tree are reused as much as possible. From
+        tokens at the tail (after the end of the modified region) the pos
+        attribute is updated if necessary.
 
         The ``build`` argument is a five-tuple ``Build(root_lexicon, text,
         start, removed, added)``.
@@ -138,7 +158,8 @@ class BasicTreeBuilder:
         The new ``tree`` is intended to replace a part of, or the whole old
         tree. If ``start`` == 0 and ``lexicons`` is not None; the whole tree
         can be replaced. (In this case; check the root lexicon of the returned
-        tree, it might have changed.)
+        tree, it might have changed!) The :meth:`replace_tree` method can
+        perform this action.
 
         If ``start`` > 0, tokens in the old tree before start are to be
         preserved.
@@ -148,7 +169,7 @@ class BasicTreeBuilder:
         gives the position change for the tokens that are reused.
 
         """
-        root_lexicon, text, start, removed, added = build
+        text, root_lexicon, start, removed, added = build
 
         if root_lexicon is not False:
             start, removed, added = 0, 0, len(text)
@@ -429,8 +450,7 @@ class TreeBuilder(BasicTreeBuilder):
         start = self.start
         end = self.end
         while c and c.has_changes():
-            build = Build(c.root_lexicon, c.text, c.position, c.removed, c.added)
-            self.rebuild(build)
+            self.rebuild(c.text, c.root_lexicon, c.position, c.removed, c.added)
             start = self.start if start == -1 else min(start, self.start)
             end = self.end if end == -1 else max(c.new_position(end), self.end)
             c = self.get_changes()
