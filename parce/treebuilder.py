@@ -350,17 +350,6 @@ class TreeBuilder(BasicTreeBuilder):
         if self._incontext == 0 and not self.busy:
             self.start_processing()
 
-    def root_lexicon(self):
-        """Return the root lexicon.
-
-        If a change is recorded, the last set lexicon is returned.
-
-        """
-        for request, *args in reversed(self.changes):
-            if request == "lexicon":
-                return args[-1]
-        return self.root.lexicon
-
     def change_root_lexicon(self, text, lexicon):
         """Record a request to change the root lexicon.
 
@@ -421,7 +410,7 @@ class TreeBuilder(BasicTreeBuilder):
         start = self.start
         end = self.end
         while c and c.has_changes():
-            if c.root_lexicon != False and c.root_lexicon != self.root.lexicon:
+            if c.root_lexicon != False:
                 self.root.lexicon = c.root_lexicon
                 self.build(c.text)
             else:
