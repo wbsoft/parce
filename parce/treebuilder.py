@@ -66,7 +66,7 @@ class BasicTreeBuilder:
 
         If a tree was rebuilt, and old tail tokens were reused, the lexicons
         variable is not set, meaning that the old value is still valid. If the
-        TreeBuilder was not used before, lexicons is then None.
+        TreeBuilder was not used before, lexicons is an empty tuple.
 
     No other variables or state are kept, so if you don't need the above
     information anymore, you can throw away the TreeBuilder after use.
@@ -74,7 +74,7 @@ class BasicTreeBuilder:
     """
     start = 0
     end = 0
-    lexicons = None
+    lexicons = ()
 
     def __init__(self, root_lexicon=None):
         self.root = Context(root_lexicon, None)
@@ -229,36 +229,38 @@ class BasicTreeBuilder:
     def replace_tree(self, result):
         """Modify the tree using the result from build_new()."""
         tree, start, end, offset, lexicons = result
-        start_trail = self.root.find_token_left_with_trail(start)[1] if start else []
-        end_trail = self.root.find_token_with_trail(end)[1] if lexicons is None else []
-
-        # find the context that really changes, adjust trails
+        start_trail = None
         context = self.root
-        i = 0
-        for i, (s, e) in enumerate(zip(start_trail, end_trail)):
-            if s == e and tree.is_context and len(tree) == 1:
-                context = context[s]
-                tree = tree[0]
-            else:
-                break
-        del start_trail[:i], end_trail[:i]
+        if self.root.lexicon:
+            start_trail = self.root.find_token_left_with_trail(start)[1] if start else []
+            end_trail = self.root.find_token_with_trail(end)[1] if lexicons is None else []
 
-        if end_trail:
-            # join stuff after end_trail with tree
-            c = context
-            t = tree
-            end_trail[-1] -= 1
-            for i in end_trail:
-                l = len(t) - 1
-                s = c[i+1:]
-                t.extend(s)
-                for n in s:
-                    n.parent = t
-                if offset:
-                    for n in tokens(s):
-                        n.pos += offset
-                t = t[l]
-                c = c[i]
+            # find the context that really changes, adjust trails
+            i = 0
+            for i, (s, e) in enumerate(zip(start_trail, end_trail)):
+                if s == e and tree.is_context and len(tree) == 1:
+                    context = context[s]
+                    tree = tree[0]
+                else:
+                    break
+            del start_trail[:i], end_trail[:i]
+
+            if end_trail:
+                # join stuff after end_trail with tree
+                c = context
+                t = tree
+                end_trail[-1] -= 1
+                for i in end_trail:
+                    l = len(t) - 1
+                    s = c[i+1:]
+                    t.extend(s)
+                    for n in s:
+                        n.parent = t
+                    if offset:
+                        for n in tokens(s):
+                            n.pos += offset
+                    t = t[l]
+                    c = c[i]
 
         if start_trail:
             # replace stuff after start_trail with tree
