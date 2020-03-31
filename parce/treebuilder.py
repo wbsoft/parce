@@ -162,7 +162,8 @@ class BasicTreeBuilder:
                     events = lexer.events(text, token.pos)
                     next(events) # skip over the first token, we need its target
                     tree = context.root()
-                    lowest_start = min(lowest_start, token.end)
+                    start = token.group[-1].end if token.group else token.end
+                    lowest_start = min(lowest_start, start)
                 else:
                     tree = context = Context(self.root.lexicon, None)
                     lexer = Lexer([self.root.lexicon])
