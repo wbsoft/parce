@@ -51,8 +51,10 @@ import contextlib
 import itertools
 import threading
 
-from parce.lexer import Lexer
+from parce.lexer import Event, Lexer
 from parce.tree import Context, Token, _GroupToken, tokens
+from parce.target import TargetFactory
+
 
 #: encapsulates the arguments for :meth:`TreeBuilder.build_new`
 Build = collections.namedtuple("Build", "text root_lexicon start removed added")
@@ -203,26 +205,28 @@ class BasicTreeBuilder:
         while True:
             # when restarting, see if we can reuse (part of) the new tree
             if tree:
-                token = find_insert_token(tree, text, start)
-                if token:
-                    context = token.parent
-                    lexer = get_lexer(token)
-                    events = lexer.events(text, token.pos)
-                    for p, i in token.ancestors_with_index():
+                tokens = find_insert_tokens(tree, text, start)
+                if tokens:
+                    t = tokens[0]
+                    context = t.parent
+                    lexer = get_lexer(t)
+                    events = lexer.events(text, t.pos)
+                    for p, i in t.ancestors_with_index():
                         del p[i+1:]
                     del context[-1]
                 else:
                     tree = None
             # find insertion spot in old tree
             if not tree:
-                token = find_insert_token(self.root, text, start)
-                if token:
-                    context = new_tree(token)
-                    lexer = get_lexer(token)
-                    events = lexer.events(text, token.pos)
+                tokens = find_insert_tokens(self.root, text, start)
+                if tokens:
+                    t = tokens[0]
+                    context = new_tree(t)
+                    lexer = get_lexer(t)
+                    events = lexer.events(text, t.pos)
                     next(events) # skip over the first token, we need its target
                     tree = context.root()
-                    start = token.group[-1].end if token.group else token.end
+                    start = tokens[-1].end
                     lowest_start = min(lowest_start, start)
                 else:
                     tree = context = Context(root_lexicon, None)
@@ -746,29 +750,21 @@ def build_tree(root_lexicon, text, pos=0):
     return root
 
 
-def find_insert_position(tree, text, start):
-    """Return the position (will be < start) where new tokens should be inserted.
+def find_insert_tokens(tree, text, start):
+    """Return the token(group) after which new tokens should be inserted.
 
-    If the returned position is 0, you can start parsing from the beginning
-    using an empty root context.
+    Normally this is the last complete tokengroup just before the start
+    position; but in certain cases this can be earlier in the text.
 
-    If the returned position > 0, there are tokens to the left of the position
-    that can remain. You should start parsing at the left of the last remaining
-    token, to get the correct target for the next token, for example::
-
-        start = find_insert_position(tree, text, start)
-        if start:
-            token = tree.find_token_before(start)
-            if token.group:
-                token = token.group[0]
-            start = token.pos
-        # Start parsing at start.
+    If this function returns None, you should start at the beginning.
 
     """
     while start:
         last_token = start_token = _find_token_before(tree, start)
+        while last_token and last_token.group and last_token.group[-1].end > start:
+            last_token = last_token.group[0].previous_token()
         if not last_token:
-            return 0
+            return
         # go back at most 10 tokens, to the beginning of a group; if we
         # are at the first token just return 0.
         for start_token in itertools.islice(last_token.backward(), 10):
@@ -780,28 +776,50 @@ def find_insert_position(tree, text, start):
         events = lexer.events(text, start)
         # compare the new events with the old tokens; at least one
         # should be the same; if not, go back further if possible
-        old_events = start_token.events_until_including(last_token)
-        one = False
-        for old, new in zip(old_events, events):
+        old_events = events_with_tokens(start_token, last_token)
+        prev = None
+        for (old, tokens), new in zip(old_events, events):
             if old != new:
-                if one or not start:
-                    return old.tokens[0][0]
                 break
-            one = True                  # at least one is the same
-        if one:
-            return last_token.end       # all events were the same
-    return 0
+            prev = tokens
+        if prev:
+            return prev
 
 
-def find_insert_token(tree, text, start):
-    """Return the token at the position where new tokens should be inserted."""
-    start = find_insert_position(tree, text, start)
-    if start:
-        token = _find_token_before(tree, start)
-        if token:
-            if token.group:
-                token = token.group[0]
-            return token
+def events_with_tokens(start_token, last_token):
+    r"""Yield (Event, tokens) tuples for start_token until and including last_token.
+
+    Events are yielded together with token groups (or single tokens in a
+    1-length tuple).
+
+    This can be used to compare an existing token structure with events
+    originating from a lexer.
+
+    """
+    context, start_trail, end_trail = start_token.common_ancestor_with_trail(last_token)
+    if context:
+
+        islice = itertools.islice
+        target = TargetFactory()
+        get, push, pop = target.get, target.push, target.pop
+
+        def events(context):
+            nodes = iter(context)
+            for n in nodes:
+                if n.is_token:
+                    group = n,
+                    if n.group:
+                        rest = len(n.group) - n.group.index(n) - 1
+                        group += tuple(islice(nodes, rest))
+                    tokens = tuple((t.pos, t.text, t.action) for t in group)
+                    yield Event(get(), tokens), group
+                else:
+                    push(n.lexicon)
+                    yield from events(n)
+                    pop()
+
+        for context, slice_ in context.slices(start_trail, end_trail, target):
+            yield from events(context[slice_])
 
 
 def get_lexer(token):

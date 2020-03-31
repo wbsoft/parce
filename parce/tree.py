@@ -48,13 +48,9 @@ See also the documentation for Token and Context.
 """
 
 
-import itertools
-
 from parce import util
 from parce import query
 from parce.lexicon import Lexicon
-from parce.lexer import Event
-from parce.target import TargetFactory
 
 
 DUMP_STYLES = {
@@ -434,12 +430,6 @@ class Token(Node):
             for context, slice_ in context.slices(start_trail, end_trail):
                 yield from tokens(context[slice_])
 
-    def events_until_including(self, other):
-        """Yield events for all tokens starting with us and upto and including the other."""
-        context, start_trail, end_trail = self.common_ancestor_with_trail(other)
-        if context:
-            yield from context.events(start_trail, end_trail)
-
     def common_ancestor_with_trail(self, other):
         """Return a three-tuple(context, trail_self, trail_other).
 
@@ -817,34 +807,6 @@ class Context(list, Node):
             if token.group:
                 token = token.group[0]
             return token
-
-    def events(self, start_trail=None, end_trail=None):
-        r"""Yield Events for all or specified child nodes.
-
-        Using ``start_trail`` and ``end_trail`` the range of tokens can be
-        specified; a trail is a list of indices to follow to get to a specific
-        token, such as returned by the various ``find_\*_with_trail`` methods.
-
-        """
-        islice = itertools.islice
-        target = TargetFactory()
-        get, push, pop = target.get, target.push, target.pop
-        def events(context):
-            nodes = iter(context)
-            for n in nodes:
-                if n.is_token:
-                    tokens = (n.pos, n.text, n.action),
-                    if n.group:
-                        rest = len(n.group) - n.group.index(n) - 1
-                        tokens += tuple((t.pos, t.text, t.action)
-                            for t in islice(nodes, rest))
-                    yield Event(get(), tokens)
-                else:
-                    push(n.lexicon)
-                    yield from events(n)
-                    pop()
-        for context, slice_ in self.slices(start_trail, end_trail, target):
-            yield from events(context[slice_])
 
 
 def tokens(nodes):
