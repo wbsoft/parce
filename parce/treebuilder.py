@@ -123,7 +123,7 @@ class BasicTreeBuilder:
         offset = added - removed
 
         if not self.root.lexicon:
-            return Context(self.root.lexicon, None), start, start + added, None
+            return Result(Context(self.root.lexicon, None), start, start + added, 0, None)
 
         # If there remains text after the modified part,
         # we try to reuse the old tokens
