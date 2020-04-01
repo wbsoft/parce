@@ -264,7 +264,7 @@ class Node:
         """
         for parent, index in self.ancestors_with_index(upto):
             if index:
-                yield from tokens_bw(parent[index-1::-1])
+                yield from util.tokens_bw(parent[index-1::-1])
 
     @property
     def query(self):
