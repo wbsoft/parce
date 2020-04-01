@@ -324,17 +324,25 @@ class BasicTreeBuilder:
                     break
             del start_trail[:i], end_trail[:i]
 
+            # all tree nodes will end up in context, don't reparent twice :-)
+            for n in tree:
+                n.parent = context
+
             if end_trail:
                 # join stuff after end_trail with tree
                 c = context
                 t = tree
+                reparent = False
                 end_trail[-1] -= 1
                 for i in end_trail:
                     l = len(t) - 1
                     s = c[i+1:]
                     t.extend(s)
-                    for n in s:
-                        n.parent = t
+                    if reparent:
+                        for n in s:
+                            n.parent = t
+                    else:
+                        reparent = True
                     if offset:
                         for n in tokens(s):
                             n.pos += offset
@@ -345,19 +353,22 @@ class BasicTreeBuilder:
                 # replace stuff after start_trail with tree
                 c = context
                 t = tree
+                reparent = False
                 for i in start_trail[:-1]:
-                    for n in t[1:]:
-                        n.parent = c
+                    if reparent:
+                        for n in t[1:]:
+                            n.parent = c
+                    else:
+                        reparent = True
                     self.replace_nodes(c, slice(i + 1, None), t[1:])
                     t = t[0]
                     c = c[i]
                 i = start_trail[-1]
-                for n in t:
-                    n.parent = c
+                if reparent:
+                    for n in t:
+                        n.parent = c
                 self.replace_nodes(c, slice(i + 1, None), t)
             else:
-                for n in tree:
-                    n.parent = context
                 self.replace_nodes(context, slice(None), tree)
 
             if offset:
