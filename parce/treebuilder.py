@@ -292,7 +292,12 @@ class BasicTreeBuilder:
         raise RuntimeError("shouldn't come here")
 
     def replace_tree(self, result):
-        """Modify the tree using the result from build_new()."""
+        """Modify the tree using the result from build_new().
+
+        In most types of GUI applications, this method should be called in the
+        main (GUI) thread.
+
+        """
         tree, start, end, offset, lexicons = result
 
         if not tree.lexicon or tree.lexicon != self.root.lexicon:
@@ -301,7 +306,7 @@ class BasicTreeBuilder:
             for n in tree:
                 n.parent = root
             self.replace_nodes(self.root, slice(None), tree)
-            root.lexicon = tree.lexicon
+            self.replace_root_lexicon(tree.lexicon)
 
         else:
 
@@ -357,7 +362,7 @@ class BasicTreeBuilder:
 
             if offset:
                 for p, i in context.ancestors_with_index():
-                    self.adjust_offset(p, slice(i + 1, None), offset)
+                    self.replace_pos(p, slice(i + 1, None), offset)
 
         self.start = start
         self.end = end + offset
@@ -365,11 +370,30 @@ class BasicTreeBuilder:
             self.lexicons = lexicons
 
     def replace_nodes(self, context, slice_, nodes):
-        """Called by replace_tree."""
+        """Replace the context's slice with new nodes.
+
+        This method is called by :meth:`replace_tree`.
+        You can reimplement this method to notify others of the change.
+
+        """
         context[slice_] = nodes
 
-    def adjust_offset(self, context, slice_, offset):
-        """Called by replace_tree."""
+    def replace_root_lexicon(self, lexicon):
+        """Set the root lexicon.
+
+        This method is called by :meth:`replace_tree`.
+        You can reimplement this method to notify others of the change.
+
+        """
+        self.root.lexicon = lexicon
+
+    def replace_pos(self, context, slice_, offset):
+        """Adjust the pos attribute of all tokens in the context's slice.
+
+        This method is called by :meth:`replace_tree`.
+        You can reimplement this method to notify others of the change.
+
+        """
         for t in tokens(context[slice_]):
             t.pos += offset
 
