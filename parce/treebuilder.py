@@ -294,9 +294,12 @@ class BasicTreeBuilder:
     def replace_tree(self, result):
         """Modify the tree using the result from build_new()."""
         tree, start, end, offset, lexicons = result
+
+        root_lexicon = tree.lexicon
+
         start_trail = None
         context = self.root
-        if tree.lexicon and tree.lexicon == self.root.lexicon:
+        if root_lexicon and root_lexicon == self.root.lexicon:
             start_trail = self.root.find_token_left_with_trail(start)[1] if start else []
             end_trail = self.root.find_token_with_trail(end)[1] if lexicons is None else []
 
@@ -345,12 +348,13 @@ class BasicTreeBuilder:
             context[:] = tree
             for n in tree:
                 n.parent = context
-            context.lexicon = tree.lexicon
 
         if offset:
             for p, i in context.ancestors_with_index():
                 for t in tokens(p[i+1:]):
                     t.pos += offset
+
+        self.root.lexicon = root_lexicon
 
         self.start = start
         self.end = end + offset
