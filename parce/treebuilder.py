@@ -295,11 +295,17 @@ class BasicTreeBuilder:
         """Modify the tree using the result from build_new()."""
         tree, start, end, offset, lexicons = result
 
-        root_lexicon = tree.lexicon
+        if not tree.lexicon or tree.lexicon != self.root.lexicon:
+            # whole tree update
+            root = self.root
+            for n in tree:
+                n.parent = root
+            self.replace_nodes(self.root, slice(None), tree)
+            root.lexicon = tree.lexicon
 
-        start_trail = None
-        context = self.root
-        if root_lexicon and root_lexicon == self.root.lexicon:
+        else:
+
+            context = self.root
             start_trail = self.root.find_token_left_with_trail(start)[1] if start else []
             end_trail = self.root.find_token_with_trail(end)[1] if lexicons is None else []
 
@@ -330,30 +336,28 @@ class BasicTreeBuilder:
                     t = t[l]
                     c = c[i]
 
-        if start_trail:
-            # replace stuff after start_trail with tree
-            c = context
-            t = tree
-            for i in start_trail[:-1]:
-                self.replace_nodes(c, slice(i+1, None), t[1:])
-                for n in t[1:]:
+            if start_trail:
+                # replace stuff after start_trail with tree
+                c = context
+                t = tree
+                for i in start_trail[:-1]:
+                    for n in t[1:]:
+                        n.parent = c
+                    self.replace_nodes(c, slice(i + 1, None), t[1:])
+                    t = t[0]
+                    c = c[i]
+                i = start_trail[-1]
+                for n in t:
                     n.parent = c
-                t = t[0]
-                c = c[i]
-            i = start_trail[-1]
-            self.replace_nodes(c, slice(i+1, None), t)
-            for n in t:
-                n.parent = c
-        else:
-            self.replace_nodes(context, slice(None), tree)
-            for n in tree:
-                n.parent = context
+                self.replace_nodes(c, slice(i + 1, None), t)
+            else:
+                for n in tree:
+                    n.parent = context
+                self.replace_nodes(context, slice(None), tree)
 
-        if offset:
-            for p, i in context.ancestors_with_index():
-                self.adjust_offset(p, slice(i + 1, None), offset)
-
-        self.root.lexicon = root_lexicon
+            if offset:
+                for p, i in context.ancestors_with_index():
+                    self.adjust_offset(p, slice(i + 1, None), offset)
 
         self.start = start
         self.end = end + offset
