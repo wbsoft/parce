@@ -20,6 +20,9 @@
 
 """
 Various utility classes and functions.
+
+This module only depends on the Python standard library.
+
 """
 
 import re

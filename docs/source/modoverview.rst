@@ -22,6 +22,7 @@ Overview of all modules
    themes.rst
    tree.rst
    treebuilder.rst
+   treebuilderutil.rst
    treedocument.rst
    util.rst
    validate.rst
