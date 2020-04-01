@@ -49,7 +49,8 @@ threads.
 import threading
 
 from parce.lexer import Lexer
-from parce.tree import Context, Token, _GroupToken, tokens
+from parce.tree import Context, Token, _GroupToken
+from parce.util import tokens
 from parce.target import TargetFactory
 from parce.treebuilderutil import (
     Build, Result, Changes, find_insert_tokens, get_lexer, new_tree)

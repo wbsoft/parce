@@ -259,3 +259,27 @@ def split_list(l, separator):
 def quote(s):
     """Like repr, but return s with double quotes, escaping " and \\."""
     return '"' + re.sub(r'([\\"])', r'\\\1', s) + '"'
+
+
+def tokens(nodes):
+    """Helper to yield tokens from the iterable of nodes."""
+    for n in nodes:
+        if n.is_token:
+            yield n
+        else:
+            yield from tokens(n)
+
+
+def tokens_bw(nodes):
+    """Helper to yield tokens from the iterable in backward direction.
+
+    Make sure nodes is already in backward direction.
+
+    """
+    for n in nodes:
+        if n.is_token:
+            yield n
+        else:
+            yield from tokens_bw(reversed(n))
+
+

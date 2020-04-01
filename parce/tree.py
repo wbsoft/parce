@@ -253,7 +253,7 @@ class Node:
 
         """
         for parent, index in self.ancestors_with_index(upto):
-            yield from tokens(parent[index+1:])
+            yield from util.tokens(parent[index+1:])
 
     def backward(self, upto=None):
         """Yield all Tokens in backward direction.
@@ -428,7 +428,7 @@ class Token(Node):
         context, start_trail, end_trail = self.common_ancestor_with_trail(other)
         if context:
             for context, slice_ in context.slices(start_trail, end_trail):
-                yield from tokens(context[slice_])
+                yield from util.tokens(context[slice_])
 
     def common_ancestor_with_trail(self, other):
         """Return a three-tuple(context, trail_self, trail_other).
@@ -561,7 +561,7 @@ class Context(list, Node):
     @property
     def pos(self):
         """Return the position or our first token. Returns 0 if empty."""
-        for t in tokens(self):
+        for t in util.tokens(self):
             return t.pos
         return 0
 
@@ -578,15 +578,15 @@ class Context(list, Node):
 
     def tokens(self):
         """Yield all Tokens, descending into nested Contexts."""
-        return tokens(self)
+        return util.tokens(self)
 
     def tokens_bw(self):
         """Yield all Tokens, descending into nested Contexts, in backward direction."""
-        return tokens_bw(self[::-1])
+        return util.tokens_bw(self[::-1])
 
     def first_token(self):
         """Return our first Token."""
-        for t in tokens(self):
+        for t in util.tokens(self):
             return t
 
     def last_token(self):
@@ -704,7 +704,7 @@ class Context(list, Node):
 
         """
         for context, slice_ in self.context_slices(start, end):
-            yield from tokens(context[slice_])
+            yield from util.tokens(context[slice_])
 
     def context_slices(self, start=0, end=None):
         """Yield (context, slice) tuples to yield tokens from.
@@ -807,27 +807,4 @@ class Context(list, Node):
             if token.group:
                 token = token.group[0]
             return token
-
-
-def tokens(nodes):
-    """Helper to yield tokens from the iterable of nodes."""
-    for n in nodes:
-        if n.is_token:
-            yield n
-        else:
-            yield from tokens(n)
-
-
-def tokens_bw(nodes):
-    """Helper to yield tokens from the iterable in backward direction.
-
-    Make sure nodes is already in backward direction.
-
-    """
-    for n in nodes:
-        if n.is_token:
-            yield n
-        else:
-            yield from tokens_bw(reversed(n))
-
 
