@@ -335,24 +335,23 @@ class BasicTreeBuilder:
             c = context
             t = tree
             for i in start_trail[:-1]:
-                c[i+1:] = t[1:]
+                self.replace_nodes(c, slice(i+1, None), t[1:])
                 for n in t[1:]:
                     n.parent = c
                 t = t[0]
                 c = c[i]
             i = start_trail[-1]
-            c[i+1:] = t
+            self.replace_nodes(c, slice(i+1, None), t)
             for n in t:
                 n.parent = c
         else:
-            context[:] = tree
+            self.replace_nodes(context, slice(None), tree)
             for n in tree:
                 n.parent = context
 
         if offset:
             for p, i in context.ancestors_with_index():
-                for t in tokens(p[i+1:]):
-                    t.pos += offset
+                self.adjust_offset(p, slice(i + 1, None), offset)
 
         self.root.lexicon = root_lexicon
 
@@ -360,6 +359,15 @@ class BasicTreeBuilder:
         self.end = end + offset
         if lexicons is not None:
             self.lexicons = lexicons
+
+    def replace_nodes(self, context, slice_, nodes):
+        """Called by replace_tree."""
+        context[slice_] = nodes
+
+    def adjust_offset(self, context, slice_, offset):
+        """Called by replace_tree."""
+        for t in tokens(context[slice_]):
+            t.pos += offset
 
 
 class TreeBuilder(BasicTreeBuilder):
