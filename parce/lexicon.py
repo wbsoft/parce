@@ -162,14 +162,12 @@ class Lexicon:
         instance, so the do not need to be computed again.
 
         """
-        if name in ("parse", "leaf_lexicon"):
+        if name in ("parse",):
             with self._lock:
                 try:
                     return object.__getattribute__(self, name)
                 except AttributeError:
-                    (self.parse,
-                     self.leaf_lexicon,
-                    ) = self.get_instance_attributes()
+                    self.parse = self.get_instance_attributes()
         return object.__getattribute__(self, name)
 
     @property
@@ -180,14 +178,10 @@ class Lexicon:
     def get_instance_attributes(self):
         """Compile the pattern rules and return instance attributes.
 
-        These are (parse, leaf_lexicon).
+        These are:
 
         ``parse``
             A ``parse(text, pos)`` function that parses text.
-
-        ``leaf_lexicon``
-            True if this lexicon can't create child contexts (i.e. all possible
-            targets pop out of this lexicon).
 
         """
         patterns = []
@@ -211,18 +205,6 @@ class Lexicon:
                 patterns.append(pattern)
                 rules.append(rule)
 
-        # check whether any rule in this lexicon can create child contexts.
-        # if not, a context created by this lexicon can become a leaf context,
-        # which allows for some optimizatitions.
-        leaf_lexicon = bool(not default_target or default_target.pop)
-        if leaf_lexicon:
-            for action, *rule in (v for r in rules for v in variations(r)):
-                if rule:
-                    target = make_target(self, rule)
-                    if target and not target.pop:
-                        leaf_lexicon = False
-                        break
-
         # handle the empty lexicon case
         if not patterns:
             if default_action is not no_default_action:
@@ -236,7 +218,7 @@ class Lexicon:
                 # just quits parsing
                 def parse(text, pos):
                     yield from ()
-            return parse, leaf_lexicon
+            return parse
 
         # if there is only one pattern, and no dynamic action or target,
         # see if the pattern is simple enough to just use str.find
@@ -277,7 +259,7 @@ class Lexicon:
                                 break
                             yield i, needle, None, action, target
                             pos = i + l
-                return parse, leaf_lexicon
+                return parse
 
         # compile the regexp for all patterns
         rx = re.compile("|".join("(?P<g_{0}>{1})".format(i, pattern)
@@ -340,6 +322,6 @@ class Lexicon:
             def parse(text, pos):
                 """Parse text, skipping unknown text."""
                 return map(token, finditer(text, pos))
-        return parse, leaf_lexicon
+        return parse
 
 
