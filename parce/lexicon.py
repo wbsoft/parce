@@ -183,7 +183,8 @@ class Lexicon:
         """
         patterns = []
         rules = []
-        default_action = None
+        no_default_action = object()
+        default_action = no_default_action
         default_target = None
 
         make_target = TargetFactory.make
@@ -203,7 +204,7 @@ class Lexicon:
 
         # handle the empty lexicon case
         if not patterns:
-            if default_action:
+            if default_action is not no_default_action:
                 def parse(text, pos):
                     yield pos, text[pos:], None, default_action, None
             elif default_target:
@@ -225,7 +226,7 @@ class Lexicon:
                 l= len(needle)
                 action, *rule = rules[0]
                 target = make_target(self, rule)
-                if default_action:
+                if default_action is not no_default_action:
                     def parse(text, pos):
                         """Parse text, using a default action for unknown text."""
                         while True:
@@ -289,7 +290,7 @@ class Lexicon:
             action, *target = inner_replace(dynamic[m.lastindex])
             return action, make_target(self, target)
 
-        if default_action:
+        if default_action is not no_default_action:
             finditer = rx.finditer
             def parse(text, pos):
                 """Parse text, using a default action for unknown text."""
