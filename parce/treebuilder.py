@@ -49,7 +49,7 @@ threads.
 import threading
 
 from parce.lexer import Lexer
-from parce.tree import Context, Token, _GroupToken
+from parce.tree import Context, _LeafContext, Token, _GroupToken
 from parce.util import tokens
 from parce.target import TargetFactory
 from parce.treebuilderutil import (
@@ -58,14 +58,21 @@ from parce.treebuilderutil import (
 
 def build_tree(root_lexicon, text, pos=0):
     """Build and return a tree in one go."""
+    context_type = (Context, _LeafContext)  # used for leaf contexts
     root = context = Context(root_lexicon, None)
     lexer = Lexer([root_lexicon])
     for e in lexer.events(text, pos):
         if e.target:
             for _ in range(e.target.pop, 0):
                 context = context.parent
-            for lexicon in e.target.push:
-                context = Context(lexicon, context)
+            push = e.target.push
+            if push:
+                assert type(context) is Context
+                for lexicon in push[:-1]:
+                    context = Context(lexicon, context)
+                    context.parent.append(context)
+                lexicon = push[-1]
+                context = context_type[lexicon.leaf_lexicon](lexicon, context)
                 context.parent.append(context)
         if len(e.tokens) > 1:
             tokens = tuple(_GroupToken(context, *t) for t in e.tokens)
@@ -213,6 +220,7 @@ class BasicTreeBuilder:
                 tail_pos = tail_token.pos
                 tail = True
 
+        context_type = (Context, _LeafContext)  # used for leaf contexts
         lowest_start = start
         changes = self.changes
         tree = None
@@ -252,8 +260,14 @@ class BasicTreeBuilder:
                 if e.target:
                     for _ in range(e.target.pop, 0):
                         context = context.parent
-                    for lexicon in e.target.push:
-                        context = Context(lexicon, context)
+                    push = e.target.push
+                    if push:
+                        assert type(context) is Context
+                        for lexicon in push[:-1]:
+                            context = Context(lexicon, context)
+                            context.parent.append(context)
+                        lexicon = push[-1]
+                        context = context_type[lexicon.leaf_lexicon](lexicon, context)
                         context.parent.append(context)
                 if len(e.tokens) > 1:
                     tokens = tuple(_GroupToken(context, *t) for t in e.tokens)
@@ -334,6 +348,7 @@ class BasicTreeBuilder:
                 if s == e and tree.is_context and len(tree) == 1:
                     context = context[s]
                     tree = tree[0]
+                    assert type(tree) is type(context)
                 else:
                     break
             del start_trail[:i], end_trail[:i]
@@ -349,6 +364,7 @@ class BasicTreeBuilder:
                 reparent = False
                 end_trail[-1] -= 1
                 for i in end_trail:
+                    assert type(c) is type(t)
                     l = len(t) - 1
                     s = c[i+1:]
                     t.extend(s)
@@ -369,6 +385,7 @@ class BasicTreeBuilder:
                 t = tree
                 reparent = False
                 for i in start_trail[:-1]:
+                    assert type(c) is type(t)
                     if reparent:
                         for n in t[1:]:
                             n.parent = c
@@ -377,6 +394,7 @@ class BasicTreeBuilder:
                     self.replace_nodes(c, slice(i + 1, None), t[1:])
                     t = t[0]
                     c = c[i]
+                assert type(c) is type(t)
                 i = start_trail[-1]
                 if reparent:
                     for n in t:

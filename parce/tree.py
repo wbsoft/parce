@@ -816,3 +816,77 @@ class Context(list, Node):
                 token = token.group[0]
             return token
 
+
+class _LeafContext(Context):
+    """A Context that will never have child contexts.
+
+    This allows for some optimisations.
+
+    """
+    def tokens(self):
+        """Yield all Tokens, descending into nested Contexts."""
+        yield from self
+
+    def tokens_bw(self):
+        """Yield all Tokens, descending into nested Contexts, in backward direction."""
+        yield from self[::-1]
+
+    def find_token(self, pos):
+        """Return the Token at or to the right of position."""
+        return self[self.find(pos)]
+
+    def find_token_with_trail(self, pos):
+        """Return the Token at or to the right of position, and the trail of indices."""
+        i = self.find(pos)
+        n = self[i]
+        trail = [i]
+        return n, trail
+
+    def find_token_left(self, pos):
+        """Return the Token at or to the left of position."""
+        return self[self.find_left(pos)]
+
+    def find_token_left_with_trail(self, pos):
+        """Return the Token at or to the left of position, and the trail of indices."""
+        i = self.find_left(pos)
+        n = self[i]
+        trail = [i]
+        return n, trail
+
+    def find_token_after(self, pos):
+        """Return the first token completely right from pos.
+
+        Returns None if there is no token right from pos.
+
+        """
+        i = 0
+        hi = len(self)
+        while i < hi:
+            mid = (i + hi) // 2
+            n = self[mid]
+            if n.pos < pos:
+                i = mid + 1
+            else:
+                hi = mid
+        if i < len(self):
+            return self[i]
+
+    def find_token_before(self, pos):
+        """Return the last token completely left from pos.
+
+        Returns None if there is no token left from pos.
+
+        """
+        i = 0
+        hi = len(self)
+        while i < hi:
+            mid = (i + hi) // 2
+            n = self[mid]
+            if pos < n.end:
+                hi = mid
+            else:
+                i = mid + 1
+        if i > 0:
+            i -= 1
+            return self[i]
+

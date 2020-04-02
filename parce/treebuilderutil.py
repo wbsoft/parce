@@ -200,7 +200,7 @@ def get_lexer(token):
 
 def new_tree(token):
     """Return an empty context with the same ancestry as the token's."""
-    c = context = Context(token.parent.lexicon, None)
+    c = context = type(token.parent)(token.parent.lexicon, None)
     for p in token.parent.ancestors():
         n = Context(p.lexicon, None)
         c.parent = n
