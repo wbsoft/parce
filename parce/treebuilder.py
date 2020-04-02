@@ -71,9 +71,9 @@ def build_tree(root_lexicon, text, pos=0):
             tokens = tuple(_GroupToken(context, *t) for t in e.tokens)
             for t in tokens:
                 t.group = tokens
+            context.extend(tokens)
         else:
-            tokens = Token(context, *e.tokens[0]),
-        context.extend(tokens)
+            context.append(Token(context, *e.tokens[0]))
     return root
 
 
@@ -208,10 +208,11 @@ class BasicTreeBuilder:
             # find the first token after the modified part
             tail_token = self.root.find_token_after(end)
             if tail_token:
-                tail_gen = ((t, t.pos) for t in tail_token.forward()
+                tail_gen = ((t, t.pos) for t in tail_token.forward_including()
                         if not t.group or (t.group and t is t.group[0]))
-                tail_pos = tail_token.pos
-                tail = True
+                for tail_token, tail_pos in tail_gen:
+                    tail = True
+                    break
 
         lowest_start = start
         changes = self.changes
