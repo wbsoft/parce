@@ -654,13 +654,9 @@ class BackgroundTreeBuilder(TreeBuilder):
 
     def wait(self):
         """Wait for completion if a background job is running."""
-        while True:
-            job = self.job
-            if job:
-                job.join()
-                if self.busy:
-                    continue
-            break
+        job = self.job
+        if job:
+            job.join()
 
     def get_root(self, wait=False, callback=None, args=None, kwargs=None):
         """Get the root element of the completed tree.
