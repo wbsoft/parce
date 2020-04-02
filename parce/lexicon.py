@@ -41,7 +41,7 @@ import threading
 import parce.regex
 from .pattern import Pattern
 from .target import TargetFactory
-from .rule import Item, ArgItem, DynamicItem
+from .rule import Item, ArgItem, DynamicItem, variations
 
 
 class LexiconDescriptor:
@@ -155,18 +155,21 @@ class Lexicon:
         return '.'.join((self.language.__name__, self.lexicon.rules_func.__name__))
 
     def __getattr__(self, name):
-        """Implemented to create the parse() function when called for the first time.
+        """Create certain instance attributes when requested the first time.
 
-        The function is created by ``_get_instance_attributes()`` and is set as
-        instance variable, so ``__getattr__`` is not called again.
+        Calls :meth:`get_instance_attributes` to get instance attributes needed
+        to use the Lexicon. Those attributes then are set in the Lexicon
+        instance, so the do not need to be computed again.
 
         """
-        if name in ("parse",):
+        if name in ("parse", "leaf_lexicon"):
             with self._lock:
                 try:
                     return object.__getattribute__(self, name)
                 except AttributeError:
-                    self.parse = self._get_instance_attributes()
+                    (self.parse,
+                     self.leaf_lexicon,
+                    ) = self.get_instance_attributes()
         return object.__getattribute__(self, name)
 
     @property
@@ -174,11 +177,17 @@ class Lexicon:
         """The re_flags set on instantiation."""
         return self.lexicon.re_flags
 
-    def _get_instance_attributes(self):
-        """Compile the pattern rules and return instance attributes: (parse,)
+    def get_instance_attributes(self):
+        """Compile the pattern rules and return instance attributes.
+
+        These are (parse, leaf_lexicon).
 
         ``parse``
             A ``parse(text, pos)`` function that parses text.
+
+        ``leaf_lexicon``
+            True if this lexicon can't create child contexts (i.e. all possible
+            targets pop out of this lexicon).
 
         """
         patterns = []
@@ -202,6 +211,18 @@ class Lexicon:
                 patterns.append(pattern)
                 rules.append(rule)
 
+        # check whether any rule in this lexicon can create child contexts.
+        # if not, a context created by this lexicon can become a leaf context,
+        # which allows for some optimizatitions.
+        leaf_lexicon = bool(not default_target or default_target.pop)
+        if leaf_lexicon:
+            for action, *rule in (variations(rule) for rule in rules):
+                if rule:
+                    target = make_target(self, rule)
+                    if target and not target.pop:
+                        leaf_lexicon = False
+                        break
+
         # handle the empty lexicon case
         if not patterns:
             if default_action is not no_default_action:
@@ -215,7 +236,7 @@ class Lexicon:
                 # just quits parsing
                 def parse(text, pos):
                     yield from ()
-            return parse
+            return parse, leaf_lexicon
 
         # if there is only one pattern, and no dynamic action or target,
         # see if the pattern is simple enough to just use str.find
@@ -256,7 +277,7 @@ class Lexicon:
                                 break
                             yield i, needle, None, action, target
                             pos = i + l
-                return parse
+                return parse, leaf_lexicon
 
         # compile the regexp for all patterns
         rx = re.compile("|".join("(?P<g_{0}>{1})".format(i, pattern)
@@ -319,6 +340,6 @@ class Lexicon:
             def parse(text, pos):
                 """Parse text, skipping unknown text."""
                 return map(token, finditer(text, pos))
-        return parse
+        return parse, leaf_lexicon
 
 
