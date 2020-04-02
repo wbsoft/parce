@@ -157,17 +157,16 @@ class Lexicon:
     def __getattr__(self, name):
         """Implemented to create the parse() function when called for the first time.
 
-        The function is created by _get_parser_func() and is set as instance
-        variable, so __getattr__ is not called again.
+        The function is created by ``_get_instance_attributes()`` and is set as
+        instance variable, so ``__getattr__`` is not called again.
 
         """
-        if name == "parse":
+        if name in ("parse",):
             with self._lock:
                 try:
                     return object.__getattribute__(self, name)
                 except AttributeError:
-                    self.parse = self._get_parser_func()
-                    return self.parse
+                    self.parse = self._get_instance_attributes()
         return object.__getattribute__(self, name)
 
     @property
@@ -175,8 +174,13 @@ class Lexicon:
         """The re_flags set on instantiation."""
         return self.lexicon.re_flags
 
-    def _get_parser_func(self):
-        """Compile the pattern rules and return a parse(text, pos) func."""
+    def _get_instance_attributes(self):
+        """Compile the pattern rules and return instance attributes: (parse,)
+
+        ``parse``
+            A ``parse(text, pos)`` function that parses text.
+
+        """
         patterns = []
         rules = []
         default_action = None
