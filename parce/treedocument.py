@@ -75,8 +75,7 @@ class TreeDocumentMixin:
     def set_root_lexicon(self, root_lexicon):
         """Set the root lexicon to use to tokenize the text."""
         if root_lexicon != self.root_lexicon():
-            with self._builder.change() as c:
-                c.change_root_lexicon(self.text(), root_lexicon)
+            self._builder.change_root_lexicon(self.text(), root_lexicon)
 
     def open_lexicons(self):
         """Return the list of lexicons that were left open at the end of the text.
@@ -94,8 +93,7 @@ class TreeDocumentMixin:
 
     def contents_changed(self, start, removed, added):
         """Called after modification of the text, retokenizes the modified part."""
-        with self._builder.change() as c:
-            c.change_contents(self.text(), start, removed, added)
+        self._builder.change_text(self.text(), start, removed, added)
 
     def updated(self, start, end):
         """Called when the document is fully tokenized.
