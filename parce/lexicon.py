@@ -216,7 +216,7 @@ class Lexicon:
         # which allows for some optimizatitions.
         leaf_lexicon = bool(not default_target or default_target.pop)
         if leaf_lexicon:
-            for action, *rule in (variations(rule) for rule in rules):
+            for action, *rule in (v for r in rules for v in variations(r)):
                 if rule:
                     target = make_target(self, rule)
                     if target and not target.pop:
