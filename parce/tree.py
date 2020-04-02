@@ -561,7 +561,7 @@ class Context(list, Node):
     @property
     def pos(self):
         """Return the position or our first token. Returns 0 if empty."""
-        for t in util.tokens(self):
+        for t in self.tokens():
             return t.pos
         return 0
 
@@ -578,15 +578,23 @@ class Context(list, Node):
 
     def tokens(self):
         """Yield all Tokens, descending into nested Contexts."""
-        return util.tokens(self)
+        for n in self:
+            if n.is_token:
+                yield n
+            else:
+                yield from n.tokens()
 
     def tokens_bw(self):
         """Yield all Tokens, descending into nested Contexts, in backward direction."""
-        return util.tokens_bw(self[::-1])
+        for n in self[::-1]:
+            if n.is_token:
+                yield n
+            else:
+                yield from n.tokens_bw()
 
     def first_token(self):
         """Return our first Token."""
-        for t in util.tokens(self):
+        for t in self.tokens():
             return t
 
     def last_token(self):
