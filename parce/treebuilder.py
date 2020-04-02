@@ -627,11 +627,7 @@ class BackgroundTreeBuilder(TreeBuilder):
         end = self.end
         while c and c.has_changes():
             self.lock.release()
-            if c.root_lexicon != False and c.root_lexicon != self.root.lexicon:
-                self.root.lexicon = c.root_lexicon
-                self.build(c.text)
-            else:
-                self.rebuild(c.text, c.position, c.removed, c.added)
+            self.rebuild(c.text, c.root_lexicon, c.position, c.removed, c.added)
             start = self.start if start == -1 else min(start, self.start)
             end = self.end if end == -1 else max(c.new_position(end), self.end)
             self.lock.acquire()
