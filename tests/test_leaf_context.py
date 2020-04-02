@@ -46,11 +46,12 @@ class LeafTest(Language):
 
 
 def test_main():
-    d = Document(LeafTest.root, "ACBCBBBB")
-    # removing the first two causes a leaf context to be merged with a non-leaf context
-    # proving that the leaf context stuff is a failed virtue ;-( :-D
-    del d[0:2]
-
+    b = treebuilder.BasicTreeBuilder(LeafTest.root)
+    b.build("ACBCBBBB")
+    # removing the first two characters causes a leaf context to be merged with
+    # a non-leaf context, proving that the leaf context stuff is a failed virtue
+    # ;-( :-D
+    b.rebuild("BCBBBB", False, 0, 2, 0)
 
 if __name__ == "__main__":
     test_main()
