@@ -53,7 +53,7 @@ from parce.tree import Context, Token, _GroupToken
 from parce.util import tokens
 from parce.target import TargetFactory
 from parce.treebuilderutil import (
-    Result, Changes, find_insert_tokens, get_lexer, new_tree)
+    BuildResult, ReplaceResult, Changes, find_insert_tokens, get_lexer, new_tree)
 
 
 def build_tree(root_lexicon, text, pos=0):
@@ -152,7 +152,11 @@ class BasicTreeBuilder:
         if added is None:
             added = len(text) - start
         result = self.build_new_tree(text, root_lexicon, start, removed, added)
-        self.replace_tree(result)
+        r = self.replace_tree(result)
+        self.start = r.start
+        self.end = r.end
+        if r.lexicons is not None:
+            self.lexicons = r.lexicons
 
     def build_new_tree(self, text, root_lexicon, start, removed, added):
         """Build a new tree without yet modifying the current tree.
@@ -209,7 +213,7 @@ class BasicTreeBuilder:
         offset = added - removed
 
         if not root_lexicon:
-            return Result(Context(root_lexicon, None), start, start + added, 0, None)
+            return BuildResult(Context(root_lexicon, None), start, start + added, 0, None)
 
         # If there remains text after the modified part,
         # we try to reuse the old tokens
@@ -283,7 +287,7 @@ class BasicTreeBuilder:
                             tail = False
                     if pos == tail_pos and tokens[0].equals(tail_token):
                         # we can reuse the tail from tail_pos
-                        return Result(tree, lowest_start, tail_pos, offset, None)
+                        return BuildResult(tree, lowest_start, tail_pos, offset, None)
                 context.extend(tokens)
                 if changes:
                     # handle changes
@@ -313,7 +317,7 @@ class BasicTreeBuilder:
                         break # break the for loop to restart at new start pos
             else:
                 # we ran till the end, also return the open lexicons
-                return Result(tree, lowest_start, len(text), 0, lexer.lexicons[1:])
+                return BuildResult(tree, lowest_start, len(text), 0, lexer.lexicons[1:])
         raise RuntimeError("shouldn't come here")
 
     def replace_tree(self, result):
@@ -404,10 +408,7 @@ class BasicTreeBuilder:
                 for p, i in context.ancestors_with_index():
                     self.replace_pos(p, slice(i + 1, None), offset)
 
-        self.start = start
-        self.end = end + offset
-        if lexicons is not None:
-            self.lexicons = lexicons
+        return ReplaceResult(start, end + offset, lexicons)
 
     def replace_nodes(self, context, slice_, nodes):
         """Replace the context's slice with new nodes.
@@ -444,19 +445,21 @@ class TreeBuilder(BasicTreeBuilder):
     The :meth:`rebuild` is reimplemented to store the changes and then call
     :meth:`start_processing`. This, in turn, performs the updating work.
 
-    You can inherit from this class and call :meth:`process_changes` from a
+    You can inherit from this class and call :meth:`do_processing` from a
     background thread to move tokenizing to a background thread. See
     :class:`BackgroundTreeBuilder` for an example that uses Python threads.
 
     While the new (part of the) tree is being built, the ``busy`` attribute is
-    set to "building". The current tree is still accessible then. When the new
-    (part of the) tree is finished, the ``busy`` attribute is set to
-    "updating", the current tree is then modified and during that process can
-    be in an inconsistent state.
+    set to True. If is set to False again when the work is done. You can also
+    implement your own handling in :meth:`do_processing` by reading from
+    the :meth:`process` generator, which performs the build/replace job and
+    yield a short string describing what it is about to do. You can choose
+    to let the tree build in a background thread, and the replacement in the
+    main thread, etc.
 
     During background tokenizing, new changes can be submitted and will
-    immediately be acted upon; the ``rebuild()`` method can interrupt itself
-    and adjust tokenizing to the new changes.
+    immediately be acted upon; the :meth:`build_new_tree` method can interrupt
+    itself and adjust tokenizing to the new changes.
 
     """
     def __init__(self, root_lexicon=None):
@@ -464,11 +467,22 @@ class TreeBuilder(BasicTreeBuilder):
         self.busy = False
         self.changes = []
 
+    def lock(self, acquire):
+        """Acquire lock (True) or release lock (False). Does nothing by default.
+
+        If you want to run the full update and replace jobs in a background
+        thread, you may need locking, to prevent changes from going unnoticed.
+
+        """
+        pass
+
     def rebuild(self, text, root_lexicon=False, start=0, removed=0, added=None):
         """Reimplemented to schedule an update of the tree."""
         if added is None:
             added = len(text) - start
+        self.lock(True)
         self.changes.append((text, root_lexicon, start, removed, added))
+        self.lock(False)
         self.start_processing()
 
     def get_changes(self):
@@ -487,44 +501,56 @@ class TreeBuilder(BasicTreeBuilder):
         """Initialize and start processing if needed."""
         if not self.busy:
             self.busy = True
-            self.start = self.end = -1
-            self.process_started()
             self.do_processing()
 
-    def do_processing(self):
-        """Called when there are recorded changes to process.
+    def process(self):
+        """This generator performs the whole job.
 
-        Calls, :meth:`process_changes()` and after that
-        :meth:`finish_processing()`; may be reimplemented to call
-        :meth:`process_changes()` in a background thread.
+        Yields "build" when about to build a new tree; "replace" when about to
+        replace a new tree; (which can be repeated); "finish" when finished
+        looping, and "done" at the very end. You should exhaust the generator
+        fully.
 
         """
-        self.process_changes()
-        self.finish_processing()
-
-    def process_changes(self):
-        """Processes the recorded change requests."""
+        self.process_started()
+        start = end = -1
+        lexicons = False    # no change
+        self.lock(True)
         c = self.get_changes()
-        start = self.start
-        end = self.end
         while c and c.has_changes():
+            self.lock(False)
+            yield "build"
             result = self.build_new_tree(c.text, c.root_lexicon, c.start, c.removed, c.added)
-            self.replace_tree(result)
-            start = self.start if start == -1 else min(start, self.start)
-            end = self.end if end == -1 else max(c.new_position(end), self.end)
+            yield "replace"
+            r = self.replace_tree(result)
+            start = r.start if start == -1 else min (start, r.start)
+            end = r.end if end == -1 else max(c.new_position(end), r.end)
+            if r.lexicons is not None:
+                lexicons = r.lexicons
+            self.lock(True)
             c = self.get_changes()
+        yield "finish"
         if start != -1:
             self.start = start
         if end != -1:
             self.end = end
-
-    def finish_processing(self):
-        """Called by :meth:`do_processing()` when :meth:`process_changes()` has finished."""
-        if self.changes:
-            self.do_processing()
-            return
+        if lexicons is not False:
+            self.lexicons = lexicons
         self.busy = False
         self.process_finished()
+        self.lock(False)
+        yield "done"
+
+    def do_processing(self):
+        """Called when there are recorded changes to process.
+
+        The default implementation reads from the :meth:`process` generator
+        until exhausted. You can inherit from this method to call it e.g. in a
+        background thread.
+
+        """
+        for state in self.process():
+            pass
 
     def process_started(self):
         """Called when ``start()`` has been called to update the tree.
@@ -567,45 +593,18 @@ class BackgroundTreeBuilder(TreeBuilder):
     def __init__(self, root_lexicon=None):
         super().__init__(root_lexicon)
         self.job = None
-        self.lock = threading.Lock()
+        self._lock = threading.Lock()
         self.updated_callbacks = []
         self.finished_callbacks = []
 
-    def rebuild(self, text, root_lexicon=False, start=0, removed=0, added=None):
-        """Reimplemented to add locking."""
-        with self.lock:
-            self.changes.append((text, root_lexicon, start, removed, added))
-        self.start_processing()
+    def lock(self, acquire):
+        """Reimplemented to actually lock/unlock."""
+        self._lock.acquire() if acquire else self._lock.release()
 
     def do_processing(self):
-        """Start a background job if needed."""
+        """Reimplemented to call do_processing in a background thread."""
         self.job = threading.Thread(target=super().do_processing)
         self.job.start()
-
-    def process_changes(self):
-        """Reimplemented to add locking."""
-        self.lock.acquire()
-        c = self.get_changes()
-        start = self.start
-        end = self.end
-        while c and c.has_changes():
-            self.lock.release()
-            result = self.build_new_tree(c.text, c.root_lexicon, c.start, c.removed, c.added)
-            self.replace_tree(result)
-            start = self.start if start == -1 else min(start, self.start)
-            end = self.end if end == -1 else max(c.new_position(end), self.end)
-            self.lock.acquire()
-            c = self.get_changes()
-        if start != -1:
-            self.start = start
-        if end != -1:
-            self.end = end
-
-    def finish_processing(self):
-        """Called by :meth:`do_processing()` when :meth:`process_changes()` has finished."""
-        self.busy = False
-        self.process_finished()
-        self.lock.release()
 
     def process_finished(self):
         """Reimplemented to clear the job attribute and call the callbacks."""

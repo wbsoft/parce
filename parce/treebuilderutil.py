@@ -32,8 +32,11 @@ from parce.tree import Context
 from parce.target import TargetFactory
 
 
-#: encapsulates the return values of :meth:`TreeBuilder.build_new`
-Result = collections.namedtuple("Result", "tree start end offset lexicons")
+#: encapsulates the return values of :meth:`TreeBuilder.build_new_tree`
+BuildResult = collections.namedtuple("BuildResult", "tree start end offset lexicons")
+
+#: encapsulates the return values of :meth:`TreeBuilder.replace_tree`
+ReplaceResult = collections.namedtuple("ReplaceResult", "start end lexicons")
 
 
 class Changes:
