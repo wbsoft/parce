@@ -53,7 +53,7 @@ from parce.tree import Context, Token, _GroupToken
 from parce.util import tokens
 from parce.target import TargetFactory
 from parce.treebuilderutil import (
-    Build, Result, Changes, find_insert_tokens, get_lexer, new_tree)
+    Result, Changes, find_insert_tokens, get_lexer, new_tree)
 
 
 def build_tree(root_lexicon, text, pos=0):
@@ -84,12 +84,16 @@ class BasicTreeBuilder:
     This root context is never replaced, although its lexicon may change and
     of course its children.
 
-    Building a tree happens in :meth:`build_new` which builds a (replacement)
-    tree without making any changes yet to the current tree.
+    Call :meth:`rebuild` to build or rebuild the tree.
 
-    The result of :meth:`build_new` is a tuple of arguments that can be used
-    to call :meth:`replace_tree`, which integrates the updated subtree in the
-    main tree structure. This method sets three instance attributes:
+    The actual building of a tree happens in :meth:`build_new_tree` which
+    builds a (replacement) tree without making any changes yet to the current
+    tree.
+
+    The result of :meth:`build_new_tree` is a tuple of arguments that is used
+    used when calling :meth:`replace_tree`, which integrates the updated
+    subtree in the main tree structure. This method sets three instance
+    attributes:
 
     ``start``, ``end``:
         indicate the region the tokens were changed. After build(), start is
@@ -107,8 +111,6 @@ class BasicTreeBuilder:
     No other variables or state are kept, so if you don't need the above
     information anymore, you can throw away the TreeBuilder after use.
 
-    The :meth:`build` and :meth:`rebuild` methods are provided for convenience.
-
     """
     start = 0
     end = 0
@@ -118,26 +120,21 @@ class BasicTreeBuilder:
         self.root = Context(root_lexicon, None)
         self.changes = False # keep "if self.changes" in rebuild() from complaining
 
-    def tree(self, text):
-        """Convenience method building and returning the tree with all tokens."""
-        self.build(text)
-        return self.root
-
-    def build(self, text):
-        """Convenience method building the tree with all tokens.
-
-        Calls :meth:`build_new` and :meth:`replace_tree` to do the work.
-
-        """
-        self.rebuild(text)
-
     def rebuild(self, text, root_lexicon=False, start=0, removed=0, added=None):
         """Tokenize the modified part of the text again and update the tree.
 
-        Except for the ``text``, all arguments have default values:
+        The arguments:
+
+        ``text``
+            The text to parse. Always give the entire text, also when you only
+            actually changed a small part. The tree builder needs to check text
+            before and after the changed region, and possibly re-parse more
+            text.
 
         ``root_lexicon``
-            False means no change; can be None or any Lexicon
+            The root lexicon to use (default: False). False means no change;
+            can be None or any Lexicon. If not False, the tree is always
+            rebuilt completely.
 
         ``start``
             Position of the change (default: 0)
@@ -147,35 +144,50 @@ class BasicTreeBuilder:
 
         ``added``
             The number of added characters (default: None, which means
-            the length of the entire text)
+            all characters from start to the end of the text)
 
-        Calls :meth:`build_new` and :meth:`replace_tree` to do the actual work.
+        Calls :meth:`build_new_tree` and :meth:`replace_tree` to do the actual work.
 
         """
         if added is None:
             added = len(text) - start
-        result = self.build_new(Build(text, root_lexicon, start, removed, added))
+        result = self.build_new_tree(text, root_lexicon, start, removed, added)
         self.replace_tree(result)
 
-    def build_new(self, build):
+    def build_new_tree(self, text, root_lexicon, start, removed, added):
         """Build a new tree without yet modifying the current tree.
 
         Tokens from the current tree are reused as much as possible. From
         tokens at the tail (after the end of the modified region) the pos
         attribute is updated if necessary.
 
-        The ``build`` argument is a five-tuple ``Build(root_lexicon, text,
-        start, removed, added)``.
+        The arguments:
 
-        Returns a ``Result`` tuple with ``tree``, ``start``, ``end``,
-        ``offset`` and ``lexicons`` values ``start`` and ``end`` are the
+        ``text``
+            The text to parse. Always the entire text, also when only a small
+            portion was changed.
+
+        ``root_lexicon``
+            The root lexicon to use. False means no change; can be None or any
+            Lexicon. If not False, the tree is always rebuilt completely.
+
+        ``start``
+            Position of the change.
+
+        ``removed``
+            The number of removed characters.
+
+        ``added``
+            The number of added characters.
+
+        Returns a ``Result`` five-tuple with ``tree``, ``start``, ``end``,
+        ``offset`` and ``lexicons`` values. The ``start`` and ``end`` are the
         insert positions in the old tree.
 
         The new ``tree`` is intended to replace a part of, or the whole old
         tree. If ``start`` == 0 and ``lexicons`` is not None; the whole tree
-        can be replaced. (In this case; check the root lexicon of the returned
-        tree, it might have changed!) The :meth:`replace_tree` method can
-        perform this action.
+        can be replaced. (In this case; the root lexicon might have changed!)
+        Use :meth:`replace_tree` to insert the result tree in the old tree.
 
         If ``start`` > 0, tokens in the old tree before start are to be
         preserved.
@@ -185,8 +197,6 @@ class BasicTreeBuilder:
         gives the position change for the tokens that are reused.
 
         """
-        text, root_lexicon, start, removed, added = build
-
         if root_lexicon is not False:
             start, removed, added = 0, 0, len(text)
         else:
@@ -312,6 +322,10 @@ class BasicTreeBuilder:
         In most types of GUI applications, this method should be called in the
         main (GUI) thread.
 
+        The changes are delegated to the various ``replace_`` methods, which
+        can be reimplemented to get fine-grained monitoring of and control over
+        the tree-replacing process.
+
         """
         tree, start, end, offset, lexicons = result
 
@@ -427,8 +441,8 @@ class BasicTreeBuilder:
 class TreeBuilder(BasicTreeBuilder):
     """TreeBuilder extends BasicTreeBuilder with change management functions.
 
-    Instead of calling :meth:`build()` or :meth:`rebuild()`, you can call
-    :meth:`change`, which will trigger a rebuild.
+    The :meth:`rebuild` is reimplemented to store the changes and then call
+    :meth:`start_processing`. This, in turn, performs the updating work.
 
     You can inherit from this class and call :meth:`process_changes` from a
     background thread to move tokenizing to a background thread. See
@@ -450,32 +464,11 @@ class TreeBuilder(BasicTreeBuilder):
         self.busy = False
         self.changes = []
 
-    def change(self, text, root_lexicon=False, start=0, removed=None, added=None):
-        """Schedule an update of the tree.
-
-        Depending on the underlying implementation, this is either performed
-        directly or in a background thread.
-
-        Except for the ``text``, all arguments have default values:
-
-        ``root_lexicon``
-            False means no change; can be None or any Lexicon. If a Lexicon,
-            the entire text is parsed again (ignoring the start/removed/added
-            values); a None ``root_lexicon`` clears the tree.
-
-        ``start``
-            Position of the change (default: 0)
-
-        ``removed``
-            The number of removed characters (default: None, which means
-            all characters from start to end of current text)
-
-        ``added``
-            The number of added characters (default: None, which means
-            the length of the entire text)
-
-        """
-        self.changes.append(Build(text, root_lexicon, start, removed, added))
+    def rebuild(self, text, root_lexicon=False, start=0, removed=0, added=None):
+        """Reimplemented to schedule an update of the tree."""
+        if added is None:
+            added = len(text) - start
+        self.changes.append((text, root_lexicon, start, removed, added))
         self.start_processing()
 
     def get_changes(self):
@@ -515,7 +508,8 @@ class TreeBuilder(BasicTreeBuilder):
         start = self.start
         end = self.end
         while c and c.has_changes():
-            self.rebuild(c.text, c.root_lexicon, c.start, c.removed, c.added)
+            result = self.build_new_tree(c.text, c.root_lexicon, c.start, c.removed, c.added)
+            self.replace_tree(result)
             start = self.start if start == -1 else min(start, self.start)
             end = self.end if end == -1 else max(c.new_position(end), self.end)
             c = self.get_changes()
@@ -552,8 +546,7 @@ class TreeBuilder(BasicTreeBuilder):
 class BackgroundTreeBuilder(TreeBuilder):
     """A TreeBuilder that can tokenize a text in a Python thread.
 
-    In BackgroundTreeBuilder, :meth:`change_text()` and
-    :meth:`change_root_lexicon()` return immediately, because
+    In BackgroundTreeBuilder, :meth:`rebuild()` returns immediately, because
     :meth:`do_processing()` has been reimplemented to call
     :meth:`process_changes()` in a background thread.
 
@@ -578,10 +571,10 @@ class BackgroundTreeBuilder(TreeBuilder):
         self.updated_callbacks = []
         self.finished_callbacks = []
 
-    def change(self, text, root_lexicon=False, start=0, removed=None, added=None):
+    def rebuild(self, text, root_lexicon=False, start=0, removed=0, added=None):
         """Reimplemented to add locking."""
         with self.lock:
-            self.changes.append(Build(text, root_lexicon, start, removed, added))
+            self.changes.append((text, root_lexicon, start, removed, added))
         self.start_processing()
 
     def do_processing(self):
@@ -597,7 +590,8 @@ class BackgroundTreeBuilder(TreeBuilder):
         end = self.end
         while c and c.has_changes():
             self.lock.release()
-            self.rebuild(c.text, c.root_lexicon, c.start, c.removed, c.added)
+            result = self.build_new_tree(c.text, c.root_lexicon, c.start, c.removed, c.added)
+            self.replace_tree(result)
             start = self.start if start == -1 else min(start, self.start)
             end = self.end if end == -1 else max(c.new_position(end), self.end)
             self.lock.acquire()
