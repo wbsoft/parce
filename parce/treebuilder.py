@@ -137,7 +137,7 @@ class BasicTreeBuilder:
         Except for the ``text``, all arguments have default values:
 
         ``root_lexicon``
-            False means no change; can be None or a Lexicon
+            False means no change; can be None or any Lexicon
 
         ``start``
             Position of the change (default: 0)
@@ -153,7 +153,7 @@ class BasicTreeBuilder:
 
         """
         if added is None:
-            added = len(text)
+            added = len(text) - start
         result = self.build_new(Build(text, root_lexicon, start, removed, added))
         self.replace_tree(result)
 
@@ -281,7 +281,7 @@ class BasicTreeBuilder:
                     if c:
                         # break out and adjust the current tokenizing process
                         text = c.text
-                        start = c.position
+                        start = c.start
                         if c.root_lexicon != False:
                             tree.lexicon = c.root_lexicon
                             start = 0
@@ -428,60 +428,55 @@ class TreeBuilder(BasicTreeBuilder):
     """TreeBuilder extends BasicTreeBuilder with change management functions.
 
     Instead of calling :meth:`build()` or :meth:`rebuild()`, you can call
-    :meth:`change_text` and/or :meth:`change_root_lexicon`, which will trigger
-    a rebuild. If you call these methods within a :keyword:`with` context,
-    changes are stored and applied as soon as the context exits.
+    :meth:`change`, which will trigger a rebuild.
 
     You can inherit from this class and call :meth:`process_changes` from a
     background thread to move tokenizing to a background thread. See
     :class:`BackgroundTreeBuilder` for an example that uses Python threads.
 
-    While tree building is in progress, the ``busy`` attribute is set to True,
-    the tree can then be in an inconsistent state. During background
-    tokenizing, new changes can be submitted and will immediately be acted
-    upon; the ``rebuild()`` method can interrupt itself and adjust tokenizing
-    to the new changes.
+    While the new (part of the) tree is being built, the ``busy`` attribute is
+    set to "building". The current tree is still accessible then. When the new
+    (part of the) tree is finished, the ``busy`` attribute is set to
+    "updating", the current tree is then modified and during that process can
+    be in an inconsistent state.
+
+    During background tokenizing, new changes can be submitted and will
+    immediately be acted upon; the ``rebuild()`` method can interrupt itself
+    and adjust tokenizing to the new changes.
 
     """
-    busy = False
-
     def __init__(self, root_lexicon=None):
         super().__init__(root_lexicon)
-        self._incontext = 0
         self.busy = False
         self.changes = []
 
-    def __enter__(self):
-        self._incontext += 1
-        return self
+    def change(self, text, root_lexicon=False, start=0, removed=None, added=None):
+        """Schedule an update of the tree.
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        self._incontext -= 1
-        if self._incontext == 0 and not self.busy:
-            self.start_processing()
+        Depending on the underlying implementation, this is either performed
+        directly or in a background thread.
 
-    def change_root_lexicon(self, text, lexicon):
-        """Record a request to change the root lexicon.
+        Except for the ``text``, all arguments have default values:
 
-        Because TreeBuilder does not store the text, we should also give the
-        text. If we are not in a :keyword:`with` context,
-        :meth:`start_processing()` is called immediately.
+        ``root_lexicon``
+            False means no change; can be None or any Lexicon. If a Lexicon,
+            the entire text is parsed again (ignoring the start/removed/added
+            values); a None ``root_lexicon`` clears the tree.
 
-        """
-        self.changes.append(("lexicon", text, lexicon))
-        if self._incontext == 0 and not self.busy:
-            self.start_processing()
+        ``start``
+            Position of the change (default: 0)
 
-    def change_text(self, text, position=0, removed=None, added=None):
-        """Record a request to change the text.
+        ``removed``
+            The number of removed characters (default: None, which means
+            all characters from start to end of current text)
 
-        If we are not in a :keyword:`with` context, :meth:`start_processing()`
-        is called immediately.
+        ``added``
+            The number of added characters (default: None, which means
+            the length of the entire text)
 
         """
-        self.changes.append(("text", text, position, removed, added))
-        if self._incontext == 0 and not self.busy:
-            self.start_processing()
+        self.changes.append(Build(text, root_lexicon, start, removed, added))
+        self.start_processing()
 
     def get_changes(self):
         """Get and combine the stored change requests in a Changes object.
@@ -492,8 +487,7 @@ class TreeBuilder(BasicTreeBuilder):
         """
         c = Changes()
         while self.changes:
-            request, *args = self.changes.pop(0)
-            c.change_root_lexicon(*args) if request == "lexicon" else c.change_contents(*args)
+            c.add(*self.changes.pop(0))
         return c
 
     def start_processing(self):
@@ -520,7 +514,7 @@ class TreeBuilder(BasicTreeBuilder):
         start = self.start
         end = self.end
         while c and c.has_changes():
-            self.rebuild(c.text, c.root_lexicon, c.position, c.removed, c.added)
+            self.rebuild(c.text, c.root_lexicon, c.start, c.removed, c.added)
             start = self.start if start == -1 else min(start, self.start)
             end = self.end if end == -1 else max(c.new_position(end), self.end)
             c = self.get_changes()
@@ -583,19 +577,11 @@ class BackgroundTreeBuilder(TreeBuilder):
         self.updated_callbacks = []
         self.finished_callbacks = []
 
-    def change_root_lexicon(self, text, lexicon):
+    def change(self, text, root_lexicon=False, start=0, removed=None, added=None):
         """Reimplemented to add locking."""
         with self.lock:
-            self.changes.append(("lexicon", text, lexicon))
-        if self._incontext == 0 and not self.busy:
-            self.start_processing()
-
-    def change_text(self, text, position=0, removed=None, added=None):
-        """Reimplemented to add locking."""
-        with self.lock:
-            self.changes.append(("text", text, position, removed, added))
-        if self._incontext == 0 and not self.busy:
-            self.start_processing()
+            self.changes.append(Build(text, root_lexicon, start, removed, added))
+        self.start_processing()
 
     def do_processing(self):
         """Start a background job if needed."""
@@ -610,7 +596,7 @@ class BackgroundTreeBuilder(TreeBuilder):
         end = self.end
         while c and c.has_changes():
             self.lock.release()
-            self.rebuild(c.text, c.root_lexicon, c.position, c.removed, c.added)
+            self.rebuild(c.text, c.root_lexicon, c.start, c.removed, c.added)
             start = self.start if start == -1 else min(start, self.start)
             end = self.end if end == -1 else max(c.new_position(end), self.end)
             self.lock.acquire()

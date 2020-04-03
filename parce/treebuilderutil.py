@@ -44,16 +44,15 @@ class Changes:
 
     This object is used by
     :meth:`~parce.treebuilder.TreeBuilder.get_changes()`. Calling
-    :meth:`change_contents()` merges new changes with the existing changes.
-    Calling :meth:`change_root_lexicon()` stores a root lexicon change.
+    :meth:`add()` merges new changes with the existing changes.
 
     """
-    __slots__ = "root_lexicon", "text", "position", "added", "removed"
+    __slots__ = "text", "root_lexicon", "start", "removed", "added"
 
     def __init__(self):
-        self.root_lexicon = False   # meaning no change is requested
         self.text = ""
-        self.position = -1          # meaning no text is altered
+        self.root_lexicon = False   # meaning no change is requested
+        self.start = -1          # meaning no text is altered
         self.removed = 0
         self.added = 0
 
@@ -61,61 +60,58 @@ class Changes:
         changes = []
         if self.root_lexicon != False:
             changes.append("root_lexicon: {}".format(self.root_lexicon))
-        if self.position != -1:
-            changes.append("text: {} -{} +{}".format(self.position, self.removed, self.added))
+        if self.start != -1:
+            changes.append("text: {} -{} +{}".format(self.start, self.removed, self.added))
         if not changes:
             changes.append("(no changes)")
         return "<Changes {}>".format(', '.join(changes))
 
-    def change_contents(self, text, position=0, removed=None, added=None):
+    def add(self, text, root_lexicon=False, start=0, removed=None, added=None):
         """Merge new change with existing changes.
 
-        If added and removed are not given, all text after position is
+        If added and removed are not given, all text after start is
         considered to be replaced.
 
         """
+        if root_lexicon != False:
+            self.root_lexicon = root_lexicon
         if removed is None:
-            removed = len(self.text) - position
+            removed = len(self.text) - start
         if added is None:
-            added = len(text) - position
+            added = len(text) - start
         self.text = text
-        if self.position == -1:
+        if self.start == -1:
             # there were no previous changes
-            self.position = position
+            self.start = start
             self.removed = removed
             self.added = added
             return
         # determine the offset for removed and added
-        if position + removed < self.position:
-            offset = self.position - position - removed
-        elif position > self.position + self.added:
-            offset = position - self.position - self.added
+        if start + removed < self.start:
+            offset = self.start - start - removed
+        elif start > self.start + self.added:
+            offset = start - self.start - self.added
         else:
             offset = 0
         # determine which part of removed falls inside existing changes
-        start = max(position, self.position)
-        end = min(position + removed, self.position + self.added)
+        start = max(start, self.start)
+        end = min(start + removed, self.start + self.added)
         offset -= max(0, end - start)
         # set the new values
-        self.position = min(self.position, position)
+        self.start = min(self.start, start)
         self.removed += removed + offset
         self.added += added + offset
 
-    def change_root_lexicon(self, text, root_lexicon):
-        """Store a root lexicon change."""
-        self.text = text
-        self.root_lexicon = root_lexicon
-
     def has_changes(self):
         """Return True when there are actually changes."""
-        return self.position != -1 or self.root_lexicon != False
+        return self.start != -1 or self.root_lexicon != False
 
     def new_position(self, pos):
-        """Return how the current changes would affect an older position."""
-        if pos < self.position:
+        """Return how the current changes would affect an older start."""
+        if pos < self.start:
             return pos
-        elif pos < self.position + self.removed:
-            return self.position + self.added
+        elif pos < self.start + self.removed:
+            return self.start + self.added
         return pos - self.removed + self.added
 
 
