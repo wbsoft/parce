@@ -492,10 +492,11 @@ class TreeBuilder(BasicTreeBuilder):
 
     def start_processing(self):
         """Initialize and start processing if needed."""
-        self.busy = True
-        self.start = self.end = -1
-        self.process_started()
-        self.do_processing()
+        if not self.busy:
+            self.busy = True
+            self.start = self.end = -1
+            self.process_started()
+            self.do_processing()
 
     def do_processing(self):
         """Called when there are recorded changes to process.
