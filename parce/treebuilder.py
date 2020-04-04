@@ -446,14 +446,6 @@ class TreeBuilder:
         for t in tokens(context[slice_]):
             t.pos += offset
 
-    def wait(self):
-        """Implement to wait for completion if a background job is running.
-
-        The default implementation does nothing, and immediately returns.
-
-        """
-        pass
-
     def get_root(self, wait=False, *args, **kwargs):
         """Return the root element of the completed tree.
 
@@ -470,15 +462,6 @@ class TreeBuilder:
                 return
             self.wait()
         return self.root
-
-    def lock(self, acquire):
-        """Acquire lock (True) or release lock (False). Does nothing by default.
-
-        If you want to run the full update and replace jobs in a background
-        thread, you may need locking, to prevent changes from going unnoticed.
-
-        """
-        pass
 
     def get_changes(self):
         """Get and combine the stored change requests in a Changes object.
@@ -504,7 +487,11 @@ class TreeBuilder:
             pass
 
     def process(self):
-        """This generator performs the whole job.
+        """Process all changes and update the tree.
+
+        This method behaves as a generator coroutine, instead of simply calling
+        this method, you should iterate over its output, which reports which
+        stage the process is at.
 
         Yields "build" when about to build a new tree; "replace" when about to
         replace a new tree; (which can be repeated); "finish" when finished
@@ -542,9 +529,26 @@ class TreeBuilder:
         if lexicons is not False:
             self.lexicons = lexicons
         self.busy = False
-        self.process_finished()
         self.lock(False)
+        self.process_finished()
         yield "done"
+
+    def wait(self):
+        """Implement to wait for completion if a background job is running.
+
+        The default implementation does nothing, and immediately returns.
+
+        """
+        pass
+
+    def lock(self, acquire):
+        """Acquire lock (True) or release lock (False). Does nothing by default.
+
+        If you want to run the full update and replace jobs in a background
+        thread, you may need locking, to prevent changes from going unnoticed.
+
+        """
+        pass
 
     def process_started(self):
         """Called when ``start()`` has been called to update the tree.
@@ -567,8 +571,8 @@ class BackgroundTreeBuilder(TreeBuilder):
     """A TreeBuilder that can tokenize a text in a Python thread.
 
     In BackgroundTreeBuilder, :meth:`rebuild()` returns immediately, because
-    :meth:`do_processing()` has been reimplemented to call
-    :meth:`process_changes()` in a background thread.
+    :meth:`start_processing()` has been reimplemented to call itself in a
+    background thread.
 
     You can continue adding changes while previous changes are processed;
     the tree builder will immediately adapt to the new changes.
@@ -581,7 +585,7 @@ class BackgroundTreeBuilder(TreeBuilder):
     ``add_finished_callback()``; those are called once when all pending changes
     are processed and then forgotten again.
 
-    To be sure you get a complete tree, call ``get_root()``.
+    To be sure you get a completed tree, call ``get_root(True)``.
 
     """
     def __init__(self, root_lexicon=None):
