@@ -500,7 +500,7 @@ class TreeBuilder:
         method to call it e.g. in a background thread.
 
         """
-        for state in self.process():
+        for stage in self.process():
             pass
 
     def process(self):

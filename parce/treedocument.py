@@ -42,9 +42,8 @@ class TreeDocumentMixin:
     """
 
     def __init__(self, builder):
-        """Initialize with a BackgroundTreeBuilder instance, which is doing the work."""
+        """Initialize with a TreeBuilder instance, which is doing the work."""
         self._builder = builder
-        builder.add_build_updated_callback(self.updated)
 
     def get_root(self, wait=False, callback=None, args=None, kwargs=None):
         """Get the root element of the completed tree.
@@ -53,10 +52,10 @@ class TreeDocumentMixin:
         full tree is returned. If wait is False, None is returned if the tree
         is still busy being built.
 
-        If a callback is given and tokenizing is still busy, that callback is
-        called once when tokenizing is ready. If given, args and kwargs are the
-        arguments the callback is called with, defaulting to () and {},
-        respectively.
+        If a callback is given and a BackgroundTreeBuilder was used and
+        tokenizing is still busy, that callback is called once when tokenizing
+        is ready. If given, args and kwargs are the arguments the callback is
+        called with, defaulting to () and {}, respectively.
 
         Note that, for the lifetime of a Document, the root element is always
         the same. But using this method you can be sure that you are dealing
@@ -67,15 +66,11 @@ class TreeDocumentMixin:
 
     def root_lexicon(self):
         """Return the currently set root lexicon."""
-        c = self._builder.changes
-        if c and c.root_lexicon != False:
-            return c.root_lexicon
         return self._builder.root.lexicon
 
     def set_root_lexicon(self, root_lexicon):
         """Set the root lexicon to use to tokenize the text."""
-        if root_lexicon != self.root_lexicon():
-            self._builder.rebuild(self.text(), root_lexicon)
+        self._builder.rebuild(self.text(), root_lexicon)
 
     def open_lexicons(self):
         """Return the list of lexicons that were left open at the end of the text.
@@ -94,13 +89,4 @@ class TreeDocumentMixin:
     def contents_changed(self, start, removed, added):
         """Called after modification of the text, retokenizes the modified part."""
         self._builder.rebuild(self.text(), False, start, removed, added)
-
-    def updated(self, start, end):
-        """Called when the document is fully tokenized.
-
-        The `start` and `end` arguments denote the region that was tokenized.
-        The same values can be found using the modified_range() method.
-
-        """
-        pass
 

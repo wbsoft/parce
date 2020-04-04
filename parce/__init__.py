@@ -50,10 +50,19 @@ from .stdactions import *
 
 
 class Document(treedocument.TreeDocumentMixin, document.Document):
-    """A Document that automatically keeps its contents tokenized."""
-    def __init__(self, root_lexicon=None, text=""):
+    """A Document that automatically keeps its contents tokenized.
+
+    You can specify your own TreeBuilder. By default, a BackgroundTreeBuilder
+    is used.
+
+    """
+    def __init__(self, root_lexicon=None, text="", builder=None):
         document.Document.__init__(self, text)
-        builder = treebuilder.BackgroundTreeBuilder(root_lexicon)
+        if builder is None:
+            builder = treebuilder.BackgroundTreeBuilder(root_lexicon)
+        else:
+            builder.root.clear()
+            builder.root.lexicon = root_lexicon
         treedocument.TreeDocumentMixin.__init__(self, builder)
         if text:
             builder.rebuild(text)
