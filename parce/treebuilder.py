@@ -77,14 +77,16 @@ def build_tree(root_lexicon, text, pos=0):
     return root
 
 
-class BasicTreeBuilder:
+class TreeBuilder:
     """Build a tree from parsing the text.
 
     The root node of the tree is in the ``root`` instance attribute.
     This root context is never replaced, although its lexicon may change and
     of course its children.
 
-    Call :meth:`rebuild` to build or rebuild the tree.
+    Call :meth:`rebuild` to build or rebuild the tree. This method stores the
+    desired changes to the tree and calls :meth:`start_processing`, which can
+    be re-implemented to support asynchronous tree building.
 
     The actual building of a tree happens in :meth:`build_new_tree` which
     builds a (replacement) tree without making any changes yet to the current
@@ -118,12 +120,13 @@ class BasicTreeBuilder:
 
     def __init__(self, root_lexicon=None):
         self.root = Context(root_lexicon, None)
-        self.changes = False # keep "if self.changes" in rebuild() from complaining
+        self.busy = False
+        self.changes = []
 
     def tree(self, text):
         """Convenience method to build a tree and return the root node."""
         self.rebuild(text)
-        return self.root
+        return self.get_root(True)
 
     def rebuild(self, text, root_lexicon=False, start=0, removed=0, added=None):
         """Tokenize the modified part of the text again and update the tree.
@@ -156,12 +159,12 @@ class BasicTreeBuilder:
         """
         if added is None:
             added = len(text) - start
-        result = self.build_new_tree(text, root_lexicon, start, removed, added)
-        r = self.replace_tree(result)
-        self.start = r.start
-        self.end = r.end
-        if r.lexicons is not None:
-            self.lexicons = r.lexicons
+        self.lock(True)
+        self.changes.append((text, root_lexicon, start, removed, added))
+        self.lock(False)
+        if not self.busy:
+            self.busy = True
+            self.start_processing()
 
     def build_new_tree(self, text, root_lexicon, start, removed, added):
         """Build a new tree without yet modifying the current tree.
@@ -443,34 +446,30 @@ class BasicTreeBuilder:
         for t in tokens(context[slice_]):
             t.pos += offset
 
+    def wait(self):
+        """Implement to wait for completion if a background job is running.
 
-class TreeBuilder(BasicTreeBuilder):
-    """TreeBuilder extends BasicTreeBuilder with change management functions.
+        The default implementation does nothing, and immediately returns.
 
-    The :meth:`rebuild` is reimplemented to store the changes and then call
-    :meth:`start_processing`. This, in turn, performs the updating work.
+        """
+        pass
 
-    You can inherit from this class and call :meth:`do_processing` from a
-    background thread to move tokenizing to a background thread. See
-    :class:`BackgroundTreeBuilder` for an example that uses Python threads.
+    def get_root(self, wait=False, *args, **kwargs):
+        """Return the root element of the completed tree.
 
-    While the new (part of the) tree is being built, the ``busy`` attribute is
-    set to True. If is set to False again when the work is done. You can also
-    implement your own handling in :meth:`do_processing` by reading from
-    the :meth:`process` generator, which performs the build/replace job and
-    yield a short string describing what it is about to do. You can choose
-    to let the tree build in a background thread, and the replacement in the
-    main thread, etc.
+        This is simply the ``root`` instance attribute, but this method only
+        returns the tree when the ``busy`` attribute is False.
 
-    During background tokenizing, new changes can be submitted and will
-    immediately be acted upon; the :meth:`build_new_tree` method can interrupt
-    itself and adjust tokenizing to the new changes.
+        If tree building is busy, returns None or calls :meth:`wait` if
+        ``wait`` is True. The default implementation ignores the other
+        arguments.
 
-    """
-    def __init__(self, root_lexicon=None):
-        super().__init__(root_lexicon)
-        self.busy = False
-        self.changes = []
+        """
+        if self.busy:
+            if not wait:
+                return
+            self.wait()
+        return self.root
 
     def lock(self, acquire):
         """Acquire lock (True) or release lock (False). Does nothing by default.
@@ -480,17 +479,6 @@ class TreeBuilder(BasicTreeBuilder):
 
         """
         pass
-
-    def rebuild(self, text, root_lexicon=False, start=0, removed=0, added=None):
-        """Reimplemented to schedule an update of the tree."""
-        if added is None:
-            added = len(text) - start
-        self.lock(True)
-        self.changes.append((text, root_lexicon, start, removed, added))
-        self.lock(False)
-        if not self.busy:
-            self.busy = True
-            self.start_processing()
 
     def get_changes(self):
         """Get and combine the stored change requests in a Changes object.
@@ -507,9 +495,9 @@ class TreeBuilder(BasicTreeBuilder):
     def start_processing(self):
         """Called when there are recorded changes to process.
 
-        The default implementation reads from the :meth:`process` generator
-        until exhausted. You can inherit from this method to call it e.g. in a
-        background thread.
+        The default implementation read all build stages from the
+        :meth:`process` generator until exhausted. You can inherit from this
+        method to call it e.g. in a background thread.
 
         """
         for state in self.process():
@@ -520,8 +508,13 @@ class TreeBuilder(BasicTreeBuilder):
 
         Yields "build" when about to build a new tree; "replace" when about to
         replace a new tree; (which can be repeated); "finish" when finished
-        looping, and "done" at the very end. You should exhaust the generator
-        fully.
+        looping, and "done" at the very end.
+
+        When re-implementing :meth:`start_processing`, you can choose to decide
+        which stages are to be run in a background thread and which in a main
+        (GUI) thread.
+
+        You should exhaust the generator fully.
 
         """
         self.process_started()
@@ -617,7 +610,7 @@ class BackgroundTreeBuilder(TreeBuilder):
             callback(*args, **kwargs)
 
     def wait(self):
-        """Wait for completion if a background job is running."""
+        """Reimplemented to await our background thread if active."""
         job = self.job
         if job:
             job.join()
