@@ -488,7 +488,9 @@ class TreeBuilder(BasicTreeBuilder):
         self.lock(True)
         self.changes.append((text, root_lexicon, start, removed, added))
         self.lock(False)
-        self.start_processing()
+        if not self.busy:
+            self.busy = True
+            self.start_processing()
 
     def get_changes(self):
         """Get and combine the stored change requests in a Changes object.
@@ -503,10 +505,15 @@ class TreeBuilder(BasicTreeBuilder):
         return c
 
     def start_processing(self):
-        """Initialize and start processing if needed."""
-        if not self.busy:
-            self.busy = True
-            self.do_processing()
+        """Called when there are recorded changes to process.
+
+        The default implementation reads from the :meth:`process` generator
+        until exhausted. You can inherit from this method to call it e.g. in a
+        background thread.
+
+        """
+        for state in self.process():
+            pass
 
     def process(self):
         """This generator performs the whole job.
@@ -545,17 +552,6 @@ class TreeBuilder(BasicTreeBuilder):
         self.process_finished()
         self.lock(False)
         yield "done"
-
-    def do_processing(self):
-        """Called when there are recorded changes to process.
-
-        The default implementation reads from the :meth:`process` generator
-        until exhausted. You can inherit from this method to call it e.g. in a
-        background thread.
-
-        """
-        for state in self.process():
-            pass
 
     def process_started(self):
         """Called when ``start()`` has been called to update the tree.
@@ -606,9 +602,9 @@ class BackgroundTreeBuilder(TreeBuilder):
         """Reimplemented to actually lock/unlock."""
         self._lock.acquire() if acquire else self._lock.release()
 
-    def do_processing(self):
-        """Reimplemented to call do_processing in a background thread."""
-        self.job = threading.Thread(target=super().do_processing)
+    def start_processing(self):
+        """Reimplemented to call start_processing in a background thread."""
+        self.job = threading.Thread(target=super().start_processing)
         self.job.start()
 
     def process_finished(self):
