@@ -21,7 +21,7 @@ from new text::
 
     import parce.treebuilder
     builder = parce.treebuilder.TreeBuilder(lexicon)
-    tree = builder.build(text)
+    tree = builder.tree(text)
 
 Although we do not need the builder anymore, it has some interesting info left
 for us. After building, the ``lexicons`` attribute of the ``builder`` lists the
@@ -31,14 +31,14 @@ This can be useful if we want to know that the source text was somehow
 "complete" and all nested constructions were finished. For example, when
 using the Nonsense.root lexicon from the Getting started section::
 
-    >>> builder=parce.treebuilder.TreeBuilder(Nonsense.root)
-    >>> tree=builder.tree(r'an "unfinished string')
+    >>> builder = parce.treebuilder.TreeBuilder(Nonsense.root)
+    >>> tree = builder.tree(r'an "unfinished string')
     >>> builder.lexicons
     [Nonsense.string]
 
 If we add a double quote, we see that there are no lexicons left open anymore::
 
-    >>> tree=builder.tree(r'an "unfinished string"')
+    >>> tree = builder.tree(r'an "unfinished string"')
     >>> builder.lexicons
     []
 
@@ -52,14 +52,14 @@ Now comes the interesting part. Instead of building the tree again,
 we can just tell the builder about the changes to the text, and only retokenize
 as few text as possible. We need to keep the TreeBuilder for this to work::
 
-    >>> builder=parce.treebuilder.TreeBuilder(Nonsense.root)
+    >>> builder = parce.treebuilder.TreeBuilder(Nonsense.root)
     >>> builder.root.dump()
     <Context Nonsense.root at ?-? (0 children)>
 
 We did not give it any text, so the root context is still empty.
 Now we feed it the unfinished string::
 
-    >>> builder.build(r'an "unfinished string')
+    >>> builder.rebuild(r'an "unfinished string')
     >>> builder.lexicons
     [Nonsense.string]
     >>> builder.start, builder.end
@@ -74,7 +74,7 @@ Now we feed it the unfinished string::
 Now we instruct the TreeBuilder that we want to append 1 character at position
 21, a double quotation mark, so we finish the string::
 
-    >>> builder.rebuild(r'an "unfinished string"', 21, 0, 1)
+    >>> builder.rebuild(r'an "unfinished string"', False, 21, 0, 1)
     >>> builder.root.dump()
     <Context Nonsense.root at 0-22 (3 children)>
      ├╴<Token 'an' at 0:2 (Text)>
@@ -120,24 +120,10 @@ GUI applications.
 A BackgroundTreeBuilder is instantiated the same as a TreeBuilder, preferably
 with a root lexicon, but updates are managed differently.
 
-Instead of calling ``build()`` or ``rebuild()`` directly, you send the
-TreeBuilder a change request that it handles in the background::
+You can just call ``rebuild()`` like before, but it returns immediately, and the
+(re)building of the tree happens in the background.
 
-    >>> builder = parce.treebuilder.BackgroundTreeBuilder(Nonsense.root)
-    >>> text = r'This is my "new" text with 1 or 2 numbers and a % comment'
-    >>> with builder.change() as c:
-    ...     c.change_contents(text)
-
-To change the root lexicon, use :py:meth:`c.change_root_lexicon(lexicon)
-<parce.treebuilder.Changes.change_root_lexicon>`. The changes are processed in
-the background. You can even apply new changes while the old are still being
-processed, the tokenizer is cleanly interrupted and adjusts itself to the new
-changes. To apply changes to existing text, use
-:py:meth:`c.change_contents(text, position, removed, added)
-<parce.treebuilder.Changes.change_contents>`, like with the ``rebuild()`` method
-of TreeBuilder.
-
-The :py:meth:`get_root() <parce.treebuilder.BackgroundTreeBuilder.get_root>`
+The :meth:`~parce.treebuilder.BackgroundTreeBuilder.get_root`
 method is used to be notified when parsing is ready. It can be used for three
 things:
 
@@ -158,7 +144,7 @@ The supplied ``func`` will then be called with two arguments ``start`` and
 ``end`` that denote the range that was re-tokenized.
 
 Finally you can also inherit from BackgroundTreeBuilder and reimplement
-the ``build_updated()`` method to do anything you like.
+the ``process_finished()`` method to do anything you like.
 
 Of course you can also access the tree directly via the root element, but it is
 not recommended to do so while parsing is busy, because you won't get reliable

@@ -120,6 +120,11 @@ class BasicTreeBuilder:
         self.root = Context(root_lexicon, None)
         self.changes = False # keep "if self.changes" in rebuild() from complaining
 
+    def tree(self, text):
+        """Convenience method to build a tree and return the root node."""
+        self.rebuild(text)
+        return self.root
+
     def rebuild(self, text, root_lexicon=False, start=0, removed=0, added=None):
         """Tokenize the modified part of the text again and update the tree.
 
