@@ -306,9 +306,10 @@ class TreeBuilder:
                         text = c.text
                         start = c.start
                         if c.root_lexicon != False:
-                            tree.lexicon = c.root_lexicon
+                            root_lexicon = c.root_lexicon
                             start = 0
                             tail = False
+                            tree = None
                         elif tail:
                             # reuse old tail?
                             new_tail_pos = start + c.added
