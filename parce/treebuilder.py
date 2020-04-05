@@ -365,52 +365,51 @@ class TreeBuilder:
                     break
             del start_trail[:i], end_trail[:i]
 
-            # all tree nodes will end up in context, don't reparent twice :-)
             for n in tree:
                 n.parent = context
 
+            slice_end = None
             if end_trail:
                 # join stuff after end_trail with tree
                 c = context
                 t = tree
-                reparent = False
                 end_trail[-1] -= 1
                 for i in end_trail:
                     l = len(t) - 1
-                    s = c[i+1:]
-                    t.extend(s)
-                    if reparent:
+                    if slice_end is None:
+                        slice_end = i + 1
+                    else:
+                        s = c[i+1:]
+                        t.extend(s)
                         for n in s:
                             n.parent = t
-                    else:
-                        reparent = True
-                    if offset:
-                        for n in tokens(s):
-                            n.pos += offset
-                    t = t[l]
+                        if offset:
+                            for n in tokens(s):
+                                n.pos += offset
+                    if t:
+                        t = t[l]    # t can be empty if len(end_trail) == 1, is last iteration anyway
                     c = c[i]
+
+            if offset and slice_end is not None and slice_end < len(context):
+                self.replace_pos(context, slice(slice_end, None), offset)
 
             if start_trail:
                 # replace stuff after start_trail with tree
                 c = context
                 t = tree
-                reparent = False
                 for i in start_trail[:-1]:
-                    if reparent:
-                        for n in t[1:]:
-                            n.parent = c
-                    else:
-                        reparent = True
-                    self.replace_nodes(c, slice(i + 1, None), t[1:])
+                    for n in t[1:]:
+                        n.parent = c
+                    self.replace_nodes(c, slice(i + 1, slice_end), t[1:])
+                    slice_end = None
                     t = t[0]
                     c = c[i]
                 i = start_trail[-1]
-                if reparent:
-                    for n in t:
-                        n.parent = c
-                self.replace_nodes(c, slice(i + 1, None), t)
+                for n in t:
+                    n.parent = c
+                self.replace_nodes(c, slice(i + 1, slice_end), t)
             else:
-                self.replace_nodes(context, slice(None), tree)
+                self.replace_nodes(context, slice(slice_end), tree)
 
             if offset:
                 for p, i in context.ancestors_with_index():
