@@ -255,6 +255,7 @@ class TreeBuilder:
                     tree = None
             # find insertion spot in old tree
             if not tree:
+                start = min(lowest_start, start)
                 tokens = find_insert_tokens(self.root, text, start)
                 if tokens:
                     t = tokens[0]
