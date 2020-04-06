@@ -118,6 +118,8 @@ class TreeBuilder:
     end = 0
     lexicons = ()
 
+    peek_threshold = 0  #: set to a value > 0 to get :meth:`peek` called during building
+
     def __init__(self, root_lexicon=None):
         self.root = Context(root_lexicon, None)
         self.busy = False
@@ -271,6 +273,7 @@ class TreeBuilder:
                     lexer = Lexer([root_lexicon])
                     events = lexer.events(text)
                     lowest_start = 0
+                peek = self.peek_threshold + lowest_start if self.peek_threshold else 0
             # start parsing
             for e in events:
                 if e.target:
@@ -325,6 +328,20 @@ class TreeBuilder:
                                     else:
                                         tail = False
                         break # break the for loop to restart at new start pos
+                if peek:
+                    if tokens[-1].pos > peek:
+                        # call peek with a copy of the current tree.
+                        copied_tree = tree.copy()
+                        if copied_tree:
+                            # remove the first empty context
+                            t = copied_tree[0]
+                            while t and t.is_context:
+                                t = t[0]
+                            while t.is_context and not t:
+                                t = t.parent
+                                del t[0]
+                            self.peek(copied_tree)
+                        peek = 0
             else:
                 # we ran till the end, also return the open lexicons
                 return BuildResult(tree, lowest_start, len(text), 0, lexer.lexicons[1:])
@@ -538,6 +555,34 @@ class TreeBuilder:
         """Implement to wait for completion if a background job is running.
 
         The default implementation does nothing, and immediately returns.
+
+        """
+        pass
+
+    def peek(self, tree):
+        """This is called from :meth:`build_new_tree` with a sneak preview tree.
+
+        This can be used to get a small tree before the new tree is built
+        completely, which is useful to update e.g. highlighting of a small
+        portion of a document that is edited by a user, instead of waiting on
+        the whole tree to update (which may cause slow highlighting updates).
+
+        When build_new_tree (the build stage) is called from a background
+        thread, this method will also be called from that same thread.
+
+        Enable the ``peek()`` feature by setting the ``peek_threshold``
+        attribute to a value > 0. E.g. the value 1000 will cause the
+        :meh:`peek` method to be called with a tree that encompasses at least
+        1000 characters (starting with the start position).
+
+        The tree that is given, is a copy of the current tree. It is safe to
+        use it in another tread, although its contents are not valid anymore
+        when the build has finished, or when a build is restarted, causing
+        peek() to be called a second time. (A build is restarted when there are
+        new changes close to the position the build originally started.)
+
+        The default implementation of this method does nothing; the default
+        value of the  ``peek_threshold`` attribute is 0.
 
         """
         pass
