@@ -48,6 +48,8 @@ See also the documentation for Token and Context.
 """
 
 
+import itertools
+
 from parce import util
 from parce import query
 from parce.lexicon import Lexicon
@@ -366,6 +368,10 @@ class Token(Node):
         self.text = text
         self.action = action
 
+    def copy(self, parent=None):
+        """Return a copy of the Token, but with the specified parent."""
+        return type(self)(parent, self.pos, self.text, self.action)
+
     def equals(self, other):
         """Return True if the other Token has the same ``text`` and ``action``
         attributes and the same context ancestry (see also
@@ -557,6 +563,23 @@ class Context(list, Node):
         if isinstance(other, Lexicon):
             return not other.equals(self.lexicon)
         return other is not self
+
+    def copy(self, parent=None):
+        """Return a copy of the context, but with the specified parent."""
+        context = type(self)(self.lexicon, parent)
+        nodes = iter(self)
+        for node in nodes:
+            if node.is_token and node.group:
+                # copy grouped tokens correctly
+                group = node.copy(context),
+                count = len(node.group) - 1
+                group += tuple(t.copy(context) for t in itertools.islice(nodes, count))
+                for n in group:
+                    n.group = group
+                context.extend(group)
+            else:
+                context.append(node.copy(context))
+        return context
 
     @property
     def pos(self):
