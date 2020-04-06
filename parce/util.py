@@ -146,7 +146,7 @@ def cached_method(func):
     """Wrap a method and caches its return value.
 
     The method argument tuple should be hashable. Keyword arguments are not
-    supported. The cache is tread-safe. Does not keep a reference to the
+    supported. The cache is thread-safe. Does not keep a reference to the
     instance.
 
     """

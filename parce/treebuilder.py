@@ -576,7 +576,7 @@ class TreeBuilder:
         1000 characters (starting with the start position).
 
         The tree that is given, is a copy of the current tree. It is safe to
-        use it in another tread, although its contents are not valid anymore
+        use it in another thread, although its contents are not valid anymore
         when the build has finished, or when a build is restarted, causing
         peek() to be called a second time. (A build is restarted when there are
         new changes close to the position the build originally started.)
