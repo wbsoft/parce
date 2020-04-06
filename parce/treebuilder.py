@@ -572,7 +572,7 @@ class TreeBuilder:
 
         Enable the ``peek()`` feature by setting the ``peek_threshold``
         attribute to a value > 0. E.g. the value 1000 will cause the
-        :meh:`peek` method to be called with a tree that encompasses at least
+        :meth:`peek` method to be called with a tree that encompasses at least
         1000 characters (starting with the start position).
 
         The tree that is given, is a copy of the current tree. It is safe to
