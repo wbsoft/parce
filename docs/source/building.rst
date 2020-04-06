@@ -105,8 +105,8 @@ have exactly the same ancestry. Typing a character that opens a new context of
 course changes the meaning of the following text, and also that is handled
 correctly.
 
-If you manually change the root lexicon, you need to call ``build()`` in order
-to rebuild the tree with the new root lexicon.
+If you manually change the root lexicon, you need to call ``rebuild()`` in
+order to rebuild the tree with the new root lexicon.
 
 
 Using BackgroundTreeBuilder
