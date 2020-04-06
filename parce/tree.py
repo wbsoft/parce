@@ -545,7 +545,7 @@ class Context(list, Node):
     def __repr__(self):
         pos, end = self.pos, self.end
         if pos == end:
-            pos = end = "?"
+            pos = end = "?" # both are 0 in this case: empty Context
         name = self.lexicon and repr(self.lexicon)
         children = "child" if len(self) == 1 else "children"
         return "<Context {} at {}-{} ({} {})>".format(
@@ -584,16 +584,24 @@ class Context(list, Node):
     @property
     def pos(self):
         """Return the position or our first token. Returns 0 if empty."""
-        for t in self.tokens():
-            return t.pos
-        return 0
+        try:
+            node = self[0]
+            while node.is_context:
+                node = node[0]
+            return node.pos
+        except IndexError:
+            return 0
 
     @property
     def end(self):
         """Return the end position or our last token. Returns 0 if empty."""
-        for t in self.tokens_bw():
-            return t.end
-        return 0
+        try:
+            node = self[-1]
+            while node.is_context:
+                node = node[-1]
+            return node.end
+        except IndexError:
+            return 0
 
     def height(self):
         """Return the height of the tree (the longest distance to a descendant)."""
@@ -617,13 +625,23 @@ class Context(list, Node):
 
     def first_token(self):
         """Return our first Token."""
-        for t in self.tokens():
-            return t
+        try:
+            node = self[0]
+            while node.is_context:
+                node = node[0]
+            return node
+        except IndexError:
+            pass
 
     def last_token(self):
         """Return our last token."""
-        for t in self.tokens_bw():
-            return t
+        try:
+            node = self[-1]
+            while node.is_context:
+                node = node[-1]
+            return node
+        except IndexError:
+            pass
 
     def find(self, pos):
         """Return the index of our child at pos."""
@@ -632,7 +650,9 @@ class Context(list, Node):
         while i < hi:
             mid = (i + hi) // 2
             n = self[mid]
-            if n.end <= pos:
+            if n.pos >= pos:
+                hi = mid
+            elif n.end <= pos:
                 i = mid + 1
             else:
                 hi = mid
