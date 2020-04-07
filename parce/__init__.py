@@ -340,6 +340,9 @@ def mapgroup(n, dictionary, default=()):
 
     If the dict does not contain the key, the default value is yielded.
 
+    If you have an optional match group, use None as key value to select
+    the case the group was not present in the match.
+
     """
     get, itemlists = _get_items_map(dictionary, default)
     def predicate(m):
