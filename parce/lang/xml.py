@@ -42,8 +42,11 @@ class Xml(Language):
         yield r'<!DOCTYPE\b', DOCTYPE.Start, cls.doctype
         yield r'<\?', PI.Start, cls.pi
         yield r'(<\s*?/)\s*(\w+(?:[:.-]\w+)*)\s*(>)', bygroup(Delimiter, Name.Tag, Delimiter), -1
-        yield r'(<)\s*(\w+(?:[:.-]\w+)*)\s*(>)', bygroup(Delimiter, Name.Tag, Delimiter), cls.tag
-        yield r'(<)\s*(\w+(?:[:.-]\w+)*)', bygroup(Delimiter, Name.Tag), cls.attrs
+        yield r'(<)\s*(\w+(?:[:.-]\w+)*)(?:\s*((?:/\s*)?>))?', \
+            bygroup(Delimiter, Name.Tag, Delimiter), mapgroup(3, {
+                None: cls.attrs,        # no ">" or "/>": go to attrs
+                ">": cls.tag,           # a ">": go to tag
+            })                          # by default ("/>"): stay in context
         yield r'&\S*?;', Escape.Entity
         yield default_action, Text
 
