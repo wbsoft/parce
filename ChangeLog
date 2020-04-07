@@ -1,10 +1,16 @@
 ChangeLog
 =========
 
-current:
+
+2020-04-07: parce-0.8.0
 
 - added documentation with examples for bundled languages
 - added ini file parser
+- added mapmember and mapgroupmember rule items
+- tree builder: simpler API, all types now simply use rebuild()
+- tree builder: while building new tree, keep old tree intact
+- tree builder: now it is possible to get fine-grained updates
+- added treebuilder.peek() functionality to get a quick first part of a build
 
 
 2020-03-14: parce-0.7.0
