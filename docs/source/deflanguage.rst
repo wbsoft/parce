@@ -141,7 +141,8 @@ to match, but induce other behaviour:
 1.  The ``default_action`` rule, which causes a token to be generated using
     the specified action for text that would otherwise not be matched by
     any of the lexicon's rules. It can be seen in action in the above
-    example.
+    example. The default action can also be a dynamic action that chooses
+    the action based on the text (see below).
 
 2.  The ``default_target`` rule, which defines the target to choose when
     none of the normal rules match. This can be seen as a "fallthrough"

@@ -41,7 +41,7 @@ import threading
 import parce.regex
 from .pattern import Pattern
 from .target import TargetFactory
-from .rule import Item, ArgItem, DynamicItem, variations
+from .rule import Item, ArgItem, DynamicItem, TextItem, variations
 
 
 class LexiconDescriptor:
@@ -205,9 +205,21 @@ class Lexicon:
                 patterns.append(pattern)
                 rules.append(rule)
 
+        # prepare to handle a dynamic default lexicon (if TextItem descendant)
+        dynamic_default_action = False
+        if default_action is not no_default_action:
+            if isinstance(default_action, TextItem):
+                def dynamic_default_action(text):
+                    for action in default_action.replace(text, None):
+                        return action
+
         # handle the empty lexicon case
         if not patterns:
-            if default_action is not no_default_action:
+            if dynamic_default_action:
+                def parse(text, pos):
+                    t = text[pos:]
+                    yield pos, t, None, dynamic_default_action(t), None
+            elif default_action is not no_default_action:
                 def parse(text, pos):
                     yield pos, text[pos:], None, default_action, None
             elif default_target:
@@ -229,7 +241,22 @@ class Lexicon:
                 l= len(needle)
                 action, *rule = rules[0]
                 target = make_target(self, rule)
-                if default_action is not no_default_action:
+                if dynamic_default_action:
+                    def parse(text, pos):
+                        """Parse text, using a default action for unknown text."""
+                        while True:
+                            i = text.find(needle, pos)
+                            if i > pos:
+                                t = text[pos:i]
+                                yield pos, t, None, dynamic_default_action(t), None
+                            elif i == -1:
+                                break
+                            yield i, needle, None, action, target
+                            pos = i + l
+                        if pos < len(text):
+                            t = text[pos:]
+                            yield pos, t, None, dynamic_default_action(t), None
+                elif default_action is not no_default_action:
                     def parse(text, pos):
                         """Parse text, using a default action for unknown text."""
                         while True:
@@ -293,7 +320,20 @@ class Lexicon:
             action, *target = inner_replace(dynamic[m.lastindex])
             return action, make_target(self, target)
 
-        if default_action is not no_default_action:
+        if dynamic_default_action:
+            finditer = rx.finditer
+            def parse(text, pos):
+                """Parse text, using a default action for unknown text."""
+                for m in finditer(text, pos):
+                    if m.start() > pos:
+                        t = text[pos:m.start()]
+                        yield pos, t, None, dynamic_default_action(t), None
+                    yield token(m)
+                    pos = m.end()
+                if pos < len(text):
+                    t = text[pos:]
+                    yield pos, t, None, dynamic_default_action(t), None
+        elif default_action is not no_default_action:
             finditer = rx.finditer
             def parse(text, pos):
                 """Parse text, using a default action for unknown text."""

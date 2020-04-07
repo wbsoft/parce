@@ -48,7 +48,7 @@ class Xml(Language):
                 ">": cls.tag,           # a ">": go to tag
             })                          # by default ("/>"): stay in context
         yield r'&\S*?;', Escape.Entity
-        yield default_action, Text
+        yield default_action, bytext((lambda t: t.isspace()), Text, Whitespace)
 
     @lexicon
     def tag(cls):

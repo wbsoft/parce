@@ -1,6 +1,10 @@
 ChangeLog
 =========
 
+current:
+
+- default_action can now be a dynamic item (TextItem)
+
 
 2020-04-07: parce-0.8.0
 
