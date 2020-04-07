@@ -207,11 +207,12 @@ class Lexicon:
 
         # prepare to handle a dynamic default lexicon (if TextItem descendant)
         dynamic_default_action = False
-        if default_action is not no_default_action:
-            if isinstance(default_action, TextItem):
-                def dynamic_default_action(text):
-                    for action in default_action.replace(text, None):
-                        return action
+        if isinstance(default_action, TextItem):
+            def dynamic_default_action(text):
+                def replace_action(action):
+                    for a in action.replace(text, None):
+                        return replace_action(a) if isinstance(a, TextItem) else a
+                return replace_action(default_action)
 
         # handle the empty lexicon case
         if not patterns:
