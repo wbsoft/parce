@@ -46,6 +46,7 @@ RE_CSS_AT_KEYWORD = r"@" + RE_CSS_IDENTIFIER
 # match either 8, 6, 4 or 3 hex digits
 RE_HEX_COLOR = r"#[0-9a-fA-F]{3}(?:[0-9a-fA-F]{5}|[0-9a-fA-F]{3}|[0-9a-fA-F]?)"
 
+
 class Css(Language):
     @lexicon
     def root(cls):
