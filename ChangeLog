@@ -3,6 +3,7 @@ ChangeLog
 
 current:
 
+- TreeBuilder.peek(start, tree) now also gets start position
 - default_action can now be a dynamic item (TextItem)
 
 

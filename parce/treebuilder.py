@@ -332,15 +332,14 @@ class TreeBuilder:
                     if tokens[-1].pos > peek:
                         # call peek with a copy of the current tree.
                         copied_tree = tree.copy()
-                        if copied_tree:
-                            # remove the first empty context
-                            t = copied_tree[0]
-                            while t and t.is_context:
-                                t = t[0]
-                            while t.is_context and not t:
-                                t = t.parent
-                                del t[0]
-                            self.peek(copied_tree)
+                        # remove the first empty context
+                        t = copied_tree[0]
+                        while t and t.is_context:
+                            t = t[0]
+                        while t.is_context and not t:
+                            t = t.parent
+                            del t[0]
+                        self.peek(lowest_start, copied_tree)
                         peek = 0
             else:
                 # we ran till the end, also return the open lexicons
@@ -348,7 +347,7 @@ class TreeBuilder:
         raise RuntimeError("shouldn't come here")
 
     def replace_tree(self, result):
-        """Modify the tree using the result from build_new().
+        """Modify the tree using the result from :meth:`build_new_tree`.
 
         In most types of GUI applications, this method should be called in the
         main (GUI) thread.
@@ -559,7 +558,7 @@ class TreeBuilder:
         """
         pass
 
-    def peek(self, tree):
+    def peek(self, start, tree):
         """This is called from :meth:`build_new_tree` with a sneak preview tree.
 
         This can be used to get a small tree before the new tree is built
@@ -597,7 +596,7 @@ class TreeBuilder:
         pass
 
     def process_started(self):
-        """Called when ``start()`` has been called to update the tree.
+        """Called at the start ot the tree building process.
 
         Does nothing by default.
 
