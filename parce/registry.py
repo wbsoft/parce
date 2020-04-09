@@ -38,11 +38,19 @@ You can also build and populate your own :class:`Registry`.
 import collections
 import fnmatch
 import importlib
+import itertools
 import operator
 import re
 
 
-Item = collections.namedtuple("Item", "name desc filenames mimetypes guesses")
+Item = collections.namedtuple("Item", (
+    "name",
+    "desc",
+    "aliases",
+    "filenames",
+    "mimetypes",
+    "guesses",
+))
 
 
 class Registry:
@@ -59,6 +67,7 @@ class Registry:
     def register(self, lexicon_name, *,
         name,
         desc,
+        aliases = [],
         filenames = [],
         mimetypes = [],
         guesses = [],
@@ -75,6 +84,8 @@ class Registry:
             A human-readable name for the file type
         ``desc``
             A short description
+        ``aliases``
+            An optional list of other names this lexicon can be found under.
         ``filenames``
             A list of tuples (pattern, weight). A pattern is a plain filename or a
             filename with globbing characters, e.g. ``"Makefile"`` or ``"*.c"``,
@@ -92,7 +103,8 @@ class Registry:
             root lexicon.
 
         """
-        self._registry[lexicon_name] = Item(name, desc, filenames, mimetypes, guesses)
+        self._registry[lexicon_name] = Item(
+                    name, desc, aliases, filenames, mimetypes, guesses)
 
     def suggest(self, filename=None, mimetype=None, contents=None):
         """Return a list of registered language definitions, sorted on relevance.
@@ -141,20 +153,27 @@ class Registry:
     def find(self, name):
         """Find a fully qualified lexicon name for the specified name.
 
-        First, tries to find the exact match on the ``name`` attribute, then a
-        case insensitive match, and then the same for the Language class name.
+        First, tries to find the exact match on the ``name`` attribute, then
+        the aliases, then a case insensitive match, and then the same for the
+        Language class name.
 
         """
-        possible = []
+        aliases = []
+        nocases = []
+        classes = []
+        name_lowered = name.lower()
         for lexicon_name, item in self._registry.items():
             if name == item.name:
                 return lexicon_name
-            if name.lower() == item.name.lower():
-                possible.append(lexicon_name)
+            if name in item.aliases:
+                aliases.append(lexicon_name)
+            if name_lowered == item.name.lower() or any(
+                    alias.lower() == name_lowered for alias in item.aliases):
+                nocases.append(lexicon_name)
             cls = lexicon_name.rsplit(".", 2)[1]
-            if name.lower() == cls.lower():
-                possible.append(lexicon_name)
-        for lexicon_name in possible:
+            if name_lowered == cls.lower():
+                classes.append(lexicon_name)
+        for lexicon_name in itertools.chain(aliases, nocases, classes):
             return lexicon_name
 
     def rename(self, lexicon_name, new_name=None):
@@ -220,6 +239,7 @@ register("parce.lang.css.Css.root",
 register("parce.lang.ini.Ini.root",
     name = "INI",
     desc = "INI file format",
+    aliases = ["config"],
     filenames = [("*.ini", 1), ("*.cfg", 0.6), ("*.conf", 0.6)],
     mimetypes = [("text/plain", 0.1)],
     guesses = [(r'^\s*\[\w+\]', 0.5), (r"^\s*[#;]", 0.1)],
@@ -244,6 +264,7 @@ register("parce.lang.lilypond.LilyPond.root",
 register("parce.lang.scheme.Scheme.root",
     name = "Scheme",
     desc = "Scheme programming language",
+    aliases = ["guile"],
     filenames = [("*.scm", 1)],
     mimetypes = [("text/x-script.scheme", 1), ("text/x-script.guile", 1)],
     guesses = [(r'^\s*[;(]', .5), (r'\(define\b', .7)],
@@ -252,6 +273,7 @@ register("parce.lang.scheme.Scheme.root",
 register("parce.lang.xml.Xml.root",
     name = "XML",
     desc = "Extensible Markup Language",
+    aliases = ['sgml'],
     filenames = [("*.xml", 1)],
     mimetypes = [("text/xml", 1), ("application/xml", 1)],
     guesses = [(r'^\s*<\?xml ', 1)],
