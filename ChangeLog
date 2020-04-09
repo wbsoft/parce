@@ -3,6 +3,7 @@ ChangeLog
 
 current:
 
+- added the registry module, and the main find() function
 - TreeBuilder.peek(start, tree) now also gets start position
 - default_action can now be a dynamic item (TextItem)
 
