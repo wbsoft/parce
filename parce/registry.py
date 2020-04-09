@@ -253,6 +253,15 @@ register("parce.lang.json.Json.root",
     guesses = [(r'^\s*\{\s*"\w+"\s*:', .7)],
 )
 
+register("parce.lang.tex.Latex.root",
+    name = "LaTeX",
+    aliases = ["TeX"],
+    desc = "TeX and LaTeX",
+    filenames = [("*.tex", 1), ("*.sty", .8), ("*.cls", .1)],
+    mimetypes = [("text/x-latex", .8), ("application/x-latex", .8)],
+    guesses = [(r'\\document(class|style)\{', .8)],
+)
+
 register("parce.lang.lilypond.LilyPond.root",
     name = "LilyPond",
     desc = "LilyPond music typesetter",
