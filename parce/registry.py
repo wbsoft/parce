@@ -183,9 +183,9 @@ def register(lexicon_name, **kwargs):
     registry.register(lexicon_name, **kwargs)
 
 
-def suggest(filename=None, mimetypes=None, contents=None):
-    """:meth:`~Registry.suggest` a lexicon from the global registry."""
-    return registry.suggest(filename, mimetypes, contents)
+def suggest(filename=None, mimetype=None, contents=None):
+    """:meth:`~Registry.suggest` zero or more lexicons from the global registry."""
+    return registry.suggest(filename, mimetype, contents)
 
 
 def find(name):
@@ -193,7 +193,7 @@ def find(name):
     return registry.find(name)
 
 
-def root_lexicon(self, lexicon_name):
+def root_lexicon(lexicon_name):
     """Import the module and return the root lexicon.
 
     Eg, for the ``lexicon_name`` ``"parce.lang.css.Css.root"`` imports the

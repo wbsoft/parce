@@ -68,6 +68,44 @@ class Document(treedocument.TreeDocumentMixin, document.Document):
             builder.rebuild(text)
 
 
+def find(name=None, *, filename=None, mimetype=None, contents=None):
+    """Find a root lexicon, either by language name, or by filename, mimetype
+    and/or contents.
+
+    If you specify a name, tries to find the language with that name, ignoring
+    the other arguments.
+
+    If you don't specify a name, but instead one or more of the other (keyword)
+    arguments, tries to find the language based on filename, mimetype or
+    contents.
+
+    If a language is found, returns the root lexicon. If no language could be
+    found, None is returned (which can also be used as root lexicon, resulting
+    in an empty token tree).
+
+    Examples::
+
+        >>> import parce
+        >>> parce.find("xml")
+        Xml.root
+        >>> parce.find(contents='{"key": 123;}')
+        Json.root
+        >>> parce.find(filename="style.css")
+        Css.root
+
+    """
+    from . import registry
+    if name:
+        lexicon_name = registry.find(name)
+    else:
+        for lexicon_name in registry.suggest(filename, mimetype, contents):
+            break
+        else:
+            return
+    if lexicon_name:
+        return registry.root_lexicon(lexicon_name)
+
+
 def root(root_lexicon, text):
     """Return the root context of the tree structure of all tokens from text."""
     return treebuilder.build_tree(root_lexicon, text)
