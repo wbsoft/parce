@@ -46,20 +46,43 @@ Item = collections.namedtuple("Item", "name desc filenames mimetypes guesses")
 _registry = {}
 
 
-def register(language, *,
+def register(lexicon_name, *,
     name,
     desc,
-    root_lexicon = "root",
     filenames = [],
     mimetypes = [],
     guesses = [],
 ):
-    """Register or update a Language (or better: a root lexicon) for a particular
-    filename (patterns), particular mime types or based on contents of the file.
+    """Register or update a Language's root lexicon for a particular filename
+    (patterns), particular mime types or based on contents of the file.
+
+    The arguments:
+
+    ``lexicon_name``
+        The fully qualified name of a root lexicon, e.g.
+        ``"parce.lang.css.Css.root"``. Must contain at least two dots.
+    ``name``
+        A human-readable name for the file type
+    ``desc``
+        A short description
+    ``filenames``
+        A list of tuples (pattern, weight). A pattern is a plain filename or a
+        filename with globbing characters, e.g. ``"Makefile"`` or ``"*.c"``,
+        and the weight is a floating point value indicating the probability
+        that the root lexicon should be chosen for this filename (0..1 range).
+    ``mimetypes``
+        A list of tuples (mimetype, weight). A mimetype is a string like
+        ``"text/css"``, the weight is a floating point value indicating the
+        probability that the root lexicon should be chosen for this filename
+        (0..1 range).
+    ``guesses``
+        A list of tuples (regexp, weight). The first 5000 characters of the
+        contents are matched against the regular expression, and when it
+        matches, the weight is added to the already computed weight for this
+        root lexicon.
 
     """
-    key = (language, root_lexicon)
-    _registry[key] = Item(name, desc, filenames, mimetypes, guesses)
+    _registry[lexicon_name] = Item(name, desc, filenames, mimetypes, guesses)
 
 
 def suggest(filename=None, mimetype=None, contents=None):
@@ -69,14 +92,12 @@ def suggest(filename=None, mimetype=None, contents=None):
     is looked at; if still the same, the contents are looked at with some
     heuristic.
 
-    Every item in the returned list is a tuple of two strings (language,
-    root_lexicon), where language is a fully qualified language name (e.g.
-    ``"parce.lang.css.Css"``) and the root_lexicon the name of the root
-    lexicon, in most cases ``"root"``.
+    Every item in the returned list is the fully qualified name of the root
+    lexicon, e.g. ``"parce.lang.css.Css.root"``.
 
     """
     results = []
-    for key, item in _registry.items():
+    for lexicon_name, item in _registry.items():
         filename_weight = 0
         if filename:
             for pattern, weight in item.filenames:
@@ -93,37 +114,76 @@ def suggest(filename=None, mimetype=None, contents=None):
                 if re.search(regex, contents[:5000]):
                     total_weight += weight
         if total_weight:
-            results.append((key, item, total_weight))
-    results.sort(key=operator.itemgetter(2), reverse=True)
-    return [key for key, item, weight in results]
+            results.append((lexicon_name, total_weight))
+    results.sort(key=operator.itemgetter(1), reverse=True)
+    return [lexicon_name for lexicon_name, weight in results]
 
 
-def root_lexicon(item):
+def root_lexicon(lexicon_name):
     """Import the module and return the root lexicon.
 
-    Eg, for the item ("parce.lang.css.Css", "root"); returns the ``Css.root``
-    lexicon.
+    Eg, for the ``lexicon_name`` ``"parce.lang.css.Css.root"`` imports the
+    ``parce.lang.css`` module and returns the ``Css.root`` lexicon.
 
     """
-    language, root = item
-    module, cls = language.rsplit(".", 1)
+    module, cls, root = lexicon_name.rsplit(".", 2)
     mod = importlib.import_module(module)
     return getattr(getattr(mod, cls), root)
 
 
-def registered_item(item):
-    """Return the stored Item tuple for the specified item.
+def registered_item(lexicon_name):
+    """Return the stored Item tuple for the specified ``lexicon_name``.
 
-    The item is a 2-tuple of strings such as returned by the :func:`suggest`
-    function, like ``("parce.lang.css.Css", "root")``.
+    The Item tuple has the same attributes as the arguments of the
+    :func:`register` function.
 
     Returns None if the language definition is not available.
 
     """
-    return _registry.get(item, None)
+    return _registry.get(lexicon_name, None)
 
 
-register("parce.lang.css.Css",
+def find(name):
+    """Find a fully qualified lexicon name for the specified name.
+
+    First, tries to find the exact match on the ``name`` attribute, then a
+    case insensitive match, and then the same for the Language class name.
+
+    """
+    possible = []
+    for lexicon_name, item in _registry.items():
+        if name == item.name:
+            return lexicon_name
+        if name.lower() == item.name.lower():
+            possible.append(lexicon_name)
+        cls = lexicon_name.rsplit(".", 2)[1]
+        if name.lower() == cls.lower():
+            possible.append(lexicon_name)
+    for lexicon_name in possible:
+        return lexicon_name
+
+
+def rename(lexicon_name, new_name=None):
+    """Rename the registration of an exiting lexicon.
+
+    This can be useful if you want to override a bundled language definition
+    and use your version.
+
+    If you don't specify a new name, the existing registration is removed.
+
+    """
+    try:
+        old = _registry.pop(lexicon_name)
+        if new_name:
+            _registry[new_name] = old
+    except KeyError:
+        pass
+
+
+
+## register the bundled languages
+
+register("parce.lang.css.Css.root",
     name = "CSS",
     desc = "Cascading Style Sheet",
     filenames = [("*.css", 1)],
@@ -131,7 +191,7 @@ register("parce.lang.css.Css",
     guesses = [(r'\b@media\b', 0.5), (r'\bdiv\b', 0.1), (r'\bbody\s*\{', 0.4)],
 )
 
-register("parce.lang.ini.Ini",
+register("parce.lang.ini.Ini.root",
     name = "INI",
     desc = "INI file format",
     filenames = [("*.ini", 1), ("*.cfg", 0.6), ("*.conf", 0.6)],
@@ -139,7 +199,7 @@ register("parce.lang.ini.Ini",
     guesses = [(r'^\s*\[\w+\]', 0.5), (r"^\s*[#;]", 0.1)],
 )
 
-register("parce.lang.json.Json",
+register("parce.lang.json.Json.root",
     name = "JSON",
     desc = "JavaScript Object Notation format",
     filenames = [("*.json", 1)],
@@ -147,7 +207,7 @@ register("parce.lang.json.Json",
     guesses = [(r'^\s*\{\s*"\w+"\s*:', .7)],
 )
 
-register("parce.lang.lilypond.LilyPond",
+register("parce.lang.lilypond.LilyPond.root",
     name = "LilyPond",
     desc = "LilyPond music typesetter",
     filenames = [("*.ly", 1), ("*.ily", .8), ("*.lyi", .5)],
@@ -155,7 +215,7 @@ register("parce.lang.lilypond.LilyPond",
     guesses = [(r'\\version\s*"\d', .8)],
 )
 
-register("parce.lang.scheme.Scheme",
+register("parce.lang.scheme.Scheme.root",
     name = "Scheme",
     desc = "Scheme programming language",
     filenames = [("*.scm", 1)],
@@ -163,7 +223,7 @@ register("parce.lang.scheme.Scheme",
     guesses = [(r'^\s*[;(]', .5), (r'\(define\b', .7)],
 )
 
-register("parce.lang.xml.Xml",
+register("parce.lang.xml.Xml.root",
     name = "XML",
     desc = "Extensible Markup Language",
     filenames = [("*.xml", 1)],
