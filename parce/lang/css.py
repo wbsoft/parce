@@ -62,6 +62,7 @@ class Css(Language):
     @lexicon
     def prelude(cls):
         yield r"\{", Delimiter, -1, cls.rule
+        yield r"(?=</)", None, -1   # back off if HTML </style> tag follows...
         yield from cls.selectors()
 
     @classmethod

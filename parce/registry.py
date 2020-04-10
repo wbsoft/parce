@@ -260,6 +260,14 @@ register("parce.lang.json.Json.root",
     guesses = [(r'^\s*\{\s*"\w+"\s*:', .7)],
 )
 
+register("parce.lang.html.Html.root",
+    name = "HTML",
+    desc = "HTML and XHTML",
+    filenames = [("*.html", 1), ("*.htm", 1)],
+    mimetypes = [("text/html", 1)],
+    guesses = [(r'(?i)<!DOCTYPE html PUBLIC', .9), (r'(?i)<html\b', .9)],
+)
+
 register("parce.lang.tex.Latex.root",
     name = "LaTeX",
     desc = "TeX and LaTeX",

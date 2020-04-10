@@ -4,6 +4,7 @@ ChangeLog
 current:
 
 - added tex/latex parser
+- added HTML parser, building on the XML parser and supporting CSS
 - added the registry module, and the main find() function
 - TreeBuilder.peek(start, tree) now also gets start position
 - default_action can now be a dynamic item (TextItem)
