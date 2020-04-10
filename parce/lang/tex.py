@@ -59,7 +59,7 @@ class Latex(Language):
         """Basic stuff."""
         yield r'\\[#$&~^%{}_ ]', Escape
         yield r'[&_^~]', Name.Command
-        yield r'\\\\', Delimiter    # line termination TODO: better action?
+        yield r'\\\\', Delimiter.Terminator    # line termination TODO: better action?
         yield r'%', Comment, cls.comment
 
     @lexicon
@@ -88,14 +88,13 @@ class Latex(Language):
 
     @lexicon
     def math(cls):
-        yield arg(), Delimiter, -1
+        yield arg(default=r'\}'), Delimiter, -1
         yield from cls.math_common()
 
     @classmethod
     def math_common(cls):
         """Stuff in math mode."""
-        yield r'\{', Delimiter.Brace, 1
-        yield r'\}', Delimiter.Brace, -1
+        yield r'\{', Delimiter.Brace, cls.math
         yield r"[\-+=<>/:!']", Operator
         yield r"[\|\[\]\(\)]", Delimiter
         yield r'\\[A-Za-z]+', Name.Function
