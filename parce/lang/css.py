@@ -225,6 +225,7 @@ class Css(Language):
         yield r";", Delimiter, -1
         yield r":", Keyword, cls.pseudo_class
         yield from cls.common()
+        yield r'(?=</)', None, -1   # leave atrule when </style tag follows
 
     @lexicon
     def identifier(cls):
