@@ -380,7 +380,7 @@ to choose rule items:
         :noindex:
 
 And a function that chooses rule items from a dictionary the lexicon argument
-is looked up in::
+is looked up in:
 
     .. autofunction:: parce.maparg
         :noindex:
