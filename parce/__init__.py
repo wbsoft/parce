@@ -93,6 +93,10 @@ def find(name=None, *, filename=None, mimetype=None, contents=None):
         >>> parce.find(filename="style.css")
         Css.root
 
+    This function uses the :mod:`registry` module and by default it finds all
+    bundled languages. See the module's documentation to find out how to
+    add your own languages to a registry.
+
     """
     from . import registry
     if name:

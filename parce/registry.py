@@ -20,10 +20,17 @@
 """
 Registry of language definitions.
 
-You can use the :func:`suggest` function in this module to find a language
-definition for a particular file type. There is basic functionality to pick a
-language definition based on file name, mime type and/or the contents of the
-file.
+Instead of importing language definitions directly, you can use a Registry to
+manage and find language definitions.
+
+The registry stores the fully qualified name for a root lexicon, for example
+``"parce.lang.css.Css.root"``. This qualified name should have at least 2 dots,
+to separate module name, class name and the name of the root lexicon.
+
+Use :func:`find` to find a language definition by name, or :func:`suggest` to
+find a language definition for a particular file type. There is basic
+functionality to pick a language definition based on file name, mime type
+and/or the contents of the file.
 
 Using the :func:`register` function it is possible to register your own
 language definitions at runtime and make them available through parce.
@@ -31,7 +38,7 @@ As a service, the bundled languages in ``parce.lang`` are automatically
 registered in the global registry.
 
 The global Registry is in the ``registry`` module variable.
-You can also build and populate your own :class:`Registry`.
+You can also create and populate your own :class:`Registry`.
 """
 
 
@@ -255,8 +262,8 @@ register("parce.lang.json.Json.root",
 
 register("parce.lang.tex.Latex.root",
     name = "LaTeX",
-    aliases = ["TeX"],
     desc = "TeX and LaTeX",
+    aliases = ["TeX"],
     filenames = [("*.tex", 1), ("*.sty", .8), ("*.cls", .1)],
     mimetypes = [("text/x-latex", .8), ("application/x-latex", .8)],
     guesses = [(r'\\document(class|style)\{', .8)],
