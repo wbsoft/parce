@@ -392,6 +392,17 @@ def mapgroup(n, dictionary, default=()):
     return bymatch(predicate, *itemlists)
 
 
+def maparg(dictionary, default=()):
+    r"""Return a :class:`~parce.rule.PredicateArgItem` that yields the itemlist
+    from the dictionary, using the current lexicon argument as key.
+
+    If the dict does not contain the key, the default value is yielded.
+
+    """
+    predicate, itemlists = _get_items_map(dictionary, default)
+    return byarg(predicate, *itemlists)
+
+
 def bygroup(*actions):
     r"""Return a :class:`~parce.action.SubgroupAction` that yields tokens for
     each subgroup in a regular expression.

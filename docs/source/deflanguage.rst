@@ -379,6 +379,13 @@ to choose rule items:
     .. autofunction:: parce.byarg
         :noindex:
 
+And a function that chooses rule items from a dictionary the lexicon argument
+is looked up in::
+
+    .. autofunction:: parce.maparg
+        :noindex:
+
+
 Of course it is also possible to target a lexicon with an argument directly::
 
     class MyLang(Language):
