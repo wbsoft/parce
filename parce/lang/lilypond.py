@@ -442,6 +442,7 @@ class LilyPond(Language):
     def markup(cls):
         """Markup without environment. Try to guess the n of arguments."""
         yield r'\{', Delimiter.OpenBrace, -1, cls.markuplist
+        yield r"(\\score)\s*(\{)", bygroup(Name.Function.Markup, Delimiter.OpenBrace), -1, cls.score
         yield RE_LILYPOND_COMMAND, cls.get_markup_action(), cls.get_markup_target()
         yield r'"', String, -1, cls.string
         yield r'[#$]', Delimiter.SchemeStart, -1, cls.get_scheme_target()
@@ -469,6 +470,7 @@ class LilyPond(Language):
         """Markup until } ."""
         yield r'\}', Delimiter.CloseBrace, -1
         yield r'\{', Delimiter.OpenBrace, 1
+        yield r"(\\score)\s*(\{)", bygroup(Name.Function.Markup, Delimiter.OpenBrace), cls.score
         yield RE_LILYPOND_COMMAND, cls.get_markup_action()
         yield from cls.base()
         yield RE_LILYPOND_MARKUP_TEXT, Text
