@@ -625,6 +625,8 @@ class Context(list, Node):
 
     def height(self):
         """Return the height of the tree (the longest distance to a descendant)."""
+        if not self:
+            return 0
         stack = []
         height = 0
         j = 0
@@ -643,7 +645,7 @@ class Context(list, Node):
                     n = n.parent
                     j = stack.pop() + 1
                 else:
-                    return height
+                    return height + 1
 
         # originally, but that led to recursion errors...
         #return max(n.height() + 1 if n.is_context else 1 for n in self) if self else 0
