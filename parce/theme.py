@@ -180,14 +180,8 @@ class Theme:
         is unused.
 
         """
-        def events(nodes):
-            for n in nodes:
-                if n.is_token:
-                    yield n
-                else:
-                    yield from events(n)
         for context, slice_ in slices:
-            yield from events(context[slice_])
+            yield from util.tokens(context[slice_])
 
 
 class MetaTheme:
