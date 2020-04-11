@@ -812,10 +812,10 @@ class Context(list, Node):
         node = self
         while True:
             i = 0
-            hi = len(self)
+            hi = len(node)
             while i < hi:
                 mid = (i + hi) // 2
-                n = self[mid]
+                n = node[mid]
                 if n.is_context:
                     n = n.first_token()
                 if pos < n.end:
