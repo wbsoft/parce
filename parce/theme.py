@@ -243,35 +243,38 @@ class MetaTheme:
         return self._theme.textformat(action)
 
     def tokens(self, theme_context, slices):
-        """Yield tokens, calling theme_context() to set the correct theme.
+        """Yield tokens, following theme_context.
 
-        The ``slices`` argument is an iterable of (context, slice) tuples.
-        such as returned by Context.slices() and Context.context_slices().
-        When a theme changes, ``theme_context()`` is called with the theme
-        for a new context with that theme (``theme_context(theme)`` should
-        return a context manager).
+        The ``slices`` argument is an iterable of (context, slice) tuples. such
+        as returned by Context.slices() and Context.context_slices(). When a
+        new context is entered, ``theme_context.push(language)`` is called
+        where ``language`` is the context's lexicon's language. When the lexicon
+        ends, ``theme_context.pop()`` is called.
 
         """
-        def events(nodes, current_language, current_theme):
-            lang = nodes[0].parent.lexicon.language
-            if lang is not current_language:
-                theme = self.get_theme(lang)
-                if theme is not current_theme:
-                    with theme_context(theme):
-                        for n in nodes:
-                            if n.is_token:
-                                yield n
-                            else:
-                                yield from events(n, lang, theme)
-                    return
-            for n in nodes:
-                if n.is_token:
-                    yield n
-                else:
-                    yield from events(n, current_language, current_theme)
-        lang = None
         for context, slice_ in slices:
-            yield from events(context[slice_], lang, self)
+            theme_context.push(context.lexicon.language)
+            stack = []
+            j = 0
+            n = context[slice_]
+            while True:
+                for i in range(j, len(n)):
+                    m = n[i]
+                    if m.is_token:
+                        yield m
+                    else:
+                        stack.append(i)
+                        j = 0
+                        n = m
+                        theme_context.push(n.lexicon.language)
+                        break
+                else:
+                    theme_context.pop()
+                    if stack:
+                        n = n.parent
+                        j = stack.pop() + 1
+                    else:
+                        break
 
 
 class TextFormat:

@@ -85,8 +85,8 @@ class FormatContext:
     """A FormatContext is used during a formatting job.
 
     It maintains the state needed to format using a MetaTheme. The only API
-    used is the ``switch_theme()`` context manager method, which is called by
-    the ``tokens()`` method of MetaTheme.
+    used is the ``push()`` and ``pop()`` method, which are called by the
+    ``tokens()`` method of MetaTheme.
 
     The default Formatter uses the ``window`` property and ``format`` method
     to get the window style for the current theme and the factory that turns
@@ -94,23 +94,27 @@ class FormatContext:
 
     """
     def __init__(self, formatter):
+        self._stack = [None]
         self._formatter = formatter
         c = self.cache = formatter.format_cache(formatter.theme())
         self.window = c.window
         self.format = c.format
 
-    @contextlib.contextmanager
-    def switch_theme(self, theme):
-        old = self.cache
+    def push(self, language):
+        self._stack.append(language)
+        if language is not self._stack[-2]:
+            self.switch_language(language)
+
+    def pop(self):
+        language = self._stack.pop()
+        if language is not self._stack[-1] and self._stack[-1]:
+            self.switch_language(self._stack[-1])
+
+    def switch_language(self, language):
+        theme = self._formatter.theme().get_theme(language)
         c = self.cache = self._formatter.format_cache(theme)
         self.window = c.window
         self.format = c.format
-        try:
-            yield
-        finally:
-            self.cache = old
-            self.window = old.window
-            self.format = old.format
 
 
 class Formatter:
@@ -124,7 +128,6 @@ class Formatter:
         self._lock = threading.Lock()   # lock for FormatCaches
         self._theme = theme
         self._factory = factory or (lambda f: f)
-        self._current_theme = theme
         self._caches = weakref.WeakKeyDictionary()
         self._caches[theme] = c = FormatCache(theme, factory, False)
 
@@ -179,7 +182,7 @@ class Formatter:
         c = FormatContext(self)
         def stream():
             end = sys.maxsize
-            for t in self._theme.tokens(c.switch_theme, slices):
+            for t in self._theme.tokens(c, slices):
                 if t.pos > end and c.window is not None:
                     # if a sub-language is active, draw its background
                     yield end, t.pos, c.window
