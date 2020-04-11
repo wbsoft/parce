@@ -566,20 +566,40 @@ class Context(list, Node):
 
     def copy(self, parent=None):
         """Return a copy of the context, but with the specified parent."""
-        context = type(self)(self.lexicon, parent)
-        nodes = iter(self)
-        for node in nodes:
-            if node.is_token and node.group:
-                # copy grouped tokens correctly
-                group = node.copy(context),
-                count = len(node.group) - 1
-                group += tuple(t.copy(context) for t in itertools.islice(nodes, count))
-                for n in group:
-                    n.group = group
-                context.extend(group)
+        # a non-recursive implementation due to Python's recursion limits
+        copy = type(self)(self.lexicon, parent)
+        stack = []
+        j = 0
+        n = self
+        while True:
+            z = len(n)
+            i = j
+            while i < z:
+                m = n[i]
+                if m.is_context:
+                    copy.append(type(m)(m.lexicon, copy))
+                    copy = copy[-1]
+                    stack.append(i)
+                    j = 0
+                    n = m
+                    break
+                elif m.group:
+                    group = tuple(node.copy(copy) for node in m.group)
+                    for m in group:
+                        m.group = group
+                    copy.extend(group)
+                    i += len(group)
+                else:
+                    copy.append(m.copy(copy))
+                    i += 1
             else:
-                context.append(node.copy(context))
-        return context
+                if stack:
+                    copy = copy.parent
+                    n = n.parent
+                    j = stack.pop() + 1
+                else:
+                    break
+        return copy
 
     @property
     def pos(self):
@@ -605,23 +625,72 @@ class Context(list, Node):
 
     def height(self):
         """Return the height of the tree (the longest distance to a descendant)."""
-        return max(n.height() + 1 if n.is_context else 1 for n in self) if self else 0
+        stack = []
+        height = 0
+        j = 0
+        n = self
+        while True:
+            for i in range(j, len(n)):
+                m = n[i]
+                if m.is_context:
+                    stack.append(i)
+                    height = max(height, len(stack))
+                    j = 0
+                    n = m
+                    break
+            else:
+                if stack:
+                    n = n.parent
+                    j = stack.pop() + 1
+                else:
+                    return height
+
+        # originally, but that led to recursion errors...
+        #return max(n.height() + 1 if n.is_context else 1 for n in self) if self else 0
 
     def tokens(self):
         """Yield all Tokens, descending into nested Contexts."""
-        for n in self:
-            if n.is_token:
-                yield n
+        stack = []
+        j = 0
+        n = self
+        while True:
+            for i in range(j, len(n)):
+                m = n[i]
+                if m.is_token:
+                    yield m
+                else:
+                    stack.append(i)
+                    j = 0
+                    n = m
+                    break
             else:
-                yield from n.tokens()
+                if stack:
+                    n = n.parent
+                    j = stack.pop() + 1
+                else:
+                    break
 
     def tokens_bw(self):
         """Yield all Tokens, descending into nested Contexts, in backward direction."""
-        for n in self[::-1]:
-            if n.is_token:
-                yield n
+        stack = []
+        n = self
+        j = len(n)
+        while True:
+            for i in range(j - 1, -1, -1):
+                m = n[i]
+                if m.is_token:
+                    yield m
+                else:
+                    stack.append(i)
+                    n = m
+                    j = len(n)
+                    break
             else:
-                yield from n.tokens_bw()
+                if stack:
+                    n = n.parent
+                    j = stack.pop()
+                else:
+                    break
 
     def first_token(self):
         """Return our first Token."""
@@ -713,19 +782,24 @@ class Context(list, Node):
         Returns None if there is no token right from pos.
 
         """
-        i = 0
-        hi = len(self)
-        while i < hi:
-            mid = (i + hi) // 2
-            n = self[mid]
-            if n.is_context:
-                n = n.last_token()
-            if n.pos < pos:
-                i = mid + 1
-            else:
-                hi = mid
-        if i < len(self):
-            return self[i].find_token_after(pos) if self[i].is_context else self[i]
+        node = self
+        while True:
+            i = 0
+            hi = l = len(node)
+            while i < hi:
+                mid = (i + hi) // 2
+                n = node[mid]
+                if n.is_context:
+                    n = n.last_token()
+                if n.pos < pos:
+                    i = mid + 1
+                else:
+                    hi = mid
+            if i >= l:
+                return
+            node = node[i]
+            if node.is_token:
+                return node
 
     def find_token_before(self, pos):
         """Return the last token completely left from pos.
@@ -733,20 +807,24 @@ class Context(list, Node):
         Returns None if there is no token left from pos.
 
         """
-        i = 0
-        hi = len(self)
-        while i < hi:
-            mid = (i + hi) // 2
-            n = self[mid]
-            if n.is_context:
-                n = n.first_token()
-            if pos < n.end:
-                hi = mid
-            else:
-                i = mid + 1
-        if i > 0:
-            i -= 1
-            return self[i].find_token_before(pos) if self[i].is_context else self[i]
+        node = self
+        while True:
+            i = 0
+            hi = len(self)
+            while i < hi:
+                mid = (i + hi) // 2
+                n = self[mid]
+                if n.is_context:
+                    n = n.first_token()
+                if pos < n.end:
+                    hi = mid
+                else:
+                    i = mid + 1
+            if i == 0:
+                return
+            node = node[i-1]
+            if node.is_token:
+                return node
 
     def tokens_range(self, start=0, end=None):
         """Yield all tokens (that completely fill this text range if specified).
