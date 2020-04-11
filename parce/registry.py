@@ -298,7 +298,7 @@ register("parce.lang.html.XHtml.root",
     name = "XHTML",
     desc = "HTML that is valid XML",
     filenames = [("*.xhtml", 1)],
-    mimetypes = [("application/xhtml+xml", 1)]
+    mimetypes = [("application/xhtml+xml", 1)],
     guesses = [(r'^\s*<\?xml ', .3)],
 )
 
