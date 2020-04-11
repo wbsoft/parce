@@ -168,20 +168,36 @@ def events_with_tokens(start_token, last_token):
         target = TargetFactory()
         get, push, pop = target.get, target.push, target.pop
 
-        def events(context):
-            nodes = iter(context)
-            for n in nodes:
-                if n.is_token:
-                    group = n,
-                    if n.group:
-                        rest = len(n.group) - n.group.index(n) - 1
-                        group += tuple(islice(nodes, rest))
-                    tokens = tuple((t.pos, t.text, t.action) for t in group)
-                    yield Event(get(), tokens), group
+        def events(nodes):
+            stack = []
+            j = 0
+            n = nodes
+            while True:
+                z = len(n)
+                i = j
+                while i < z:
+                    m = n[i]
+                    if m.is_context:
+                        push(m.lexicon)
+                        stack.append(i)
+                        j = 0
+                        n = m
+                        break
+                    else:
+                        group = m,
+                        if m.group:
+                            count = len(m.group) - m.group.index(m)
+                            group = n[i:i+count]
+                        tokens = tuple((t.pos, t.text, t.action) for t in group)
+                        yield Event(get(), tokens), group
+                        i += len(group)
                 else:
-                    push(n.lexicon)
-                    yield from events(n)
-                    pop()
+                    if stack:
+                        pop()
+                        n = n.parent
+                        j = stack.pop() + 1
+                    else:
+                        break
 
         for context, slice_ in context.slices(start_trail, end_trail, target):
             yield from events(context[slice_])
@@ -205,7 +221,7 @@ def new_tree(token):
     return context
 
 
-def find_token_before(context, pos):
+def find_token_before(node, pos):
     """A version of :meth:`~parce.tree.Context.find_token_before` that can handle
     empty contexts.
 
@@ -215,19 +231,21 @@ def find_token_before(context, pos):
     left from pos.
 
     """
-    i = 0
-    hi = len(context)
-    while i < hi:
-        mid = (i + hi) // 2
-        n = context[mid]
-        if n.is_context:
-            n = n.first_token() or n    # if no first token, just n itself
-        if pos < n.end:
-            hi = mid
-        else:
-            i = mid + 1
-    if i > 0:
-        i -= 1
-        n = context[i]
-        return find_token_before(n, pos) if n.is_context else n
+    while True:
+        i = 0
+        hi = len(node)
+        while i < hi:
+            mid = (i + hi) // 2
+            n = node[mid]
+            if n.is_context:
+                n = n.first_token() or n    # if no first token, just n itself
+            if pos < n.end:
+                hi = mid
+            else:
+                i = mid + 1
+        if i == 0:
+            return
+        node = node[i-1]
+        if node.is_token:
+            return node
 
