@@ -380,7 +380,8 @@ class Query:
                         break
         for n in self:
             yield n
-            yield from innergen(n)
+            if n.is_context:
+                yield from innergen(n)
 
     @pquery
     def alltokens(self):

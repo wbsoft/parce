@@ -33,7 +33,7 @@ def test_main():
     root = parce.root(parce.find("xml"), "<xml>" * 10000)
     assert len(list(root.tokens())) == 30000
     assert root.height() == 10000
-
+    assert root.query.all.count() == 40000
 
 
 if __name__ == "__main__":
