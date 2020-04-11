@@ -32,7 +32,15 @@ from parce.lang.xml import Xml
 from parce.lang.css import Css
 
 
-class Html(Xml):
+# elements that do not start a new tag context
+HTML_VOID_ELEMENTS = (
+    "area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta",
+    "param", "source", "track", "wbr", "command", "keygen", "menuitem",
+)
+
+
+class XHtml(Xml):
+    """XHtml, is also valid Xml."""
     @lexicon(re_flags=re.IGNORECASE)
     def root(cls):
         yield r'(<)(style)\b(>|/\s*>)?', bygroup(Delimiter, Name.Tag, Delimiter), \
@@ -47,8 +55,8 @@ class Html(Xml):
         """Reimplemented to recognize style attributes and switch to style tag."""
         yield r'(style)\s*(=)\s*(")', bygroup(Name.Attribute, Operator, String), \
             cls.css_style_attribute
-        predicate = lambda arg: arg == "css"
-        yield r'>', Delimiter, -1, byarg(predicate, cls.tag, cls.css_style_tag)
+        yield r'>', Delimiter, -1, maparg({
+            "css": cls.css_style_tag, None: cls.tag})
         yield from super().attrs
 
     @lexicon
@@ -64,3 +72,14 @@ class Html(Xml):
         yield from Css.inline
 
 
+class Html(XHtml):
+    """Html, allows certain tags (void elements) not to be closed."""
+    @lexicon(re_flags=re.IGNORECASE)
+    def root(cls):
+        yield words(HTML_VOID_ELEMENTS, prefix=r'(<\s*?/)\s*((?:\w+:)?', suffix=r')\s*(>)'), \
+            bygroup(Delimiter, Name.Tag, Delimiter) # don't leave no-closing tags
+        yield words(HTML_VOID_ELEMENTS, prefix=r'(<)\s*(', suffix=r')(?:\s*((?:/\s*)?>))?'), \
+            bygroup(Delimiter, Name.Tag, Delimiter), mapgroup(3, {
+                None: cls.attrs("noclose"), # no ">" or "/>": go to attrs/noclose
+            })                          # by default ("/>"): stay in context
+        yield from super().root

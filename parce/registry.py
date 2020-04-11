@@ -262,7 +262,7 @@ register("parce.lang.json.Json.root",
 
 register("parce.lang.html.Html.root",
     name = "HTML",
-    desc = "HTML and XHTML",
+    desc = "HTML (4 or 5)",
     filenames = [("*.html", 1), ("*.htm", 1)],
     mimetypes = [("text/html", 1)],
     guesses = [(r'(?i)<!DOCTYPE html PUBLIC', .9), (r'(?i)<html\b', .9)],
@@ -292,6 +292,14 @@ register("parce.lang.scheme.Scheme.root",
     filenames = [("*.scm", 1)],
     mimetypes = [("text/x-script.scheme", 1), ("text/x-script.guile", 1)],
     guesses = [(r'^\s*[;(]', .5), (r'\(define\b', .7)],
+)
+
+register("parce.lang.html.XHtml.root",
+    name = "XHTML",
+    desc = "HTML that is valid XML",
+    filenames = [("*.xhtml", 1)],
+    mimetypes = [("application/xhtml+xml", 1)]
+    guesses = [(r'^\s*<\?xml ', .3)],
 )
 
 register("parce.lang.xml.Xml.root",
