@@ -360,12 +360,27 @@ class Query:
     @pquery
     def all(self):
         """All descendants, contexts and their nodes."""
-        def innergen(node):
-            for n in node:
-                yield n
-                if n.is_context:
-                    yield from innergen(n)
-        return innergen(self)
+        def innergen(n):
+            stack = []
+            j = 0
+            while True:
+                for i in range(j, len(n)):
+                    m = n[i]
+                    yield m
+                    if m.is_context:
+                        stack.append(i)
+                        j = 0
+                        n = m
+                        break
+                else:
+                    if stack:
+                        n = n.parent
+                        j = stack.pop() + 1
+                    else:
+                        break
+        for n in self:
+            yield n
+            yield from innergen(n)
 
     @pquery
     def alltokens(self):
@@ -379,12 +394,28 @@ class Query:
     @pquery
     def allcontexts(self):
         """Shortcut for all.contexts."""
-        def innergen(node):
-            for n in node:
-                if n.is_context:
-                    yield n
-                    yield from innergen(n)
-        return innergen(self)
+        def innergen(n):
+            stack = []
+            j = 0
+            while True:
+                for i in range(j, len(n)):
+                    m = n[i]
+                    if m.is_context:
+                        yield m
+                        stack.append(i)
+                        j = 0
+                        n = m
+                        break
+                else:
+                    if stack:
+                        n = n.parent
+                        j = stack.pop() + 1
+                    else:
+                        break
+        for n in self:
+            if n.is_context:
+                yield n
+                yield from innergen(n)
 
     @pquery
     def parent(self):
