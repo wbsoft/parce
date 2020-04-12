@@ -105,7 +105,7 @@ class FormatContext:
     def _set_theme(self, theme):
         if theme is not self._current_theme:
             self._current_theme = theme
-            c = self.cache = formatter.format_cache()
+            c = self.cache = self._formatter.format_cache(theme)
             self.window = c.window
             self.format = c.format
 
