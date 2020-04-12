@@ -164,23 +164,21 @@ def events_with_tokens(start_token, last_token):
     context, start_trail, end_trail = start_token.common_ancestor_with_trail(last_token)
     if context:
 
-        islice = itertools.islice
         target = TargetFactory()
         get, push, pop = target.get, target.push, target.pop
 
         def events(nodes):
             stack = []
-            j = 0
+            i = 0
             n = nodes
             while True:
                 z = len(n)
-                i = j
                 while i < z:
                     m = n[i]
                     if m.is_context:
                         push(m.lexicon)
                         stack.append(i)
-                        j = 0
+                        i = 0
                         n = m
                         break
                     else:
@@ -195,7 +193,7 @@ def events_with_tokens(start_token, last_token):
                     if stack:
                         pop()
                         n = n.parent
-                        j = stack.pop() + 1
+                        i = stack.pop() + 1
                     else:
                         break
 

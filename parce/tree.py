@@ -569,18 +569,17 @@ class Context(list, Node):
         # a non-recursive implementation due to Python's recursion limits
         copy = type(self)(self.lexicon, parent)
         stack = []
-        j = 0
+        i = 0
         n = self
         while True:
             z = len(n)
-            i = j
             while i < z:
                 m = n[i]
                 if m.is_context:
                     copy.append(type(m)(m.lexicon, copy))
                     copy = copy[-1]
                     stack.append(i)
-                    j = 0
+                    i = 0
                     n = m
                     break
                 elif m.group:
@@ -596,7 +595,7 @@ class Context(list, Node):
                 if stack:
                     copy = copy.parent
                     n = n.parent
-                    j = stack.pop() + 1
+                    i = stack.pop() + 1
                 else:
                     break
         return copy
@@ -629,21 +628,21 @@ class Context(list, Node):
             return 0
         stack = []
         height = 0
-        j = 0
+        i = 0
         n = self
         while True:
-            for i in range(j, len(n)):
+            for i in range(i, len(n)):
                 m = n[i]
                 if m.is_context:
                     stack.append(i)
                     height = max(height, len(stack))
-                    j = 0
+                    i = 0
                     n = m
                     break
             else:
                 if stack:
                     n = n.parent
-                    j = stack.pop() + 1
+                    i = stack.pop() + 1
                 else:
                     return height + 1
 
@@ -653,22 +652,22 @@ class Context(list, Node):
     def tokens(self):
         """Yield all Tokens, descending into nested Contexts."""
         stack = []
-        j = 0
+        i = 0
         n = self
         while True:
-            for i in range(j, len(n)):
+            for i in range(i, len(n)):
                 m = n[i]
                 if m.is_token:
                     yield m
                 else:
                     stack.append(i)
-                    j = 0
+                    i = 0
                     n = m
                     break
             else:
                 if stack:
                     n = n.parent
-                    j = stack.pop() + 1
+                    i = stack.pop() + 1
                 else:
                     break
 
@@ -676,21 +675,21 @@ class Context(list, Node):
         """Yield all Tokens, descending into nested Contexts, in backward direction."""
         stack = []
         n = self
-        j = len(n)
+        i = len(n)
         while True:
-            for i in range(j - 1, -1, -1):
+            for i in range(i - 1, -1, -1):
                 m = n[i]
                 if m.is_token:
                     yield m
                 else:
                     stack.append(i)
                     n = m
-                    j = len(n)
+                    i = len(n)
                     break
             else:
                 if stack:
                     n = n.parent
-                    j = stack.pop()
+                    i = stack.pop()
                 else:
                     break
 

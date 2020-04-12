@@ -255,16 +255,16 @@ class MetaTheme:
         for context, slice_ in slices:
             theme_context.push(context.lexicon.language)
             stack = []
-            j = 0
+            i = 0
             n = context[slice_]
             while True:
-                for i in range(j, len(n)):
+                for i in range(i, len(n)):
                     m = n[i]
                     if m.is_token:
                         yield m
                     else:
                         stack.append(i)
-                        j = 0
+                        i = 0
                         n = m
                         theme_context.push(n.lexicon.language)
                         break
@@ -272,7 +272,7 @@ class MetaTheme:
                     theme_context.pop()
                     if stack:
                         n = n.parent
-                        j = stack.pop() + 1
+                        i = stack.pop() + 1
                     else:
                         break
 
