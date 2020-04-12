@@ -177,7 +177,7 @@ def events_with_tokens(start_token, last_token):
                     m = n[i]
                     if m.is_context:
                         push(m.lexicon)
-                        stack.append(i)
+                        stack.append((n, i + 1))
                         i = 0
                         n = m
                         break
@@ -192,8 +192,7 @@ def events_with_tokens(start_token, last_token):
                 else:
                     if stack:
                         pop()
-                        n = n.parent
-                        i = stack.pop() + 1
+                        n, i = stack.pop()
                     else:
                         break
 

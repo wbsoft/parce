@@ -254,28 +254,28 @@ class MetaTheme:
         """
         for context, slice_ in slices:
             theme_context.push(context.lexicon.language)
-            stack = []
-            i = 0
-            n = context[slice_]
-            while True:
-                for i in range(i, len(n)):
-                    m = n[i]
-                    if m.is_token:
-                        yield m
+            for n in context[slice_]:
+                stack = []
+                i = 0
+                while True:
+                    for i in range(i, len(n)):
+                        m = n[i]
+                        if m.is_token:
+                            yield m
+                        else:
+                            stack.append(i)
+                            i = 0
+                            n = m
+                            theme_context.push(n.lexicon.language)
+                            break
                     else:
-                        stack.append(i)
-                        i = 0
-                        n = m
-                        theme_context.push(n.lexicon.language)
-                        break
-                else:
-                    theme_context.pop()
-                    if stack:
-                        n = n.parent
-                        i = stack.pop() + 1
-                    else:
-                        break
-
+                        if stack:
+                            theme_context.pop()
+                            n = n.parent
+                            i = stack.pop() + 1
+                        else:
+                            break
+            theme_context.pop()
 
 class TextFormat:
     """Simple textformat that reads CSS properties and supports a subset of those.
