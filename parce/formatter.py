@@ -94,7 +94,7 @@ class FormatContext:
 
     """
     def __init__(self, formatter):
-        self._stack = [None]
+        self._stack = []
         self._formatter = formatter
         c = self.cache = formatter.format_cache(formatter.theme())
         self.window = c.window
@@ -102,12 +102,12 @@ class FormatContext:
 
     def push(self, language):
         self._stack.append(language)
-        if language is not self._stack[-2]:
+        if len(self._stack) < 2 or language is not self._stack[-2]:
             self.switch_language(language)
 
     def pop(self):
         language = self._stack.pop()
-        if language is not self._stack[-1] and self._stack[-1]:
+        if len(self._stack) > 0 and language is not self._stack[-1]:
             self.switch_language(self._stack[-1])
 
     def switch_language(self, language):
