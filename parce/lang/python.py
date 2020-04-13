@@ -49,6 +49,8 @@ class Python(Language):
         yield r'#', Comment, cls.comment
         yield r'\[', Delimiter, cls.list
         yield r'\(', Delimiter, cls.tuple
+        yield r'\{', Delimiter, cls.dict
+
         yield r'''[rRuUfF]{,2}["']$''', String.Error
         yield r'''[rRbB]{,2}["']$''', Bytes.Error
         yield r'(\b[rR])("""|'r"''')", bygroup(String.Prefix, String.Start), withgroup(2, cls.longstring_raw)
@@ -94,14 +96,20 @@ class Python(Language):
     ## ----- item types -------------
     @lexicon
     def list(cls):
-        """A python list."""
         yield r'\]', Delimiter, -1
+        yield ',', Delimiter
         yield from cls.common()
 
     @lexicon
     def tuple(cls):
-        """A python tuple."""
         yield r'\)', Delimiter, -1
+        yield ',', Delimiter
+        yield from cls.common()
+
+    @lexicon
+    def dict(cls):
+        yield r'\}', Delimiter, -1
+        yield '[,:]', Delimiter
         yield from cls.common()
 
     ## ------- strings --------------
