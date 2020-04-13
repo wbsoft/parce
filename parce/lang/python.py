@@ -45,6 +45,23 @@ class Python(Language):
         yield r'#', Comment, cls.comment
         yield r'\[', Delimiter, cls.list
         yield r'\(', Delimiter, cls.tuple
+        yield r'(\b[rR])(""")', bygroup(String.Prefix, String.Start), cls.longstring_raw('"""')
+        yield r"(\b[rR])(''')", bygroup(String.Prefix, String.Start), cls.longstring_raw("'''")
+        yield r'(\b[fF][rR]|[rR][fF])(""")', bygroup(String.Prefix, String.Start), cls.longstring_raw_format('"""')
+        yield r"(\b[fF][rR]|[rR][fF])(''')", bygroup(String.Prefix, String.Start), cls.longstring_raw_format("'''")
+        yield r'"""', String.Start, cls.longstring('"""')
+        yield r"'''", String.Start, cls.longstring("'''")
+        yield r'(\b[fF])(""")', bygroup(String.Prefix, String.Start), cls.longstring_format('"""')
+        yield r"(\b[fF])(''')", bygroup(String.Prefix, String.Start), cls.longstring_format("'''")
+        yield r'(\b[rR])(")', bygroup(String.Prefix, String.Start), cls.string_raw('"')
+        yield r"(\b[rR])(')", bygroup(String.Prefix, String.Start), cls.string_raw("'")
+        yield r'(\b[fF][rR]|[rR][fF])(")', bygroup(String.Prefix, String.Start), cls.string_raw_format('"')
+        yield r"(\b[fF][rR]|[rR][fF])(')", bygroup(String.Prefix, String.Start), cls.string_raw_format("'")
+        yield r'"', String.Start, cls.string('"')
+        yield r"'", String.Start, cls.string("'")
+        yield r'(\b[fF])(")', bygroup(String.Prefix, String.Start), cls.string_format('"')
+        yield r"(\b[fF])(')", bygroup(String.Prefix, String.Start), cls.string_format("'")
+
 
     @lexicon
     def funcdef(cls):
@@ -84,6 +101,47 @@ class Python(Language):
         """A python tuple."""
         yield r'\)', Delimiter, -1
         yield from cls.common()
+
+    ## ------- strings --------------
+    @lexicon
+    def string(cls):
+        yield arg(), String.End, -1
+        yield default_action, String
+
+    @lexicon
+    def string_raw(cls):
+        yield arg(), String.End, -1
+        yield default_action, String
+
+    @lexicon
+    def string_format(cls):
+        yield arg(), String.End, -1
+        yield default_action, String
+
+    @lexicon
+    def string_raw_format(cls):
+        yield arg(), String.End, -1
+        yield default_action, String
+
+    @lexicon
+    def longstring(cls):
+        yield arg(), String.End, -1
+        yield default_action, String
+
+    @lexicon
+    def longstring_raw(cls):
+        yield arg(), String.End, -1
+        yield default_action, String
+
+    @lexicon
+    def longstring_format(cls):
+        yield arg(), String.End, -1
+        yield default_action, String
+
+    @lexicon
+    def longstring_raw_format(cls):
+        yield arg(), String.End, -1
+        yield default_action, String
 
     ## ------- comments -------------
     @lexicon(re_flags=re.MULTILINE)
