@@ -23,10 +23,12 @@ Registry of built-in language definitions.
 This file is imported by the :mod:`parce.registry` module, so that the global
 registry contains all the language definitions listed below.
 
-This file is manually updated, if you add a language definition, add a listing
-here. The order is not significant, although it is comfortable to keep the
-listing here in sorted order. Carefully check the weights of the guesses in
-order to to maximize the guessing accuracy.
+This file is manually updated.
+
+If you add a language definition, add a listing here. The order is not
+significant, although it is comfortable to keep the listing here in sorted
+order. Carefully check the weights of the guesses in order to to maximize the
+guessing accuracy.
 
 """
 

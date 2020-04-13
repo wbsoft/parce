@@ -37,8 +37,9 @@ language definitions at runtime and make them available through parce.
 As a service, the bundled languages in ``parce.lang`` are automatically
 registered in the global registry.
 
-The global Registry is in the ``registry`` module variable.
+The global registry is in the ``registry`` module variable.
 You can also create and populate your own :class:`Registry`.
+
 """
 
 
@@ -60,17 +61,14 @@ Item = collections.namedtuple("Item", (
 ))
 
 
-class Registry:
-    """Registry of language definitions."""
-    def __init__(self):
-        self._registry = {}
+class Registry(dict):
+    """Registry of language definitions.
 
-    def copy(self):
-        """Return a copy of the registry."""
-        r = type(self)()
-        r._registry.update(self._registry)
-        return r
+    The ``Registry`` is based on the Python dictionary class, and maps fully
+    qualified lexicon names (such as ``"parce.lang.css.Css.root"``) to
+    :class:`Item` tuples.
 
+    """
     def register(self, lexicon_name, *,
         name,
         desc,
@@ -109,9 +107,12 @@ class Registry:
             matches, the weight is added to the already computed weight for this
             root lexicon.
 
+        This method simply creates an :class:`Item` tuple with all the arguments
+        and stores it using the lexicon name as key.
+
         """
-        self._registry[lexicon_name] = Item(
-                    name, desc, aliases, filenames, mimetypes, guesses)
+        item = Item(name, desc, aliases, filenames, mimetypes, guesses)
+        self[lexicon_name] = item
 
     def suggest(self, filename=None, mimetype=None, contents=None):
         """Return a list of registered language definitions, sorted on relevance.
@@ -124,17 +125,16 @@ class Registry:
         lexicon, e.g. ``"parce.lang.css.Css.root"``.
 
         """
-        reg = self._registry
         weights = collections.defaultdict(int)
         if filename:
-            for name in reg:
-                weight = max((w for pat, w in reg[name].filenames
+            for name in self:
+                weight = max((w for pat, w in self[name].filenames
                                if fnmatch.fnmatch(filename, pat)), default=0)
                 if weight:
                     weights[name] += weight
         if mimetype:
-            for name in reg:
-                weight = max((w for mtype, w in reg[name].mimetypes
+            for name in self:
+                weight = max((w for mtype, w in self[name].mimetypes
                                if mtype == mimetype), default=0)
                 if weight:
                     weights[name] += weight
@@ -146,26 +146,15 @@ class Registry:
             if len(names) == 1 or weights[names[0]] > weights[names[1]]:
                 return names
         else:
-            names = reg.keys()
+            names = self.keys()
         if contents:
             contents = contents[:5000]
             for name in names:
-                weight = sum(w for regex, w in reg[name].guesses
+                weight = sum(w for regex, w in self[name].guesses
                                if re.search(regex, contents))
                 if weight:
                     weights[name] += weight
         return sorted(weights, key=weights.get, reverse=True)
-
-    def registered_item(self, lexicon_name):
-        """Return the stored Item tuple for the specified ``lexicon_name``.
-
-        The Item tuple has the same attributes as the arguments of the
-        :func:`register` function.
-
-        Returns None if the language definition is not available.
-
-        """
-        return self._registry.get(lexicon_name, None)
 
     def find(self, name):
         """Find a fully qualified lexicon name for the specified name.
@@ -179,7 +168,7 @@ class Registry:
         nocases = []
         classes = []
         name_lowered = name.lower()
-        for lexicon_name, item in self._registry.items():
+        for lexicon_name, item in self.items():
             if name == item.name:
                 return lexicon_name
             if name in item.aliases:
@@ -192,22 +181,6 @@ class Registry:
                 classes.append(lexicon_name)
         for lexicon_name in itertools.chain(aliases, nocases, classes):
             return lexicon_name
-
-    def rename(self, lexicon_name, new_name=None):
-        """Rename the registration of an exiting lexicon.
-
-        This can be useful if you want to override a bundled language definition
-        and use your version.
-
-        If you don't specify a new name, the existing registration is removed.
-
-        """
-        try:
-            old = self._registry.pop(lexicon_name)
-            if new_name:
-                _registry[new_name] = old
-        except KeyError:
-            pass
 
 
 #: the global Registry is in the ``registry`` module variable
