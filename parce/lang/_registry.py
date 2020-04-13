@@ -86,6 +86,14 @@ register("parce.lang.lilypond.LilyPond.root",
     guesses = [(r'\\version\s*"\d', .8)],
 )
 
+register("parce.lang.python.Python.root",
+    name = "Python",
+    desc = "Python programming language",
+    filenames = [("*.py", 1)],
+    mimetypes = [("text/x-python", .8)],
+    guesses = [(r'^#!.{,20}python', .8), (r'\bimport\s+[a-z]+\b', .3)],
+)
+
 register("parce.lang.scheme.Scheme.root",
     name = "Scheme",
     desc = "Scheme programming language",
