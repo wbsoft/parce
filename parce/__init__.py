@@ -225,9 +225,11 @@ def bytext(predicate, *itemlists):
 
 def ifgroup(n, itemlist, else_itemlist=()):
     r"""Return a :class:`~parce.rule.MatchItem` that yields ``itemlist`` if
-    group n in the match is not empty.
+    group n in the match is not None.
 
-    If group ``n`` in the match object is empty, ``else_itemlist`` is yielded.
+    If group ``n`` in the match object is None, ``else_itemlist`` is yielded.
+    A match group is None when the group was optional and did not participate
+    in the match.
 
     An example rule::
 
@@ -241,7 +243,7 @@ def ifgroup(n, itemlist, else_itemlist=()):
     (See also :func:`bygroup`.)
 
     """
-    predicate = lambda m: not m.group(m.lastindex + n)
+    predicate = lambda m: m.group(m.lastindex + n) is None
     return bymatch(predicate, itemlist, else_itemlist)
 
 
