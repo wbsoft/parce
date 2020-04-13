@@ -37,7 +37,7 @@ language definitions at runtime and make them available through parce.
 As a service, the bundled languages in ``parce.lang`` are automatically
 registered in the global registry.
 
-The global registry is in the ``registry`` module variable.
+The global registry is in the :attr:`registry` module variable.
 You can also create and populate your own :class:`Registry`.
 
 """
@@ -183,7 +183,7 @@ class Registry(dict):
             return lexicon_name
 
 
-#: the global Registry is in the ``registry`` module variable
+# the global Registry is in the ``registry`` module variable
 registry = Registry()
 
 
