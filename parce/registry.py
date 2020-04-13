@@ -124,27 +124,37 @@ class Registry:
         lexicon, e.g. ``"parce.lang.css.Css.root"``.
 
         """
-        results = []
-        for lexicon_name, item in self._registry.items():
-            filename_weight = 0
-            if filename:
-                for pattern, weight in item.filenames:
-                    if fnmatch.fnmatch(filename, pattern):
-                        filename_weight += weight
-            mimetype_weight = 0
-            if mimetype:
-                for mtype, weight in item.mimetypes:
-                    if mtype == mimetype:
-                        mimetype_weight = max(mimetype_weight, weight)
-            total_weight = filename_weight + mimetype_weight
-            if total_weight == 0 and contents:
-                for regex, weight in item.guesses:
-                    if re.search(regex, contents[:5000]):
-                        total_weight += weight
-            if total_weight:
-                results.append((lexicon_name, total_weight))
-        results.sort(key=operator.itemgetter(1), reverse=True)
-        return [lexicon_name for lexicon_name, weight in results]
+        reg = self._registry
+        weights = collections.defaultdict(int)
+        if filename:
+            for name in reg:
+                weight = max((w for pat, w in reg[name].filenames
+                               if fnmatch.fnmatch(filename, pat)), default=0)
+                if weight:
+                    weights[name] += weight
+        if mimetype:
+            for name in reg:
+                weight = max((w for mtype, w in reg[name].mimetypes
+                               if mtype == mimetype), default=0)
+                if weight:
+                    weights[name] += weight
+
+        # check the contents only if no filename/mimetype matched
+        # or there were multiple matches with the same weight
+        if weights:
+            names = sorted(weights, key=weights.get, reverse=True)
+            if len(names) == 1 or weights[names[0]] > weights[names[1]]:
+                return names
+        else:
+            names = reg.keys()
+        if contents:
+            contents = contents[:5000]
+            for name in names:
+                weight = sum(w for regex, w in reg[name].guesses
+                               if re.search(regex, contents))
+                if weight:
+                    weights[name] += weight
+        return sorted(weights, key=weights.get, reverse=True)
 
     def registered_item(self, lexicon_name):
         """Return the stored Item tuple for the specified ``lexicon_name``.
