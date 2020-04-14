@@ -54,7 +54,7 @@ class Scheme(Language):
         if go_back == 0:
             yield r"\.(?!\S)", Delimiter.Dot
         yield r"#[tf]\b", Boolean, go_back
-        yield r"#\\([a-z]+|.)", Char, go_back
+        yield r"#\\([a-z]+|.)", Character, go_back
         yield r'[^()"{}\s]+', cls.get_word_action(), go_back
 
     @lexicon

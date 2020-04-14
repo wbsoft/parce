@@ -28,26 +28,23 @@ import re
 from parce import *
 
 
-CDATA = Literal.CDATA
-DOCTYPE = Keyword.DOCTYPE
-ENTITY = Keyword.ENTITY
-PI = Comment.PI
+Doctype = Name.Type
 
 
 class Xml(Language):
     @lexicon(re_flags=re.IGNORECASE)
     def root(cls):
         yield r'<!--', Comment.Start, cls.comment
-        yield r'<!\[CDATA\[', CDATA.Start, cls.cdata
-        yield r'<!DOCTYPE\b', DOCTYPE.Start, cls.doctype
-        yield r'<\?', PI.Start, cls.pi
+        yield r'<!\[CDATA\[', Data.Start, cls.cdata
+        yield r'<!DOCTYPE\b', Doctype.Start, cls.doctype
+        yield r'<\?', Delimiter.Preprocessed.Start, cls.pi
         yield r'(<\s*?/)\s*(\w+(?:[:.-]\w+)*)\s*(>)', bygroup(Delimiter, Name.Tag, Delimiter), -1
         yield r'(<)\s*(\w+(?:[:.-]\w+)*)(?:\s*((?:/\s*)?>))?', \
             bygroup(Delimiter, Name.Tag, Delimiter), mapgroup(3, {
                 None: cls.attrs,        # no ">" or "/>": go to attrs
                 ">": cls.tag,           # a ">": go to tag
             })                          # by default ("/>"): stay in context
-        yield r'&\S*?;', Escape.Entity
+        yield r'&\S*?;', Escape
         yield default_action, bytext(str.isspace, Text, Whitespace)
 
     @lexicon
@@ -61,57 +58,57 @@ class Xml(Language):
 
     @lexicon
     def cdata(cls):
-        yield default_action, CDATA
-        yield r'\]\]>', CDATA.End, -1
+        yield default_action, Data
+        yield r'\]\]>', Data.End, -1
 
     @lexicon
     def pi(cls):
         yield r'(\w+(?:[:.-]\w+)*)\s*?(=)(?=\s*?")', bygroup(Name.Attribute, Operator)
         yield r'"', String, cls.dqstring
         yield r"'", String, cls.sqstring
-        yield default_action, PI
-        yield r'\?>', PI.End, -1
+        yield default_action, Preprocessed
+        yield r'\?>', Delimiter.Preprocessed.End, -1
 
     @lexicon
     def doctype(cls):
         yield r'\w+', Text
         yield r'"', String, cls.dqstring
-        yield r'\[', DOCTYPE.Start, cls.internal_dtd
-        yield r'>', DOCTYPE.End, -1
+        yield r'\[', Doctype.Start, cls.internal_dtd
+        yield r'>', Doctype.End, -1
 
     @lexicon
     def internal_dtd(cls):
-        yield r'<!ENTITY\b', ENTITY.Start, cls.entity
-        yield r'<![^>]*>', DOCTYPE
+        yield r'<!ENTITY\b', Name.Entity.Definition.Start, cls.entity
+        yield r'<![^>]*>', Doctype
         yield default_action, Text  # TODO include dtd language
-        yield r'\]', DOCTYPE.End, -1
+        yield r'\]', Doctype.End, -1
 
     @lexicon
     def entity(cls):
         yield r'\w+', Name.Entity
         yield r'"', String, cls.dqstring
-        yield r'>', ENTITY.End, -1
+        yield r'>', Name.Entity.Definition.End, -1
 
     @lexicon
     def attrs(cls):
         yield r'\w+([:.-]\w+)*', Name.Attribute
         yield r'=', Operator
-        yield r'"', String, cls.dqstring
-        yield r"'", String, cls.sqstring
+        yield r'"', String.Double.Start, cls.dqstring
+        yield r"'", String.Single.Start, cls.sqstring
         yield r'/\s*>', Delimiter, -1
         yield r'>', Delimiter, -1, cls.tag
         yield r'\s+', skip
-        yield default_action, Error
+        yield default_action, Invalid
 
     @lexicon
     def dqstring(cls):
-        yield r'&\S*?;', Escape.Entity
-        yield default_action, String
-        yield r'"', String, -1
+        yield r'&\S*?;', String.Escape
+        yield default_action, String.Double
+        yield r'"', String.Double.End, -1
 
     @lexicon
     def sqstring(cls):
-        yield r'&\S*?;', Escape.Entity
-        yield default_action, String
-        yield r"'", String, -1
+        yield r'&\S*?;', String.Escape
+        yield default_action, String.Single
+        yield r"'", String.Single.End, -1
 

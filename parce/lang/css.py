@@ -272,7 +272,7 @@ class Css(Language):
         yield default_action, String
         yield RE_CSS_ESCAPE, String.Escape
         yield r"\\\n", String.Escape
-        yield r"\n", Error, -1
+        yield r"\n", Invalid, -1
 
     @lexicon
     def comment(cls):

@@ -81,7 +81,7 @@ Spanner.Slur
 Spanner.Ligature
 Spanner.Tie
 Direction = Delimiter.Direction
-Script = Char.Script
+Script = Character.Script
 Fingering = Number.Fingering
 
 

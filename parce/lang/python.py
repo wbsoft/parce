@@ -35,7 +35,7 @@ RE_PYTHON_LINE_CONTINUATION = _N_ = r'\\\n'
 _SN_ = fr'(?:{_S_}|{_N_})'
 
 
-Bytes = Literal.Bytes
+Bytes = Data.Bytes
 
 
 class Python(Language):
@@ -44,9 +44,9 @@ class Python(Language):
         yield fr'^{_S_}+($|(?=#))?', ifgroup(1, Whitespace, Whitespace.Indent)
         yield r'@', Name.Decorator, cls.decorator
         yield fr'(class\b){_S_}*({_I_})', bygroup(Keyword,
-            ifgroupmember(2, python_words.keywords, Error, Name.Class)), cls.classdef
+            ifgroupmember(2, python_words.keywords, Invalid, Name.Class)), cls.classdef
         yield fr'(def\b){_S_}*({_I_})', bygroup(Keyword,
-            ifgroupmember(2, python_words.keywords, Error, Name.Function)), cls.funcdef
+            ifgroupmember(2, python_words.keywords, Invalid, Name.Function)), cls.funcdef
         yield from cls.common()
 
     @classmethod
@@ -58,8 +58,8 @@ class Python(Language):
         yield r'\{', Delimiter, cls.dict
 
         ## string literals
-        yield r'''[rRuUfF]{,2}["']$''', String.Error
-        yield r'''[rRbB]{,2}["']$''', Bytes.Error
+        yield r'''[rRuUfF]{,2}["']$''', String.Invalid
+        yield r'''[rRbB]{,2}["']$''', Bytes.Invalid
         yield r'(\b[rR])("""|'r"''')", bygroup(String.Prefix, String.Start), withgroup(2, cls.longstring_raw)
         yield r'(\b(?:[fF][rR])|(?:[rR][fF]))("""|'r"''')", bygroup(String.Prefix, String.Start), withgroup(2, cls.longstring_raw_format)
         yield r'(\b[uU])?("""|'r"''')", String.Start, withgroup(2, cls.longstring)
@@ -235,7 +235,7 @@ class Python(Language):
 
     @lexicon
     def string_format_expr(cls):
-        yield '![sra]', Char
+        yield '![sra]', Character
         yield ':', Delimiter, cls.string_format_spec
         yield r'\}', Delimiter, -1
 

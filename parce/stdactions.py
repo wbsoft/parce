@@ -28,114 +28,52 @@ from . import action
 # ------------------------------------------------------------------------
 
 
-# Base actions:
+a = action.StandardAction
 
-Whitespace = action.StandardAction("Whitespace")
-Text = action.StandardAction("Text")
+# Base actions, derive from these:
 
-Comment = action.StandardAction("Comment")
-Delimiter = action.StandardAction("Delimiter")
-Error = action.StandardAction("Error")
-Escape = action.StandardAction("Escape")
-Keyword = action.StandardAction("Keyword")
-Literal = action.StandardAction("Literal")
-Name = action.StandardAction("Name")
-Pseudo = action.StandardAction("Pseudo")
-Template = action.StandardAction("Template")
-
-# Actions that derive from Name:
-
-Name.Attribute
-Name.Builtin
-Name.Class
-Name.Command
-Name.Constant
-Name.Decorator
-Name.Exception
-Name.Function
-Name.Identifier
-Name.Macro
-Name.Method
-Name.Namespace
-Name.Object
-Name.Property
-Name.Symbol
-Name.Tag
-Name.Variable
-
-# Actions that derive from Literal:
-
-Verbatim = Literal.Verbatim
-Value = Literal.Value
-String = Literal.String
-Number = Literal.Number
-Boolean = Literal.Boolean
-Char = Literal.Char
-Literal.Color
-Literal.Email
-Literal.Url
-
-# Actions that derive from String:
-
-String.Double
-String.Single
-String.Escape
-
-# Other derived actions:
-
-Comment.Alert
-Operator = Delimiter.Operator
-Template.Preprocessed
-Text.Deleted
-Text.Inserted
+Text            = a("Text")
+Whitespace      = a("Whitespace")
+Keyword         = a("Keyword")
+Delimiter       = a("Delimiter")
+Name            = a("Name")         # see below for many derived actions
+Literal         = a("Literal")      # see below for many derived actions
+Value           = a("Value")
+Data            = a("Data")
+Comment         = a("Comment")
 
 
+# Mixin actions, yield subtle style changes:
 
-"""
+Alert           = a("Alert")
+Important       = a("Important")
+Unimportant     = a("Unimportant")
+Special         = a("Special")
+
+Definition      = a("Definition")   # a thing is defined (vs referred to)
+Invalid         = a("Invalid")      # invalid or erroneous input
+Escape          = a("Escape")       # escaped text like \n in a string
+Template        = a("Template")     # a template for something else
+Pseudo          = a("Pseudo")       # e.g. a pseudo-class or -comment
+Preprocessed    = a("Preprocessed")
+
+Inserted        = a("Inserted")     # inserted text (e.g. in a diff)
+Deleted         = a("Deleted")      # deleted text (e.g. in a diff)
+Quoted          = a("Quoted")       # e.g. a blockquote
+Bold            = a("Bold")         # Bold text
+Emphasized      = a("Emphasized")   # Emphasized text
 
 
-sketch
+# Mixin actions that are not styled by default:
 
-actions
+Start           = a("Start")        # start of something
+End             = a("End")          # end of something
+Indent          = a("Indent")       # denotes an indent
+Dedent          = a("Dedent")       # denotes a dedent
 
-base actions, defining the type of text
 
-Text            # just text, with no special styles
-Whitespace      # whitespace
-Keyword         # a keyword
-Delimiter       # a delimiter (mostly a punctuation character)
-Name            # a name, e.g. of a function, tag or variable
-Value           # a value
-Data            # stuff that is more like verbatim data
-Comment         # a comment
+# Actions that derive of Name:
 
-base actions that can be used alone, but also
-appended to other actions, they change the style in some ways.
-Some do not change the style, but provide information about the token
-
-Alert           # should stand out, like TODO in a comment
-Important       # should stand out somewhat
-Unimportant     # something unimportant, could be greyed out
-Special         # should stand out somewhat
-Definition      # denotes where a thing is defined (vs referred to)
-Invalid         # invalid or erroneous input
-Escape          # escaped text like \n in a string
-Template        # something that is a template for something else
-Preprocess      # something that is preprocessed
-Inserted        # inserted text (in a diff e.g.)
-Deleted         # deleted text (e.g. in a diff)
-Quoted          # stuff like a blockquote
-Bold            # Bold text
-Emphasized      # Emphasized text
-
-those are not styled by default
-
-Start           # denotes the start of something
-End             # denotes the end of something
-Indent          # denotes an indent
-Dedent          # denotes a dedent
-
-# derive of name
 Name.Attribute
 Name.Builtin
 Name.Class
@@ -157,23 +95,27 @@ Name.Tag
 Name.Type
 Name.Variable
 
-# derive of value
-String = Value.String          # a quoted string
-Character = Value.Character       # a single character
-Number = Value.Number          # a numeric value
-Boolean = Value.Boolean        # a boolean value
-Value.Url
-Value.Email
-Value.Color
 
-# derive of string
+# Actions that derive of Literal:
+
+String = Literal.String         # a quoted string
+Character = Literal.Character   # a single character
+Number = Literal.Number         # a numeric value
+Fraction = Number.Fraction      # a fraction/rational value
+Boolean = Literal.Boolean       # a boolean value
+Literal.Url
+Literal.Email
+Literal.Color
+
+
+# Actions that derive of String:
+
 String.Double
 String.Single
 
-# derive of Delimiter
+
+# Actions that derive of Delimiter:
+
 Operator = Delimiter.Operator
 Operator.Assignment
 
-# other derives
-
-"""
