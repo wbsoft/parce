@@ -31,6 +31,8 @@ from . import python_words
 
 RE_PYTHON_IDENTIFIER = _I_ = r'[^\W\d]\w*'
 RE_PYTHON_HORIZ_SPACE = _S_ = r'[^\S\n]'
+RE_PYTHON_LINE_CONTINUATION = _N_ = r'\\\n'
+_SN_ = fr'(?:{_S_}|{_N_})'
 
 
 Bytes = Literal.Bytes
@@ -41,13 +43,16 @@ class Python(Language):
     def root(cls):
         yield fr'^{_S_}+($|(?=#))?', ifgroup(1, Whitespace, Whitespace.Indent)
         yield r'@', Name.Decorator, cls.decorator
-        yield fr'(class\b){_S_}*({_I_})', bygroup(Keyword, Name.Class), cls.classdef
-        yield fr'(def\b){_S_}*({_I_})', bygroup(Keyword, Name.Function), cls.funcdef
+        yield fr'(class\b){_S_}*({_I_})', bygroup(Keyword,
+            ifgroupmember(2, python_words.keywords, Error, Name.Class)), cls.classdef
+        yield fr'(def\b){_S_}*({_I_})', bygroup(Keyword,
+            ifgroupmember(2, python_words.keywords, Error, Name.Function)), cls.funcdef
         yield from cls.common()
 
     @classmethod
     def common(cls):
         yield r'#', Comment, cls.comment
+        yield fr'({_N_})(\s*)', bygroup(Escape, Whitespace)
         yield r'\[', Delimiter, cls.list
         yield r'\(', Delimiter, cls.tuple
         yield r'\{', Delimiter, cls.dict
@@ -67,6 +72,14 @@ class Python(Language):
         yield r'''(\b(?:[bB][rR])|(?:[rR][bB]))(['"])''', bygroup(Bytes.Prefix, Bytes.Start), withgroup(2, cls.bytes_raw)
         yield r'''(\b[bB])(['"])''', bygroup(Bytes.Prefix, Bytes.Start), withgroup(2, cls.bytes)
         yield words(python_words.keywords, prefix=r'\b', suffix=r'\b'), Keyword
+        yield words(python_words.constants, prefix=r'\b', suffix=r'\b'), Name.Constant
+        yield fr'\.{_SN_}*\b({_I_})\b(?:{_SN_}*([\[\(]))?', \
+            bygroup(mapgroup(2, {'(': Name.Function}, Name.Variable), Delimiter), \
+            mapgroup(2, {'(': cls.call, '[': cls.item})
+        yield fr'\b({_I_})\b(?:{_SN_}*([\[\(]))?', \
+            bygroup(ifgroupmember(1, python_words.builtins, Name.Builtin,
+                mapgroup(2, {'(': Name.Function}, Name.Variable)), Delimiter), \
+            mapgroup(2, {'(': cls.call, '[': cls.item})
 
     @lexicon(re_flags=re.MULTILINE)
     def decorator(cls):
@@ -76,6 +89,7 @@ class Python(Language):
         yield r'\(', Delimiter, cls.call
         yield r'\.', Delimiter
         yield '$', None, -1
+        yield r'\\\n', Escape
         yield r'#', Comment, -1, cls.comment
 
     @lexicon
@@ -109,11 +123,13 @@ class Python(Language):
     def item(cls):
         """Stuff between xxx[ and ] (getitem)."""
         yield r'\]', Delimiter, -1
+        yield from cls.common()
 
     @lexicon
     def call(cls):
         """Stuff between xxx( and ) (call)."""
         yield r'\)', Delimiter, -1
+        yield from cls.common()
 
     ## ----- item types -------------
     @lexicon
