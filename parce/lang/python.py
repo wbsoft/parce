@@ -40,6 +40,7 @@ class Python(Language):
     @lexicon(re_flags=re.MULTILINE)
     def root(cls):
         yield r'^\s+($|(?=#))?', ifgroup(1, Whitespace, Whitespace.Indent)
+        yield r'@', Name.Decorator, cls.decorator
         yield fr'(class\b){_S_}*({_I_})', bygroup(Keyword, Name.Class), cls.classdef
         yield fr'(def\b){_S_}*({_I_})', bygroup(Keyword, Name.Function), cls.funcdef
         yield from cls.common()
@@ -67,6 +68,16 @@ class Python(Language):
         yield r'''(\b[bB])(['"])''', bygroup(Bytes.Prefix, Bytes.Start), withgroup(2, cls.bytes)
         yield words(python_words.keywords, prefix=r'\b', suffix=r'\b'), Keyword
 
+    @lexicon(re_flags=re.MULTILINE)
+    def decorator(cls):
+        """A decorator."""
+        yield _I_, Name.Decorator
+        yield r'\[', Delimiter, cls.item
+        yield r'\(', Delimiter, cls.call
+        yield r'\.', Delimiter
+        yield '$', None, -1
+        yield r'#', Comment, -1, cls.comment
+
     @lexicon
     def funcdef(cls):
         """A function definition."""
@@ -92,6 +103,17 @@ class Python(Language):
         """The base classes in a class definition."""
         yield r'\)', Delimiter, -1
         yield from cls.common()
+
+    ## ------ expressions -----------
+    @lexicon
+    def item(cls):
+        """Stuff between xxx[ and ] (getitem)."""
+        yield r'\]', Delimiter, -1
+
+    @lexicon
+    def call(cls):
+        """Stuff between xxx( and ) (call)."""
+        yield r'\)', Delimiter, -1
 
     ## ----- item types -------------
     @lexicon
