@@ -89,3 +89,91 @@ Template.Preprocessed
 Text.Deleted
 Text.Inserted
 
+
+
+"""
+
+
+sketch
+
+actions
+
+base actions, defining the type of text
+
+Text            # just text, with no special styles
+Whitespace      # whitespace
+Keyword         # a keyword
+Delimiter       # a delimiter (mostly a punctuation character)
+Name            # a name, e.g. of a function, tag or variable
+Value           # a value
+Data            # stuff that is more like verbatim data
+Comment         # a comment
+
+base actions that can be used alone, but also
+appended to other actions, they change the style in some ways.
+Some do not change the style, but provide information about the token
+
+Alert           # should stand out, like TODO in a comment
+Important       # should stand out somewhat
+Unimportant     # something unimportant, could be greyed out
+Special         # should stand out somewhat
+Definition      # denotes where a thing is defined (vs referred to)
+Invalid         # invalid or erroneous input
+Escape          # escaped text like \n in a string
+Template        # something that is a template for something else
+Preprocess      # something that is preprocessed
+Inserted        # inserted text (in a diff e.g.)
+Deleted         # deleted text (e.g. in a diff)
+Quoted          # stuff like a blockquote
+Bold            # Bold text
+Emphasized      # Emphasized text
+
+those are not styled by default
+
+Start           # denotes the start of something
+End             # denotes the end of something
+Indent          # denotes an indent
+Dedent          # denotes a dedent
+
+# derive of name
+Name.Attribute
+Name.Builtin
+Name.Class
+Name.Command
+Name.Constant
+Name.Decorator
+Name.Entity
+Name.Exception
+Name.Function
+Name.Identifier
+Name.Macro
+Name.Markup
+Name.Method
+Name.Namespace
+Name.Object
+Name.Property
+Name.Symbol
+Name.Tag
+Name.Type
+Name.Variable
+
+# derive of value
+String = Value.String          # a quoted string
+Character = Value.Character       # a single character
+Number = Value.Number          # a numeric value
+Boolean = Value.Boolean        # a boolean value
+Value.Url
+Value.Email
+Value.Color
+
+# derive of string
+String.Double
+String.Single
+
+# derive of Delimiter
+Operator = Delimiter.Operator
+Operator.Assignment
+
+# other derives
+
+"""
