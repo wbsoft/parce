@@ -122,25 +122,26 @@ from .rule import ActionItem
 # to me to equip every instance with one.
 _lock = threading.Lock()
 
+_toplevel_actions = {}       # store the "root" actions
+
 
 class StandardAction:
     """Factory for standard action singletons."""
-    _parent = None
-    def __init__(self, name):
-        self._name = name
+    def __new__(cls, name, parent=None):
+        d = parent.__dict__ if parent else _toplevel_actions
+        with _lock:
+            try:
+                return d[name]
+            except KeyError:
+                new = d[name] = object.__new__(cls)
+                new._name = name
+                new._parent = parent
+                return new
 
     def __getattr__(self, name):
         if name.startswith('_'):
             raise AttributeError("{} has no attribute {}".format(self, repr(name)))
-        with _lock:
-            try:
-                return object.__getattribute__(self, name)
-            except AttributeError:
-                pass
-            new = type(self)(name)
-            new._parent = self
-            setattr(self, name, new)
-            return new
+        return type(self)(name, self)
 
     def __repr__(self):
         return ".".join(reversed([n._name for n in self]))
