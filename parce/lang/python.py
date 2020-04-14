@@ -57,6 +57,7 @@ class Python(Language):
         yield r'\(', Delimiter, cls.tuple
         yield r'\{', Delimiter, cls.dict
 
+        ## string literals
         yield r'''[rRuUfF]{,2}["']$''', String.Error
         yield r'''[rRbB]{,2}["']$''', Bytes.Error
         yield r'(\b[rR])("""|'r"''')", bygroup(String.Prefix, String.Start), withgroup(2, cls.longstring_raw)
@@ -71,6 +72,14 @@ class Python(Language):
         yield r'(\b[bB])("""|'r"''')", bygroup(Bytes.Prefix, Bytes.Start), withgroup(2, cls.longbytes)
         yield r'''(\b(?:[bB][rR])|(?:[rR][bB]))(['"])''', bygroup(Bytes.Prefix, Bytes.Start), withgroup(2, cls.bytes_raw)
         yield r'''(\b[bB])(['"])''', bygroup(Bytes.Prefix, Bytes.Start), withgroup(2, cls.bytes)
+
+        ## numerical values
+        yield '0[oO](?:_?[0-7])+', Number
+        yield '0[bB](?:_?[01])+', Number
+        yield '0[xX](?:_?[0-9a-fA-F])+', Number
+        yield r'(?:\.\d(?:_?\d)*|\d(?:_?\d)*(?:\.(?:\d(?:_?\d)*)?)?)(?:[eE][-+]\d(?:_?\d)*)?[jJ]?', Number
+
+        ## keywords, variables, functions
         yield words(python_words.keywords, prefix=r'\b', suffix=r'\b'), Keyword
         yield words(python_words.constants, prefix=r'\b', suffix=r'\b'), Name.Constant
         yield fr'\.{_SN_}*\b({_I_})\b(?:{_SN_}*([\[\(]))?', \
@@ -80,6 +89,9 @@ class Python(Language):
             bygroup(ifgroupmember(1, python_words.builtins, Name.Builtin,
                 mapgroup(2, {'(': Name.Function}, Name.Variable)), Delimiter), \
             mapgroup(2, {'(': cls.call, '[': cls.item})
+
+        ## delimiters, operators
+        yield r'[;,:]', Delimiter
 
     @lexicon(re_flags=re.MULTILINE)
     def decorator(cls):
@@ -96,13 +108,16 @@ class Python(Language):
     def funcdef(cls):
         """A function definition."""
         yield r'\(', Delimiter, cls.signature
+        yield r'->', Delimiter.Annotation
         yield r':', Delimiter.Indent, -1
         yield r'#', Comment, -1, cls.comment
+        yield from cls.common()
 
     @lexicon
     def signature(cls):
         """A function signature."""
         yield r'\)', Delimiter, -1
+        yield r':', Delimiter.Annotation
         yield from cls.common()
 
     @lexicon
@@ -111,6 +126,7 @@ class Python(Language):
         yield r'\(', Delimiter, cls.bases
         yield ":", Delimiter.Indent, -1
         yield r'#', Comment, -1, cls.comment
+        yield from cls.common()
 
     @lexicon
     def bases(cls):
