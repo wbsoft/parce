@@ -23,10 +23,10 @@ Standard actions defined in the parce module namespace.
 
 from . import action
 
-# Note: this file is literally shown in the documentation (stdactions.rst)
-# from line 30 on.
-# ------------------------------------------------------------------------
+# Note: the marked part below of this file is literally shown in the
+# documentation (stdactions.rst)
 
+# BEGIN_ACTIONS
 
 a = action.StandardAction
 
@@ -123,3 +123,4 @@ Operator = Delimiter.Operator
 Operator.Assignment
 
 del a
+# END_ACTIONS
