@@ -172,12 +172,13 @@ class Theme:
     def tokens(self, theme_context, slices):
         """Yield tokens from the slices, calling ``theme_context`` if necessary.
 
-        The ``slices`` argument is an iterable of (context, slice) tuples.
-        such as returned by Context.slices() and Context.context_slices().
-        When a theme changes, ``theme_context()`` is called with the theme
-        for a new context with that theme (``theme_context(theme)`` should
-        return a context manager). In Theme, the ``theme_context`` argument
-        is unused.
+        The ``slices`` argument is an iterable of (context, slice) tuples. such
+        as returned by Context.slices() and Context.context_slices(). When a
+        new context is entered, ``theme_context.push(language)`` is called
+        where ``language`` is the context's lexicon's language. When the lexicon
+        ends, ``theme_context.pop()`` is called.
+
+        In Theme, the ``theme_context`` argument is unused.
 
         """
         for context, slice_ in slices:
@@ -276,6 +277,7 @@ class MetaTheme:
                         else:
                             break
             theme_context.pop()
+
 
 class TextFormat:
     """Simple textformat that reads CSS properties and supports a subset of those.
