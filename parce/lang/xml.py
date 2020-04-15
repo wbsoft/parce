@@ -31,7 +31,28 @@ from parce import *
 Doctype = Name.Type
 
 
-class Xml(Language):
+class _XmlBase(Language):
+    """Common stuff between Xml and Dtd."""
+    @lexicon
+    def dqstring(cls):
+        yield r'&\S*?;', String.Escape
+        yield default_action, String.Double
+        yield r'"', String.Double.End, -1
+
+    @lexicon
+    def sqstring(cls):
+        yield r'&\S*?;', String.Escape
+        yield default_action, String.Single
+        yield r"'", String.Single.End, -1
+
+    @lexicon
+    def comment(cls):
+        yield r'-->', Comment.End, -1
+        yield from cls.comment_common()
+
+
+class Xml(_XmlBase):
+    """Parse XML."""
     @lexicon(re_flags=re.IGNORECASE)
     def root(cls):
         yield r'<!--', Comment.Start, cls.comment
@@ -50,11 +71,6 @@ class Xml(Language):
     @lexicon
     def tag(cls):
         yield from cls.root()
-
-    @lexicon
-    def comment(cls):
-        yield r'-->', Comment.End, -1
-        yield from cls.comment_common()
 
     @lexicon
     def cdata(cls):
@@ -78,16 +94,8 @@ class Xml(Language):
 
     @lexicon
     def internal_dtd(cls):
-        yield r'<!ENTITY\b', Name.Entity.Definition.Start, cls.entity
-        yield r'<![^>]*>', Doctype
-        yield default_action, Text  # TODO include dtd language
         yield r'\]', Doctype.End, -1
-
-    @lexicon
-    def entity(cls):
-        yield r'\w+', Name.Entity
-        yield r'"', String, cls.dqstring
-        yield r'>', Name.Entity.Definition.End, -1
+        yield from Dtd.root
 
     @lexicon
     def attrs(cls):
@@ -100,15 +108,18 @@ class Xml(Language):
         yield r'\s+', skip
         yield default_action, Invalid
 
+
+class Dtd(_XmlBase):
+    """Parse a DTD (Document Type Definition)."""
     @lexicon
-    def dqstring(cls):
-        yield r'&\S*?;', String.Escape
-        yield default_action, String.Double
-        yield r'"', String.Double.End, -1
+    def root(cls):
+        yield r'<!--', Comment.Start, cls.comment
+        yield r'<!ENTITY\b', Name.Entity.Definition.Start, cls.entity
+        yield default_action, Text  # TODO include more dtd language
 
     @lexicon
-    def sqstring(cls):
-        yield r'&\S*?;', String.Escape
-        yield default_action, String.Single
-        yield r"'", String.Single.End, -1
+    def entity(cls):
+        yield r'\w+', Name.Entity
+        yield r'"', String, cls.dqstring
+        yield r'>', Name.Entity.Definition.End, -1
 

@@ -44,6 +44,14 @@ register("parce.lang.css.Css.root",
     guesses = [(r'\b@media\b', 0.5), (r'\bdiv\b', 0.1), (r'\bbody\s*\{', 0.4)],
 )
 
+register("parce.lang.xml.Dtd.root",
+    name = "DTD",
+    desc = "Document Type Definition",
+    filenames = [("*.dtd", 1)],
+    mimetypes = [("application/xml-dtd", 1)],
+    guesses = [(r'<!ENTITY\b', 0.5)],
+)
+
 register("parce.lang.ini.Ini.root",
     name = "INI",
     desc = "INI file format",
