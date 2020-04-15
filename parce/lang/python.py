@@ -234,17 +234,25 @@ class Python(Language):
     @classmethod
     def string_formatstring(cls):
         yield r'\{\{|\}\}', String.Escape
-        yield r'\{', Delimiter, cls.string_format_expr
+        yield r'\{', Delimiter.Template, cls.string_format_expr
 
     @lexicon
     def string_format_expr(cls):
         yield '![sra]', Character
         yield ':', Delimiter, cls.string_format_spec
-        yield r'\}', Delimiter, -1
+        yield r'\}', Delimiter.Template, -1
+        yield from cls.common()
 
     @lexicon
     def string_format_spec(cls):
-        yield r'\}', Delimiter, -2
+        yield r'\{', Delimiter, cls.string_format_spec_nested
+        yield r'\}', Delimiter.Template, -2
+        yield from cls.common() # TODO maybe really parse format strings
+
+    @lexicon
+    def string_format_spec_nested(cls):
+        yield r'\}', Delimiter, -1
+        yield from cls.common()
 
     @lexicon(re_flags=re.MULTILINE)
     def bytes(cls):
