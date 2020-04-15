@@ -1,0 +1,379 @@
+/*
+ * Template CSS theme for parce.
+ *
+ * Use this as a template when creating a theme.
+ */
+
+
+/*
+ * Default style for a parce DIV or text editing window etc.
+ */
+
+/* Default */
+.parce {
+
+}
+
+/* The line the cursor is in */
+.parce.current-line {
+
+}
+
+/* The current line when the window has focus */
+.parce.current-line:focus {
+
+}
+
+/* Selected text */
+.parce::selection {
+
+}
+
+/* Selected text when the window has focus */
+.parce::selection:focus {
+
+}
+
+/* The current line when text widget is disabled
+ * (probably unused normally)
+ */
+.parce.current-line:disabled {
+
+}
+
+.parce::selection:disabled {
+
+}
+
+
+/*
+ * Styles for the base types
+ */
+.parce
+.text {
+
+}
+
+.parce
+.whitespace {
+
+}
+
+.parce
+.keyword {
+
+}
+
+.parce
+.delimiter {
+
+}
+
+.parce
+.name {
+
+}
+
+.parce
+.literal {
+
+}
+
+.parce
+.comment {
+
+}
+
+/*
+ * Styles for the mixin types
+ */
+.parce
+.alert {
+
+}
+
+.parce
+.important {
+
+}
+
+.parce
+.unimportant {
+
+}
+
+.parce
+.special {
+
+}
+
+.parce
+.definition {
+
+}
+
+.parce
+.invalid {
+
+}
+
+.parce
+.escape {
+
+}
+
+.parce
+.template {
+
+}
+
+.parce
+.pseudo {
+
+}
+
+.parce
+.preprocessed {
+
+}
+
+.parce
+.inserted {
+
+}
+
+.parce
+.deleted {
+
+}
+
+.parce
+.quoted {
+
+}
+
+.parce
+.bold {
+
+}
+
+.parce
+.emphasized {
+
+}
+
+/* (Start, End, Indent and Dedent don't need styling) */
+.parce
+.start {
+
+}
+
+.parce
+.end {
+
+}
+
+.parce
+.indent {
+
+}
+
+.parce
+.dedent {
+
+}
+
+
+/*
+ * Styles for Name derivatives
+ */
+.parce
+.attribute {
+
+}
+
+.parce
+.builtin {
+
+}
+
+.parce
+.class {
+
+}
+
+.parce
+.command {
+
+}
+
+.parce
+.constant {
+
+}
+
+.parce
+.decorator {
+
+}
+
+.parce
+.entity {
+
+}
+
+.parce
+.exception {
+
+}
+
+.parce
+.function {
+
+}
+
+.parce
+.identifier {
+
+}
+
+.parce
+.macro {
+
+}
+
+.parce
+.markup {
+
+}
+
+.parce
+.method {
+
+}
+
+.parce
+.namespace {
+
+}
+
+.parce
+.object {
+
+}
+
+.parce
+.property {
+
+}
+
+.parce
+.symbol {
+
+}
+
+.parce
+.tag {
+
+}
+
+.parce
+.type {
+
+}
+
+.parce
+.variable {
+
+}
+
+
+/*
+ * Styles for Literal derivatives
+ */
+.parce
+.data {
+
+}
+
+.parce
+.verbatim {
+
+}
+
+.parce
+.string {
+
+}
+
+.parce
+.number {
+
+}
+
+.parce
+.fraction {
+
+}
+
+.parce
+.boolean {
+
+}
+
+.parce
+.color {
+
+}
+
+.parce
+.email {
+
+}
+
+.parce
+.url {
+
+}
+
+.parce
+.input {
+
+}
+
+.parce
+.output {
+
+}
+
+.parce
+.error {
+
+}
+
+/*
+ * String styles
+ */
+.parce
+.string.double {
+
+}
+
+.parce
+.string.single {
+
+}
+
+/*
+ * Styles for Delimiter derivatives
+ */
+.parce
+.operator {
+
+}
+
+.parce
+.assignment {
+
+}
+
