@@ -60,8 +60,8 @@ RE_LILYPOND_DURATION = \
 
 
 # Standard actions defined/used here:
-Rest = Name.Rest
-Pitch = Name.Pitch
+Rest = Text.Music.Rest
+Pitch = Text.Music.Pitch
 Octave = Pitch.Octave
 OctaveCheck = Pitch.Octave.OctaveCheck
 Accidental = Pitch.Accidental
@@ -91,7 +91,7 @@ class LilyPond(Language):
     def root(cls):
         """Toplevel LilyPond document."""
         yield from cls.blocks()
-        yield RE_LILYPOND_SYMBOL, Name.Variable
+        yield RE_LILYPOND_SYMBOL, Name.Variable.Definition
         yield "[,.]", Delimiter
         yield "=", Operator.Assignment
         yield r"\\version\b", Keyword
@@ -265,7 +265,7 @@ class LilyPond(Language):
         yield words(lilypond_words.contexts), Context
         yield r'[.,]', Delimiter
         yield r"(=)(?:\s*(" + RE_FRACTION + r"|\d+))?", bygroup(Operator.Assignment, Number)
-        yield RE_LILYPOND_SYMBOL + r"(?=\s*([,.=])?)", Name.Variable, ifgroup(1, (), -1)
+        yield RE_LILYPOND_SYMBOL + r"(?=\s*([,.=])?)", Name.Variable.Definition, ifgroup(1, (), -1)
         yield default_target, -1
 
     @lexicon
