@@ -119,8 +119,13 @@ String.Single
 
 # Actions that derive of Delimiter:
 
-Operator = Delimiter.Operator
+Operator        = Delimiter.Operator
+Bracket         = Delimiter.Bracket
+ModeChange      = Delimiter.ModeChange
+Quote           = Delimiter.Quote
+Separator       = Delimiter.Separator
 Operator.Assignment
+
 
 del a
 # END_ACTIONS

@@ -258,7 +258,7 @@
 
 .parce
 .markup {
-
+    color: darkgreen;
 }
 
 .parce
@@ -393,6 +393,27 @@
 
 .parce
 .assignment {
+
+}
+
+.parce
+.bracket {
+    font-weight: bold;
+}
+
+.parce
+.modechange {
+    font-weight: bold;
+    color: chocolate;
+}
+
+.parce
+.quote {
+
+}
+
+.parce
+.separator {
 
 }
 

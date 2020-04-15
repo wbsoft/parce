@@ -71,7 +71,7 @@ Grob = Name.Object.Grob
 Duration = Number.Duration
 Duration.Dot
 Duration.Scaling
-Dynamic = Name.Command.Dynamic
+Dynamic = Name.Builtin.Dynamic
 LyricText = Text.Lyric.LyricText
 LyricHyphen = Delimiter.Lyric.LyricHyphen
 LyricExtender = Delimiter.Lyric.LyricExtender
@@ -99,30 +99,30 @@ class LilyPond(Language):
 
     @classmethod
     def blocks(cls):
-        yield r"(\\book(?:part)?)\s*(\{)", bygroup(Keyword, Delimiter.OpenBrace), cls.book
-        yield r"(\\score)\s*(\{)", bygroup(Keyword, Delimiter.OpenBrace), cls.score
-        yield r"(\\header)\s*(\{)", bygroup(Keyword, Delimiter.OpenBrace), cls.header
-        yield r"(\\paper)\s*(\{)", bygroup(Keyword, Delimiter.OpenBrace), cls.paper
-        yield r"(\\layout)\s*(\{)", bygroup(Keyword, Delimiter.OpenBrace), cls.layout
-        yield r"(\\midi)\s*(\{)", bygroup(Keyword, Delimiter.OpenBrace), cls.midi
+        yield r"(\\book(?:part)?)\s*(\{)", bygroup(Keyword, Bracket.Start), cls.book
+        yield r"(\\score)\s*(\{)", bygroup(Keyword, Bracket.Start), cls.score
+        yield r"(\\header)\s*(\{)", bygroup(Keyword, Bracket.Start), cls.header
+        yield r"(\\paper)\s*(\{)", bygroup(Keyword, Bracket.Start), cls.paper
+        yield r"(\\layout)\s*(\{)", bygroup(Keyword, Bracket.Start), cls.layout
+        yield r"(\\midi)\s*(\{)", bygroup(Keyword, Bracket.Start), cls.midi
 
     @lexicon
     def book(cls):
         """Book or bookpart."""
-        yield r'\}', Delimiter.CloseBrace, -1
+        yield r'\}', Bracket.End, -1
         yield from cls.common()
         yield from cls.blocks()
         yield from cls.music()
 
     @lexicon
     def score(cls):
-        yield r'\}', Delimiter.CloseBrace, -1
+        yield r'\}', Bracket.End, -1
         yield from cls.blocks()
         yield from cls.music()
 
     @lexicon
     def header(cls):
-        yield r'\}', Delimiter.CloseBrace, -1
+        yield r'\}', Bracket.End, -1
         yield RE_LILYPOND_SYMBOL, Name.Variable
         yield "[,.]", Delimiter
         yield "=", Operator.Assignment
@@ -130,7 +130,7 @@ class LilyPond(Language):
 
     @lexicon
     def paper(cls):
-        yield r'\}', Delimiter.CloseBrace, -1
+        yield r'\}', Bracket.End, -1
         yield RE_LILYPOND_SYMBOL, Name.Variable
         yield "[,.]", Delimiter
         yield "=", Operator.Assignment
@@ -140,20 +140,20 @@ class LilyPond(Language):
 
     @lexicon
     def layout(cls):
-        yield r'\}', Delimiter.CloseBrace, -1
-        yield r"(\\context)\s*(\{)", bygroup(Keyword, Delimiter.OpenBrace), cls.layout_context
+        yield r'\}', Bracket.End, -1
+        yield r"(\\context)\s*(\{)", bygroup(Keyword, Bracket.Start), cls.layout_context
         yield from cls.music()
 
     @lexicon
     def midi(cls):
-        yield r'\}', Delimiter.CloseBrace, -1
-        yield r"(\\context)\s*(\{)", bygroup(Keyword, Delimiter.OpenBrace), cls.layout_context
+        yield r'\}', Bracket.End, -1
+        yield r"(\\context)\s*(\{)", bygroup(Keyword, Bracket.Start), cls.layout_context
         yield from cls.music()
 
     @lexicon
     def layout_context(cls):
         r"""Contents of \layout or \midi { \context { } } or \with. { }."""
-        yield r'\}', Delimiter.CloseBrace, -1
+        yield r'\}', Bracket.End, -1
         yield words(lilypond_words.contexts, prefix=r"\\", suffix=r"\b"), Context
         yield words(lilypond_words.grobs), Grob
         yield words(lilypond_words.keywords, prefix=r"\\", suffix=r"(?![^\W\d])"), Keyword
@@ -171,14 +171,14 @@ class LilyPond(Language):
         yield r"\\(?:un)?set(?![^\W\d])", Keyword, cls.set_unset
         yield r"\\(?:override|revert)(?![^\W\d])", Keyword, cls.override
         yield r"\\(?:new|change|context)(?![^\W\d])", Keyword, cls.context
-        yield r"(\\with)\s*(\{)", bygroup(Keyword, Delimiter.OpenBrace), cls.layout_context
+        yield r"(\\with)\s*(\{)", bygroup(Keyword, Bracket.Start), cls.layout_context
         yield r"(\\relative)(?![^\W\d])(?:\s+" + RE_LILYPOND_PITCH_OCT + ")?", \
             bygroup(Keyword, cls.ifpitch(), Octave)
         yield (r"(\\transpose)(?![^\W\d])(?:\s+" + RE_LILYPOND_PITCH_OCT + ")?"
                r"(?:\s*" + RE_LILYPOND_PITCH_OCT + ")?"), \
                bygroup(Keyword, cls.ifpitch(), Octave, cls.ifpitch(), Octave)
         yield r"\\tempo(?![^\W\d])", Keyword, cls.tempo
-        yield r"(\\chord(?:s|mode))\b\s*(\{)?", bygroup(Keyword, Delimiter.OpenBrace), \
+        yield r"(\\chord(?:s|mode))\b\s*(\{)?", bygroup(Keyword, Bracket.Start), \
             ifgroup(2, cls.chordmode)
         yield from cls.notemode_rule()
         yield from cls.lyricmode_rules()
@@ -194,11 +194,11 @@ class LilyPond(Language):
     def music(cls):
         """Musical items."""
         yield from cls.common()
-        yield r"<<", Delimiter.OpenBrace, cls.simultaneous
-        yield r"<", Delimiter.OpenChord, cls.chord
-        yield r"\{", Delimiter.OpenBrace, cls.sequential
-        yield r"\\\\", Delimiter.VoiceSeparator
-        yield r"\|", Delimiter.PipeSymbol
+        yield r"<<", Bracket.Start, cls.simultaneous
+        yield r"<", Bracket.Chord.Start, cls.chord
+        yield r"\{", Bracket.Start, cls.sequential
+        yield r"\\\\", Separator.VoiceSeparator
+        yield r"\|", Separator.PipeSymbol
         yield r"\\[\[\]]", Spanner.Ligature
         yield r"[\[\]]", Spanner.Beam
         yield r"\\[()]", Spanner.Slur.Phrasing
@@ -220,19 +220,19 @@ class LilyPond(Language):
     @lexicon
     def sequential(cls):
         """A { } construct."""
-        yield r"\}", Delimiter.CloseBrace, -1
+        yield r"\}", Bracket.End, -1
         yield from cls.music()
 
     @lexicon
     def simultaneous(cls):
         """A << >> construct."""
-        yield r">>", Delimiter.CloseBrace, -1
+        yield r">>", Bracket.End, -1
         yield from cls.music()
 
     @lexicon
     def chord(cls):
         """A < chord > construct."""
-        yield r">", Delimiter.CloseChord, -1
+        yield r">", Bracket.Chord.End, -1
         yield from cls.music()
 
     # ------------------ special commands ---------------
@@ -254,7 +254,7 @@ class LilyPond(Language):
         yield words(lilypond_words.contexts), Context
         yield "=", Operator.Assignment
         yield RE_LILYPOND_SYMBOL, Name.Symbol
-        yield r"(\\with)\s*(\{)", bygroup(Keyword, Delimiter.OpenBrace), -1, cls.layout_context
+        yield r"(\\with)\s*(\{)", bygroup(Keyword, Bracket.Start), -1, cls.layout_context
         yield from cls.common()
         yield default_target, -1
 
@@ -271,8 +271,13 @@ class LilyPond(Language):
     @lexicon
     def override(cls):
         """\\override, \\revert."""
+        yield SKIP_WHITESPACE
+        yield words(lilypond_words.contexts), Context
         yield words(lilypond_words.grobs), Grob
-        yield from cls.set_unset()
+        yield r'[.,]', Delimiter
+        yield r"=", Operator.Assignment
+        yield RE_LILYPOND_SYMBOL, Name.Variable
+        yield default_target, -1
 
     # ------------------ script -------------------------
     @lexicon
@@ -322,8 +327,8 @@ class LilyPond(Language):
     def lyricmode(cls):
         """Yield contents in lyric mode."""
         yield from cls.common()
-        yield r">>|\}", Delimiter.CloseBrace, -1
-        yield r"<<|\{", Delimiter.OpenBrace, 1
+        yield r">>|\}", Bracket.End, -1
+        yield r"<<|\{", Bracket.Start, 1
         yield RE_LILYPOND_LYRIC_TEXT, maptext({
                 "--": LyricHyphen,
                 "__": LyricExtender,
@@ -339,14 +344,14 @@ class LilyPond(Language):
         yield from cls.base()
         yield RE_LILYPOND_SYMBOL, Name.Symbol
         yield r"\\s(sequential|imultaneous)\b", Keyword
-        yield r"\{|<<", Delimiter.OpenBrace, -1, cls.lyricmode
+        yield r"\{|<<", Bracket.Start, -1, cls.lyricmode
         yield SKIP_WHITESPACE
         yield default_target, -1
 
     @classmethod
     def lyricmode_rules(cls):
         yield r"(\\(?:lyric(?:mode|s)|addlyrics))\b\s*(\\s(?:equential|imultaneous)\b)?\s*(\{|<<)?", \
-            bygroup(Keyword.Lyric, Keyword, Delimiter.OpenBrace), \
+            bygroup(Keyword.Lyric, Keyword, Bracket.Start), \
             ifgroup(3, cls.lyricmode)
         yield r"\\lyricsto\b", Keyword.Lyric, cls.lyricsto
 
@@ -359,7 +364,7 @@ class LilyPond(Language):
     @classmethod
     def notemode_rule(cls):
         """Yield the rule for \\notemode / \\notes."""
-        yield r"(\\note(?:s|mode))\b\s*(\{|<<)?", bygroup(Keyword, Delimiter.OpenBrace), \
+        yield r"(\\note(?:s|mode))\b\s*(\{|<<)?", bygroup(Keyword, Bracket.Start), \
             mapgroup(2, {
                 "{": (cls.notemode, cls.sequential),
                 "<<": (cls.notemode, cls.simultaneous),
@@ -374,9 +379,9 @@ class LilyPond(Language):
     @classmethod
     def drummode_items(cls):
         """What can be found in drummode."""
-        yield r"\{", Delimiter.OpenBrace, cls.drummode_sequential
-        yield r"<<", Delimiter.OpenBrace, cls.drummode_simultaneous
-        yield r"\}|>>", Delimiter.CloseBrace, -1
+        yield r"\{", Bracket.Start, cls.drummode_sequential
+        yield r"<<", Bracket.Start, cls.drummode_simultaneous
+        yield r"\}|>>", Bracket.End, -1
         yield RE_LILYPOND_REST, Rest
         yield RE_LILYPOND_PITCHWORD, ifmember(lilypond_words.drum_pitch_names_set, Pitch.Drum, Name.Symbol)
         yield from cls.music()
@@ -392,7 +397,7 @@ class LilyPond(Language):
     @classmethod
     def drummode_rule(cls):
         """Yield the rule for \\drummode / \\drums."""
-        yield r"(\\drum(?:s|mode))\b\s*(\{|<<)?", bygroup(Keyword.Drum, Delimiter.OpenBrace), \
+        yield r"(\\drum(?:s|mode))\b\s*(\{|<<)?", bygroup(Keyword.Drum, Bracket.Start), \
             mapgroup(2, {
                 "{": (cls.drummode, cls.drummode_sequential),
                 "<<": (cls.drummode, cls.drummode_simultaneous),
@@ -402,9 +407,9 @@ class LilyPond(Language):
     @lexicon
     def chordmode(cls):
         """\\chordmode and \\chords."""
-        yield r":|/\+?", Delimiter.ChordSeparator, cls.chord_modifier
-        yield r"\}", Delimiter.CloseBrace, -1
-        yield r"\{", Delimiter.OpenBrace, 1
+        yield r":|/\+?", Separator.Chord, cls.chord_modifier
+        yield r"\}", Bracket.End, -1
+        yield r"\{", Bracket.Start, 1
         yield from cls.music()
 
     @lexicon
@@ -412,8 +417,8 @@ class LilyPond(Language):
         """Stuff in chord mode after a `:`"""
         yield r"((?<![a-z])|^)(?:aug|dim|sus|min|maj|m)(?![a-z])", Name.Symbol
         yield r"(\d+)([-+])?", bygroup(Number, Operator.Alteration)
-        yield r"\.", Delimiter
-        yield r"/\+?", Delimiter.ChordSeparator
+        yield r"\.", Separator.Dot
+        yield r"/\+?", Separator.Chord
         yield RE_LILYPOND_PITCHWORD, cls.ifpitch()
         yield default_target, -1
 
@@ -422,7 +427,7 @@ class LilyPond(Language):
     def base(cls):
         """Find comment, string and scheme."""
         yield r'"', String, cls.string
-        yield r'[#$]', Delimiter.SchemeStart, cls.get_scheme_target()
+        yield r'[#$]', Delimiter.ModeChange.SchemeStart, cls.get_scheme_target()
         yield from cls.comments()
 
     @classmethod
@@ -434,18 +439,18 @@ class LilyPond(Language):
     @lexicon
     def varname(cls):
         """bla.bla.bla syntax."""
-        yield r'\s*(\.)\s*(' + RE_LILYPOND_SYMBOL + ')', bygroup(Delimiter.Dot, Name.Variable)
+        yield r'\s*(\.)\s*(' + RE_LILYPOND_SYMBOL + ')', bygroup(Separator.Dot, Name.Variable)
         yield default_target, -1
 
     # -------------------- markup --------------------
     @lexicon
     def markup(cls):
         """Markup without environment. Try to guess the n of arguments."""
-        yield r'\{', Delimiter.OpenBrace, -1, cls.markuplist
-        yield r"(\\score)\s*(\{)", bygroup(Name.Function.Markup, Delimiter.OpenBrace), -1, cls.score
+        yield r'\{', Bracket.Start, -1, cls.markuplist
+        yield r"(\\score)\s*(\{)", bygroup(Name.Function.Markup, Bracket.Start), -1, cls.score
         yield RE_LILYPOND_COMMAND, cls.get_markup_action(), cls.get_markup_target()
         yield r'"', String, -1, cls.string
-        yield r'[#$]', Delimiter.SchemeStart, -1, cls.get_scheme_target()
+        yield r'[#$]', Delimiter.ModeChange.SchemeStart, -1, cls.get_scheme_target()
         yield from cls.comments()
         yield RE_LILYPOND_MARKUP_TEXT, Text, -1
 
@@ -468,9 +473,9 @@ class LilyPond(Language):
     @lexicon
     def markuplist(cls):
         """Markup until } ."""
-        yield r'\}', Delimiter.CloseBrace, -1
-        yield r'\{', Delimiter.OpenBrace, 1
-        yield r"(\\score)\s*(\{)", bygroup(Name.Function.Markup, Delimiter.OpenBrace), cls.score
+        yield r'\}', Bracket.End, -1
+        yield r'\{', Bracket.Start, 1
+        yield r"(\\score)\s*(\{)", bygroup(Name.Function.Markup, Bracket.Start), cls.score
         yield RE_LILYPOND_COMMAND, cls.get_markup_action()
         yield from cls.base()
         yield RE_LILYPOND_MARKUP_TEXT, Text
@@ -478,7 +483,7 @@ class LilyPond(Language):
     @classmethod
     def get_markup_action(cls):
         r"""Get the action for a command in \markup { }."""
-        return ifmember(lilypond_words.markup_commands, Name.Function.Markup, Name.Function)
+        return ifgroupmember(1, lilypond_words.markup_commands, Name.Function.Markup, Name.Function)
 
     # -------------- Scheme ---------------------
     @classmethod
