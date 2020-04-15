@@ -166,8 +166,9 @@ class Theme:
     @util.cached_method
     def textformat(self, action):
         """Return the TextFormat for the specified action."""
-        classes = repr(action).lower().split('.')
-        return self.TextFormat(self.style.select_class(*classes).properties())
+        class_ = repr(action).lower().replace('.', ' ')
+        e = css.Element(class_=class_, parent=css.Element(class_="parce"))
+        return self.TextFormat(self.style.select_element(e).properties())
 
     def tokens(self, theme_context, slices):
         """Yield tokens from the slices, calling ``theme_context`` if necessary.

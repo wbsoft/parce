@@ -55,10 +55,12 @@ Workflow:
 
 Example::
 
-    >>> from parce.css import StyleSheet
+    >>> from parce.css import Element, StyleSheet
     >>> style = StyleSheet.from_file("parce/themes/default.css").style
-    >>> style.select_class("comment").properties()
-    {'font-style': [<Value text='italic'>], 'color': [<Value color='#666'>]}
+    >>> e = css.Element(class_="comment", parent=css.Element(class_="parce"))
+    >>> style.select_element(e).properties()
+    {'color': [<Value text='dimgray'>], 'font-family': [<Value text='serif'>],
+    'font-style': [<Value text='italic'>]}
 
 """
 
@@ -364,20 +366,6 @@ class Style:
     """
     def __init__(self, rules):
         self.rules = rules
-
-    @style_query
-    def select_class(self, *classes):
-        """Select the rules that match at least one of the class names.
-
-        Just looks at the last class name in a selector, does not use combinators.
-        (Enough for internal styling :-).
-
-        """
-        for rule in self.rules:
-            for selectors in util.split_list(rule.selectors, ","):
-                c = Query.from_nodes(selectors).all(Css.class_selector).pick_last()
-                if c and get_ident_token(c) in classes:
-                    yield rule
 
     @style_query
     def select_element(self, element):
