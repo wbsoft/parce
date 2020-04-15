@@ -194,7 +194,7 @@ class Python(Language):
     def string_common(cls):
         yield arg(), String.End, -1
         predicate = lambda arg: arg == "'"
-        yield byarg(predicate, r'[^"]+$', r"[^']+$"), String.Error
+        yield byarg(predicate, r'[^"]*?$', r"[^']*?$"), String.Invalid, -1
         yield default_action, String
 
     @lexicon
@@ -276,7 +276,7 @@ class Python(Language):
     def bytes_common(cls):
         yield arg(), Bytes.End, -1
         predicate = lambda arg: arg == "'"
-        yield byarg(predicate, r'[^"]+$', r"[^']+$"), Bytes.Error
+        yield byarg(predicate, r'[^"]*?$', r"[^']*?$"), Bytes.Invalid, -1
         yield default_action, Bytes
 
     @classmethod

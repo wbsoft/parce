@@ -122,7 +122,7 @@
 
 .parce
 .invalid {
-
+    text-decoration: underline red solid;
 }
 
 .parce
@@ -200,7 +200,7 @@
  */
 .parce
 .attribute {
-
+    color: mediumblue;
 }
 
 .parce
