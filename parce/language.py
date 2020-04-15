@@ -121,6 +121,7 @@ def get_languages(name):
     mod = importlib.import_module(modname)
     for name, obj in mod.__dict__.items():
         if (isinstance(obj, type) and issubclass(obj, parce.Language)
+               and not obj.__name__.startswith('_')
                and obj is not parce.Language and obj.__module__ == modname):
             yield obj
 
