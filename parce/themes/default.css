@@ -102,7 +102,7 @@
 
 .parce
 .important {
-
+    font-weight: bold;
 }
 
 .parce
@@ -133,7 +133,8 @@
 
 .parce
 .template {
-
+    font-weight: bold;
+    color: green;
 }
 
 .parce
