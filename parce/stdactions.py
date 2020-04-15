@@ -36,8 +36,8 @@ Text            = a("Text")
 Whitespace      = a("Whitespace")
 Keyword         = a("Keyword")
 Delimiter       = a("Delimiter")
-Name            = a("Name")         # see below for many derived actions
-Literal         = a("Literal")      # see below for many derived actions
+Name            = a("Name")             # see below for many derived actions
+Literal         = a("Literal")          # see below for many derived actions
 Comment         = a("Comment")
 
 
@@ -48,26 +48,26 @@ Important       = a("Important")
 Unimportant     = a("Unimportant")
 Special         = a("Special")
 
-Definition      = a("Definition")   # a thing is defined (vs referred to)
-Invalid         = a("Invalid")      # invalid input
-Escape          = a("Escape")       # escaped text like \n in a string
-Template        = a("Template")     # a template for something else
-Pseudo          = a("Pseudo")       # e.g. a pseudo-class or -comment
+Definition      = a("Definition")       # a thing is defined (vs referred to)
+Invalid         = a("Invalid")          # invalid input
+Escape          = a("Escape")           # escaped text like \n in a string
+Template        = a("Template")         # a template for something else
+Pseudo          = a("Pseudo")           # e.g. a pseudo-class or -comment
 Preprocessed    = a("Preprocessed")
 
-Inserted        = a("Inserted")     # inserted text (e.g. in a diff)
-Deleted         = a("Deleted")      # deleted text (e.g. in a diff)
-Quoted          = a("Quoted")       # e.g. a blockquote
-Bold            = a("Bold")         # Bold text
-Emphasized      = a("Emphasized")   # Emphasized text
+Inserted        = a("Inserted")         # inserted text (e.g. in a diff)
+Deleted         = a("Deleted")          # deleted text (e.g. in a diff)
+Quoted          = a("Quoted")           # e.g. a blockquote
+Bold            = a("Bold")             # Bold text
+Emphasized      = a("Emphasized")       # Emphasized text
 
 
 # Mixin actions that are not styled by default:
 
-Start           = a("Start")        # start of something
-End             = a("End")          # end of something
-Indent          = a("Indent")       # denotes an indent
-Dedent          = a("Dedent")       # denotes a dedent
+Start           = a("Start")            # start of something
+End             = a("End")              # end of something
+Indent          = a("Indent")           # denotes an indent
+Dedent          = a("Dedent")           # denotes a dedent
 
 
 # Actions that derive of Name:
@@ -98,11 +98,11 @@ Name.Variable
 
 Data            = Literal.Data
 Verbatim        = Literal.Verbatim
-String          = Literal.String    # a quoted string
-Character       = Literal.Character # a single character
-Number          = Literal.Number    # a numeric value
-Fraction        = Number.Fraction   # a fraction/rational value
-Boolean         = Number.Boolean    # a boolean value
+String          = Literal.String        # a quoted string
+Character       = Literal.Character     # a single character
+Number          = Literal.Number        # a numeric value
+Fraction        = Number.Fraction       # a fraction/rational value
+Boolean         = Number.Boolean        # a boolean value
 Literal.Color
 Literal.Email
 Literal.Url
@@ -119,12 +119,15 @@ String.Single
 
 # Actions that derive of Delimiter:
 
-Operator        = Delimiter.Operator
-Bracket         = Delimiter.Bracket
-ModeChange      = Delimiter.ModeChange
-Quote           = Delimiter.Quote
-Separator       = Delimiter.Separator
-Operator.Assignment
+Connection      = Delimiter.Connection  # connects things
+Direction       = Delimiter.Direction   # implicates a direction
+Bracket         = Delimiter.Bracket     # for { }, ( ), [ ] etc.
+ModeChange      = Delimiter.ModeChange  # a special char that changes mode
+Operator        = Delimiter.Operator    # an arithmetic operator
+Quote           = Delimiter.Quote       # a quote, e.g. " or «
+Separator       = Delimiter.Separator   # a separator, like \\ or | in LaTeX
+
+Operator.Assignment                     # e.g. = to denote an assignment
 
 
 del a

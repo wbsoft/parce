@@ -76,11 +76,10 @@ LyricText = Text.Lyric.LyricText
 LyricHyphen = Delimiter.Lyric.LyricHyphen
 LyricExtender = Delimiter.Lyric.LyricExtender
 LyricSkip = Delimiter.Lyric.LyricSkip
-Spanner = Delimiter.Spanner
+Spanner = Name.Symbol.Spanner
 Spanner.Slur
 Spanner.Ligature
 Spanner.Tie
-Direction = Delimiter.Direction
 Script = Character.Script
 Fingering = Number.Fingering
 
@@ -275,8 +274,9 @@ class LilyPond(Language):
         yield words(lilypond_words.contexts), Context
         yield words(lilypond_words.grobs), Grob
         yield r'[.,]', Delimiter
-        yield r"=", Operator.Assignment
-        yield RE_LILYPOND_SYMBOL, Name.Variable
+        yield r"=", Operator.Assignment, -1
+        yield RE_LILYPOND_SYMBOL + r"(?=\s*([,.=])?)", Name.Variable, ifgroup(1, (), -1)
+        yield from cls.scheme()
         yield default_target, -1
 
     # ------------------ script -------------------------
@@ -424,17 +424,22 @@ class LilyPond(Language):
 
     # -------------------- base stuff --------------------
     @classmethod
-    def base(cls):
-        """Find comment, string and scheme."""
-        yield r'"', String, cls.string
-        yield r'[#$]', Delimiter.ModeChange.SchemeStart, cls.get_scheme_target()
-        yield from cls.comments()
-
-    @classmethod
     def common(cls):
         """Find comment, string, scheme and markup."""
         yield from cls.base()
         yield r"\\markup(lines|list)?" + RE_LILYPOND_ID_RIGHT_BOUND, Keyword.Markup, cls.markup
+
+    @classmethod
+    def base(cls):
+        """Find comment, string and scheme."""
+        yield r'"', String, cls.string
+        yield from cls.scheme()
+        yield from cls.comments()
+
+    @classmethod
+    def scheme(cls):
+        """Find scheme."""
+        yield r'[#$]', Delimiter.ModeChange.SchemeStart, cls.get_scheme_target()
 
     @lexicon
     def varname(cls):
@@ -446,11 +451,11 @@ class LilyPond(Language):
     @lexicon
     def markup(cls):
         """Markup without environment. Try to guess the n of arguments."""
-        yield r'\{', Bracket.Start, -1, cls.markuplist
+        yield r'\{', Bracket.Markup.Start, -1, cls.markuplist
         yield r"(\\score)\s*(\{)", bygroup(Name.Function.Markup, Bracket.Start), -1, cls.score
         yield RE_LILYPOND_COMMAND, cls.get_markup_action(), cls.get_markup_target()
         yield r'"', String, -1, cls.string
-        yield r'[#$]', Delimiter.ModeChange.SchemeStart, -1, cls.get_scheme_target()
+        yield from cls.scheme()
         yield from cls.comments()
         yield RE_LILYPOND_MARKUP_TEXT, Text, -1
 
@@ -473,8 +478,8 @@ class LilyPond(Language):
     @lexicon
     def markuplist(cls):
         """Markup until } ."""
-        yield r'\}', Bracket.End, -1
-        yield r'\{', Bracket.Start, 1
+        yield r'\}', Bracket.Markup.End, -1
+        yield r'\{', Bracket.Markup.Start, 1
         yield r"(\\score)\s*(\{)", bygroup(Name.Function.Markup, Bracket.Start), cls.score
         yield RE_LILYPOND_COMMAND, cls.get_markup_action()
         yield from cls.base()
