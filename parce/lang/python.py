@@ -44,9 +44,9 @@ class Python(Language):
         yield fr'^{_S_}+($|(?=#))?', ifgroup(1, Whitespace, Whitespace.Indent)
         yield r'@', Name.Decorator, cls.decorator
         yield fr'(class\b){_S_}*({_I_})', bygroup(Keyword,
-            ifgroupmember(2, python_words.keywords, Invalid, Name.Class)), cls.classdef
+            ifgroupmember(2, python_words.keywords, Invalid, Name.Class.Definition)), cls.classdef
         yield fr'(def\b){_S_}*({_I_})', bygroup(Keyword,
-            ifgroupmember(2, python_words.keywords, Invalid, Name.Function)), cls.funcdef
+            ifgroupmember(2, python_words.keywords, Invalid, Name.Function.Definition)), cls.funcdef
         yield from cls.common()
 
     @classmethod
@@ -82,8 +82,11 @@ class Python(Language):
         ## keywords, variables, functions
         yield words(python_words.keywords, prefix=r'\b', suffix=r'\b'), Keyword
         yield words(python_words.constants, prefix=r'\b', suffix=r'\b'), Name.Constant
+        yield fr'\b(self|cls)\b(?:{_SN_}*([\[\(]))?', Name.Variable.Special, \
+            mapgroup(2, {'(': cls.call, '[': cls.item})
         yield fr'\.{_SN_}*\b({_I_})\b(?:{_SN_}*([\[\(]))?', \
-            bygroup(mapgroup(2, {'(': Name.Function}, Name.Variable), Delimiter), \
+            bygroup(ifgroupmember(1, python_words.keywords, Keyword,
+                mapgroup(2, {'(': Name.Function}, Name.Variable)), Delimiter), \
             mapgroup(2, {'(': cls.call, '[': cls.item})
         yield fr'\b({_I_})\b(?:{_SN_}*([\[\(]))?', \
             bygroup(ifgroupmember(1, python_words.builtins, Name.Builtin,
@@ -91,7 +94,7 @@ class Python(Language):
             mapgroup(2, {'(': cls.call, '[': cls.item})
 
         ## delimiters, operators
-        yield r'[;,:]', Delimiter
+        yield r'[.;,:]', Delimiter
 
     @lexicon(re_flags=re.MULTILINE)
     def decorator(cls):

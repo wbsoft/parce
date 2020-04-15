@@ -124,3 +124,4 @@ Operator.Assignment
 
 del a
 # END_ACTIONS
+del action
