@@ -38,8 +38,6 @@ Keyword         = a("Keyword")
 Delimiter       = a("Delimiter")
 Name            = a("Name")         # see below for many derived actions
 Literal         = a("Literal")      # see below for many derived actions
-Value           = a("Value")
-Data            = a("Data")
 Comment         = a("Comment")
 
 
@@ -51,7 +49,7 @@ Unimportant     = a("Unimportant")
 Special         = a("Special")
 
 Definition      = a("Definition")   # a thing is defined (vs referred to)
-Invalid         = a("Invalid")      # invalid or erroneous input
+Invalid         = a("Invalid")      # invalid input
 Escape          = a("Escape")       # escaped text like \n in a string
 Template        = a("Template")     # a template for something else
 Pseudo          = a("Pseudo")       # e.g. a pseudo-class or -comment
@@ -98,14 +96,19 @@ Name.Variable
 
 # Actions that derive of Literal:
 
-String = Literal.String         # a quoted string
-Character = Literal.Character   # a single character
-Number = Literal.Number         # a numeric value
-Fraction = Number.Fraction      # a fraction/rational value
-Boolean = Literal.Boolean       # a boolean value
-Literal.Url
-Literal.Email
+Data            = Literal.Data
+Verbatim        = Literal.Verbatim
+String          = Literal.String    # a quoted string
+Character       = Literal.Character # a single character
+Number          = Literal.Number    # a numeric value
+Fraction        = Number.Fraction   # a fraction/rational value
+Boolean         = Number.Boolean    # a boolean value
 Literal.Color
+Literal.Email
+Literal.Url
+Literal.Input
+Literal.Output
+Literal.Error
 
 
 # Actions that derive of String:
@@ -119,3 +122,4 @@ String.Single
 Operator = Delimiter.Operator
 Operator.Assignment
 
+del a

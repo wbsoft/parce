@@ -52,7 +52,7 @@ class Ini(Language):
     @lexicon
     def value(cls):
         """Yield a Value until line end (or continuation line)."""
-        yield from cls.values(Value)
+        yield from cls.values(Data)
 
     @classmethod
     def values(cls, action):
