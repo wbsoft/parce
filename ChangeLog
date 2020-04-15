@@ -3,6 +3,9 @@ ChangeLog
 
 current:
 
+- restructured standard actions, easier to combine actions
+- improved default styles, added a template for new styles
+- parce is now fully recursion proof, there is no limit on the depth of a tree
 - added tex/latex parser
 - added HTML parser, building on the XML parser and supporting CSS
 - support \score inside \markup in LilyPond
