@@ -96,8 +96,6 @@ class LexiconValidator:
                     self.error("rule #{}: conflicting default actions".format(n))
                 else:
                     default_act = rule[0]
-                    if isinstance(default_act, Item):
-                        self.warning("rule #{}: dynamic default_action; will not be replaced!".format(n))
             elif pattern is parce.default_target:
                 if default_tg:
                     self.error("rule #{}: conflicting default targets".format(n))
