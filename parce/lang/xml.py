@@ -27,9 +27,16 @@ import re
 
 from parce import *
 
-RE_XML_NAME = _N_ = r'[^\W\d]\w*'
-RE_XML_ELEMENT_NAME = _T_ = fr'(?:{_N_}:)?{_N_}\b'
-RE_XML_ATTRIBUTE_NAME = _A_ = fr'(?:{_N_}:)?{_N_}\b'
+# source: https://www.w3.org/TR/xml/#NT-NameStartChar
+RE_XML_NAME_START_CHAR = (
+    '_:A-Za-z\xC0-\xD6\xD8-\xF6'
+    '\xF8-\u02FF\u0370-\u037D\u037F-\u1FFF'
+    '\u200C\u200D\u2070-\u218F\u2C00-\u2FEF'
+    '\u3001-\uD7FF\uF900-\uFDCF\uFDF0-\uFFFD'
+    '\U00010000-\U000EFFFF'
+)
+RE_XML_NAME_CHAR = '-.0-9\xB7\u0300-\u036F\u203F-\u2040' + RE_XML_NAME_START_CHAR
+RE_XML_NAME = _N_ = fr'[{RE_XML_NAME_START_CHAR}][{RE_XML_NAME_CHAR}]*'
 
 
 class _XmlBase(Language):
@@ -71,8 +78,8 @@ class Xml(_XmlBase):
         yield fr'(<!)(DOCTYPE)\b(?:\s*({_N_}))?', \
             bygroup(Delimiter, Keyword, Name.Tag.Definition), cls.doctype
         yield r'<\?', Delimiter.Preprocessed.Start, cls.pi
-        yield fr'(<\s*?/)\s*({_T_})\s*(>)', bygroup(Delimiter, Name.Tag, Delimiter), -1
-        yield fr'(<)\s*({_T_})(?:\s*((?:/\s*)?>))?', \
+        yield fr'(<\s*?/)\s*({_N_})\s*(>)', bygroup(Delimiter, Name.Tag, Delimiter), -1
+        yield fr'(<)\s*({_N_})(?:\s*((?:/\s*)?>))?', \
             bygroup(Delimiter, Name.Tag, Delimiter), mapgroup(3, {
                 None: cls.attrs,        # no ">" or "/>": go to attrs
                 ">": cls.tag,           # a ">": go to tag
@@ -91,7 +98,7 @@ class Xml(_XmlBase):
 
     @lexicon
     def pi(cls):
-        yield fr'({_A_})\s*?(=)(?=\s*?")', bygroup(Name.Attribute, Operator)
+        yield fr'({_N_})\s*?(=)(?=\s*?")', bygroup(Name.Attribute, Operator)
         yield from cls.find_strings()
         yield default_action, Preprocessed
         yield r'\?>', Delimiter.Preprocessed.End, -1
@@ -112,7 +119,7 @@ class Xml(_XmlBase):
 
     @lexicon
     def attrs(cls):
-        yield _A_, Name.Attribute
+        yield _N_, Name.Attribute
         yield r'=', Operator
         yield from cls.find_strings()
         yield r'/\s*>', Delimiter, -1
@@ -138,33 +145,63 @@ class Dtd(_XmlBase):
     def common(cls):
         yield from cls.find_strings()
         yield fr'%{_N_};', Name.Entity.Escape
-        yield r'>', Delimiter, -1
 
     @lexicon
     def entity(cls):
         yield words(("SYSTEM", "PUBLIC", "NDATA")), Keyword
         yield _N_, Name.Entity
         yield from cls.common()
+        yield r'>', Delimiter, -1
 
     @lexicon
     def element(cls):
-        yield r'\(', Bracket, cls.children
+        yield r'\(', Bracket, cls.element_contents
         yield words(("ANY", "EMPTY")), Name.Keyword
+        yield r'[,|?+*]', Operator
         yield from cls.common()
+        yield r'>', Delimiter, -1
 
     @lexicon
-    def children(cls):
-        yield r'\(', Bracket, 1
-        yield r'\)', Bracket, -1
-        yield r'[,|?+*]', Operator
+    def element_contents(cls):
+        """Content definition inside a <!ELEMENT > declaration."""
         yield r'#PCDATA', Name.Builtin
-        yield _N_, Name.Element
+        yield from cls.enumerate(r'[,|?+*]', Name.Element)
 
     @lexicon
     def attlist(cls):
+        yield words(("#REQUIRED", "#IMPLIED", "#FIXED"), suffix=r'\b'), Name.Builtin
+        yield words(('CDATA', 'ID', 'IDREF', 'IDREFS', 'ENTITY', 'ENTITIES',
+            'NMTOKEN', 'NMTOKENS'), prefix=r'\b', suffix=r'\b'), Name.Type
+        yield r'\b(NOTATION)\b(?:\s+(\())', bygroup(Name.Type, Bracket), ifgroup(2, cls.attlist_notation)
+        yield _N_, Name.Attribute.Definition
+        yield r'\(', Bracket, cls.attlist_enumeration
         yield from cls.common()
+        yield r'>', Delimiter, -1
+
+    @lexicon
+    def attlist_enumeration(cls):
+        yield from cls.enumerate(r'\|', Data)
+
+    @lexicon
+    def attlist_notation(cls):
+        yield from cls.enumerate(r'\|', Name.Type)
 
     @lexicon
     def notation(cls):
+        yield words(("SYSTEM", "PUBLIC")), Keyword
         yield from cls.common()
+        yield r'>', Delimiter, -1
 
+    @classmethod
+    def enumerate(cls, operators=r'\|', nametype=Name.Type):
+        """Find names between ( ), and operators, string and parameter entities.
+
+        ``operators`` is the regexp for the operators, ``nametype`` the action
+        for the found names.
+
+        """
+        yield r'\(', Bracket, 1
+        yield r'\)', Bracket, -1
+        yield operators, Operator
+        yield _N_, nametype
+        yield from cls.common()
