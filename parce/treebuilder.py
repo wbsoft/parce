@@ -223,7 +223,7 @@ class TreeBuilder:
         offset = added - removed
 
         if not root_lexicon:
-            return BuildResult(Context(root_lexicon, None), start, start + added, 0, None)
+            return BuildResult(Context(root_lexicon, None), start, start + added, 0, [])
 
         # If there remains text after the modified part,
         # we try to reuse the old tokens
@@ -310,9 +310,12 @@ class TreeBuilder:
                         start = c.start
                         if c.root_lexicon != False:
                             root_lexicon = c.root_lexicon
+                            if not root_lexicon:
+                                return BuildResult(Context(root_lexicon, None), 0, len(text), 0, [])
                             start = 0
                             tail = False
                             tree = None
+
                         elif tail:
                             # reuse old tail?
                             new_tail_pos = start + c.added
