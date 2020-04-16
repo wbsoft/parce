@@ -49,6 +49,7 @@ class _XmlBase(Language):
     @lexicon
     def comment(cls):
         yield r'-->', Comment.End, -1
+        yield r'--', Comment.Invalid
         yield from cls.comment_common()
 
     @classmethod
@@ -127,30 +128,43 @@ class Dtd(_XmlBase):
         yield from cls.find_comments()
         yield fr'(<!)(ENTITY)\b(?:\s*(%))?(?:\s*({_N_}))?', \
             bygroup(Delimiter, Keyword, Keyword, Name.Entity.Definition), cls.entity
-        yield fr'(<!)(ELEMENT)\b(?:\s*({_N_}))?', \
-            bygroup(Delimiter, Keyword, Name.Element.Definition), cls.element
-        yield fr'(<!)(ATTLIST)\b(?:\s*({_N_}))?', \
-            bygroup(Delimiter, Keyword, Name.Element.Definition), cls.attlist
+        yield fr'(<!)(ELEMENT|ATTLIST|NOTATION)\b(?:\s*({_N_}))?', \
+            bygroup(Delimiter, Keyword, Name.Element.Definition), \
+            mapgroup(2, {"ELEMENT": cls.element, "ATTLIST": cls.attlist}, cls.notation)
         yield fr'%{_N_};', Name.Entity.Escape
         yield default_action, bytext(str.isspace, Text, skip)
+
+    @classmethod
+    def common(cls):
+        yield from cls.find_strings()
+        yield fr'%{_N_};', Name.Entity.Escape
+        yield r'>', Delimiter, -1
 
     @lexicon
     def entity(cls):
         yield words(("SYSTEM", "PUBLIC", "NDATA")), Keyword
         yield _N_, Name.Entity
-        yield from cls.find_strings()
-        yield fr'%{_N_};', Name.Entity.Escape
-        yield r'>', Delimiter, -1
+        yield from cls.common()
 
     @lexicon
     def element(cls):
-        yield from cls.find_strings()
-        yield fr'%{_N_};', Name.Entity.Escape
-        yield r'>', Delimiter, -1
+        yield r'\(', Bracket, cls.children
+        yield words(("ANY", "EMPTY")), Name.Keyword
+        yield from cls.common()
+
+    @lexicon
+    def children(cls):
+        yield r'\(', Bracket, 1
+        yield r'\)', Bracket, -1
+        yield r'[,|?+*]', Operator
+        yield r'#PCDATA', Name.Builtin
+        yield _N_, Name.Element
 
     @lexicon
     def attlist(cls):
-        yield from cls.find_strings()
-        yield fr'%{_N_};', Name.Entity.Escape
-        yield r'>', Delimiter, -1
+        yield from cls.common()
+
+    @lexicon
+    def notation(cls):
+        yield from cls.common()
 
