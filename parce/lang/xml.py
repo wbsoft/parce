@@ -27,8 +27,9 @@ import re
 
 from parce import *
 
-
-Doctype = Name.Type
+RE_XML_NAME = _N_ = r'[^\W\d]\w*'
+RE_XML_ELEMENT_NAME = _T_ = fr'(?:{_N_}:)?{_N_}\b'
+RE_XML_ATTRIBUTE_NAME = _A_ = fr'(?:{_N_}:)?{_N_}\b'
 
 
 class _XmlBase(Language):
@@ -50,17 +51,26 @@ class _XmlBase(Language):
         yield r'-->', Comment.End, -1
         yield from cls.comment_common()
 
+    @classmethod
+    def find_strings(cls):
+        yield r'"', String.Double.Start, cls.dqstring
+        yield r"'", String.Single.Start, cls.sqstring
+
+    @classmethod
+    def find_comments(cls):
+        yield r'<!--', Comment.Start, cls.comment
+
 
 class Xml(_XmlBase):
     """Parse XML."""
     @lexicon(re_flags=re.IGNORECASE)
     def root(cls):
-        yield r'<!--', Comment.Start, cls.comment
-        yield r'<!\[CDATA\[', Data.Start, cls.cdata
-        yield r'<!DOCTYPE\b', Doctype.Start, cls.doctype
+        yield from cls.find_comments()
+        yield r'(<!\[)(CDATA)(\[)', bygroup(Delimiter, Data.Definition, Delimiter), cls.cdata
+        yield r'(<!)(DOCTYPE)\b', bygroup(Delimiter, Keyword), cls.doctype
         yield r'<\?', Delimiter.Preprocessed.Start, cls.pi
-        yield r'(<\s*?/)\s*(\w+(?:[:.-]\w+)*)\s*(>)', bygroup(Delimiter, Name.Tag, Delimiter), -1
-        yield r'(<)\s*(\w+(?:[:.-]\w+)*)(?:\s*((?:/\s*)?>))?', \
+        yield fr'(<\s*?/)\s*({_T_})\s*(>)', bygroup(Delimiter, Name.Tag, Delimiter), -1
+        yield fr'(<)\s*({_T_})(?:\s*((?:/\s*)?>))?', \
             bygroup(Delimiter, Name.Tag, Delimiter), mapgroup(3, {
                 None: cls.attrs,        # no ">" or "/>": go to attrs
                 ">": cls.tag,           # a ">": go to tag
@@ -75,34 +85,32 @@ class Xml(_XmlBase):
     @lexicon
     def cdata(cls):
         yield default_action, Data
-        yield r'\]\]>', Data.End, -1
+        yield r'\]\]>', Delimiter, -1
 
     @lexicon
     def pi(cls):
-        yield r'(\w+(?:[:.-]\w+)*)\s*?(=)(?=\s*?")', bygroup(Name.Attribute, Operator)
-        yield r'"', String, cls.dqstring
-        yield r"'", String, cls.sqstring
+        yield fr'({_A_})\s*?(=)(?=\s*?")', bygroup(Name.Attribute, Operator)
+        yield from cls.find_strings()
         yield default_action, Preprocessed
         yield r'\?>', Delimiter.Preprocessed.End, -1
 
     @lexicon
     def doctype(cls):
         yield r'\w+', Text
-        yield r'"', String, cls.dqstring
-        yield r'\[', Doctype.Start, cls.internal_dtd
-        yield r'>', Doctype.End, -1
+        yield from cls.find_strings()
+        yield r'\[', Bracket, cls.internal_dtd
+        yield r'>', Delimiter, -1
 
     @lexicon
     def internal_dtd(cls):
-        yield r'\]', Doctype.End, -1
+        yield r'\]', Bracket, -1
         yield from Dtd.root
 
     @lexicon
     def attrs(cls):
-        yield r'\w+([:.-]\w+)*', Name.Attribute
+        yield _A_, Name.Attribute
         yield r'=', Operator
-        yield r'"', String.Double.Start, cls.dqstring
-        yield r"'", String.Single.Start, cls.sqstring
+        yield from cls.find_strings()
         yield r'/\s*>', Delimiter, -1
         yield r'>', Delimiter, -1, cls.tag
         yield r'\s+', skip
@@ -113,13 +121,23 @@ class Dtd(_XmlBase):
     """Parse a DTD (Document Type Definition)."""
     @lexicon
     def root(cls):
-        yield r'<!--', Comment.Start, cls.comment
-        yield r'<!ENTITY\b', Name.Entity.Definition.Start, cls.entity
-        yield default_action, Text  # TODO include more dtd language
+        yield from cls.find_comments()
+        yield fr'(<!)(ENTITY)\b(?:\s*(%))?(?:\s*({_N_}))?', \
+            bygroup(Delimiter, Keyword, Keyword, Name.Entity.Definition), \
+            cls.entity
+        yield r'(<!)(ATTLIST)\b', bygroup(Delimiter, Keyword), cls.attlist
+        yield fr'%{_N_};', Name.Entity.Escape
+        yield default_action, bytext(str.isspace, Text, skip)
 
     @lexicon
     def entity(cls):
-        yield r'\w+', Name.Entity
-        yield r'"', String, cls.dqstring
-        yield r'>', Name.Entity.Definition.End, -1
+        yield words(("SYSTEM", "PUBLIC", "NDATA")), Keyword
+        yield _N_, Name.Entity
+        yield from cls.find_strings()
+        yield r'>', Delimiter, -1
+
+    @lexicon
+    def attlist(cls):
+        yield from cls.find_strings()
+        yield r'>', Delimiter, -1
 
