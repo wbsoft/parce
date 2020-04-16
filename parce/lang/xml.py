@@ -67,7 +67,8 @@ class Xml(_XmlBase):
     def root(cls):
         yield from cls.find_comments()
         yield r'(<!\[)(CDATA)(\[)', bygroup(Delimiter, Data.Definition, Delimiter), cls.cdata
-        yield r'(<!)(DOCTYPE)\b', bygroup(Delimiter, Keyword), cls.doctype
+        yield fr'(<!)(DOCTYPE)\b(?:\s*({_N_}))?', \
+            bygroup(Delimiter, Keyword, Name.Tag.Definition), cls.doctype
         yield r'<\?', Delimiter.Preprocessed.Start, cls.pi
         yield fr'(<\s*?/)\s*({_T_})\s*(>)', bygroup(Delimiter, Name.Tag, Delimiter), -1
         yield fr'(<)\s*({_T_})(?:\s*((?:/\s*)?>))?', \
@@ -96,9 +97,11 @@ class Xml(_XmlBase):
 
     @lexicon
     def doctype(cls):
-        yield r'\w+', Text
+        yield words(("SYSTEM", "PUBLIC", "NDATA")), Keyword
+        yield _N_, Name
         yield from cls.find_strings()
         yield r'\[', Bracket, cls.internal_dtd
+        yield fr'%{_N_};', Name.Entity.Escape
         yield r'>', Delimiter, -1
 
     @lexicon
@@ -123,9 +126,11 @@ class Dtd(_XmlBase):
     def root(cls):
         yield from cls.find_comments()
         yield fr'(<!)(ENTITY)\b(?:\s*(%))?(?:\s*({_N_}))?', \
-            bygroup(Delimiter, Keyword, Keyword, Name.Entity.Definition), \
-            cls.entity
-        yield r'(<!)(ATTLIST)\b', bygroup(Delimiter, Keyword), cls.attlist
+            bygroup(Delimiter, Keyword, Keyword, Name.Entity.Definition), cls.entity
+        yield fr'(<!)(ELEMENT)\b(?:\s*({_N_}))?', \
+            bygroup(Delimiter, Keyword, Name.Element.Definition), cls.element
+        yield fr'(<!)(ATTLIST)\b(?:\s*({_N_}))?', \
+            bygroup(Delimiter, Keyword, Name.Element.Definition), cls.attlist
         yield fr'%{_N_};', Name.Entity.Escape
         yield default_action, bytext(str.isspace, Text, skip)
 
@@ -134,10 +139,18 @@ class Dtd(_XmlBase):
         yield words(("SYSTEM", "PUBLIC", "NDATA")), Keyword
         yield _N_, Name.Entity
         yield from cls.find_strings()
+        yield fr'%{_N_};', Name.Entity.Escape
+        yield r'>', Delimiter, -1
+
+    @lexicon
+    def element(cls):
+        yield from cls.find_strings()
+        yield fr'%{_N_};', Name.Entity.Escape
         yield r'>', Delimiter, -1
 
     @lexicon
     def attlist(cls):
         yield from cls.find_strings()
+        yield fr'%{_N_};', Name.Entity.Escape
         yield r'>', Delimiter, -1
 
