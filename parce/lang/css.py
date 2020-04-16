@@ -80,7 +80,7 @@ class Css(Language):
     def selector(cls):
         yield r"\*", Keyword    # "any" element
         yield r"\|", Keyword    # css selector namespace prefix separator
-        yield r"#", Name.Identifier, cls.id_selector
+        yield r"#", Name.Identifier.Definition, cls.id_selector
         yield r"\.(?!\d)", Keyword, cls.class_selector
         yield r"::", Keyword, cls.pseudo_element
         yield r":", Keyword, cls.pseudo_class
@@ -165,7 +165,7 @@ class Css(Language):
     @lexicon
     def id_selector(cls):
         """#id"""
-        yield from cls.identifier_common(Name.Identifier)
+        yield from cls.identifier_common(Name.Identifier.Definition)
 
     @lexicon
     def class_selector(cls):
