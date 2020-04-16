@@ -77,7 +77,7 @@ class Xml(_XmlBase):
         yield r'(<!\[)(CDATA)(\[)', bygroup(Delimiter, Data.Definition, Delimiter), cls.cdata
         yield fr'(<!)(DOCTYPE)\b(?:\s*({_N_}))?', \
             bygroup(Delimiter, Keyword, Name.Tag.Definition), cls.doctype
-        yield r'<\?', Delimiter.Preprocessed.Start, cls.pi
+        yield r'<\?', Delimiter.Preprocessed.Start, cls.processing_instruction
         yield fr'(<\s*?/)\s*({_N_})\s*(>)', bygroup(Delimiter, Name.Tag, Delimiter), -1
         yield fr'(<)\s*({_N_})(?:\s*((?:/\s*)?>))?', \
             bygroup(Delimiter, Name.Tag, Delimiter), mapgroup(3, {
@@ -97,7 +97,7 @@ class Xml(_XmlBase):
         yield r'\]\]>', Delimiter, -1
 
     @lexicon
-    def pi(cls):
+    def processing_instruction(cls):
         yield fr'({_N_})\s*?(=)(?=\s*?")', bygroup(Name.Attribute, Operator)
         yield from cls.find_strings()
         yield default_action, Preprocessed
@@ -107,9 +107,8 @@ class Xml(_XmlBase):
     def doctype(cls):
         yield words(("SYSTEM", "PUBLIC", "NDATA")), Keyword
         yield _N_, Name
-        yield from cls.find_strings()
+        yield from cls.common()
         yield r'\[', Bracket, cls.internal_dtd
-        yield fr'%{_N_};', Name.Entity.Escape
         yield r'>', Delimiter, -1
 
     @lexicon
