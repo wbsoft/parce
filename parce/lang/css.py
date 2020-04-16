@@ -61,7 +61,7 @@ class Css(Language):
 
     @lexicon
     def prelude(cls):
-        yield r"\{", Delimiter, -1, cls.rule
+        yield r"\{", Bracket, -1, cls.rule
         yield r"(?=</)", None, -1   # back off if HTML </style> tag follows...
         yield from cls.selectors()
 
@@ -97,7 +97,7 @@ class Css(Language):
     @lexicon
     def rule(cls):
         """Declarations of a qualified rule between { and }."""
-        yield r"\}", Delimiter, -1
+        yield r"\}", Bracket, -1
         yield from cls.inline()
 
     @lexicon
@@ -122,7 +122,7 @@ class Css(Language):
         yield r'"', String, cls.dqstring
         yield r"'", String, cls.sqstring
         yield r"/\*", Comment, cls.comment
-        yield r"\{", Delimiter, cls.rule
+        yield r"\{", Bracket, cls.rule
         yield RE_CSS_NUMBER, Number, cls.unit
         yield RE_HEX_COLOR, Literal.Color
         yield r"(url)(\()", bygroup(Name, Delimiter), cls.url_function
@@ -153,7 +153,9 @@ class Css(Language):
     @lexicon
     def property(cls):
         """A CSS property."""
-        yield from cls.identifier_common(Name.Property)
+        from .css_words import CSS3_ALL_PROPERTIES
+        yield from cls.identifier_common(
+            ifmember(CSS3_ALL_PROPERTIES, Name.Property.Definition, Name.Property))
 
     @lexicon
     def attribute(cls):
@@ -181,24 +183,24 @@ class Css(Language):
     def pseudo_class(cls):
         """Things like :first-child etc."""
         yield r"\(", Delimiter, -1, cls.selector_list
-        yield from cls.identifier_common(Name.Pseudo.Class)
+        yield from cls.identifier_common(Name.Class.Pseudo)
 
     @lexicon
     def pseudo_element(cls):
         """Things like ::first-letter etc."""
-        yield from cls.identifier_common(Name.Pseudo.Tag)
+        yield from cls.identifier_common(Name.Tag.Pseudo)
 
     # --------------------- @-rule ------------------------
     @lexicon
     def atrule(cls):
         """Contents following '@'."""
-        yield r"\{", Delimiter, cls.atrule_block
+        yield r"\{", Bracket, cls.atrule_block
         yield from cls.atrule_common()
 
     @lexicon
     def atrule_nested(cls):
         """An atrule that has nested toplevel contents (@media, etc.)"""
-        yield r"\{", Delimiter, cls.atrule_nested_block
+        yield r"\{", Bracket, cls.atrule_nested_block
         yield from cls.atrule_common()
 
     @lexicon
@@ -210,13 +212,13 @@ class Css(Language):
     @lexicon
     def atrule_block(cls):
         """a { } block from an @-rule."""
-        yield r"\}", Delimiter, -2  # immediately leave the atrule context
+        yield r"\}", Bracket, -2  # immediately leave the atrule context
         yield from cls.inline()
 
     @lexicon
     def atrule_nested_block(cls):
         """a { } block from @media, @document or @supports."""
-        yield r"\}", Delimiter, -2  # immediately leave the atrule_nested context
+        yield r"\}", Bracket, -2  # immediately leave the atrule_nested context
         yield from cls.toplevel()
 
     @classmethod
@@ -233,7 +235,7 @@ class Css(Language):
         from .css_words import CSS3_NAMED_COLORS
         yield r"\(", Delimiter, -1, cls.function
         yield RE_CSS_ESCAPE, Escape
-        yield r"[\w-]+", ifmember(CSS3_NAMED_COLORS, Literal.Color, Name)
+        yield r"[\w-]+", ifmember(CSS3_NAMED_COLORS, Literal.Color, Name.Symbol)
         yield default_target, -1
 
     @lexicon

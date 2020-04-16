@@ -139,13 +139,13 @@
 
 .parce
 .pseudo {
-
+    color: orange !important;
 }
 
 .parce
 .preprocessed {
     font-weight: bold;
-    color: green;
+    color: green !important;
 }
 
 .parce
@@ -200,7 +200,7 @@
  */
 .parce
 .attribute {
-    color: mediumblue;
+    color: dodgerblue;
 }
 
 .parce
@@ -238,7 +238,7 @@
 
 .parce
 .exception {
-
+    color: crimson;
 }
 
 .parce
@@ -248,7 +248,8 @@
 
 .parce
 .identifier {
-
+    color: brown;
+    font-weight: bold;
 }
 
 .parce
@@ -278,7 +279,7 @@
 
 .parce
 .property {
-
+    color: royalblue;
 }
 
 .parce
