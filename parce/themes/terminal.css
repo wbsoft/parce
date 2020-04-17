@@ -1,0 +1,422 @@
+/*
+ * Template CSS theme for parce.
+ *
+ * Use this as a template when creating a theme.
+ */
+
+
+/*
+ * Default style for a parce DIV or text editing window etc.
+ */
+
+/* Default */
+.parce {
+    color: white;
+    background: black;
+    font-family: monospace;
+}
+
+/* The line the cursor is in */
+.parce.current-line {
+
+}
+
+/* The current line when the window has focus */
+.parce.current-line:focus {
+
+}
+
+/* Selected text */
+.parce::selection {
+    color: black;
+    background: silver;
+}
+
+/* Selected text when the window has focus */
+.parce::selection:focus {
+
+}
+
+/* The current line when text widget is disabled
+ * (probably unused normally)
+ */
+.parce.current-line:disabled {
+
+}
+
+.parce::selection:disabled {
+
+}
+
+
+/*
+ * Styles for the base types
+ */
+.parce
+.text {
+
+}
+
+.parce
+.whitespace {
+
+}
+
+.parce
+.keyword {
+    font-weight: bold;
+}
+
+.parce
+.delimiter {
+    color: silver;
+}
+
+.parce
+.name {
+
+}
+
+.parce
+.literal {
+
+}
+
+.parce
+.comment {
+    color: gray;
+}
+
+/*
+ * Styles for the mixin types
+ */
+.parce
+.alert {
+    background: maroon;
+    color: silver;
+    font-weight: bold;
+}
+
+.parce
+.important {
+
+}
+
+.parce
+.unimportant {
+
+}
+
+.parce
+.special {
+
+}
+
+.parce
+.definition {
+    font-weight: bold;
+}
+
+.parce
+.invalid {
+
+}
+
+.parce
+.escape {
+    color: fuchsia;
+    font-weight: bold;
+}
+
+.parce
+.template {
+
+}
+
+.parce
+.pseudo {
+
+}
+
+.parce
+.preprocessed {
+
+}
+
+.parce
+.inserted {
+
+}
+
+.parce
+.deleted {
+
+}
+
+.parce
+.quoted {
+
+}
+
+.parce
+.bold {
+
+}
+
+.parce
+.emphasized {
+
+}
+
+/* (Start, End, Indent and Dedent don't need styling) */
+.parce
+.start {
+
+}
+
+.parce
+.end {
+
+}
+
+.parce
+.indent {
+
+}
+
+.parce
+.dedent {
+
+}
+
+
+/*
+ * Styles for Name derivatives
+ */
+.parce
+.attribute {
+    color: teal;
+}
+
+.parce
+.builtin {
+    color: lime;
+}
+
+.parce
+.class {
+    color: aqua;
+}
+
+.parce
+.command {
+
+}
+
+.parce
+.constant {
+    color: purple;
+    font-weight: bold;
+}
+
+.parce
+.decorator {
+
+}
+
+.parce
+.entity {
+
+}
+
+.parce
+.exception {
+
+}
+
+.parce
+.function {
+    color: olive;
+}
+
+.parce
+.identifier {
+
+}
+
+.parce
+.macro {
+
+}
+
+.parce
+.markup {
+    color: olive;
+}
+
+.parce
+.method {
+
+}
+
+.parce
+.namespace {
+
+}
+
+.parce
+.object {
+    color: fuchsia;
+}
+
+.parce
+.property {
+
+}
+
+.parce
+.symbol {
+
+}
+
+.parce
+.tag {
+    color: teal;
+    font-weight: bold;
+}
+
+.parce
+.type {
+
+}
+
+.parce
+.variable {
+    color: aqua;
+}
+
+
+/*
+ * Styles for Literal derivatives
+ */
+.parce
+.data {
+
+}
+
+.parce
+.verbatim {
+
+}
+
+.parce
+.string {
+    color: red;
+}
+
+.parce
+.number {
+    color: yellow;
+}
+
+.parce
+.fraction {
+
+}
+
+.parce
+.boolean {
+
+}
+
+.parce
+.color {
+
+}
+
+.parce
+.email {
+
+}
+
+.parce
+.url {
+
+}
+
+.parce
+.input {
+
+}
+
+.parce
+.output {
+
+}
+
+.parce
+.error {
+
+}
+
+/*
+ * String styles
+ */
+.parce
+.string.double {
+
+}
+
+.parce
+.string.single {
+
+}
+
+.parce
+.string.escape {
+    color: fuchsia;
+}
+
+/*
+ * Styles for Delimiter derivatives
+ */
+.parce
+.connection {
+
+}
+
+.parce
+.direction {
+
+}
+
+.parce
+.operator {
+
+}
+
+.parce
+.assignment {
+
+}
+
+.parce
+.bracket {
+    font-weight: bold;
+}
+
+.parce
+.modechange {
+
+}
+
+.parce
+.quote {
+
+}
+
+.parce
+.separator {
+
+}
+
