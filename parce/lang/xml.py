@@ -60,6 +60,12 @@ class _XmlBase(Language):
         yield from cls.comment_common()
 
     @classmethod
+    def common_defs(cls):
+        """Common stuff inside DOCTYPE or ENTITY declarations etc."""
+        yield from cls.find_strings()
+        yield fr'%{_N_};', Name.Entity.Escape
+
+    @classmethod
     def find_strings(cls):
         yield r'"', String.Double.Start, cls.dqstring
         yield r"'", String.Single.Start, cls.sqstring
@@ -109,7 +115,7 @@ class Xml(_XmlBase):
     def doctype(cls):
         yield words(("SYSTEM", "PUBLIC", "NDATA")), Keyword
         yield _N_, Name
-        yield from cls.common()
+        yield from cls.common_defs()
         yield r'\[', Bracket, cls.internal_dtd
         yield r'>', Delimiter, -1
 
@@ -142,16 +148,11 @@ class Dtd(_XmlBase):
         yield fr'%{_N_};', Name.Entity.Escape
         yield default_action, bytext(str.isspace, Text, skip)
 
-    @classmethod
-    def common(cls):
-        yield from cls.find_strings()
-        yield fr'%{_N_};', Name.Entity.Escape
-
     @lexicon
     def entity(cls):
         yield words(("SYSTEM", "PUBLIC", "NDATA")), Keyword
         yield _N_, Name.Entity
-        yield from cls.common()
+        yield from cls.common_defs()
         yield r'>', Delimiter, -1
 
     @lexicon
@@ -159,7 +160,7 @@ class Dtd(_XmlBase):
         yield r'\(', Bracket, cls.element_contents
         yield words(("ANY", "EMPTY")), Name.Keyword
         yield r'[,|?+*]', Operator
-        yield from cls.common()
+        yield from cls.common_defs()
         yield r'>', Delimiter, -1
 
     @lexicon
@@ -176,7 +177,7 @@ class Dtd(_XmlBase):
         yield r'\b(NOTATION)\b(?:\s+(\())', bygroup(Name.Type, Bracket), ifgroup(2, cls.attlist_notation)
         yield _N_, Name.Attribute.Definition
         yield r'\(', Bracket, cls.attlist_enumeration
-        yield from cls.common()
+        yield from cls.common_defs()
         yield r'>', Delimiter, -1
 
     @lexicon
@@ -190,7 +191,7 @@ class Dtd(_XmlBase):
     @lexicon
     def notation(cls):
         yield words(("SYSTEM", "PUBLIC")), Keyword
-        yield from cls.common()
+        yield from cls.common_defs()
         yield r'>', Delimiter, -1
 
     @classmethod
@@ -205,4 +206,4 @@ class Dtd(_XmlBase):
         yield r'\)', Bracket, -1
         yield operators, Operator
         yield _N_, nametype
-        yield from cls.common()
+        yield from cls.common_defs()
