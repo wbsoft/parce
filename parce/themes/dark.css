@@ -10,17 +10,17 @@
  */
 
 .parce {
-    background: #111k;
-    color: white;
+    background: black;
+    color: ivory;
     font: monospace 12pt;
 }
 
 .parce.current-line {
-    background: #222;
+    background: #111;
 }
 
 .parce.current-line:focus {
-    background: #444;
+    background: #181818;
 }
 
 .parce::selection {
@@ -33,140 +33,24 @@
     color: white;
 }
 
+/* The current line when text widget is disabled
+ * (probably unused normally)
+ */
+.parce.current-line:disabled {
 
+}
 
+.parce::selection:disabled {
+
+}
 
 /*
- * inheriting from Name
+ * Styles for the base types
  */
-
 .parce
-.name {
-    color: indianred;
+.text {
+
 }
-
-.parce
-.attribute {
-    color: dodgerblue;
-}
-
-.parce
-.builtin {
-    color: mediumvioletred;
-}
-
-.parce
-.class {
-    color: royalblue;
-}
-
-.parce
-.constant {
-    color: steelblue;
-}
-
-.parce
-.decorator {
-    color: forestgreen;
-}
-
-.parce
-.exception {
-    color: crimson;
-    font-weight: 600;
-}
-
-.parce
-.function {
-    font-weight: bold;
-    color: mediumblue;
-}
-
-.parce
-.identifier {
-    font-weight: 600;
-    color: saddlebrown;
-}
-
-.parce
-.property {
-    font-weight: 600;
-    color: brown;
-}
-
-.parce
-.tag {
-    color: royalblue;
-    font-weight: 600;
-}
-
-.parce
-.variable {
-    color: blue;
-}
-
-
-/*
- * inheriting from Delimiter
- */
-
-.parce
-.operator {
-    color: white;
-}
-
-
-/*
- * inheriting from Literal
- */
-
-.parce
-.boolean {
-    font-weight: 600;
-    color: slateblue;
-}
-
-.parce
-.char {
-    font-weight: 600;
-    color: darkred;
-}
-
-.parce
-.number {
-    color: darkgoldenrod;
-}
-
-.parce
-.string {
-    color: orangered;
-}
-
-.parce
-.verbatim {
-    color: lightgray;
-}
-
-.parce
-.color {
-    color: darkorange;
-}
-
-.parce
-.email {
-    color: deepskyblue;
-}
-
-.parce
-.url {
-    color: deepskyblue;
-    text-decoration: dotted underline;
-}
-
-
-/*
- * Base style classes
- */
 
 .parce
 .whitespace {
@@ -174,59 +58,364 @@
 }
 
 .parce
-.text {
-
-}
-
-.parce
-.comment {
-    font-family: serif;
-    font-style: italic;
-    color: silver;
+.keyword {
+    font-weight: bold;
 }
 
 .parce
 .delimiter {
-    font-weight: 600;   /* almost bold */
-    color: lightgray;
+
 }
 
 .parce
-.error {
-    color: red;
-    text-decoration: underline;
-    text-decoration-color: red;
-}
-
-.parce
-.escape {
-    color: darkcyan;
-    font-weight: 600;   /* almost bold */
-}
-
-.parce
-.keyword {
-    font-weight: bold;
-    color: white;
+.name {
+    color: lightskyblue;
 }
 
 .parce
 .literal {
+    color: seagreen;
+}
+
+.parce
+.comment {
+    color: lightgray;
+    font-family: serif;
+    font-style: italic;
+}
+
+/*
+ * Styles for the mixin types
+ */
+.parce
+.alert {
+    color: tomato;
+    font-weight: bold;
+}
+
+.parce
+.important {
+    font-weight: bold;
+}
+
+.parce
+.unimportant {
 
 }
 
 .parce
-.pseudo {
-    color: limegreen;
+.special {
+    color: forestgreen;
+}
+
+.parce
+.definition {
+    font-weight: bold;
+}
+
+.parce
+.invalid {
+    text-decoration: underline red solid;
+}
+
+.parce
+.escape {
+    font-weight: bold;
+    color: darkcyan;
 }
 
 .parce
 .template {
+    font-weight: bold;
+    color: green;
+}
+
+.parce
+.pseudo {
+    color: orange !important;
+}
+
+.parce
+.preprocessed {
+    color: green !important;
+}
+
+.parce
+.inserted {
 
 }
 
 .parce
-.alert {
-    color: red;
+.deleted {
+
+}
+
+.parce
+.quoted {
+
+}
+
+.parce
+.bold {
+
+}
+
+.parce
+.emphasized {
+
+}
+
+/* (Start, End, Indent and Dedent don't need styling) */
+.parce
+.start {
+
+}
+
+.parce
+.end {
+
+}
+
+.parce
+.indent {
+
+}
+
+.parce
+.dedent {
+
+}
+
+
+/*
+ * Styles for Name derivatives
+ */
+.parce
+.attribute {
+    color: dodgerblue;
+}
+
+.parce
+.builtin {
+    color: darksalmon;
     font-weight: bold;
 }
+
+.parce
+.class {
+    color: dodgerblue;
+}
+
+.parce
+.command {
+
+}
+
+.parce
+.constant {
+    color: orchid;
+    font-weight: bold;
+}
+
+.parce
+.decorator {
+    color: orange;
+    font-weight: bold;
+}
+
+.parce
+.entity {
+
+}
+
+.parce
+.exception {
+    color: crimson;
+}
+
+.parce
+.function {
+
+}
+
+.parce
+.identifier {
+    color: brown;
+}
+
+.parce
+.macro {
+
+}
+
+.parce
+.markup {
+    color: limegreen;
+}
+
+.parce
+.method {
+
+}
+
+.parce
+.namespace {
+
+}
+
+.parce
+.object {
+    color: darkorchid;
+}
+
+.parce
+.property {
+    color: royalblue;
+}
+
+.parce
+.symbol {
+
+}
+
+.parce
+.tag {
+    font-weight: bold;
+}
+
+.parce
+.type {
+
+}
+
+.parce
+.variable {
+
+}
+
+
+/*
+ * Styles for Literal derivatives
+ */
+.parce
+.data {
+
+}
+
+.parce
+.verbatim {
+
+}
+
+.parce
+.string {
+    color: indianred;
+}
+
+.parce
+.number {
+    color: pink;
+}
+
+.parce
+.fraction {
+
+}
+
+.parce
+.boolean {
+
+}
+
+.parce
+.color {
+
+}
+
+.parce
+.email {
+
+}
+
+.parce
+.url {
+
+}
+
+.parce
+.input {
+
+}
+
+.parce
+.output {
+
+}
+
+.parce
+.error {
+
+}
+
+/*
+ * String styles
+ */
+.parce
+.string.double {
+
+}
+
+.parce
+.string.single {
+
+}
+
+.parce
+.string.escape {
+    color: orangered;
+}
+
+/*
+ * Styles for Delimiter derivatives
+ */
+.parce
+.connection {
+
+}
+
+.parce
+.direction {
+
+}
+
+.parce
+.operator {
+
+}
+
+.parce
+.assignment {
+
+}
+
+.parce
+.bracket {
+    font-weight: bold;
+}
+
+.parce
+.modechange {
+    font-weight: bold;
+    color: chocolate;
+}
+
+.parce
+.quote {
+
+}
+
+.parce
+.separator {
+
+}
+
