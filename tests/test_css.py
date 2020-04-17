@@ -46,7 +46,7 @@ h1[attribute="value"] + p {
     assert tree.query.all.action(Number).pick().pos == 40
     assert tree.query.all(Css.declaration)[0][0].list() == [
         'width', 'height', 'color', 'background','text-decoration']
-    assert tree.query.all.action(Name.Property)("color").next.next.pick() == "white"
+    assert tree.query.all.action(Name.Property.Definition)("color").next.next.pick() == "white"
 
 if __name__ == "__main__":
     test_main()
