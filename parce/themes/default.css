@@ -19,12 +19,12 @@
 
 /* The line the cursor is in */
 .parce.current-line {
-    background: rgb(255, 255, 224, 0.5) /* lightyellow with .5 alpha */
+    background: oldlace;
 }
 
 /* The current line when the window has focus */
 .parce.current-line:focus {
-    background: lightyellow;
+    background: papayawhip;
 }
 
 /* Selected text */
