@@ -194,7 +194,7 @@ class LilyPond(Language):
         """Musical items."""
         yield from cls.common()
         yield r"<<", Bracket.Start, cls.simultaneous
-        yield r"<", Bracket.Chord.Start, cls.chord
+        yield r"<", Delimiter.Chord.Start, cls.chord
         yield r"\{", Bracket.Start, cls.sequential
         yield r"\\\\", Separator.VoiceSeparator
         yield r"\|", Separator.PipeSymbol
@@ -231,7 +231,7 @@ class LilyPond(Language):
     @lexicon
     def chord(cls):
         """A < chord > construct."""
-        yield r">", Bracket.Chord.End, -1
+        yield r">", Delimiter.Chord.End, -1
         yield from cls.music()
 
     # ------------------ special commands ---------------
