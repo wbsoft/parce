@@ -94,6 +94,9 @@ class Python(Language):
             mapgroup(2, {'(': cls.call, '[': cls.item})
 
         ## delimiters, operators
+        yield r'\.\.\.', Delimiter.Special.Ellipsis
+        yield r'(?:\*\*|//|<<|>>|[-+*/%@&|^])=', Operator.Assignment
+        yield r'\*\*|//|<<|>>|[:<>=!]=|[-+*/%@&|^~<>]', Operator
         yield r'[.;,:]', Delimiter
 
     @lexicon(re_flags=re.MULTILINE)
