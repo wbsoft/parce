@@ -18,18 +18,37 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 
-CSS3_NAMED_COLORS = {
+CSS1_NAMED_COLORS = {
+    # color name  R    G    B       # CGA name      (num)
+    "white": (255, 255, 255),       # white         (15)
+    "silver": (192, 192, 192),      # light gray    (07)
+    "gray": (128, 128, 128),        # dark gray     (08)
+    "grey": (128, 128, 128),        # dark gray     (08)
+    "black": (0, 0, 0),             # black         (00)
+    "red": (255, 0, 0),             # high red      (12)
+    "maroon": (128, 0, 0),          # low red       (04)
+    "yellow": (255, 255, 0),        # yellow        (14)
+    "olive": (128, 128, 0),         # brown         (06)
+    "lime": (0, 255, 0),            # high green    (10)
+    "green": (0, 128, 0),           # low green     (02)
+    "aqua": (0, 255, 255),          # high cyan     (11)
+    "teal": (0, 128, 128),          # low cyan      (03)
+    "blue": (0, 0, 255),            # high blue     (09)
+    "navy": (0, 0, 128),            # low blue      (01)
+    "fuchsia": (255, 0, 255),       # high magenta  (13)
+    "purple": (128, 0, 128),        # low magenta   (05)
+}
+
+
+CSS3_NAMED_COLORS = dict(**CSS1_NAMED_COLORS, **{
     # color name  R    G    B
     "aliceblue": (240, 248, 255),
     "antiquewhite": (250, 235, 215),
-    "aqua": (0, 255, 255),
     "aquamarine": (127, 255, 212),
     "azure": (240, 255, 255),
     "beige": (245, 245, 220),
     "bisque": (255, 228, 196),
-    "black": (0, 0, 0),
     "blanchedalmond": (255, 235, 205),
-    "blue": (0, 0, 255),
     "blueviolet": (138, 43, 226),
     "brown": (165, 42, 42),
     "burlywood": (222, 184, 135),
@@ -68,14 +87,10 @@ CSS3_NAMED_COLORS = {
     "firebrick": (178, 34, 34),
     "floralwhite": (255, 250, 240),
     "forestgreen": (34, 139, 34),
-    "fuchsia": (255, 0, 255),
     "gainsboro": (220, 220, 220),
     "ghostwhite": (248, 248, 255),
     "gold": (255, 215, 0),
     "goldenrod": (218, 165, 32),
-    "gray": (128, 128, 128),
-    "grey": (128, 128, 128),
-    "green": (0, 128, 0),
     "greenyellow": (173, 255, 47),
     "honeydew": (240, 255, 240),
     "hotpink": (255, 105, 180),
@@ -102,11 +117,9 @@ CSS3_NAMED_COLORS = {
     "lightslategrey": (119, 136, 153),
     "lightsteelblue": (176, 196, 222),
     "lightyellow": (255, 255, 224),
-    "lime": (0, 255, 0),
     "limegreen": (50, 205, 50),
     "linen": (250, 240, 230),
     "magenta": (255, 0, 255),
-    "maroon": (128, 0, 0),
     "mediumaquamarine": (102, 205, 170),
     "mediumblue": (0, 0, 205),
     "mediumorchid": (186, 85, 211),
@@ -121,9 +134,7 @@ CSS3_NAMED_COLORS = {
     "mistyrose": (255, 228, 225),
     "moccasin": (255, 228, 181),
     "navajowhite": (255, 222, 173),
-    "navy": (0, 0, 128),
     "oldlace": (253, 245, 230),
-    "olive": (128, 128, 0),
     "olivedrab": (107, 142, 35),
     "orange": (255, 165, 0),
     "orangered": (255, 69, 0),
@@ -138,8 +149,6 @@ CSS3_NAMED_COLORS = {
     "pink": (255, 192, 203),
     "plum": (221, 160, 221),
     "powderblue": (176, 224, 230),
-    "purple": (128, 0, 128),
-    "red": (255, 0, 0),
     "rosybrown": (188, 143, 143),
     "royalblue": (65, 105, 225),
     "saddlebrown": (139, 69, 19),
@@ -148,7 +157,6 @@ CSS3_NAMED_COLORS = {
     "seagreen": (46, 139, 87),
     "seashell": (255, 245, 238),
     "sienna": (160, 82, 45),
-    "silver": (192, 192, 192),
     "skyblue": (135, 206, 235),
     "slateblue": (106, 90, 205),
     "slategray": (112, 128, 144),
@@ -157,17 +165,15 @@ CSS3_NAMED_COLORS = {
     "springgreen": (0, 255, 127),
     "steelblue": (70, 130, 180),
     "tan": (210, 180, 140),
-    "teal": (0, 128, 128),
     "thistle": (216, 191, 216),
     "tomato": (255, 99, 71),
     "turquoise": (64, 224, 208),
     "violet": (238, 130, 238),
     "wheat": (245, 222, 179),
-    "white": (255, 255, 255),
     "whitesmoke": (245, 245, 245),
-    "yellow": (255, 255, 0),
     "yellowgreen": (154, 205, 50),
-}
+})
+
 
 # source: https://www.w3.org/Style/CSS/all-properties
 CSS3_ALL_PROPERTIES = (
