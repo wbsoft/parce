@@ -84,10 +84,10 @@ class Python(Language):
         yield words(python_words.constants, prefix=r'\b', suffix=r'\b'), Name.Constant
         yield fr'\b(self|cls)\b(?:{_SN_}*([\[\(]))?', Name.Variable.Special, \
             mapgroup(2, {'(': cls.call, '[': cls.item})
-        yield fr'\.{_SN_}*\b({_I_})\b(?:{_SN_}*([\[\(]))?', \
-            bygroup(ifgroupmember(1, python_words.keywords, Keyword,
-                mapgroup(2, {'(': Name.Function}, Name.Variable)), Delimiter), \
-            mapgroup(2, {'(': cls.call, '[': cls.item})
+        yield fr'(\.){_SN_}*\b({_I_})\b(?:{_SN_}*([\[\(]))?', \
+            bygroup(Delimiter, ifgroupmember(2, python_words.keywords, Keyword,
+                mapgroup(3, {'(': Name.Function}, Name.Variable)), Delimiter), \
+            mapgroup(3, {'(': cls.call, '[': cls.item})
         yield fr'\b({_I_})\b(?:{_SN_}*([\[\(]))?', \
             bygroup(ifgroupmember(1, python_words.builtins, Name.Builtin,
                 mapgroup(2, {'(': Name.Function}, Name.Variable)), Delimiter), \
