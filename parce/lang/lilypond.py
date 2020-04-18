@@ -172,12 +172,14 @@ class LilyPond(Language):
         yield r"\\(?:override|revert)(?![^\W\d])", Keyword, cls.override
         yield r"\\(?:new|change|context)(?![^\W\d])", Keyword, cls.context
         yield r"(\\with)\s*(\{)", bygroup(Keyword, Bracket.Start), cls.layout_context
+        yield r"(\\key)(?![^\W\d])(?:\s+(" + RE_LILYPOND_PITCHWORD +"))?", \
+            bygroup(Name.Builtin, cls.ifpitch())
         yield r"(\\relative)(?![^\W\d])(?:\s+" + RE_LILYPOND_PITCH_OCT + ")?", \
-            bygroup(Keyword, cls.ifpitch(), Octave)
+            bygroup(Name.Builtin, cls.ifpitch(), Octave)
         yield (r"(\\transpose)(?![^\W\d])(?:\s+" + RE_LILYPOND_PITCH_OCT + ")?"
                r"(?:\s*" + RE_LILYPOND_PITCH_OCT + ")?"), \
-               bygroup(Keyword, cls.ifpitch(), Octave, cls.ifpitch(), Octave)
-        yield r"\\tempo(?![^\W\d])", Keyword, cls.tempo
+               bygroup(Name.Builtin, cls.ifpitch(), Octave, cls.ifpitch(), Octave)
+        yield r"\\tempo(?![^\W\d])", Name.Builtin, cls.tempo
         yield r"(\\chord(?:s|mode))\b\s*(\{)?", bygroup(Keyword, Bracket.Start), \
             ifgroup(2, cls.chordmode)
         yield from cls.notemode_rule()
