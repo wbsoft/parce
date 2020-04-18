@@ -135,41 +135,42 @@ class Theme:
         return self._stylesheet.filenames()
 
     @util.cached_method
-    def window(self, state="default"):
-        """Return the default textformat.
+    def baseformat(self, role="window", state="default"):
+        """Return a TextFormat for a specific role and a state.
 
-        This is intended to be used for the editor window or encompassing DIV
-        element. The state argument may be "default", "focus", or "disabled".
+        The role may be any string that maps to a CSS class in the theme
+        CSS file that is available there together with the 'parce' class.
 
-        """
-        e = css.Element(class_="parce")
-        if state in ("focus", "disabled"):
-            e.pseudo_classes = [state]
-        return self.TextFormat(self.style.select_element(e).properties())
+        The following roles are recognized and used by parce, but you may
+        also define your own roles in your (applications') theme CSS files:
 
-    @util.cached_method
-    def selection(self, state="default"):
-        """Return the default textformat for selected text.
+        ``"window"``
+            The TextFormat for the editor window or the encompassing DIV when
+            formatting HTML. Corresponds to the "parce" CSS class alone in the
+            theme file. You can set color, background and, if desired, font
+            preferences.
+        ``"selection"``
+            The TextFormat to use for selected text. Uses the ``::selection``
+            pseudo element.
+        ``"current-line"``
+            The TextFormat for the current line. If you use it, set only the
+            *background* color in your theme file.
+        ``"trialing-whitespace"``
+            The TextFormat (use only the *background*) to highlight trialing
+            whitespace, if desired.
+        ``"eol-marker"``
+            The *color* to draw a "end-of-line" marker with, if desired
 
-        This is intended to be used for the editor window or encompassing DIV
-        element. The state argument may be "default", "focus", or "disabled".
-
-        """
-        e = css.Element(class_="parce", pseudo_elements=["selection"])
-        if state in ("focus", "disabled"):
-            e.pseudo_classes = [state]
-        return self.TextFormat(self.style.select_element(e).properties())
-
-    @util.cached_method
-    def currentline(self, state="default"):
-        """Return the default textformat for the current line.
-
-        This is intended to be used for the editor window or encompassing DIV
-        element, probably only the background color. The state argument may be
-        "default", "focus", or "disabled".
+        The state argument may be "default", "focus", or "disabled", and
+        reflects the state of the user interface the style variant is used for.
 
         """
-        e = css.Element(class_="parce current-line")
+        if role == "window":
+            e = css.Element(class_="parce")
+        elif role == "selection":
+            e = css.Element(class_="parce", pseudo_elements=["selection"])
+        else:
+            e = css.Element(class_="parce {}".format(role))
         if state in ("focus", "disabled"):
             e.pseudo_classes = [state]
         return self.TextFormat(self.style.select_element(e).properties())
@@ -236,17 +237,9 @@ class MetaTheme:
         """Return the ``add_window`` value that was set when adding this sub-theme."""
         return self._add_window.get(theme, False)
 
-    def window(self, state="default"):
-        """Return the window TextFormat for the state of the default theme."""
-        return self._theme.window(state)
-
-    def selection(self, state="default"):
-        """Return the selection TextFormat for the state of the default theme."""
-        return self._theme.selection(state)
-
-    def currentline(self, state="default"):
-        """Return the currentline TextFormat for the state of the default theme."""
-        return self._theme.currentline(state)
+    def baseformat(self, role="window", state="default"):
+        """Return the base TextFormat for the rold and state of the default theme."""
+        return self._theme.baseformat(state)
 
     def textformat(self, action):
         """Return the TextFormat for the specified action of the default theme."""

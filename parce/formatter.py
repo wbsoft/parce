@@ -68,7 +68,7 @@ class FormatCache:
     def __init__(self, theme, factory, add_window=True):
         """Caches conversions from TextFormat to something else."""
         if add_window:
-            window = theme.window()
+            window = theme.baseformat()
             self.window = factory(window)
             self._format = lambda action: factory(window + theme.textformat(action))
         else:
@@ -139,19 +139,9 @@ class Formatter:
         return self._theme
 
     @util.cached_method
-    def window(self, state="default"):
-        """Return our textformat for the window or encompassing DIV."""
-        return self._factory(self._theme.window(state))
-
-    @util.cached_method
-    def selection(self, state="default"):
-        """Return our textformat for the selected text."""
-        return self._factory(self._theme.selection(state))
-
-    @util.cached_method
-    def currentline(self, state="default"):
+    def baseformat(self, role="window", state="default"):
         """Return our textformat for the current line."""
-        return self._factory(self._theme.currentline(state))
+        return self._factory(self._theme.baseformat(role, state))
 
     def format_cache(self, theme):
         """Return a FormatCache for the Theme.
