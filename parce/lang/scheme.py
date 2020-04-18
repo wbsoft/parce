@@ -40,22 +40,22 @@ class Scheme(Language):
         yield from cls.common()
 
     @classmethod
-    def common(cls, go_back=0):
-        """Yield common stuff. ``go_back`` can be set to -1 for one-arg mode."""
+    def common(cls, pop=0):
+        """Yield common stuff. ``pop`` can be set to -1 for one-arg mode."""
         yield r"['`,]", Delimiter.Scheme.Quote
-        yield r"\(", Delimiter.OpenParen, go_back, cls.list
-        yield r"#\(", Delimiter.OpenVector, go_back, cls.vector
-        yield r'"', String, go_back, cls.string
-        yield r';', Comment, go_back, cls.singleline_comment
-        yield r'#!', Comment, go_back, cls.multiline_comment
-        yield RE_SCHEME_FRACTION, Number.Fraction, go_back
-        yield RE_SCHEME_FLOAT, Number.Float, go_back
-        yield RE_SCHEME_NUMBER, Number, go_back
-        if go_back == 0:
+        yield r"\(", Delimiter.OpenParen, pop, cls.list
+        yield r"#\(", Delimiter.OpenVector, pop, cls.vector
+        yield r'"', String, pop, cls.string
+        yield r';', Comment, pop, cls.singleline_comment
+        yield r'#!', Comment, pop, cls.multiline_comment
+        yield RE_SCHEME_FRACTION, Number.Fraction, pop
+        yield RE_SCHEME_FLOAT, Number.Float, pop
+        yield RE_SCHEME_NUMBER, Number, pop
+        if pop == 0:
             yield r"\.(?!\S)", Delimiter.Dot
-        yield r"#[tf]\b", Boolean, go_back
-        yield r"#\\([a-z]+|.)", Character, go_back
-        yield r'[^()"{}\s]+', cls.get_word_action(), go_back
+        yield r"#[tf]\b", Boolean, pop
+        yield r"#\\([a-z]+|.)", Character, pop
+        yield r'[^()"{}\s]+', cls.get_word_action(), pop
 
     @lexicon
     def list(cls):
@@ -106,8 +106,8 @@ class SchemeLily(Scheme):
         yield default_target, -1
 
     @classmethod
-    def common(cls, go_back=0):
+    def common(cls, pop=0):
         from . import lilypond
-        yield r"#{", Delimiter.LilyPond, go_back, lilypond.LilyPond.schemelily
-        yield from super().common(go_back)
+        yield r"#{", Delimiter.LilyPond, pop, lilypond.LilyPond.schemelily
+        yield from super().common(pop)
 
