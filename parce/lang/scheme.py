@@ -101,6 +101,7 @@ class SchemeLily(Scheme):
     @lexicon
     def one_arg(cls):
         """Pick one thing and pop back."""
+        yield r'\s+', skip
         yield from cls.common(-1)
         yield default_target, -1
 
