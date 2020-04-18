@@ -226,9 +226,10 @@ class Python(Language):
     @classmethod
     def string_raw_common(cls):
         yield arg(), String.End, -1
-        yield arg(prefix=r'\\'), String  # escape quote, but the \ remains
+        yield r'\\\\', String
         predicate = lambda arg: arg == "'"
-        yield byarg(predicate, r'(\\"[^"])*?$', r"(\\'|[^'])*?$"), String.Invalid, -1
+        yield byarg(predicate, fr'([^\\"]*?|\\"{_S_}*)$', fr"([^\\']*?|\\'{_S_}*)$"), String.Invalid, -1
+        yield arg(prefix=r'\\'), String  # escape quote, but the \ remains
         yield default_action, String
 
     @lexicon
@@ -315,9 +316,10 @@ class Python(Language):
 
     @classmethod
     def bytes_raw_common(cls):
-        yield arg(prefix=r'\\'), Bytes  # escape quote, but the \ remains
+        yield r'\\\\', Bytes
         predicate = lambda arg: arg == "'"
-        yield byarg(predicate, r'(\\"[^"])*?$', r"(\\'|[^'])*?$"), Bytes.Invalid, -1
+        yield byarg(predicate, fr'([^\\"]*?|\\"{_S_}*)$', fr"([^\\']*?|\\'{_S_}*)$"), Bytes.Invalid, -1
+        yield arg(prefix=r'\\'), Bytes  # escape quote, but the \ remains
         yield from cls.longbytes_common()
 
     @classmethod
