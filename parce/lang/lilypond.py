@@ -437,9 +437,9 @@ class LilyPond(Language):
         yield from cls.comments()
 
     @classmethod
-    def scheme(cls):
+    def scheme(cls, pop=0):
         """Find scheme."""
-        yield r'[#$]', Delimiter.ModeChange.SchemeStart, cls.get_scheme_target()
+        yield r'[#$]', Delimiter.ModeChange.SchemeStart, pop, cls.get_scheme_target()
 
     @lexicon
     def varname(cls):
@@ -455,7 +455,7 @@ class LilyPond(Language):
         yield r"(\\score)\s*(\{)", bygroup(Name.Function.Markup, Bracket.Start), -1, cls.score
         yield RE_LILYPOND_COMMAND, cls.get_markup_action(), cls.get_markup_target()
         yield r'"', String, -1, cls.string
-        yield from cls.scheme()
+        yield from cls.scheme(-1)
         yield from cls.comments()
         yield RE_LILYPOND_MARKUP_TEXT, Text, -1
 
