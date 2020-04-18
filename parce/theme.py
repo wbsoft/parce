@@ -167,20 +167,17 @@ class Theme:
         e = css.Element(class_=class_, parent=css.Element(class_="parce"))
         return self.TextFormat(self.style.select_element(e).properties())
 
-    def tokens(self, theme_context, slices):
-        """Yield tokens from the slices, calling ``theme_context`` if necessary.
+    def tokens(self, theme_context, tree, start=0, end=None):
+        """Yield tokens from ``tree.tokens_range(start, end)``.
 
-        The ``slices`` argument is an iterable of (context, slice) tuples. such
-        as returned by Context.slices() and Context.context_slices(). When a
-        new context is entered, ``theme_context.push(language)`` is called
-        where ``language`` is the context's lexicon's language. When the lexicon
-        ends, ``theme_context.pop()`` is called.
+        If a context is entered, ``theme_context.push(language)`` is called
+        with the language of the context's lexicon. If the context is left,
+        ``theme_context.pop()`` is called.
 
         In Theme, the ``theme_context`` argument is unused.
 
         """
-        for context, slice_ in slices:
-            yield from util.tokens(context[slice_])
+        yield from tree.tokens_range(start, end)
 
 
 class MetaTheme:
@@ -241,17 +238,17 @@ class MetaTheme:
         """Return the TextFormat for the specified action of the default theme."""
         return self._theme.textformat(action)
 
-    def tokens(self, theme_context, slices):
-        """Yield tokens, following theme_context.
+    def tokens(self, theme_context, tree, start=0, end=None):
+        """Yield tokens from ``tree.tokens_range(start, end)``.
 
-        The ``slices`` argument is an iterable of (context, slice) tuples. such
-        as returned by Context.slices() and Context.context_slices(). When a
-        new context is entered, ``theme_context.push(language)`` is called
-        where ``language`` is the context's lexicon's language. When the lexicon
-        ends, ``theme_context.pop()`` is called.
+        If a context is entered, ``theme_context.push(language)`` is called
+        with the language of the context's lexicon. If the context is left,
+        ``theme_context.pop()`` is called.
+
+        The theme_context can switch the theme, based on the current language.
 
         """
-        for context, slice_ in slices:
+        for context, slice_ in tree.context_slices(start, end):
             theme_context.push(context.lexicon.language)
             for n in context[slice_]:
                 stack = []

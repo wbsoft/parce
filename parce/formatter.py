@@ -173,7 +173,7 @@ class Formatter:
                                     theme, self._factory, add_window)
                 return c
 
-    def format_ranges(self, slices):
+    def format_ranges(self, tree, start=0, end=None):
         """Yield FormatRange(pos, end, format) three-tuples.
 
         The ``format`` is the value returned by Theme.textformat() for the
@@ -184,15 +184,15 @@ class Formatter:
         """
         c = FormatContext(self)
         def stream():
-            end = sys.maxsize
-            for t in self._theme.tokens(c, slices):
-                if t.pos > end and c.window is not None:
+            prev_end = sys.maxsize
+            for t in self._theme.tokens(c, tree, start, end):
+                if t.pos > prev_end and c.window is not None:
                     # if a sub-language is active, draw its background
-                    yield end, t.pos, c.window
+                    yield prev_end, t.pos, c.window
                 f = c.format(t.action)
                 if f is not None:
                     yield t.pos, t.end, f
-                end = t.end
+                prev_end = t.end
         yield from util.merge_adjacent(stream(), FormatRange)
 
 
