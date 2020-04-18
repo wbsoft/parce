@@ -92,15 +92,15 @@ class Python(Language):
             mapgroup(2, {'(': cls.call, '[': cls.item})
         # method, class or attribute (keywords after a . are also caught)
         yield fr'(\.){_SN_}*\b({_I_})\b(?:{_SN_}*([\[\(]))?', \
-            bygroup(Delimiter,
-                    ifgroupmember(2, python_words.keywords,
-                        Keyword,
-                        mapgroup(3,
-                            {'(': bytext(isclassname, Name.Method, Name.Class)},
-                            bytext(str.isupper,
-                                   bytext(isclassname, Name.Attribute, Name.Class),
-                                   Name.Constant))),
-                    Delimiter), \
+            bygroup(
+                Delimiter,
+                ifgroupmember(2, python_words.keywords,
+                    Keyword,
+                    mapgroup(3, {'(': bytext(isclassname, Name.Method, Name.Class)},
+                         bytext(str.isupper,
+                             bytext(isclassname, Name.Attribute, Name.Class),
+                             Name.Constant))),
+                Delimiter), \
             mapgroup(3, {'(': cls.call, '[': cls.item})
         # function, class or variable
         yield fr'\b({_I_})\b(?:{_SN_}*([\[\(]))?', \
@@ -109,8 +109,10 @@ class Python(Language):
                     ((python_words.builtins, Name.Builtin),
                      (python_words.exceptions, Name.Exception)),
                     bytext(str.isupper,
-                           bytext(isclassname, mapgroup(2, {'(': Name.Function}, Name.Variable), Name.Class),
-                           Name.Constant)),
+                        bytext(isclassname,
+                            mapgroup(2, {'(': Name.Function}, Name.Variable),
+                            Name.Class),
+                        Name.Constant)),
                 Delimiter), \
             mapgroup(2, {'(': cls.call, '[': cls.item})
 
