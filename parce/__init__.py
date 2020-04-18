@@ -299,6 +299,10 @@ def _get_sequences_map(pairs, default):
     sequences = []
     itemlists = []
     all_items = set()
+    try:
+        pairs = pairs.items()   # succeeds if it's a dict
+    except AttributeError:
+        pass
     for s, i in pairs:
         s = frozenset(set(s) - all_items)
         all_items |= s
