@@ -139,11 +139,9 @@ class AbstractDocument:
         """Get start and end values from key. Called by __[gs]etitem__."""
         total = len(self)
         if isinstance(key, slice):
-            start = key.start or 0
-            end = key.stop
+            start, end, _ = key.indices(total)
         elif isinstance(key, Cursor):
-            start = key.start
-            end = key.end
+            start, end, _ = slice(key.start, key.end).indices(total)
         else:
             # single integer
             if key < 0:
@@ -151,18 +149,6 @@ class AbstractDocument:
             if 0 <= key < total:
                 return key, key + 1
             raise IndexError("index out of range")
-        if start is None or start < -total:
-            start = 0
-        elif start < 0:
-            start += total
-        elif start > total:
-            start = total
-        if end is None or end > total:
-            end = total
-        elif end < -total:
-            end = 0
-        elif end < 0:
-            end += total
         if end < start:
             end = start
         return start, end
