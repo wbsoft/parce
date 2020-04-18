@@ -96,20 +96,34 @@ from . import util
 
 class Theme:
     """A Theme maps a StandardAction to a TextFormat with CSS properties."""
-    def __init__(self, filename):
-        """Instantiate Theme from a CSS file."""
+    def __init__(self, filename="", stylesheet=""):
+        """Instantiate Theme from a CSS file or text.
+
+        If the ``stylesheet`` text is given, it is used as the stylesheet. Only
+        if the text is empty, the filename is used to read the stylesheet from.
+
+        """
         self._filename = filename
+        self._css_text = stylesheet
         self.TextFormat = TextFormat
 
     @classmethod
     def byname(cls, name="default"):
-        """Create Theme by name, that should reside in the themes/ directory."""
+        """Create Theme by name.
+
+        The name is a CSS file in the themes/ directory, without the ".css"
+        extension.
+
+        """
         return cls(themes.filename(name))
 
     @util.cached_property
     def _stylesheet(self):
         """Load and cache the StyleSheet."""
-        return css.StyleSheet.from_file(self._filename)
+        if self._css_text or not self._filename:
+            return css.StyleSheet.from_text(self._css_text, self._filename)
+        else:
+            return css.StyleSheet.from_file(self._filename)
 
     @util.cached_property
     def style(self):

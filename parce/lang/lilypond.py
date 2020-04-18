@@ -140,14 +140,15 @@ class LilyPond(Language):
     @lexicon
     def layout(cls):
         yield r'\}', Bracket.End, -1
+        yield RE_LILYPOND_SYMBOL, Name.Variable
+        yield "[,.]", Delimiter
+        yield "=", Operator.Assignment
         yield r"(\\context)\s*(\{)", bygroup(Keyword, Bracket.Start), cls.layout_context
         yield from cls.music()
 
     @lexicon
     def midi(cls):
-        yield r'\}', Bracket.End, -1
-        yield r"(\\context)\s*(\{)", bygroup(Keyword, Bracket.Start), cls.layout_context
-        yield from cls.music()
+        yield from cls.layout
 
     @lexicon
     def layout_context(cls):
