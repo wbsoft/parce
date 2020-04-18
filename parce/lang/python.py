@@ -97,7 +97,9 @@ class Python(Language):
                         Keyword,
                         mapgroup(3,
                             {'(': bytext(isclassname, Name.Method, Name.Class)},
-                            Name.Attribute)),
+                            bytext(str.isupper,
+                                   bytext(isclassname, Name.Attribute, Name.Class),
+                                   Name.Constant))),
                     Delimiter), \
             mapgroup(3, {'(': cls.call, '[': cls.item})
         # function, class or variable
