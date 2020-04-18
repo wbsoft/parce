@@ -221,7 +221,6 @@
 .parce
 .constant {
     color: darkmagenta;
-    font-weight: bold;
 }
 
 .parce
@@ -238,6 +237,7 @@
 .parce
 .exception {
     color: crimson;
+    font-weight: bold;
 }
 
 .parce

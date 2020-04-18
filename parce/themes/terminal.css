@@ -232,7 +232,8 @@
 
 .parce
 .exception {
-
+    color: red;
+    font-weight: bold;
 }
 
 .parce
