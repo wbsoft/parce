@@ -48,6 +48,11 @@ class Python(Language):
         yield fr'(def\b){_S_}*({_I_})', bygroup(Keyword,
             ifgroupmember(2, python_words.keywords, Invalid, Name.Function.Definition)), cls.funcdef
         yield fr':(?={_S_}*(?:$|#))', Delimiter.Indent
+        yield fr'({_I_})\s*(=)', bygroup(
+            bytext(str.isupper,
+                   bytext(isclassname, Name.Variable, Name.Class),
+                   Name.Constant),
+            Operator.Assignment)
         yield from cls.common()
 
     @classmethod
@@ -97,8 +102,14 @@ class Python(Language):
             mapgroup(3, {'(': cls.call, '[': cls.item})
         # function, class or variable
         yield fr'\b({_I_})\b(?:{_SN_}*([\[\(]))?', \
-            bygroup(ifgroupmember(1, python_words.builtins, Name.Builtin,
-                bytext(isclassname, mapgroup(2, {'(': Name.Function}, Name.Variable), Name.Class)), Delimiter), \
+            bygroup(
+                mapgroupmember(1,
+                    ((python_words.builtins, Name.Builtin),
+                     (python_words.exceptions, Name.Exception)),
+                    bytext(str.isupper,
+                           bytext(isclassname, mapgroup(2, {'(': Name.Function}, Name.Variable), Name.Class),
+                           Name.Constant)),
+                Delimiter), \
             mapgroup(2, {'(': cls.call, '[': cls.item})
 
         ## delimiters, operators
@@ -188,7 +199,7 @@ class Python(Language):
 
     @lexicon(re_flags=re.MULTILINE)
     def string_raw(cls):
-        yield from cls.string_common()
+        yield from cls.string_raw_common()
 
     @lexicon(re_flags=re.MULTILINE)
     def string_format(cls):
@@ -199,13 +210,21 @@ class Python(Language):
     @lexicon(re_flags=re.MULTILINE)
     def string_raw_format(cls):
         yield from cls.string_formatstring()
-        yield from cls.string_common()
+        yield from cls.string_raw_common()
 
     @classmethod
     def string_common(cls):
         yield arg(), String.End, -1
         predicate = lambda arg: arg == "'"
         yield byarg(predicate, r'[^"]*?$', r"[^']*?$"), String.Invalid, -1
+        yield default_action, String
+
+    @classmethod
+    def string_raw_common(cls):
+        yield arg(), String.End, -1
+        yield arg(prefix=r'\\'), String  # escape quote, but the \ remains
+        predicate = lambda arg: arg == "'"
+        yield byarg(predicate, r'(\\"[^"])*?$', r"(\\'|[^'])*?$"), String.Invalid, -1
         yield default_action, String
 
     @lexicon
@@ -215,6 +234,7 @@ class Python(Language):
 
     @lexicon
     def longstring_raw(cls):
+        yield arg(prefix=r'\\'), String  # escape quote, but the \ remains
         yield from cls.longstring_common()
 
     @lexicon
@@ -225,6 +245,7 @@ class Python(Language):
 
     @lexicon
     def longstring_raw_format(cls):
+        yield arg(prefix=r'\\'), String  # escape quote, but the \ remains
         yield from cls.string_formatstring()
         yield from cls.longstring_common()
 
@@ -235,9 +256,7 @@ class Python(Language):
 
     @classmethod
     def string_escape(cls):
-        yield r'''\\[\n\\'"abfnrtv]''', String.Escape
-        yield r'\\\d{1,3}', String.Escape
-        yield r'\\x[0-9a-fA-F]{2}', String.Escape
+        yield from cls.bytes_escape(String.Escape)
         yield r'\\N\{[^\}]+\}', String.Escape
         yield r'\\u[0-9a-fA-F]{4}', String.Escape
         yield r'\\U[0-9a-fA-F]{8}', String.Escape
@@ -272,7 +291,7 @@ class Python(Language):
 
     @lexicon(re_flags=re.MULTILINE)
     def bytes_raw(cls):
-        yield from cls.bytes_common()
+        yield from cls.bytes_raw_common()
 
     @lexicon
     def longbytes(cls):
@@ -291,15 +310,22 @@ class Python(Language):
         yield default_action, Bytes
 
     @classmethod
+    def bytes_raw_common(cls):
+        yield arg(prefix=r'\\'), Bytes  # escape quote, but the \ remains
+        predicate = lambda arg: arg == "'"
+        yield byarg(predicate, r'(\\"[^"])*?$', r"(\\'|[^'])*?$"), Bytes.Invalid, -1
+        yield from cls.longbytes_common()
+
+    @classmethod
     def longbytes_common(cls):
         yield arg(), Bytes.End, -1
         yield default_action, Bytes
 
     @classmethod
-    def bytes_escape(cls):
-        yield r'''\\[\n\\'"abfnrtv]''', Bytes.Escape
-        yield r'\\\d{1,3}', Bytes.Escape
-        yield r'\\x[0-9a-fA-F]{2}', Bytes.Escape
+    def bytes_escape(cls, action=Bytes.Escape):
+        yield r'''\\[\n\\'"abfnrtv]''', action
+        yield r'\\\d{1,3}', action
+        yield r'\\x[0-9a-fA-F]{2}', action
 
     ## ------- comments -------------
     @lexicon(re_flags=re.MULTILINE)
