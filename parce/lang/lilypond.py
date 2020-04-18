@@ -50,7 +50,7 @@ RE_LILYPOND_DYNAMIC = (
 RE_LILYPOND_REST = r"[rRs](?![^\W\d])"
 
 # a string that could be a valid pitch name (or drum name)
-RE_LILYPOND_PITCHWORD = r"(?<![^\W\d])[a-zé]+(?:-[a-zé]+)*(?![^\W\d])"
+RE_LILYPOND_PITCHWORD = r"(?<![^\W\d])[a-zé]+(?:[_-][a-zé]+)*(?![^\W\d_])"
 
 # a pitch name followed by an optional octave (two capturing groups)
 RE_LILYPOND_PITCH_OCT = "(" + RE_LILYPOND_PITCHWORD + r")\s*('+|,+)?"
