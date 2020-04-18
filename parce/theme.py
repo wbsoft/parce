@@ -94,9 +94,6 @@ from . import themes
 from . import util
 
 
-TextFormatRange = collections.namedtuple("TextFormatRange", "pos end textformat theme")
-
-
 class Theme:
     """A Theme maps a StandardAction to a TextFormat with CSS properties."""
     def __init__(self, filename):
