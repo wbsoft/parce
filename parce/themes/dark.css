@@ -335,12 +335,12 @@
 
 .parce
 .email {
-
+    text-decoration: underline dodgerblue dashed;
 }
 
 .parce
 .url {
-
+    text-decoration: underline dodgerblue dashed;
 }
 
 .parce

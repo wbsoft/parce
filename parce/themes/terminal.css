@@ -338,12 +338,12 @@
 
 .parce
 .email {
-
+    text-decoration: underline gray solid;
 }
 
 .parce
 .url {
-
+    text-decoration: underline gray solid;
 }
 
 .parce

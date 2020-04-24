@@ -48,6 +48,8 @@ class Language:
     @classmethod
     def comment_common(cls):
         """Highlights TODO, XXX and TEMP inside comments using Comment.Alert."""
+        yield r'\b\w(?:[._%+-]?\w+)*@\w(?:[._-]?\w+)*\b', parce.Comment.Email
+        yield r'(?:https?|ftp):/(?:[\w._~:?/#-]+|\([\w._~:?/#-]*\))+', parce.Comment.Url
         yield r"\b(ALERT|BUG|FIXME|TEMP|TODO|XXX+)\b", parce.Comment.Alert
         yield parce.default_action, parce.Comment
 
