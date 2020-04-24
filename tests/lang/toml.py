@@ -22,7 +22,7 @@ from parce.lang.toml import Toml
 
 def examples():
     # example from https://github.com/toml-lang/toml
-    yield Toml.root, r"""\
+    yield Toml.root, r"""
 # This is a TOML document.
 
 title = "TOML Example"
