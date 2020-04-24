@@ -27,7 +27,6 @@ EXAMPLES_DIRECTORY = "../tests/lang/"
 
 import collections
 import glob
-import importlib
 import io
 import os
 import sys

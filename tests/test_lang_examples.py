@@ -21,25 +21,31 @@
 Test proper functioning of all examples in the ./lang directory.
 """
 
-import importlib
+EXAMPLES_DIRECTORY = "tests/lang/"
+
+import glob
 import os
 import sys
 
 sys.path.insert(0, ".")
 
-import parce.language
-import parce.validate
+import parce
+
+
+def get_examples():
+    """Return a list of all example documents in tests/lang/example.*."""
+    pattern = os.path.join(EXAMPLES_DIRECTORY, "example*.*")
+    return glob.glob(pattern)
+
 
 def test_main():
-    for name in parce.language.get_all_modules():
-        try:
-            mod = importlib.import_module('tests.lang.' + name)
-        except ImportError:
-            continue
-        print("Running examples from {}:".format(name))
-        for n, (root_lexicon, text) in enumerate(mod.examples(), 1):
-            print("Example #{}:".format(n))
-            parce.root(root_lexicon, text).dump()
+    for filename in get_examples():
+        print("Testing:", filename)
+        text = open(filename).read()    # TODO encoding?
+        root_lexicon = parce.find(filename=filename, contents=text)
+        assert root_lexicon
+        print("Root lexicon: {}, result tree:".format(root_lexicon))
+        parce.root(root_lexicon, text).dump()
 
 
 if __name__ == "__main__":
