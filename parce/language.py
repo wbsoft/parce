@@ -47,7 +47,14 @@ class Language:
 
     @classmethod
     def comment_common(cls):
-        """Highlights TODO, XXX and TEMP inside comments using Comment.Alert."""
+        """Provides subtle highlighting within comments.
+
+        The default implementation highlight TODO, XXX and TEMP
+        using Comment.Alert, and highlights URLs and email addresses with the
+        Comment.Url and Comment.Email action respectively.
+        Most bundled languages use this method for their comment lexicons.
+
+        """
         yield r'\b\w(?:[._%+-]?\w+)*@\w(?:[._-]?\w+)*\b', parce.Comment.Email
         yield r'(?:https?|ftp):/(?:[\w._~:?/#-]+|\([\w._~:?/#-]*\))+', parce.Comment.Url
         yield r"\b(ALERT|BUG|FIXME|TEMP|TODO|XXX+)\b", parce.Comment.Alert
