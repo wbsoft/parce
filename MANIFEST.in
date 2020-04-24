@@ -1,5 +1,5 @@
-global-exclude *~
+global-exclude *~ *.py[cod] __pycache__
 include README.rst ChangeLog LICENSE
-graft docs
+graft parce docs
 prune docs/build
 
