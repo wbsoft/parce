@@ -46,20 +46,23 @@ class Toml(Language):
     @lexicon
     def root(cls):
         yield '#', Comment, cls.comment
-        yield r'\[\[', Bracket, cls.array_table
-        yield r'\[', Bracket, cls.table
-        yield r'=', Operator.Assignment.Invalid
+        yield r'(\[\[)(?:[ \t]*(\.))?', bygroup(Bracket, Invalid), cls.array_table
+        yield r'(\[)(?:[ \t]*(\.))?', bygroup(Bracket, Invalid), cls.table
+        yield r'=[^\n#]*', Invalid
+        yield r'\.[^\n#]*', Invalid
         yield r'\s+', skip
         yield default_target, cls.key
 
     @lexicon
     def table(cls):
-        yield r'(\])(\S*)', bygroup(Bracket, Invalid), -1
+        yield r'(?:(\.)[ \t]*)?(\])([^\n#]*)', \
+            bygroup(Invalid, Bracket, bytext(str.isspace, Invalid, skip)), -1
         yield from cls.keys()
 
     @lexicon
     def array_table(cls):
-        yield r'(\]\])(\S*)', bygroup(Bracket, Invalid), -1
+        yield r'(?:(\.)[ \t]*)?(\]\])([^\n#]*)', \
+            bygroup(Invalid, Bracket, bytext(str.isspace, Invalid, skip)), -1
         yield from cls.keys()
 
     @lexicon(re_flags=re.MULTILINE)
@@ -71,40 +74,40 @@ class Toml(Language):
     def value(cls):
         yield '#', Comment, -1, cls.comment
         yield r'$', None, -1
-        yield from cls.values()
+        yield from cls.values(-1)
 
     @classmethod
     def keys(cls):
         yield r'[A-Za-z0-9_-]+', Name.Variable
-        yield r'\.', Delimiter.Dot
+        yield r'''(\.)(?=[ \t]*[\}\],'"A-Za-z0-9_-])''', Delimiter.Dot
         yield r'"', String, cls.string_basic
         yield r"'", String, cls.string_literal
         yield r'[ \t]+', skip
         yield default_action, Invalid
 
     @classmethod
-    def values(cls):
-        yield '#', Comment, cls.comment
-        yield r'\[', Bracket, cls.array
-        yield r'\{', Bracket, cls.inline_table
-        yield r'"""', String, cls.string_multiline_basic
-        yield r'"', String, cls.string_basic
-        yield r"(''')(\n)?", bygroup(String, Whitespace), cls.string_multiline_literal
-        yield r"'", String, cls.string_literal
-        yield RE_DATE_TIME, Literal.Timestamp
-        yield RE_FULL_DATE, Literal.Timestamp
-        yield RE_FULL_TIME, Literal.Timestamp
-        yield RE_OCT, Number
-        yield RE_BIN, Number
-        yield RE_HEX, Number
-        yield RE_DEC, Number
-        yield r"[-+]?\b(?:inf|nan)\b", Number
-        yield r"\b(?:true|false)\b", Name.Constant
-        yield r'\S+', Invalid
+    def values(cls, pop=0):
+        yield '#', Comment, pop, cls.comment
+        yield r'\[', Bracket, pop, cls.array
+        yield r'\{', Bracket, pop, cls.inline_table
+        yield r'"""', String, pop, cls.string_multiline_basic
+        yield r'"', String, pop, cls.string_basic
+        yield r"(''')(\n)?", bygroup(String, Whitespace), pop, cls.string_multiline_literal
+        yield r"'", String, pop, cls.string_literal
+        yield RE_DATE_TIME, Literal.Timestamp, pop
+        yield RE_FULL_DATE, Literal.Timestamp, pop
+        yield RE_FULL_TIME, Literal.Timestamp, pop
+        yield RE_OCT, Number, pop
+        yield RE_BIN, Number, pop
+        yield RE_HEX, Number, pop
+        yield RE_DEC, Number, pop
+        yield r"[-+]?\b(?:inf|nan)\b", Number, pop
+        yield r"\b(?:true|false)\b", Name.Constant, pop
+        yield r'\S+', Invalid, pop
 
     @lexicon
     def array(cls):
-        yield r'\]', Bracket, -1
+        yield r'(\])([^,}#\]]*)', bygroup(Bracket, bytext(str.isspace, Invalid, skip)), -1
         yield r',', Separator
         yield from cls.values()
 
