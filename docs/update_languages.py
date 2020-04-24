@@ -22,9 +22,16 @@
 Updates the language stub files in source/lang and the listing in source/langs.inc
 """
 
-import io
-import sys
+EXAMPLES_DIRECTORY = "../tests/lang/"
+
+
+import collections
+import glob
 import importlib
+import io
+import os
+import sys
+
 sys.path.insert(0, "..")
 
 import parce
@@ -72,40 +79,50 @@ def indent(text, indent=4):
     return '\n'.join(' ' * indent + line for line in text.splitlines())
 
 
-def make_stub(name):
+def make_stub(name, examples):
     text = STUB.format(name, '=' * len(name))
     with open("source/lang/{0}.rst".format(name), "w") as f:
         f.write(text)
 
-        try:
-            mod = importlib.import_module('tests.lang.' + name)
-        except ImportError:
-            return
-        examples = list(mod.examples())
-        if not examples:
-            return
+        if examples:
+            if len(examples) > 1:
+                f.write("Examples:\n---------")
+            else:
+                f.write("Example:\n--------")
 
-        if len(examples) > 1:
-            f.write("Examples:\n---------")
-        else:
-            f.write("Example:\n--------")
+            for root_lexicon, text in examples:
+                tree = parce.root(root_lexicon, text)
+                buf = io.StringIO()
+                tree.dump(buf)
+                f.write(EXAMPLE_STUB.format(root_lexicon, name, indent(text),
+                                            indent(buf.getvalue())))
 
-        for root_lexicon, text in examples:
-            tree = parce.root(root_lexicon, text)
-            buf = io.StringIO()
-            tree.dump(buf)
-            f.write(EXAMPLE_STUB.format(root_lexicon, name, indent(text),
-                                        indent(buf.getvalue())))
+
+def get_examples():
+    """Return a list of all example documents in tests/lang/example.*."""
+    pattern = os.path.join(EXAMPLES_DIRECTORY, "example*.*")
+    return glob.glob(pattern)
 
 
 def main():
+
+    # make a mapping from the example files to their Language
+    all_examples = collections.defaultdict(list)
+    for filename in get_examples():
+        text = open(filename).read()    # TODO encoding?
+        root_lexicon = parce.find(filename=filename, contents=text)
+        all_examples[root_lexicon.language].append((root_lexicon, text))
+
+
     with open("source/langs.inc", "w") as f:
         f.write(LANGS_INC_HEADER)
         for name in get_all_modules():
-            clss = ", ".join(":class:`~parce.lang.{0}.{1}`".format(name, c.__name__)
-                for c in get_languages(name))
-            if clss:
-                make_stub(name)
+            langs = list(get_languages(name))
+            if langs:
+                clss = ", ".join(":class:`~parce.lang.{0}.{1}`".format(name, lang.__name__)
+                    for lang in langs)
+                examples = sum((all_examples.get(lang, []) for lang in langs), [])
+                make_stub(name, examples)
                 f.write("   * - :mod:`~parce.lang.{0}`\n".format(name))
                 f.write("     - {0}\n\n".format(clss))
 
