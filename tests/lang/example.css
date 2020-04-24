@@ -1,0 +1,5 @@
+/* css example */
+h1.main {
+    color: red;
+    background: grey url(bla.png);
+}

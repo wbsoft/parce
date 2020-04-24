@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!-- xml example -->
+<note type="urgent">
+  <to>Tove</to>
+  <from>Jani&eacute;</from>
+  <heading>Reminder</heading>
+  <body>Don't <em>forget me</em> this weekend!</body>
+</note>
