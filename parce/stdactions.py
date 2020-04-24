@@ -106,6 +106,7 @@ Boolean         = Number.Boolean        # a boolean value
 Literal.Color
 Literal.Email
 Literal.Url
+Literal.Timestamp
 Literal.Input
 Literal.Output
 Literal.Error

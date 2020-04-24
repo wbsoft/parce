@@ -111,6 +111,14 @@ register("parce.lang.scheme.Scheme.root",
     guesses = [(r'^\s*[;(]', .5), (r'\(define\b', .7)],
 )
 
+register("parce.lang.toml.Toml.root",
+    name = "TOML",
+    desc = "Tom's Obvious, Minimal Language",
+    filenames = [("*.toml", 1)],
+    mimetypes = [("application/toml", 1)],
+    guesses = [(r'^\s*\[\\w+(\.(w+))*\]', 0.5), (r"^\s*#", 0.05)],
+)
+
 register("parce.lang.html.XHtml.root",
     name = "XHTML",
     desc = "HTML that is valid XML",
