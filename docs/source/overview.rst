@@ -1,8 +1,8 @@
 Overview
 ========
 
-The `parce` module consists of a parser that can build a tree structure of
-`tokens` from a text, using regular expression patterns. Parsing happens by a
+The `parce` module consists of a lexer that can build a tree structure of
+`tokens` from a text, using regular expression patterns. Lexing happens by a
 `lexicon`, which is a set of rules with patterns to look for. Tokens can be
 given a meaning (`action`) and a rule can, if its pattern matches, also
 move parsing to another lexicon, "opening a new context", so to say.
@@ -16,7 +16,7 @@ taylor them to your own needs. This documentation helps you going, see
 Features
 ^^^^^^^^
 
-* parse text to a stream of `events` or a tree structure of `tokens`, according
+* lex text to a stream of `events` or a tree structure of `tokens`, according
   to a language definition
 * examine and query the generated tree structure
 * apply changes to the text, and only update the needed part of a tree
@@ -25,7 +25,7 @@ Features
 * parsing and tokenizing can be done in a background thread
 * map the `action` of a token to CSS classes for highlighting based on CSS
 
-You can parse a text once and examine the generated tree structure of tokens,
+You can lex a text once and examine the generated tree structure of tokens,
 but, and this is a key point of `parce`, you can also use a Document which
 keeps its text contents tokenized automatically, and if you change part of
 the text, only updates the tokens that need to, leaving the rest in place.

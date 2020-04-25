@@ -11,12 +11,12 @@ The parce module
 `Documentation  <https://parce.info>`_                          •
 `License        <https://www.gnu.org/licenses/gpl-3.0>`_
 
-This Python package, `parce`, can be used for parsing text into tokens using
+This Python package, `parce`, can be used for lexing text into tokens using
 one of the supplied language definitions in the ``lang`` directory, or
-building your own language definitions and parse text using them.
+building your own language definitions and lex text using them.
 
 The `parce` module is designed to be very fast, while being written in pure
-Python, using native data structures as much as possible. Parsing can be done
+Python, using native data structures as much as possible. Lexing can be done
 in a background thread.
 
 A powerful feature of parce is that you can retokenize only modified parts of a
