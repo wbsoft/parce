@@ -37,7 +37,7 @@ RE_XML_NAME_START_CHAR = (
 )
 RE_XML_NAME_CHAR = '-.0-9\xB7\u0300-\u036F\u203F-\u2040' + RE_XML_NAME_START_CHAR
 RE_XML_NAME = _N_ = fr'[{RE_XML_NAME_START_CHAR}][{RE_XML_NAME_CHAR}]*'
-
+RE_XML_NAME_TOKEN = _T_ = fr'[{RE_XML_NAME_CHAR}]*'
 
 class _XmlBase(Language):
     """Common stuff between Xml and Dtd."""
@@ -205,5 +205,5 @@ class Dtd(_XmlBase):
         yield r'\(', Bracket, 1
         yield r'\)', Bracket, -1
         yield operators, Operator
-        yield _N_, nametype
+        yield _T_, nametype
         yield from cls.common_defs()
