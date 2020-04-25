@@ -1,10 +1,12 @@
 ChangeLog
 =========
 
-current:
+
+2020-04-25: parce-0.8.5
 
 - restructured standard actions, easier to combine actions
-- improved default styles, added a template for new styles
+- improved default styles, added a template for new CSS styles
+- added oldfashioned terminal CSS style (see parce/themes)
 - parce is now fully recursion proof, there is no limit on the depth of a tree
 - added toml parser
 - added tex/latex parser
