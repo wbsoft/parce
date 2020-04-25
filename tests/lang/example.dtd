@@ -1,0 +1,10 @@
+<!-- example doctype definition (dtd) -->
+<!ELEMENT book (chapter)*>
+<!ELEMENT chapter ANY>
+<!ENTITY author "Wilbert Berendsen">
+<!ENTITY chapter1 SYSTEM "chapter1.xml">
+<!ATTLIST chapter
+    number ID #REQUIRED
+    author CDATA #REQUIRED
+    lastmodified CDATA #IMPLIED
+>
