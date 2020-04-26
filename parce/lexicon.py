@@ -141,8 +141,8 @@ class Lexicon:
                     if isinstance(i, Item):
                         i.itemlists = [list(replace_arg_items(l)) for l in i.itemlists]
                     yield i
-        for rule in self.lexicon.rules_func(self.language) or ():
-            yield list(replace_arg_items(rule))
+        for pattern, *rule in self.lexicon.rules_func(self.language) or ():
+            yield (pattern, *replace_arg_items(rule))
 
     def __repr__(self):
         s = self.name()
