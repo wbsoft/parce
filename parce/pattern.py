@@ -76,7 +76,7 @@ class Char(Pattern):
 
 
 class ArgPattern(Pattern):
-    """An abstract pattern class that uses the lexicon argument.
+    """Abstract Pattern subclass that uses the lexicon argument.
 
     The :meth:`build` method has changed to accept the Lexicon argument, which
     can be used to customize the pattern.
