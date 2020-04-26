@@ -31,13 +31,12 @@ class Pattern:
     """Base class for objects that build a regular expression.
 
     The ``build()`` method should return a regular pattern string, or another
-    ``Pattern`` object. The ``arg`` is the lexicon argument, which can be
-    used to customize the pattern.
+    ``Pattern`` object.
 
     If the ``build()`` method returns None, the entire rule is skipped.
 
     """
-    def build(self, arg=None):
+    def build(self):
         """Create and return the regular expression string."""
         raise NotImplementedError
 
@@ -49,7 +48,7 @@ class Words(Pattern):
         self.prefix = prefix
         self.suffix = suffix
 
-    def build(self, arg=None):
+    def build(self):
         """Return an optimized regular expression string from the words list."""
         from . import regex
         expr = regex.words2regexp(self.words)
@@ -69,14 +68,26 @@ class Char(Pattern):
         self.chars = chars
         self.positive = positive
 
-    def build(self, arg=None):
+    def build(self):
         """Return an optimized regular expression string for the characters."""
         from . import regex
         negate = "" if self.positive else "^"
         return '[' + negate + regex.make_charclass(set(self.chars)) + ']'
 
 
-class Arg(Pattern):
+class ArgPattern(Pattern):
+    """An abstract pattern class that uses the lexicon argument.
+
+    The :meth:`build` method has changed to accept the Lexicon argument, which
+    can be used to customize the pattern.
+
+    """
+    def build(self, arg):
+        """Create and return the regular expression string, using the lexicon argument."""
+        raise NotImplementedError
+
+
+class Arg(ArgPattern):
     r"""Creates a pattern that contains the argument the current Lexicon was
     called with.
 
@@ -96,7 +107,7 @@ class Arg(Pattern):
         self.suffix = suffix
         self.default = default
 
-    def build(self, arg=None):
+    def build(self, arg):
         """Return the lexicon argument as regular expression."""
         if isinstance(arg, str):
             if self.escape:
@@ -105,7 +116,7 @@ class Arg(Pattern):
         return self.default
 
 
-class IfArg(Pattern):
+class IfArg(ArgPattern):
     r"""Pattern that returns the specified regular expression pattern (or
     nested Pattern instance) if the lexicon was called with an argument.
 
@@ -117,7 +128,7 @@ class IfArg(Pattern):
         self.pattern = pattern
         self.else_pattern = else_pattern
 
-    def build(self, arg=None):
+    def build(self, arg):
         return self.pattern if arg is not None else self.else_pattern
 
 

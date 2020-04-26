@@ -39,7 +39,8 @@ import re
 import threading
 
 import parce.regex
-from .pattern import Pattern
+from . import util
+from .pattern import ArgPattern, Pattern
 from .target import TargetFactory
 from .rule import Item, ArgItem, DynamicItem, TextItem, variations
 
@@ -130,8 +131,9 @@ class Lexicon:
         """Return True if we are the same lexicon or a derivate from the same."""
         return self.lexicon is other.lexicon and self.language is other.language
 
-    def __iter__(self):
-        """Yield the rules, replacing the ArgItem instances."""
+    @util.cached_property
+    def _rules(self):
+        """Yield the rules, building the patterns and replacing the ArgItem instances."""
         def replace_arg_items(items):
             """Replace ArgRuleItem instances."""
             for i in items:
@@ -141,8 +143,26 @@ class Lexicon:
                     if isinstance(i, Item):
                         i.itemlists = [list(replace_arg_items(l)) for l in i.itemlists]
                     yield i
-        for pattern, *rule in self.lexicon.rules_func(self.language) or ():
-            yield (pattern, *replace_arg_items(rule))
+        def rules():
+            for pattern, *rule in self.lexicon.rules_func(self.language) or ():
+                while True:
+                    if isinstance(pattern, ArgPattern):
+                        pattern = pattern.build(self.arg)
+                    elif isinstance(pattern, Pattern):
+                        pattern = pattern.build()
+                    else:
+                        break
+                yield (pattern, *replace_arg_items(rule))
+        return tuple(rules())
+
+    def __iter__(self):
+        """Yield the rules.
+
+        Pattern objects are built, and the ArgItem instances replaced when this
+        method is called for the first time.
+
+        """
+        yield from self._rules
 
     def __repr__(self):
         s = self.name()
@@ -194,8 +214,6 @@ class Lexicon:
 
         # make lists of pattern, action and possible targets
         for pattern, *rule in self:
-            while isinstance(pattern, Pattern):
-                pattern = pattern.build(self.arg)
             if pattern is parce.default_action:
                 default_action = rule[0]
             elif pattern is parce.default_target:
