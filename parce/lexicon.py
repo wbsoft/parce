@@ -144,15 +144,14 @@ class Lexicon:
                         i.itemlists = [list(replace_arg_items(l)) for l in i.itemlists]
                     yield i
         def rules():
-            for pattern, *rule in self.lexicon.rules_func(self.language) or ():
-                while True:
+            for rule in self.lexicon.rules_func(self.language) or ():
+                pattern, *rule = replace_arg_items(rule)
+                while isinstance(pattern, Pattern):
                     if isinstance(pattern, ArgPattern):
                         pattern = pattern.build(self.arg)
-                    elif isinstance(pattern, Pattern):
-                        pattern = pattern.build()
                     else:
-                        break
-                yield (pattern, *replace_arg_items(rule))
+                        pattern = pattern.build()
+                yield (pattern, *rule)
         return tuple(rules())
 
     def __iter__(self):
