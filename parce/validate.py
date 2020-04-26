@@ -103,8 +103,6 @@ class LexiconValidator:
                     default_tg = rule
                     self.check_default_target(default_tg)
             else:
-                while isinstance(pattern, Pattern):
-                    pattern = pattern.build()
                 if pattern is None:
                     self.warning("rule #{}: pattern is None; rule will be skipped".format(n))
                 else:
