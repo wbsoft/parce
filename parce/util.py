@@ -142,6 +142,24 @@ class Dispatcher:
         return func
 
 
+class Symbol:
+    """An unique object that has a name."""
+    __slots__ = ('_name_')
+    _store_ = {}
+    _lock_ = threading.Lock()
+    def __new__(cls, name):
+        with cls._lock_:
+            try:
+                obj = cls._store_[name]
+            except KeyError:
+                obj = cls._store_[name] = object.__new__(cls)
+                obj._name_ = name
+            return obj
+
+    def __repr__(self):
+        return self._name_
+
+
 def cached_method(func):
     """Wrap a method and caches its return value.
 

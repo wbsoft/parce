@@ -41,7 +41,8 @@ also available in the ``parce`` module namespace. See for the full list
 """
 
 
-from . import action, document, lexer, pattern, rule, treebuilder, treedocument
+from . import (
+    action, document, lexer, pattern, rule, treebuilder, treedocument, util)
 from . import lexicon as lexicon_
 from .document import Cursor
 from .language import Language
@@ -520,8 +521,8 @@ def theme_from_file(filename):
 
 
 # these can be used in rules where a pattern is expected
-default_action = object()   #: denotes a default action for unmatched text
-default_target = object()   #: denotes a default target when no text matches
+default_action = util.Symbol("default_action")   #: denotes a default action for unmatched text
+default_target = util.Symbol("default_target")   #: denotes a default target when no text matches
 
 
 #: used to suppress generating a token
