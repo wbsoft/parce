@@ -252,8 +252,8 @@ class Lexicon:
 
         # if there is only one pattern, and no dynamic action or target,
         # see if the pattern is simple enough to just use str.find
-        if len(patterns) == 1 and not any(isinstance(item, Item)
-                                          for item in rules[0]):
+        if len(patterns) == 1 and not self.re_flags & re.IGNORECASE and \
+                not any(isinstance(item, Item) for item in rules[0]):
             needle = parce.regex.to_string(patterns[0])
             if needle:
                 l= len(needle)
