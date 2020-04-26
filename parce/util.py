@@ -173,15 +173,12 @@ def cached_method(func):
     _lock = threading.Lock()
 
     def lock(obj):
-        try:
-            return _locker[obj]
-        except KeyError:
-            with _lock:
-                try:
-                    return _locker[obj]
-                except KeyError:
-                    lock = _locker[obj] = threading.Lock()
-                    return lock
+        with _lock:
+            try:
+                return _locker[obj]
+            except KeyError:
+                lock = _locker[obj] = threading.Lock()
+                return lock
 
     @functools.wraps(func)
     def wrapper(self, *args):
