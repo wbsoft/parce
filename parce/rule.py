@@ -213,7 +213,7 @@ def variations(rule):
     """
     items = list(rule)
     for i, item in enumerate(items):
-        if isinstance(item, DynamicItem):
+        if isinstance(item, (DynamicItem, ArgItem)):
             prefix = items[:i]
             for suffix in variations(items[i+1:]):
                 for itemlist in item.itemlists:
