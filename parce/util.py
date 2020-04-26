@@ -169,13 +169,26 @@ def cached_method(func):
 
     """
     _cache = weakref.WeakKeyDictionary()
+    _locker = weakref.WeakKeyDictionary()
     _lock = threading.Lock()
+
+    def lock(obj):
+        try:
+            return _locker[obj]
+        except KeyError:
+            with _lock:
+                try:
+                    return _locker[obj]
+                except KeyError:
+                    lock = _locker[obj] = threading.Lock()
+                    return lock
+
     @functools.wraps(func)
     def wrapper(self, *args):
         try:
             return _cache[self][args]
         except KeyError:
-            with _lock:
+            with lock(self):
                 try:
                     return _cache[self][args]
                 except KeyError:
