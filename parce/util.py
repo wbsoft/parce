@@ -144,7 +144,7 @@ class Dispatcher:
 
 class Symbol:
     """An unique object that has a name."""
-    __slots__ = ('_name_')
+    __slots__ = ('_name_',)
     _store_ = {}
     _lock_ = threading.Lock()
     def __new__(cls, name):
