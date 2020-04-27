@@ -22,8 +22,9 @@ Helper functions to inspect and document objects.
 """
 
 
-from .rule import variations_tree
-
+from .rule import DynamicItem, variations_tree
+from .action import StandardAction
+from .lexicon import LexiconDescriptor, Lexicon
 
 
 def decision_tree(lexicon, build=False):
@@ -40,5 +41,49 @@ def decision_tree(lexicon, build=False):
     rules = lexicon if build else lexicon.lexicon.rules_func(lexicon.language)
     for rule in rules:
         yield variations_tree(rule)
+
+
+def lexicons(lang):
+    """Return a list of all the lexicons on the language."""
+    lexicons = []
+    for key, value in lang.__dict__.items():
+        if isinstance(value, LexiconDescriptor):
+            lexicons.append(getattr(lang, key))
+    return lexicons
+
+
+def rule_items(lang):
+    """Yield all rule items in a language, flattening all DynamicItem instances."""
+    def flatten(items):
+        for i in items:
+            if isinstance(i, DynamicItem):
+                for l in i.itemlists:
+                    yield from flatten(l)
+            else:
+                yield i
+    for lexicon in lexicons(lang):
+        for rule in lexicon:
+            yield from flatten(rule)
+
+
+def standardactions(lang):
+    """Return the set of all the StandardAction instances in the language.
+
+    Does not follow targets to other languages.
+
+    """
+    return set(i for i in rule_items(lang) if isinstance(i, StandardAction))
+
+
+def languages(lang):
+    """Return the set of all languages that this language refers to.
+
+    Does not follow targets from languages that are referred to.
+
+    """
+    return set(i.language
+        for i in rule_items(lang)
+            if isinstance(i, Lexicon) and i.language is not lang)
+
 
 
