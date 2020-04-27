@@ -1,5 +1,9 @@
 .. include:: ../../README.rst
 
+.. figure:: _static/parceqt.png
+
+   A screenshot of the debugger included with *parceqt*
+
 This manual documents `parce` version |release|.
 
 .. toctree::
