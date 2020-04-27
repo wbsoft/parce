@@ -22,40 +22,22 @@ Helper functions to inspect and document objects.
 """
 
 
-from .rule import variations
+from .rule import variations_tree
 
 
 
-def rules(lexicon):
+def rules(lexicon, build=False):
     """Yield all rules of the lexicon, including variations.
 
-    Every rule is a two-tuple (pattern, variations), where variations is a list
-    of variations. Every variation is a two-tuple (actions, target).
-    The actions is a tuple of actions and targets is a Target.
+    Every rule is a tuple. A variation is indicated by a frozenset, which
+    again contains tuples. See also :func:`parce.rule.variations_tree`.
+
+    If ``build`` is set to True, Pattern objects are built and ArgItem
+    instances are replaced.
 
     """
-    # merge items that are the only child with their parents
-    def merge(node):
-        for key, node in node.items():
-            if key is not None:
-                key = [key]
-                while len(node) == 1:
-                    k, n = next(iter(node.items()))
-                    if k is not None:
-                        key.append(k)
-                        node = n
-                    else:
-                        break
-                else:
-                    node = dict(merge(node))
-                key = tuple(key)
-            yield key, node
+    rules = lexicon if build else lexicon.lexicon.rules_func(lexicon.language)
+    for rule in rules:
+        yield variations_tree(rule)
 
-    for rule in lexicon.lexicon.rules_func(lexicon.language):
-        tree = {}
-        for variation in variations(rule):
-            d = tree
-            for item in variation:
-                d = d.setdefault(item, {})
-            d[None] = True
-        yield dict(merge(tree))
+

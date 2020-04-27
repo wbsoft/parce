@@ -231,8 +231,8 @@ def variations_tree(rule):
     Branches (choices) are indicated by a frozenset, which contains
     one or more tuples.
 
-    A DynamicAction can be recognized as a frozenset with only one member,
-    and a SkipAction as an empty frozenset.
+    A DynamicAction can be recognized as a frozenset with only one member.
+    For the SkipAction that member is an empty tuple.
 
     """
     items = tuple(rule)
