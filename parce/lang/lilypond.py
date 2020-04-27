@@ -502,7 +502,7 @@ class LilyPond(Language):
     @lexicon
     def schemelily(cls):
         """LilyPond from scheme.SchemeLily #{ #}."""
-        yield r"#}", Delimiter.LilyPond, -1
+        yield r"#}", Bracket.LilyPond.End, -1
         yield from cls.root()
 
     # -------------- String ---------------------
