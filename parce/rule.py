@@ -206,9 +206,9 @@ class LexiconMatchItem(MatchItem):
 def variations(rule):
     """Yield lists with all possible variations on the rule.
 
-    Every DynamicItem is recursively replaced with all of its alternatives.
-    Note that DynamicAction is an ActionItem subclass, and that is not
-    unfolded.
+    Every DynamicItem and every ArgItem is recursively replaced with all of its
+    alternatives. Note that DynamicAction is an ActionItem subclass, and that
+    is not unfolded.
 
     """
     items = list(rule)
@@ -223,4 +223,24 @@ def variations(rule):
     else:
         yield items
 
+
+def variations_tree(rule):
+    """Return a tuple with the tree structure of all possible variations.
+
+    Unlike :func:`variations`, this function unfolds *all* Item instances.
+    Branches (choices) are indicated by a frozenset, which contains
+    one or more tuples.
+
+    A DynamicAction can be recognized as a frozenset with only one member,
+    and a SkipAction as an empty frozenset.
+
+    """
+    items = tuple(rule)
+    for i, item in enumerate(items):
+        if isinstance(item, Item):
+            return items[:i] + (
+                    frozenset(variations_tree(l) for l in item.itemlists),
+                    *variations_tree(items[i+1:]))
+    else:
+        return items
 
