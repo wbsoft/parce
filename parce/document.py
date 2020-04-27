@@ -39,10 +39,8 @@ For tokenized documents, parce inherits from this base class.
 
 import itertools
 import re
+import reprlib
 import weakref
-
-
-from . import util
 
 
 class AbstractDocument:
@@ -82,7 +80,7 @@ class AbstractDocument:
         self[:] = text
 
     def __repr__(self):
-        text = util.abbreviate_repr(self[:31])
+        text = reprlib.repr(self.text())
         return "<{} {}>".format(type(self).__name__, text)
 
     def __str__(self):

@@ -49,6 +49,7 @@ See also the documentation for Token and Context.
 
 
 import itertools
+import reprlib
 
 from parce import util
 from parce import query
@@ -396,7 +397,7 @@ class Token(Node):
         return c1.parent is None and c2.parent is None
 
     def __repr__(self):
-        text = util.abbreviate_repr(self.text[:31])
+        text = reprlib.repr(self.text)
         return "<Token {} at {}:{} ({})>".format(text, self.pos, self.end, self.action)
 
     def __eq__(self, other):

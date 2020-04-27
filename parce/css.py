@@ -437,7 +437,7 @@ class AbstractElement:
         return True
 
     def __repr__(self):
-        attrs = util.abbreviate_repr(repr(self.get_attributes()))
+        attrs = reprlib.repr(self.get_attributes())
         count = self.get_child_count()
         return "<Element {} {} ({} children)>".format(self.get_name(),
             attrs, count)

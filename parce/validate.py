@@ -20,12 +20,12 @@
 
 import collections
 import re
+import reprlib
 
 import parce
 from .lexicon import LexiconDescriptor, Lexicon
 from .pattern import Pattern
 from .rule import Item, variations
-from . import util
 
 
 def validate_language(lang):
@@ -108,7 +108,7 @@ class LexiconValidator:
                 else:
                     self.validate_pattern(pattern, n)
                     if pattern in patterns:
-                        self.warning("rule #{0}: repeated pattern {1}; will be skipped".format(n, util.abbreviate_repr(pattern)))
+                        self.warning("rule #{0}: repeated pattern {1}; will be skipped".format(n, reprlib.repr(pattern)))
                     patterns.add(pattern)
                 self.validate_rule(rule, n)
 

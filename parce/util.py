@@ -199,13 +199,6 @@ def cached_property(func):
     return property(cached_method(func))
 
 
-def abbreviate_repr(s, length=30):
-    """Elegantly abbreviate repr text."""
-    if len(s) > length:
-        return repr(s[:length-2]) + "..."
-    return repr(s)
-
-
 def merge_adjacent(stream, factory=tuple):
     """Yield items from a stream of tuples.
 
