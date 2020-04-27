@@ -42,7 +42,7 @@ import parce.regex
 from . import util
 from .pattern import ArgPattern, Pattern
 from .target import TargetFactory
-from .rule import Item, ArgItem, DynamicItem, TextItem, variations
+from .rule import Item, ArgItem, DynamicItem, TextItem
 
 
 class LexiconDescriptor:
