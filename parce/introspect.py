@@ -26,11 +26,12 @@ from .rule import variations_tree
 
 
 
-def rules(lexicon, build=False):
+def decision_tree(lexicon, build=False):
     """Yield all rules of the lexicon, including variations.
 
-    Every rule is a tuple. A variation is indicated by a frozenset, which
-    again contains tuples. See also :func:`parce.rule.variations_tree`.
+    Every rule is a tuple. Items are members of the tuple. A variation (choice)
+    is indicated by a frozenset, which again contains tuples. See also
+    :func:`parce.rule.variations_tree`.
 
     If ``build`` is set to True, Pattern objects are built and ArgItem
     instances are replaced.
