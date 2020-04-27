@@ -25,6 +25,7 @@ Helper objects to construct regular expressions.
 
 
 import re
+import reprlib
 
 
 class Pattern:
@@ -39,6 +40,11 @@ class Pattern:
     def build(self):
         """Create and return the regular expression string."""
         raise NotImplementedError
+
+    def __repr__(self):
+        items = ("{}={}".format(name, reprlib.repr(value))
+                    for name, value in self.__dict__.items())
+        return "<{} {}>".format(self.__class__.__name__, ", ".join(items))
 
 
 class Words(Pattern):
