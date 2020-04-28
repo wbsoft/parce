@@ -38,6 +38,9 @@ BuildResult = collections.namedtuple("BuildResult", "tree start end offset lexic
 #: encapsulates the return values of :meth:`TreeBuilder.replace_tree`
 ReplaceResult = collections.namedtuple("ReplaceResult", "start end lexicons")
 
+#: encapsulates the return values of :func:`get_prepared_lexer`
+PreparedLexer = collections.namedtuple("PreparedLexer", "lexer events start")
+
 
 class Changes:
     """Store changes that have to be made to a tree.
@@ -115,13 +118,12 @@ class Changes:
         return pos - self.removed + self.added
 
 
-def find_insert_tokens(tree, text, start):
-    """Return the token(group) after which new tokens should be inserted.
+def get_prepared_lexer(tree, text, start):
+    """Get a prepared lexer reading from text, positioned at (or before) start.
 
-    Normally this is the last complete tokengroup just before the start
-    position; but in certain cases this can be earlier in the text.
-
-    If this function returns None, you should start at the beginning.
+    Returns the three-tuple (lexer, events, tokens). The events stream is
+    returned seperately because the last Event can be pushed back, so it is
+    yielded again. The tokens are the last tokens group that remained the same.
 
     """
     while start:
@@ -145,10 +147,13 @@ def find_insert_tokens(tree, text, start):
         prev = None
         for (old, tokens), new in zip(old_events, events):
             if old != new:
+                if prev:
+                    return lexer, itertools.chain((new,), events), prev
                 break
             prev = tokens
-        if prev:
-            return prev
+        else:
+            if prev:
+                return lexer, events, prev
 
 
 def events_with_tokens(start_token, last_token):

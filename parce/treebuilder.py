@@ -53,7 +53,7 @@ from parce.tree import Context, Token, _GroupToken
 from parce.util import tokens
 from parce.target import TargetFactory
 from parce.treebuilderutil import (
-    BuildResult, ReplaceResult, Changes, find_insert_tokens, get_lexer, new_tree)
+    BuildResult, ReplaceResult, Changes, get_prepared_lexer, new_tree)
 
 
 def build_tree(root_lexicon, text, pos=0):
@@ -244,12 +244,11 @@ class TreeBuilder:
         while True:
             # when restarting, see if we can reuse (part of) the new tree
             if tree:
-                tokens = find_insert_tokens(tree, text, start)
-                if tokens:
+                result = get_prepared_lexer(tree, text, start)
+                if result:
+                    lexer, events, tokens = result
                     t = tokens[0]
                     context = t.parent
-                    lexer = get_lexer(t)
-                    events = lexer.events(text, t.pos)
                     for p, i in t.ancestors_with_index():
                         del p[i+1:]
                     del context[-1]
@@ -258,13 +257,11 @@ class TreeBuilder:
             # find insertion spot in old tree
             if not tree:
                 start = min(lowest_start, start)
-                tokens = find_insert_tokens(self.root, text, start)
-                if tokens:
+                result = get_prepared_lexer(self.root, text, start)
+                if result:
+                    lexer, events, tokens = result
                     t = tokens[0]
                     context = new_tree(t)
-                    lexer = get_lexer(t)
-                    events = lexer.events(text, t.pos)
-                    next(events) # skip over the first token, we need its target
                     tree = context.root()
                     start = tokens[-1].end
                     lowest_start = min(lowest_start, start)
