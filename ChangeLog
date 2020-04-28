@@ -2,6 +2,11 @@ ChangeLog
 =========
 
 
+current:
+
+- added groff/troff parser
+
+
 2020-04-25: parce-0.8.5
 
 - restructured standard actions, easier to combine actions

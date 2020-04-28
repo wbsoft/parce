@@ -102,6 +102,15 @@ register("parce.lang.python.Python.root",
     guesses = [(r'^#!.{,20}python', .8), (r'\bimport\s+[a-z]+\b', .3)],
 )
 
+register("parce.lang.troff.Troff.root",
+    name = "Troff",
+    desc = "Troff document processing language",
+    aliases = ["groff", "nroff", "roff", "man"],
+    filenames = [("*.man", .8), ("*.[12345678]", .8)],
+    mimetypes = [("application/x-troff", .8), ("text/troff", .8)],
+    guesses = [(r'^\.', .5), (r'^\.TH\b', 1), (r'^\.\\"', 1)],
+)
+
 register("parce.lang.scheme.Scheme.root",
     name = "Scheme",
     desc = "Scheme programming language",
