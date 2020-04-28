@@ -40,7 +40,7 @@ class Troff(Language):
     def request(cls):
         yield from cls.escapes()
         yield r'\n', skip, -1
-        yield r'( +)(")', bygroup(Whitespace, String), cls.string
+        yield r'(?<= )"', String, cls.string
         yield default_action, Text
 
     @lexicon
