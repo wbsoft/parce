@@ -5,6 +5,8 @@ ChangeLog
 current:
 
 - added groff/troff parser
+- fixed parsing resume when first part of a match was skipped or not used
+  (e.g. r'( )(")', bygroup(skip, String) or r' (")', bygroup(String))
 
 
 2020-04-25: parce-0.8.5
