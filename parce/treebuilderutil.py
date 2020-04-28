@@ -125,6 +125,9 @@ def get_prepared_lexer(tree, text, start):
     returned seperately because the last Event can be pushed back, so it is
     yielded again. The tokens are the last tokens group that remained the same.
 
+    Returns None when no position to start can be found, just start from the
+    beginning in this case.
+
     """
     while start:
         last_token = start_token = find_token_before(tree, start)
