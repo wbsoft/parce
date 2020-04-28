@@ -110,6 +110,7 @@ Literal.Timestamp
 Literal.Input
 Literal.Output
 Literal.Error
+Literal.Prompt
 
 
 # Actions that derive of String:

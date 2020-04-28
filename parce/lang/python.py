@@ -340,6 +340,24 @@ class Python(Language):
         yield r'$', Comment, -1
 
 
+class PythonConsole(Python):
+    """Python console input and output with prompt."""
+    @classmethod
+    def common(cls):
+        yield r'(?:(?<=\n)|^)(?:>>>|\.\.\.) ', Literal.Prompt
+        yield from super().common()
+
+    @classmethod
+    def longstring_common(cls):
+        yield r'(?:(?<=\n)|^)\.\.\. ', Literal.Prompt
+        yield from super().longstring_common()
+
+    @classmethod
+    def longbytes_common(cls):
+        yield r'(?:(?<=\n)|^)\.\.\. ', Literal.Prompt
+        yield from super().longbytes_common()
+
+
 def isclassname(text):
     """Return True is text is an uppercased name (skipping starting underscores)."""
     for c in text:
