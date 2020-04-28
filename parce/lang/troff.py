@@ -41,6 +41,9 @@ class Troff(Language):
         yield from cls.escapes()
         yield r'\n', skip, -1
         yield r' (")', bygroup(String), cls.string
+        yield r'([-+]?(?:\d+(?:\.\d*)?)|\.\d+)([ciPpmMnuvsf])?', bygroup(Number, Name.Unit)
+        yield r'[-+*/%=<>&:!()]|[=<>]=', Operator
+        yield r'[<>]\?|;', Operator # GNU extension
         yield default_action, Text
 
     @lexicon
@@ -54,6 +57,7 @@ class Troff(Language):
         """String in request arguments."""
         yield r'$', None, -1
         yield r'"', String, -1
+        yield from cls.escapes(String)
         yield default_action, String
 
     @lexicon(re_flags=re.MULTILINE)
@@ -62,20 +66,22 @@ class Troff(Language):
         yield from cls.comment_common()
 
     @classmethod
-    def escapes(cls):
+    def escapes(cls, escape_base=Text):
         # escapes (man 7 groff)
         yield r'\\["#]', Comment, cls.comment
         # prevent interpreting request after continuation line
-        yield r"(\\\n)([.'])?", bygroup(Escape, Text)
+        yield r"(\\\n)([.'])?", bygroup(escape_base.Escape, Text)
         # single char escapes
-        yield r"\\[\\'`_.%! 0|^&)/,~:{}acdeEprtu-]", Escape
+        yield r"\\[\\'`_.%! 0|^&)/,~:{}acdeEprtu-]", escape_base.Escape
         # escapes expecting single, two-char or bracketed arg
-        yield r"\\[\*$fFgkmMnVYs](?:\[[^\]\n]*\]|\(..|.)", Escape
+        yield r"\\[\*$fFgkmMnVY](?:\[[^\]\n]*\]|\(..|.)", escape_base.Escape
+        # \s
+        yield r"\\s[-+]?(?:\d|\([-+]?\d\d|\[[\d+-]+\]|'[\d+-]+')", escape_base.Escape
         # escapes expecting a single-quoted argument
-        yield r"\\[AbBCDlLnoRsSvwxXZ](?:'[^'\n]*')?", Escape
+        yield r"\\[AbBCDlLnoRsSvwxXZ](?:'[^'\n]*')?", escape_base.Escape
         # \(<xx> or \[<xxxx>]
-        yield r"\\(?:\[[^\]\n]*\]|\(..)", Escape
+        yield r"\\(?:\[[^\]\n]*\]|\(..)", escape_base.Escape
         # undefined (last resort)
-        yield r"\\", Escape
+        yield r"\\", escape_base.Escape
 
 
