@@ -48,7 +48,8 @@ class Troff(Language):
 
     @lexicon
     def name(cls):
-        """The name of a request."""
+        """The name of a request, handle some special preprocessor macros."""
+        yield r'lilypond\b', Name.Identifier.Preprocessed, -1, cls.preprocess_lilypond
         yield r'[^\W\d]\w*\b', Name.Identifier, -1
         yield default_target, -1
 
@@ -64,6 +65,21 @@ class Troff(Language):
     def comment(cls):
         yield r'$', None, -1
         yield from cls.comment_common()
+
+    @lexicon
+    def preprocess_lilypond(cls):
+        """If "start" is found, go to LilyPond, otherwise back to the request context."""
+        yield r'[ \t]*(start)\b', bygroup(Name.Command), -2, cls.lilypond, cls.request
+        yield default_target, -1 # back to request
+
+    @lexicon(re_flags=re.MULTILINE)
+    def lilypond(cls):
+        """Stuff between .lilypond start and .lilypond end."""
+        from .lilypond import LilyPond
+        yield r"^(['.])[ \t]*(lilypond) +(end)\b", \
+            bygroup(Delimiter.Request, Name.Identifier.Preprocessed, Name.Command), \
+            -1
+        yield from LilyPond.root
 
     @classmethod
     def escapes(cls, escape_base=Text):
@@ -83,5 +99,4 @@ class Troff(Language):
         yield r"\\(?:\[[^\]\n]*\]|\(..)", escape_base.Escape
         # undefined (last resort)
         yield r"\\", escape_base.Escape
-
 
