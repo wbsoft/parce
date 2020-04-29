@@ -181,11 +181,11 @@ first time.
 
 There are convenient functions for creating some types of Pattern instances:
 
-    .. autofunction:: parce.words
-        :noindex:
+.. autofunction:: parce.words
+    :noindex:
 
-    .. autofunction:: parce.char
-        :noindex:
+.. autofunction:: parce.char
+    :noindex:
 
 See for more information about Pattern objects the documentation of the
 :mod:`~parce.pattern` module.
@@ -206,11 +206,11 @@ target. Dynamic items can be nested.
 
 There are a few convenient functions to create dynamic actions and/or targets:
 
-    .. autofunction:: parce.bymatch
-        :noindex:
+.. autofunction:: parce.bymatch
+    :noindex:
 
-    .. autofunction:: parce.bytext
-        :noindex:
+.. autofunction:: parce.bytext
+    :noindex:
 
 (You might wonder why the predicate functions used by :func:`~parce.bymatch`
 and :func:`~parce.bytext` would not directly return the action or target(s).
@@ -222,26 +222,26 @@ verbatim in the lexicon's rules.)
 The following functions all use the same mechanism under the hood, but they
 also create the predicate function for you:
 
-    .. autofunction:: parce.ifgroup
-        :noindex:
+.. autofunction:: parce.ifgroup
+    :noindex:
 
-    .. autofunction:: parce.ifmember
-        :noindex:
+.. autofunction:: parce.ifmember
+    :noindex:
 
-    .. autofunction:: parce.ifgroupmember
-        :noindex:
+.. autofunction:: parce.ifgroupmember
+    :noindex:
 
-    .. autofunction:: parce.maptext
-        :noindex:
+.. autofunction:: parce.maptext
+    :noindex:
 
-    .. autofunction:: parce.mapgroup
-        :noindex:
+.. autofunction:: parce.mapgroup
+    :noindex:
 
-    .. autofunction:: parce.mapmember
-        :noindex:
+.. autofunction:: parce.mapmember
+    :noindex:
 
-    .. autofunction:: parce.mapgroupmember
-        :noindex:
+.. autofunction:: parce.mapgroupmember
+    :noindex:
 
 Instead of a list or tuple of items, a single action or target item can also be
 given. These functions can also be used for mapping an action *and* target
@@ -269,14 +269,14 @@ tokens generated from a single regular expression match.
 The function :func:`~parce.bygroup` can be used to yield zero or more actions,
 yielding a token for every non-empty match in a group:
 
-    .. autofunction:: parce.bygroup
-        :noindex:
+.. autofunction:: parce.bygroup
+    :noindex:
 
 The function :func:`~parce.using` can be used to lex the matched text with
 another lexicon:
 
-    .. autofunction:: parce.using
-        :noindex:
+.. autofunction:: parce.using
+    :noindex:
 
 Finally, there exists a special :class:`~parce.action.DynamicAction` in the
 ``skip`` object, it's an instance of :class:`~parce.action.SkipAction` and it
@@ -361,35 +361,35 @@ possibilities and future logic to replace items in rules before parsing.)
 There are two helper functions that create the Pattern based on the contents
 of the lexicon argument:
 
-    .. autofunction:: parce.arg
-        :noindex:
+.. autofunction:: parce.arg
+    :noindex:
 
-    .. autofunction:: parce.ifarg
-        :noindex:
+.. autofunction:: parce.ifarg
+    :noindex:
 
 There are three helper functions that create a target lexicon using an
 argument:
 
-    .. autofunction:: parce.withgroup
-        :noindex:
+.. autofunction:: parce.withgroup
+    :noindex:
 
-    .. autofunction:: parce.withtext
-        :noindex:
+.. autofunction:: parce.withtext
+    :noindex:
 
-    .. autofunction:: parce.witharg
-        :noindex:
+.. autofunction:: parce.witharg
+    :noindex:
 
 And there is a helper function that calls a predicate with the lexicon argument
 to choose rule items:
 
-    .. autofunction:: parce.byarg
-        :noindex:
+.. autofunction:: parce.byarg
+    :noindex:
 
 And a function that chooses rule items from a dictionary the lexicon argument
 is looked up in:
 
-    .. autofunction:: parce.maparg
-        :noindex:
+.. autofunction:: parce.maparg
+    :noindex:
 
 
 Of course it is also possible to target a lexicon with an argument directly::
