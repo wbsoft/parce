@@ -52,7 +52,7 @@ class Language:
         Most bundled languages use this method for their comment lexicons.
 
         """
-        yield r'\b\w(?:[._%+-]?\w+)*@\w(?:[._-]?\w+)*\b', parce.Comment.Email
+        yield r'\b\w+(?:[._%+-]\w+)*@\w+(?:[._-]\w+)*\b', parce.Comment.Email
         yield r'(?:https?|ftp):/(?:[\w._~:?/#-]+|\([\w._~:?/#-]*\))+', parce.Comment.Url
         yield r"\b(ALERT|BUG|FIXME|TEMP|TODO|XXX+)\b", parce.Comment.Alert
         yield parce.default_action, parce.Comment
