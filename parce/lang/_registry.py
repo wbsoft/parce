@@ -102,6 +102,14 @@ register("parce.lang.python.Python.root",
     guesses = [(r'^#!.{,20}python', .8), (r'\bimport\s+[a-z]+\b', .3)],
 )
 
+register("parce.lang.texinfo.Texinfo.root",
+    name = "Texinfo",
+    desc = "GNU Texinfo",
+    filenames = [("*.texi", 1), ("*.texinfo", 1), ("*.txi", .5), ("*.itexi", .3), ("*.tex", .1)],
+    mimetypes = [("application/x-texinfo", 1)],
+    guesses = [(r'^@c\b', .8), (r'^\\input\s+texinfo\b', 1)],
+)
+
 register("parce.lang.troff.Troff.root",
     name = "Troff",
     desc = "Troff document processing language",

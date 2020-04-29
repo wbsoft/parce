@@ -6,6 +6,7 @@ current:
 
 - added using(), like in Pygments, it lexes a match with another lexicon
 - added Python console session parser (with prompts)
+- added basic GNU Texinfo parser
 - added groff/troff parser, even includes LilyPond (as per the groff manual!)
 - fixed parsing resume when first part of a match was skipped or not used
   (e.g. r'( )(")', bygroup(skip, String) or r' (")', bygroup(String))
