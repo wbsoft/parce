@@ -39,6 +39,7 @@ class Texinfo(Language):
         yield r'@c(?:omment)?\b', Comment, cls.singleline_comment
         yield r'@ignore\b', Comment, cls.multiline_comment
         yield r'@verbatim\b', Keyword.Verbatim, cls.verbatim
+        yield r'@html', Keyword, cls.html
         yield r'(@[a-zA-Z]+)(?:(\{)(\})?)?', bygroup(
                 ifgroup(2, ifgroup(3, Name.Symbol, Name.Function), Name.Command),
                 Bracket.Start,
@@ -54,6 +55,12 @@ class Texinfo(Language):
     def verbatim(cls):
         yield r'(@end)[ \t]+(verbatim)\b', bygroup(Keyword, Keyword.Verbatim), -1
         yield default_action, Verbatim
+
+    @lexicon
+    def html(cls):
+        from .html import Html
+        yield r'(@end)[ \t]+(html)\b', bygroup(Keyword, Keyword), -1
+        yield from Html.root
 
     #---------- comments ------------------------
     @lexicon(re_flags=re.MULTILINE)
