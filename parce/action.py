@@ -207,6 +207,30 @@ class SubgroupAction(DynamicAction):
             yield from lexer.filter_actions(action, match.start(i), match.group(i), match)
 
 
+class DelegateAction(DynamicAction):
+    """This action uses a lexicon to parse the text.
+
+    All tokens are yielded as one group, flattened, ignoring the tree
+    structure, so this is not efficient for large portions of text, as the
+    whole region is parsed again on every modification.
+
+    But it can be useful when you want to match a not too large text blob first
+    that's difficult to capture otherwise, and then lex it with a lexicon that
+    does (almost) not enter other lexicons.
+
+    """
+    def __init__(self, lexicon):
+        super().__init__(lexicon)
+
+    def replace(self, lexer, pos, text, match):
+        """Use our lexicon to parse the matched text."""
+        lexicon = self.itemlists[0][0]
+        sublexer = type(lexer)([lexicon])
+        for e in sublexer.events(text):
+            for p, txt, action in e.tokens:
+                yield from lexer.filter_actions(action, pos + p, txt, None)
+
+
 class SkipAction(DynamicAction):
     """A DynamicAction that yields nothing.
 

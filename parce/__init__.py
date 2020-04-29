@@ -431,6 +431,22 @@ def bygroup(*actions):
     return action.SubgroupAction(*actions)
 
 
+def using(lexicon):
+    r"""Return a :class:`~parce.action.DelegateAction` that yields tokens
+    using the specified lexicon.
+
+    All tokens are yielded as one group, flattened, ignoring the tree
+    structure, so this is not efficient for large portions of text, as the
+    whole region is parsed again on every modification.
+
+    But it can be useful when you want to match a not too large text blob first
+    that's difficult to capture otherwise, and then lex it with a lexicon that
+    does (almost) not enter other lexicons.
+
+    """
+    return action.DelegateAction(lexicon)
+
+
 def withgroup(n, lexicon, mapping=None):
     r"""Return a :class:`~parce.rule.LexiconMatchItem` rule item that calls
     the ``lexicon`` with the matched text from group ``n``.

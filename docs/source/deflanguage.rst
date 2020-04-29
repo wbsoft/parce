@@ -272,6 +272,12 @@ yielding a token for every non-empty match in a group:
     .. autofunction:: parce.bygroup
         :noindex:
 
+The function :func:`~parce.using` can be used to lex the matched text with
+another lexicon:
+
+    .. autofunction:: parce.using
+        :noindex:
+
 Finally, there exists a special :class:`~parce.action.DynamicAction` in the
 ``skip`` object, it's an instance of :class:`~parce.action.SkipAction` and it
 yields no actions, so in effect creating no tokens. Use it if you want to match
