@@ -40,6 +40,9 @@ class Texinfo(Language):
         yield r'@ignore\b', Comment, cls.multiline_comment
         yield r'@verbatim\b', Keyword.Verbatim, cls.verbatim
         yield r'@html', Keyword, cls.html
+        yield r'(@lilypond)\b(?:(\[)([^\n\]]*)(\]))?(\{)?', bygroup(
+            Name.Function, Bracket, Name.Property, Bracket, Bracket.Start), \
+            ifgroup(5, cls.lilypond_brace, cls.lilypond_block)
         yield r'(@[a-zA-Z]+)(?:(\{)(\})?)?', bygroup(
                 ifgroup(2, ifgroup(3, Name.Symbol, Name.Function), Name.Command),
                 Bracket.Start,
@@ -61,6 +64,18 @@ class Texinfo(Language):
         from .html import Html
         yield r'(@end)[ \t]+(html)\b', bygroup(Keyword, Keyword), -1
         yield from Html.root
+
+    @lexicon
+    def lilypond_block(cls):
+        from .lilypond import LilyPond
+        yield r'(@end)[ \t]+(lilypond)\b', bygroup(Keyword, Name.Function), -1
+        yield from LilyPond.root
+
+    @lexicon
+    def lilypond_brace(cls):
+        from .lilypond import LilyPond
+        yield r'\}', Bracket.End, -1
+        yield from LilyPond.root
 
     #---------- comments ------------------------
     @lexicon(re_flags=re.MULTILINE)
