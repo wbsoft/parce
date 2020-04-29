@@ -228,7 +228,7 @@ class DelegateAction(DynamicAction):
         sublexer = type(lexer)([lexicon])
         for e in sublexer.events(text):
             for p, txt, action in e.tokens:
-                yield from lexer.filter_actions(action, pos + p, txt, None)
+                yield pos + p, txt, action
 
 
 class SkipAction(DynamicAction):
