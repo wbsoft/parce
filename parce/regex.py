@@ -54,11 +54,16 @@ def make_charclass(chars):
         >>> parce.regex.make_charclass(('a', 'd', 'b', 'f', 'c'))
         'a-df'
 
+    Supplying a string is also supported::
+
+        >>> parce.regex.make_charclass("abcdefghjklmnop")
+        'a-hj-p'
+
     Special characters are properly escaped.
 
     """
     buf = []
-    for c in sorted(map(ord, chars)):
+    for c in sorted(map(ord, set(chars))):
         if buf and buf[-1][1] == c - 1:
             buf[-1][1] = c
         else:
