@@ -25,11 +25,12 @@ Parse JavaScript.
 import re
 
 from parce import *
+from parce.unicharclass import categories
 from .javascript_words import *
 
 
-RE_JS_IDENT_STARTCHAR = r'$_A-Za-z' # TODO proper unicode names support
-RE_JS_IDENT_CHAR = RE_JS_IDENT_STARTCHAR + r'\d'
+RE_JS_IDENT_STARTCHAR = r'$_' + ''.join(map(categories.get, ['Lu', 'Ll', 'Lt', 'Lm', 'Lo', 'Nl']))
+RE_JS_IDENT_CHAR = RE_JS_IDENT_STARTCHAR + '\u200c\u200d' + ''.join(map(categories.get, ['Mn', 'Mc', 'Nd', 'Pc']))
 RE_JS_ESCAPE_CHAR = r'\\u[0-9a-fA-F]{4}'
 RE_JS_IDENT_TOKEN = _I_ = fr'(?:[{RE_JS_IDENT_STARTCHAR}]|{RE_JS_ESCAPE_CHAR})' \
                 fr'(?:[{RE_JS_IDENT_CHAR}]+|{RE_JS_ESCAPE_CHAR})*'
