@@ -47,8 +47,9 @@ JAVASCRIPT_KEYWORDS = (
 
 
 JAVASCRIPT_DECLARATORS = (
-    'var',
+    'const',
     'let',
+    'var',
     'with',
     'function',
 )
@@ -56,6 +57,7 @@ JAVASCRIPT_DECLARATORS = (
 
 JAVASCRIPT_RESERVED_KEYWORDS = (
     'abstract',
+    'await',
     'boolean',
     'byte',
     'char',

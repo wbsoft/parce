@@ -28,6 +28,14 @@ from parce import *
 from .javascript_words import *
 
 
+RE_JS_IDENT_STARTCHAR = r'$_A-Za-z' # TODO proper unicode names support
+RE_JS_IDENT_CHAR = RE_JS_IDENT_STARTCHAR + r'\d'
+RE_JS_ESCAPE_CHAR = r'\\u[0-9a-fA-F]{4}'
+RE_JS_IDENT_TOKEN = _I_ = fr'(?:[{RE_JS_IDENT_STARTCHAR}]|{RE_JS_ESCAPE_CHAR})' \
+                fr'(?:[{RE_JS_IDENT_CHAR}]+|{RE_JS_ESCAPE_CHAR})*'
+
+
+
 class JavaScript(Language):
     @lexicon
     def root(cls):
@@ -35,10 +43,14 @@ class JavaScript(Language):
         yield r'"', String.Start, cls.string('"')
         yield '//', Comment, cls.singleline_comment
         yield r'/\*', Comment.Start, cls.multiline_comment
+        yield fr'(const|let|var)\s+({_I_})\b', bygroup(Keyword, Name.Variable.Definition)
+        yield fr'(new)\s+({_I_})\b', bygroup(Keyword, Name.Class.Definition)
         yield words(JAVASCRIPT_KEYWORDS, prefix=r'\b', suffix=r'\b'), Keyword
+        yield words(JAVASCRIPT_DECLARATORS, prefix=r'\b', suffix=r'\b'), Keyword
         yield words(JAVASCRIPT_RESERVED_KEYWORDS, prefix=r'\b', suffix=r'\b'), Keyword.Reserved
         yield words(JAVASCRIPT_CONSTANTS, prefix=r'\b', suffix=r'\b'), Name.Constant
         yield words(JAVASCRIPT_BUILTINS, prefix=r'\b', suffix=r'\b'), Name.Builtin
+        yield words(JAVASCRIPT_PROTOTYPES, prefix=r'\b', suffix=r'\b'), Name.Class
 
     @lexicon
     def string(cls):
@@ -50,7 +62,7 @@ class JavaScript(Language):
         yield default_action, String
 
     #------------------ comments -------------------------
-    @lexicon
+    @lexicon(re_flags=re.MULTILINE)
     def singleline_comment(cls):
         yield '$', None, -1
         yield from cls.comment_common()
