@@ -53,14 +53,20 @@ class JavaScript(Language):
         yield words(JAVASCRIPT_CONSTANTS, prefix=r'\b', suffix=r'\b'), Name.Constant
         yield words(JAVASCRIPT_BUILTINS, prefix=r'\b', suffix=r'\b'), Name.Builtin
         yield words(JAVASCRIPT_PROTOTYPES, prefix=r'\b', suffix=r'\b'), Name.Builtin
-        yield fr'(\.)\s*({_I_})\b\s*(\()?', bygroup(Delimiter,
-            ifgroup(3, Name.Method, Name.Attribute), Delimiter)
+        yield fr'(\.)\s*({_I_})\b(?=(\s*\()?)', bygroup(Delimiter,
+            ifgroup(3, Name.Method, Name.Attribute))
         yield fr'{_I_}\b', bytext(str.isupper, Name.Variable, Name.Class)
         ## numerical values (recently, underscore support inside numbers was added)
         yield '0[oO](?:_?[0-7])+', Number
         yield '0[bB](?:_?[01])+', Number
         yield '0[xX](?:_?[0-9a-fA-F])+', Number
         yield r'(?:\.\d(?:_?\d)*|\d(?:_?\d)*(?:\.(?:\d(?:_?\d)*)?)?)(?:[eE][-+]\d(?:_?\d)*)?', Number
+        yield r'\{', Bracket.Start, cls.scope
+
+    @lexicon
+    def scope(cls):
+        yield r'\}', Bracket.End, -1
+        yield from cls.root
 
     @lexicon
     def string(cls):
