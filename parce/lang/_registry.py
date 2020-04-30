@@ -61,6 +61,15 @@ register("parce.lang.ini.Ini.root",
     guesses = [(r'^\s*\[\w+\]', 0.5), (r"^\s*[#;]", 0.1)],
 )
 
+register("parce.lang.javascript.JavaScript.root",
+    name = "JavaScript",
+    desc = "JavaScript programming language",
+    aliases = ["js", "ecmascript"],
+    filenames = [("*.js", 1), ("*.jsm", .8)],
+    mimetypes = [("application/javascript", 1), ("application/x-javascript", 1),
+             ("text/x-javascript", 1), ("text/javascript", 1)],
+)
+
 register("parce.lang.json.Json.root",
     name = "JSON",
     desc = "JavaScript Object Notation format",
