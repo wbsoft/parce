@@ -26,6 +26,7 @@ Overview of all modules
    treebuilder.rst
    treebuilderutil.rst
    treedocument.rst
+   unicharclass.rst
    util.rst
    validate.rst
 

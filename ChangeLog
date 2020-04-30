@@ -4,6 +4,7 @@ ChangeLog
 
 current:
 
+- added unicharclass module
 - added using(), like in Pygments, it lexes a match with another lexicon
 - added Python console session parser (with prompts)
 - added basic GNU Texinfo parser
