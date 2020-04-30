@@ -78,7 +78,7 @@ class Char(Pattern):
         """Return an optimized regular expression string for the characters."""
         from . import regex
         negate = "" if self.positive else "^"
-        return '[' + negate + regex.make_charclass(self.chars) + ']'
+        return '[{}{}]'.format(negate, regex.make_charclass(self.chars))
 
 
 class ArgPattern(Pattern):
