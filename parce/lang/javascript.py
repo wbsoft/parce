@@ -53,8 +53,12 @@ class JavaScript(Language):
         yield words(JAVASCRIPT_CONSTANTS, prefix=r'\b', suffix=r'\b'), Name.Constant
         yield words(JAVASCRIPT_BUILTINS, prefix=r'\b', suffix=r'\b'), Name.Builtin
         yield words(JAVASCRIPT_PROTOTYPES, prefix=r'\b', suffix=r'\b'), Name.Builtin
-        yield fr'(\.)\s*({_I_})\b(?=(\s*\()?)', bygroup(Delimiter,
-            ifgroup(3, Name.Method, Name.Attribute))
+        yield fr'(\.)\s*({_I_})\b(?:\s*([\(\[]))?', bygroup(Delimiter,
+                mapgroup(3, {'(': Name.Method}, Name.Attribute), Delimiter), \
+            mapgroup(3, {'(': cls.call, '[': cls.index})
+        yield fr'({_I_})\b(?:\s*([\(\[]))?', bygroup(
+                mapgroup(2, {'(': Name.Function}, Name.Variable), Delimiter), \
+            mapgroup(2, {'(': cls.call, '[': cls.index})
         yield fr'{_I_}\b', bytext(str.isupper, Name.Variable, Name.Class)
         ## numerical values (recently, underscore support inside numbers was added)
         yield '0[oO](?:_?[0-7])+', Number
@@ -62,10 +66,51 @@ class JavaScript(Language):
         yield '0[xX](?:_?[0-9a-fA-F])+', Number
         yield r'(?:\.\d(?:_?\d)*|\d(?:_?\d)*(?:\.(?:\d(?:_?\d)*)?)?)(?:[eE][-+]\d(?:_?\d)*)?', Number
         yield r'\{', Bracket.Start, cls.scope
+        yield r'\[', Bracket.Start, cls.array
+        yield r'\(', Delimiter, cls.paren
 
     @lexicon
     def scope(cls):
         yield r'\}', Bracket.End, -1
+        yield from cls.root
+
+    @lexicon
+    def call(cls):
+        """name(...) syntax."""
+        yield r'\)', Delimiter, -1
+        yield from cls.root
+
+    @classmethod
+    def expression(cls):
+        """Stuff between ( ) or [ ]"""
+        yield r'\{', Bracket.Start, cls.object
+        yield from cls.root
+
+    @lexicon
+    def object(cls):
+        """An object (dictionary) { ... }."""
+        yield r'[:,]', Separator
+        yield r'\}', Bracket.End, -1
+        yield from cls.expression()
+
+    @lexicon
+    def array(cls):
+        """An array [ ... ]."""
+        yield r'[,]', Separator
+        yield r'\]', Bracket.End, -1
+        yield from cls.expression()
+
+    @lexicon
+    def paren(cls):
+        """An array [ ... ]."""
+        yield r'[,]', Separator
+        yield r'\)', Delimiter, -1
+        yield from cls.expression()
+
+    @lexicon
+    def index(cls):
+        """name[...] syntax."""
+        yield r'\]', Delimiter, -1
         yield from cls.root
 
     @lexicon
