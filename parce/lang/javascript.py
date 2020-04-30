@@ -45,13 +45,22 @@ class JavaScript(Language):
         yield '//', Comment, cls.singleline_comment
         yield r'/\*', Comment.Start, cls.multiline_comment
         yield fr'(const|let|var)\s+({_I_})\b', bygroup(Keyword, Name.Variable.Definition)
+        yield fr'(function)\s+({_I_})\b', bygroup(Keyword, Name.Function.Definition)
         yield fr'(new)\s+({_I_})\b', bygroup(Keyword, Name.Class.Definition)
         yield words(JAVASCRIPT_KEYWORDS, prefix=r'\b', suffix=r'\b'), Keyword
         yield words(JAVASCRIPT_DECLARATORS, prefix=r'\b', suffix=r'\b'), Keyword
         yield words(JAVASCRIPT_RESERVED_KEYWORDS, prefix=r'\b', suffix=r'\b'), Keyword.Reserved
         yield words(JAVASCRIPT_CONSTANTS, prefix=r'\b', suffix=r'\b'), Name.Constant
         yield words(JAVASCRIPT_BUILTINS, prefix=r'\b', suffix=r'\b'), Name.Builtin
-        yield words(JAVASCRIPT_PROTOTYPES, prefix=r'\b', suffix=r'\b'), Name.Class
+        yield words(JAVASCRIPT_PROTOTYPES, prefix=r'\b', suffix=r'\b'), Name.Builtin
+        yield fr'(\.)\s*({_I_})\b\s*(\()?', bygroup(Delimiter,
+            ifgroup(3, Name.Method, Name.Attribute), Delimiter)
+        yield fr'{_I_}\b', bytext(str.isupper, Name.Variable, Name.Class)
+        ## numerical values (recently, underscore support inside numbers was added)
+        yield '0[oO](?:_?[0-7])+', Number
+        yield '0[bB](?:_?[01])+', Number
+        yield '0[xX](?:_?[0-9a-fA-F])+', Number
+        yield r'(?:\.\d(?:_?\d)*|\d(?:_?\d)*(?:\.(?:\d(?:_?\d)*)?)?)(?:[eE][-+]\d(?:_?\d)*)?', Number
 
     @lexicon
     def string(cls):
