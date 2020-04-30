@@ -19,7 +19,7 @@
 
 
 """
-This module caches some information about unicode data.
+This helper module caches some information about unicode data.
 
 To update the information, simply run the file directly with python, it
 overwrites itself.
@@ -29,6 +29,17 @@ Available attributes:
 ``categories``
     a dictionary mapping unicode Category names to a character class string,
     usable in a regular expression. Special characters are already escaped.
+    This is useful because the default Python re module does not yet provide
+    a way to match unicode character classes by category, etc.
+
+Usage for example::
+
+    from parce.unicharclass import categories
+
+    # this pattern matches a word consisting of upper- and lowercase letters,
+    # starting with an uppercase letter
+    pattern = '[' + categories['Lu'] + '][' + categories['Lu'] + categories['Ll'] + ']*'
+
 
 """
 
