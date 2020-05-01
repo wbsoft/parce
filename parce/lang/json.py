@@ -119,7 +119,7 @@ class JsonTransform(Transformer):
     @transform
     def key(self, items):
         for i in items:
-            if not i.text:
+            if i.name == "string":
                 return i.obj
 
     @transform

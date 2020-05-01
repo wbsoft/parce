@@ -84,7 +84,7 @@ def transform_tree(tree, transformer):
                 break
         else:
             # TODO handle lexicons from other Language, create other Transformer
-            name = node.lexicon.lexicon.rules_func.__name__ # TEMP
+            name = node.lexicon.name
             obj = getattr(transformer, name)(items) # TODO failsafe
             # TODO cache the obj on the node??
             if stack:
