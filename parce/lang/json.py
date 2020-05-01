@@ -77,3 +77,69 @@ class Json(Language):
         yield r'\\(?:["\\/bfnrt]|u[0-9a-fA-F]{4})', String.Escape
         yield default_action, String
 
+
+### TEMP XXXXXXXXXXXX, first sketches for a tree transformer/evalutator
+from parce.transform import transform, transform_using, Transformer
+
+class JsonTransform(Transformer):
+
+    @transform
+    def root(self, items):
+        for value in self.values(items):
+            return value
+
+    def values(self, items):
+        for i in items:
+            if i.text:
+                if i.action == Number:
+                    n = float(i.text)
+                    if n.is_integer():
+                        n = int(n)
+                    yield n
+                elif i.action == Name.Constant:
+                    yield {
+                        'true': True,
+                        'false': False,
+                        'null': None,
+                    }[i.text]
+            else:
+                yield i.obj
+
+    @transform_using(dict)
+    def object(self, items):
+        key = None
+        for i in items:
+            if i.name == "key":
+                key = i.obj
+            elif i.name == "value":
+                if key is not None:
+                    yield key, i.obj
+                    key = None
+
+    @transform
+    def key(self, items):
+        for i in items:
+            if not i.text:
+                return i.obj
+
+    @transform
+    def value(self, items):
+        for value in self.values(items):
+            return value
+
+    @transform_using(list)
+    def array(self, items):
+        yield from self.values(items)
+
+    @transform_using(''.join)
+    def string(self, items):
+        for i in items[:-1]:
+            if i.text:
+                if i.action == String.Escape:
+                    if i.text[1] == 'u':
+                        yield chr(int(i.text[2:], 16))
+                    else:
+                        yield i.text[1]
+                else:
+                    yield i.text
+
