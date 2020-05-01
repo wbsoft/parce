@@ -42,6 +42,7 @@ class JavaScript(Language):
     def root(cls):
         yield r"'", String.Start, cls.string("'")
         yield r'"', String.Start, cls.string('"')
+        yield r'`', String.Start, cls.template_literal
         yield '//', Comment, cls.singleline_comment
         yield r'/\*', Comment.Start, cls.multiline_comment
         yield fr'(const|let|var)\s+({_I_})\b', bygroup(Keyword, Name.Variable.Definition)
@@ -121,6 +122,18 @@ class JavaScript(Language):
             r'|u\d{4}'
             r'|u\{[a-fA-F0-9]{1,5}\})'), String.Escape
         yield default_action, String
+
+    @lexicon
+    def template_literal(cls):
+        yield from cls.string('`')
+        yield r'\\[$`]', String.Escape
+        yield r'\$\{', Delimiter.Template, cls.template_literal_expression
+
+    @lexicon
+    def template_literal_expression(cls):
+        yield r'\}', Delimiter.Template, -1
+        yield from cls.root
+
 
     #------------------ comments -------------------------
     @lexicon(re_flags=re.MULTILINE)
