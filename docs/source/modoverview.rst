@@ -22,6 +22,7 @@ Overview of all modules
    target.rst
    theme.rst
    themes.rst
+   transform.rst
    tree.rst
    treebuilder.rst
    treebuilderutil.rst
