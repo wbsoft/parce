@@ -32,6 +32,28 @@ rules it creates are cached.
 
 This makes it possible to inherit from a Language class and only re-implement
 some lexicons, the others keep working as in the base class.
+
+Every Lexicon has the following attributes: (they are almost never needed, but
+anyway)
+
+``arg``
+    The argument the lexicon was called with (creating a derived Lexicon).
+    None for a normal lexicon.
+``name``
+    The short name (name of the method it was defined with)
+``fullname``
+    The short name with the Language name prepended, like
+    ``'Language.lexicon'``.
+``qualname``
+    The full name with the Language's module prepended, like
+    ``'parce.lang.xml.Xml.root'``.
+``language``
+    The Language class the lexicon belongs to.
+``lexicon``
+    The LexiconDescriptor the Lexicon was created by.
+``re_flags``
+    The ``re_flags`` set by the @lexicon decorator.
+
 """
 
 import itertools
@@ -93,6 +115,9 @@ class Lexicon:
         self.lexicon = lexicon
         self.language = language
         self.arg = arg
+        self.name = lexicon.rules_func.__name__
+        self.fullname = language.__name__ + '.' + self.name
+        self.qualname = language.__module__ + '.' + self.fullname
         self.__doc__ = lexicon.rules_func.__doc__
         self._derived = {}
         # lock is used when creating a derivate and/or the parse() instance function
@@ -164,14 +189,10 @@ class Lexicon:
         yield from self._rules
 
     def __repr__(self):
-        s = self.name()
+        s = self.fullname
         if self.arg is not None:
             s += '*'
         return s
-
-    def name(self):
-        """Return the 'Language.lexicon' name of this bound lexicon."""
-        return '.'.join((self.language.__name__, self.lexicon.rules_func.__name__))
 
     def __getattr__(self, name):
         """Create certain instance attributes when requested the first time.
