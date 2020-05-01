@@ -85,7 +85,12 @@ def transform_tree(tree, transformer):
         else:
             # TODO handle lexicons from other Language, create other Transformer
             name = node.lexicon.name
-            obj = getattr(transformer, name)(items) # TODO failsafe
+            try:
+                meth = getattr(transformer, name)
+            except AttributeError:
+                obj = None
+            else:
+                obj = meth(items)
             # TODO cache the obj on the node??
             if stack:
                 items = stack.pop()
