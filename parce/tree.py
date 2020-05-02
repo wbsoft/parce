@@ -939,3 +939,21 @@ class Context(list, Node):
                 token = token.group[0]
             return token
 
+
+def make_tokens(event, parent=None):
+    """Factory returning a tuple of one or more Token instances for the event.
+
+    The event is an Event namedtuple defined in the mod:`~parce.lexer` module.
+    If the event contains more than one token, _GroupToken instances are
+    created.
+
+    """
+    if len(event.tokens) > 1:
+        tokens = tuple(_GroupToken(parent, *t) for t in event.tokens)
+        for t in tokens:
+            t.group = tokens
+        return tokens
+    else:
+        return Token(parent, *event.tokens[0]),
+
+

@@ -49,15 +49,16 @@ threads.
 import threading
 
 from parce.lexer import Lexer
-from parce.tree import Context, Token, _GroupToken
 from parce.util import tokens
 from parce.target import TargetFactory
+from parce.tree import Context, make_tokens
 from parce.treebuilderutil import (
     BuildResult, ReplaceResult, Changes, get_prepared_lexer, new_tree)
 
 
 def build_tree(root_lexicon, text, pos=0):
     """Build and return a tree in one go."""
+    from parce.tree import Context, make_tokens # local is faster
     root = context = Context(root_lexicon, None)
     lexer = Lexer([root_lexicon])
     for e in lexer.events(text, pos):
@@ -67,13 +68,7 @@ def build_tree(root_lexicon, text, pos=0):
             for lexicon in e.target.push:
                 context = Context(lexicon, context)
                 context.parent.append(context)
-        if len(e.tokens) > 1:
-            tokens = tuple(_GroupToken(context, *t) for t in e.tokens)
-            for t in tokens:
-                t.group = tokens
-            context.extend(tokens)
-        else:
-            context.append(Token(context, *e.tokens[0]))
+        context.extend(make_tokens(e, context))
     return root
 
 
@@ -211,6 +206,8 @@ class TreeBuilder:
         gives the position change for the tokens that are reused.
 
         """
+        from parce.tree import Context, make_tokens # local is faster
+
         if root_lexicon is not False:
             start, removed, added = 0, 0, len(text)
         else:
@@ -279,12 +276,7 @@ class TreeBuilder:
                     for lexicon in e.target.push:
                         context = Context(lexicon, context)
                         context.parent.append(context)
-                if len(e.tokens) > 1:
-                    tokens = tuple(_GroupToken(context, *t) for t in e.tokens)
-                    for t in tokens:
-                        t.group = tokens
-                else:
-                    tokens = Token(context, *e.tokens[0]),
+                tokens = make_tokens(e, context)
                 if tail:
                     # handle tail
                     pos = tokens[0].pos - offset
