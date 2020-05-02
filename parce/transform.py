@@ -22,6 +22,27 @@ Transform/evaluate a tree or a stream of events.
 
 XXX This module is in the planning phase!!
 
+The basic idea of transformation is simple: for every Context in a tree
+structure, a method of a Transform instance is called. The method has the same
+name as the context's lexicon, and is called with the list of children of that
+context, where sub-contexts already have been replaced with the result of
+that context's lexicon's transformation method.
+So a Transform class can closely mimic a corresponding Language class.
+
+The actual task of transformation (evaluation) is performed by a Transformer.
+The Transformer has infrastructure to choose the Transform class based on the
+current Language.
+
+Using the :meth:`~Transformer.add_transform` method, you can assign a Transform
+instance to a Language class.
+
+TODO: it would be nice to be able to specify the Transform for another Language
+inside a Transform, just like a lexicon can target a lexicon from a different
+language. But I'm not yet sure how it would be specified.
+
+
+
+
 """
 
 import collections
@@ -61,7 +82,12 @@ class Transformer:
         self._transforms = {}
 
     def transform_text(self, root_lexicon, text, pos=0):
-        """Directly create an evaluated object from text using root_lexicon."""
+        """Directly create an evaluated object from text using root_lexicon.
+
+        The transform methods get intermediate tokens, but *no* tree is built
+        and the tokens don't have a parent.
+
+        """
         from parce.tree import make_tokens  # local lookup is faster
 
         curlang = root_lexicon.language
