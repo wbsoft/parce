@@ -90,18 +90,18 @@ class JsonTransform(Transform):
     def values(self, items):
         """Yield values like the Json.values() classmethod generates."""
         for i in items:
-            if i.token:
-                if i.token.action == Number:
-                    n = float(i.token.text)
+            if i.is_token:
+                if i.action == Number:
+                    n = float(i.text)
                     if n.is_integer():
                         n = int(n)
                     yield n
-                elif i.token.action == Name.Constant:
+                elif i.action == Name.Constant:
                     yield {
                         'true': True,
                         'false': False,
                         'null': None,
-                    }[i.token.text]
+                    }[i.text]
             else:
                 yield i.obj
 
@@ -109,17 +109,18 @@ class JsonTransform(Transform):
         d = {}
         key = None
         for i in items:
-            if i.name == "key":
-                key = i.obj
-            elif i.name == "value":
-                if key is not None:
-                    d[key] = i.obj
-                    key = None
+            if not i.is_token:
+                if i.lexicon.name == "key":
+                    key = i.obj
+                elif i.lexicon.name == "value":
+                    if key is not None:
+                        d[key] = i.obj
+                        key = None
         return d
 
     def key(self, items):
         for i in items:
-            if i.name == "string":
+            if not i.is_token and i.lexicon.name == "string":
                 return i.obj
 
     def value(self, items):
@@ -132,12 +133,12 @@ class JsonTransform(Transform):
     def string(self, items):
         def gen():
             for i in items[:-1]:
-                if i.token:
-                    if i.token.action == String.Escape:
-                        if i.token.text[1] == 'u':
-                            yield chr(int(i.token.text[2:], 16))
+                if i.is_token:
+                    if i.action == String.Escape:
+                        if i.text[1] == 'u':
+                            yield chr(int(i.text[2:], 16))
                         else:
-                            yield i.token.text[1]
+                            yield i.text[1]
                     else:
-                        yield i.token.text
+                        yield i.text
         return ''.join(gen())
