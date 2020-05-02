@@ -128,13 +128,12 @@ class Transformer:
                     item = get_object_item(items)
                     lexicon, items = stack.pop()
                     items.append(item)
-
                 for l in e.target.push:
                     stack.append((lexicon, items))
                     items = []
                     lexicon = l
-
             items.extend(make_tokens(e))
+
         # unwind
         while True:
             item = get_object_item(items)
@@ -142,7 +141,6 @@ class Transformer:
                 return item.obj
             lexicon, items = stack.pop()
             items.append(item)
-
 
     def transform_tree(self, tree):
         """Evaluate a tree structure."""
