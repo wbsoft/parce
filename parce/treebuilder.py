@@ -358,6 +358,7 @@ class TreeBuilder:
                 n.parent = root
             self.replace_nodes(self.root, slice(None), tree)
             self.replace_root_lexicon(tree.lexicon)
+            self.invalidate_context(self.root)
 
         else:
 
@@ -411,6 +412,7 @@ class TreeBuilder:
                     for n in t[1:]:
                         n.parent = c
                     self.replace_nodes(c, slice(i + 1, slice_end), t[1:])
+                    self.invalidate_context(c)
                     slice_end = None
                     t = t[0]
                     c = c[i]
@@ -418,12 +420,16 @@ class TreeBuilder:
                 for n in t:
                     n.parent = c
                 self.replace_nodes(c, slice(i + 1, slice_end), t)
+                self.invalidate_context(c)
             else:
                 self.replace_nodes(context, slice(slice_end), tree)
+                self.invalidate_context(context)
 
             if offset:
                 for p, i in context.ancestors_with_index():
                     self.replace_pos(p, slice(i + 1, None), offset)
+            for c in context.ancestors():
+                self.invalidate_context(c)
 
         return ReplaceResult(start, end + offset, lexicons)
 
@@ -454,6 +460,19 @@ class TreeBuilder:
         """
         for t in tokens(context[slice_]):
             t.pos += offset
+
+    def invalidate_context(self, context):
+        """Called when child elements of this context are removed or added,
+        of when a child context was invalidated.
+
+        The default implementation deletes the ``data`` attribute of the
+        Context, if it exists.
+
+        """
+        try:
+            del context.data
+        except AttributeError:
+            pass
 
     def get_root(self, wait=False, *args, **kwargs):
         """Return the root element of the completed tree.
