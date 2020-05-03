@@ -201,7 +201,7 @@ class Observable:
 
         The ``event`` should be a string or any hashable object that identifies
         the event. The ``priority`` determines the order the functions are
-        called. Lower numbers are called first. If ``once`` is set to True; the
+        called. Lower numbers are called first. If ``once`` is set to True, the
         function is called once and then removed from the list of callbacks. If
         ``prepend_self`` is True, the callback is called with the treebuilder
         itself as first argument.

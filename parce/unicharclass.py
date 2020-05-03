@@ -29,8 +29,8 @@ Available attributes:
 ``categories``
     a dictionary mapping unicode Category names to a character class string,
     usable in a regular expression. Special characters are already escaped.
-    This is useful because the default Python re module does not yet provide
-    a way to match unicode character classes by category, etc.
+    This is useful because the default Python :mod:`re` module does not yet
+    provide a way to match unicode character classes by category, etc.
 
 Usage for example::
 
