@@ -142,6 +142,90 @@ class Dispatcher:
         return func
 
 
+class Observable:
+    """Simple base class for objects that need to announce events.
+
+    Use :meth:`connect` to add a callable to be called when a certain event
+    occurs.
+
+    To announce an event from inside methods, use :meth:`emit`. In your
+    documentation you should specify *which* arguments are used for *which*
+    events; to keep this class simple and fast, no checking is performed
+    whatsoever.
+
+    """
+    def __init__(self):
+        self._callbacks = {}
+
+    def connect(self, event, func, once=False, prepend_self=False, priority=0):
+        """Register a function to be called when a certain event occurs.
+
+        The ``event`` should be a string or any hashable object that identifies
+        the event. The ``priority`` determines the order the functions are
+        called. Lower numbers are called first. If ``once`` is set to True; the
+        function is called once and then removed from the list of callbacks. If
+        ``prepend_self`` is True, the callback is called with the treebuilder
+        itself as first argument.
+
+        """
+        self._callbacks.setdefault(event, {})[func] = (once, prepend_self, priority)
+
+    def disconnect(self, event, func):
+        """Remove a previously registered callback function."""
+        try:
+            del self._callbacks[event][func]
+            if not self._callbacks[event]:
+                del self._callbacks[event]
+        except KeyError:
+            pass
+
+    def disconnect_all(self, event=None):
+        """Disconnect all functions (from the event).
+
+        If event is None, disconnects all connected functions from all events.
+
+        """
+        if event is None:
+            self._callbacks.clear()
+        else:
+            try:
+                self._callbacks[event].clear()
+            except KeyError:
+                pass
+
+    def has_connections(self, event):
+        """Return True when there is at least one callback registered for the event.
+
+        This can be used before performing some task, the task maybe then can
+        be optimized because we know nobody needs the events.
+
+        """
+        return event in self._callbacks
+
+    def is_connected(self, event, func):
+        """Return True if func is connected to event."""
+        try:
+            return func in self._callbacks[event]
+        except KeyError:
+            return False
+
+    def emit(self, event, *args, **kwargs):
+        """Call all callbacks for the event."""
+        try:
+            d = self._callbacks[event]
+        except KeyError:
+            return
+        # TODO: do the sorting when connections are made/removed
+        callbacks = sorted(((func, *prefs) for func, prefs in d.items()),
+                           key=operator.itemgetter(3))
+        for func, once, prep_self, prio in callbacks:
+            if once:
+                self.disconnect(event, func)
+            if prep_self:
+                args = (self, *args)
+            func(*args, **kwargs)
+
+
 class Symbol:
     """An unique object that has a name."""
     __slots__ = ('_name_',)
