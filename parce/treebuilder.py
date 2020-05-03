@@ -108,10 +108,10 @@ class TreeBuilder(Observable):
     No other variables or state are kept, so if you don't need the above
     information anymore, you can throw away the TreeBuilder after use.
 
-    During the building, the TreeBuilder emits certain events you can subscribe
-    to, using the :meth:`~parce.util.Observable.connect` method provided by the
-    :class:`~parce.util.Observable` class that's mixed into this TreeBuilder
-    class.
+    During the building process, the TreeBuilder emits certain events you can
+    subscribe to, using the :meth:`~parce.util.Observable.connect` method
+    provided by the :class:`~parce.util.Observable` class that's mixed into
+    this TreeBuilder class.
 
     The following events are emitted, with following arguments:
 
@@ -134,10 +134,10 @@ class TreeBuilder(Observable):
     peek_threshold = 0  #: set to a value > 0 to get :meth:`peek` called during building
 
     def __init__(self, root_lexicon=None):
+        super().__init__()
         self.root = Context(root_lexicon, None)
         self.busy = False
         self.changes = []
-        self._callbacks = {}
 
     def tree(self, text):
         """Convenience method to build a tree and return the root node."""
@@ -515,7 +515,7 @@ class TreeBuilder(Observable):
             if callback:
                 if args or kwargs:
                     callback = lambda: callback(*args, **kwargs)
-                self.add_callback("finished", callback, True)
+                self.connect("finished", callback, True)
             if not wait:
                 return
             self.wait()
@@ -689,4 +689,10 @@ class BackgroundTreeBuilder(TreeBuilder):
         job = self.job
         if job:
             job.join()
+
+    def process_finished(self):
+        """Reimplemented to clear the job attribute."""
+        self.job = None
+        super().process_finished()
+
 
