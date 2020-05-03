@@ -638,13 +638,14 @@ class TreeBuilder:
         self.callback("updated", self.start, self.end)
         self.callback("finished")
 
-    def add_callback(self, event, func, once=False, priority=0):
+    def add_callback(self, event, func, once=False, prepend_self=False, priority=0):
         """Register a function to be called when a certain event occurs.
 
         The ``event`` types are listed below. The ``priority`` determines the
         order the functions are called. Lower numbers are called first. If
         ``once`` is set to True; the function is called once and then removed
-        from the list of callbacks.
+        from the list of callbacks. If ``prepend_self`` is True, the callback
+        is called with the treebuilder itself as first argument.
 
         A registered event handler is called with arguments depending on the
         event:
@@ -661,7 +662,7 @@ class TreeBuilder:
             the handler is called with the Context that is invalidated
 
         """
-        self._callbacks.setdefault(event, {})[func] = (priority, once)
+        self._callbacks.setdefault(event, {})[func] = (once, prepend_self, priority)
 
     def remove_callback(self, event, func):
         """Remove a previously registered callback function."""
@@ -687,12 +688,13 @@ class TreeBuilder:
             d = self._callbacks[event]
         except KeyError:
             return
-        callbacks = sorted(((func, once, prio)
-                            for func, (prio, once) in d.items()),
-                           key=operator.itemgetter(2))
-        for func, once, prio in callbacks:
+        callbacks = sorted(((func, *prefs) for func, prefs in d.items()),
+                           key=operator.itemgetter(3))
+        for func, once, prep_self, prio in callbacks:
             if once:
                 self.remove_callback(event, func)
+            if prep_self:
+                args = (self, *args)
             func(*args, **kwargs)
 
 
