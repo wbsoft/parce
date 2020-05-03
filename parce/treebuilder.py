@@ -49,7 +49,7 @@ import operator
 import threading
 
 from parce.lexer import Lexer
-from parce.util import tokens
+from parce.util import Observable, tokens
 from parce.target import TargetFactory
 from parce.tree import Context, make_tokens
 from parce.treebuilderutil import (
@@ -72,7 +72,7 @@ def build_tree(root_lexicon, text, pos=0):
     return root
 
 
-class TreeBuilder:
+class TreeBuilder(Observable):
     """Build a tree from parsing the text.
 
     The root node of the tree is in the ``root`` instance attribute.
@@ -107,6 +107,24 @@ class TreeBuilder:
 
     No other variables or state are kept, so if you don't need the above
     information anymore, you can throw away the TreeBuilder after use.
+
+    During the building, the TreeBuilder emits certain events you can subscribe
+    to, using the :meth:`~parce.util.Observable.connect` method provided by the
+    :class:`~parce.util.Observable` class that's mixed into this TreeBuilder
+    class.
+
+    The following events are emitted, with following arguments:
+
+    ``started``:
+        the handler is called without arguments
+    ``finished``:
+        the handler is called without arguments
+    ``updated``:
+        the handler is called with two arguments: ``start``, ``end``
+    ``peek``:
+        the handler is called with two arguments: ``start``, ``tree``
+    ``invalidate``:
+        the handler is called with the Context that is invalidated
 
     """
     start = 0
@@ -470,7 +488,7 @@ class TreeBuilder:
         for the ``invalidate`` event, see :meth:`add_callback`.
 
         """
-        self.callback("invalidate", context)
+        self.emit("invalidate", context)
 
     def get_root(self, wait=False, callback=None, args=(), kwargs={}):
         """Return the root element of the completed tree.
@@ -607,7 +625,7 @@ class TreeBuilder:
         ``peek`` event, see :meth:`add_callback`.
 
         """
-        self.callback("peek", start, tree)
+        self.emit("peek", start, tree)
 
     def lock(self, acquire):
         """Acquire lock (True) or release lock (False). Does nothing by default.
@@ -625,7 +643,7 @@ class TreeBuilder:
         ``started`` event, see :meth:`add_callback`.
 
         """
-        self.callback("started")
+        self.emit("started")
 
     def process_finished(self):
         """Called when tree building is done.
@@ -635,67 +653,8 @@ class TreeBuilder:
         :meth:`add_callback`.
 
         """
-        self.callback("updated", self.start, self.end)
-        self.callback("finished")
-
-    def add_callback(self, event, func, once=False, prepend_self=False, priority=0):
-        """Register a function to be called when a certain event occurs.
-
-        The ``event`` types are listed below. The ``priority`` determines the
-        order the functions are called. Lower numbers are called first. If
-        ``once`` is set to True; the function is called once and then removed
-        from the list of callbacks. If ``prepend_self`` is True, the callback
-        is called with the treebuilder itself as first argument.
-
-        A registered event handler is called with arguments depending on the
-        event:
-
-        ``started``:
-            the handler is called without arguments
-        ``finished``:
-            the handler is called without arguments
-        ``updated``:
-            the handler is called with two arguments: ``start``, ``end``
-        ``peek``:
-            the handler is called with two arguments: ``start``, ``tree``
-        ``invalidate``:
-            the handler is called with the Context that is invalidated
-
-        """
-        self._callbacks.setdefault(event, {})[func] = (once, prepend_self, priority)
-
-    def remove_callback(self, event, func):
-        """Remove a previously registered callback function."""
-        try:
-            del self._callbacks[event][func]
-            if not self._callbacks[event]:
-                del self._callbacks[event]
-        except KeyError:
-            pass
-
-    def has_callback(self, event):
-        """Return True when there is at least one callback registered for the event.
-
-        This can be used before performing some task, the task maybe then can
-        be optimized because we know nobody needs the events.
-
-        """
-        return event in self._callbacks
-
-    def callback(self, event, *args, **kwargs):
-        """Call all callbacks for the event."""
-        try:
-            d = self._callbacks[event]
-        except KeyError:
-            return
-        callbacks = sorted(((func, *prefs) for func, prefs in d.items()),
-                           key=operator.itemgetter(3))
-        for func, once, prep_self, prio in callbacks:
-            if once:
-                self.remove_callback(event, func)
-            if prep_self:
-                args = (self, *args)
-            func(*args, **kwargs)
+        self.emit("updated", self.start, self.end)
+        self.emit("finished")
 
 
 class BackgroundTreeBuilder(TreeBuilder):
@@ -715,8 +674,6 @@ class BackgroundTreeBuilder(TreeBuilder):
         super().__init__(root_lexicon)
         self.job = None
         self._lock = threading.Lock()
-        self.updated_callbacks = []
-        self.finished_callbacks = []
 
     def lock(self, acquire):
         """Reimplemented to actually lock/unlock."""
