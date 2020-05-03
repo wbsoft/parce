@@ -387,6 +387,9 @@ class TreeBuilder(Observable):
         can be reimplemented to get fine-grained monitoring of and control over
         the tree-replacing process.
 
+        Additionally, this method calls :meth:`invalidate_context` with the
+        youghest Context that had children removed or added.
+
         """
         tree, start, end, offset, lexicons = result
 
@@ -451,7 +454,6 @@ class TreeBuilder(Observable):
                     for n in t[1:]:
                         n.parent = c
                     self.replace_nodes(c, slice(i + 1, slice_end), t[1:])
-                    self.invalidate_context(c)
                     slice_end = None
                     t = t[0]
                     c = c[i]
@@ -467,8 +469,6 @@ class TreeBuilder(Observable):
             if offset:
                 for p, i in context.ancestors_with_index():
                     self.replace_pos(p, slice(i + 1, None), offset)
-            for c in context.ancestors():
-                self.invalidate_context(c)
 
         return ReplaceResult(start, end + offset, lexicons)
 
@@ -501,8 +501,12 @@ class TreeBuilder(Observable):
             t.pos += offset
 
     def invalidate_context(self, context):
-        """Called when child elements of this context are removed or added,
-        of when a child context was invalidated.
+        """Called with the younghest Context that had children are removed or
+        added.
+
+        This means that the meaning of this context probably has changed, for
+        example when you want to transform the context to some other data
+        structure, and that the ancestors also need to be invalidated.
 
         The default implementation of this method emits the ``invalidate``
         event, see :meth:`~parce.util.Observable.connect`.
