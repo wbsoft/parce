@@ -25,6 +25,7 @@ This module only depends on the Python standard library.
 
 """
 
+import bisect
 import re
 import codecs
 import functools
@@ -142,6 +143,44 @@ class Dispatcher:
         return func
 
 
+class _Observer:
+    """Helper for Observable class.
+
+    The magic lt/gt methods are to help with sorting on priority and the eq/ne
+    methods to see if the function already is added to the list of slots.
+
+    """
+    __slots__ = ('func', 'once', 'priority', 'call')
+    def __init__(self, func, once=None, prepend_self=False, priority=0):
+        self.func = func
+        self.once = once
+        self.priority = priority
+        if prepend_self:
+            self.call = func    # Observable calls with self prepended
+        else:
+            self.call = lambda self, *args, **kwargs: func(*args, **kwargs)
+
+    def __eq__(self, other):
+        if type(other) == type(self):
+            return self.func == other.func
+        return super().__eq__(other)
+
+    def __ne__(self, other):
+        if type(other) == type(self):
+            return self.func != other.func
+        return super().__ne__(other)
+
+    def __lt__(self, other):
+        if type(other) == type(self):
+            return self.priority < other.priority
+        return super().__lt__(other)
+
+    def __gt__(self, other):
+        if type(other) == type(self):
+            return self.priority > other.priority
+        return super().__gt__(other)
+
+
 class Observable:
     """Simple base class for objects that need to announce events.
 
@@ -168,16 +207,24 @@ class Observable:
         itself as first argument.
 
         """
-        self._callbacks.setdefault(event, {})[func] = (once, prepend_self, priority)
+        observer = _Observer(func, once, prepend_self, priority)
+        slots = self._callbacks.setdefault(event, [])
+        if observer not in slots:
+            bisect.insort_right(slots, observer)
 
     def disconnect(self, event, func):
         """Remove a previously registered callback function."""
         try:
-            del self._callbacks[event][func]
-            if not self._callbacks[event]:
-                del self._callbacks[event]
+            slots = self._callbacks[event]
         except KeyError:
-            pass
+            return
+        observer = _Observer(func)
+        try:
+            slots.remove(observer)
+        except ValueError:
+            return
+        if not slots:
+            del self._callbacks[event]
 
     def disconnect_all(self, event=None):
         """Disconnect all functions (from the event).
@@ -189,7 +236,7 @@ class Observable:
             self._callbacks.clear()
         else:
             try:
-                self._callbacks[event].clear()
+                del self._callbacks[event]
             except KeyError:
                 pass
 
@@ -205,25 +252,24 @@ class Observable:
     def is_connected(self, event, func):
         """Return True if func is connected to event."""
         try:
-            return func in self._callbacks[event]
+            slots = self._callbacks[event]
         except KeyError:
             return False
+        return _Observer(func) in slots
 
     def emit(self, event, *args, **kwargs):
         """Call all callbacks for the event."""
         try:
-            d = self._callbacks[event]
+            slots = self._callbacks[event]
         except KeyError:
             return
-        # TODO: do the sorting when connections are made/removed
-        callbacks = sorted(((func, *prefs) for func, prefs in d.items()),
-                           key=operator.itemgetter(3))
-        for func, once, prep_self, prio in callbacks:
-            if once:
-                self.disconnect(event, func)
-            if prep_self:
-                args = (self, *args)
-            func(*args, **kwargs)
+        disconnect = []
+        for i, observer in enumerate(slots):
+            observer.call(self, *args, **kwargs)
+            if observer.once:
+                disconnect.append(i)
+        for i in reversed(disconnect):
+            del slots[i]
 
 
 class Symbol:
