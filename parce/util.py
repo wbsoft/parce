@@ -209,8 +209,11 @@ class Observable:
         """
         observer = _Observer(func, once, prepend_self, priority)
         slots = self._callbacks.setdefault(event, [])
-        if observer not in slots:
-            bisect.insort_right(slots, observer)
+        try:
+            slots.remove(observer)
+        except ValueError:
+            pass
+        bisect.insort_right(slots, observer)
 
     def disconnect(self, event, func):
         """Remove a previously registered callback function."""
