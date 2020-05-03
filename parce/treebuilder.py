@@ -115,16 +115,36 @@ class TreeBuilder(Observable):
 
     The following events are emitted, with following arguments:
 
-    ``started``:
-        the handler is called without arguments
-    ``finished``:
-        the handler is called without arguments
-    ``updated``:
-        the handler is called with two arguments: ``start``, ``end``
-    ``peek``:
+    ``"started"``:
+        emitted when a (re)build starts; the handler is called without
+        arguments
+
+    ``"finished"``:
+        emitted when a (re)build has finished; the handler is called without
+        arguments
+
+    ``"updated"``:
+        emitted when a (re)build has finished; the handler is called with two
+        arguments: ``start``, ``end``, that denote the updated range
+
+    ``"peek"``:
+        emitted by the default implementation of the :meth:`peek` method,
         the handler is called with two arguments: ``start``, ``tree``
-    ``invalidate``:
-        the handler is called with the Context that is invalidated
+
+    ``"invalidate"``:
+        emitted by the default implementation of the :meth:`invalidate_context`
+        method, the handler is called with the Context that is invalidated
+
+    For example, to get notified when a build process starts::
+
+        >>> b = TreeBuilder(MyLang.root)
+        >>> def hi_there():
+        ...     print("started")
+        ...
+        >>> b.connect("started", hi_there)
+        >>> b.rebuild("some boring text")
+        started
+        >>>
 
     """
     start = 0
@@ -484,8 +504,8 @@ class TreeBuilder(Observable):
         """Called when child elements of this context are removed or added,
         of when a child context was invalidated.
 
-        The default implementation of this method calls the callbacks
-        for the ``invalidate`` event, see :meth:`add_callback`.
+        The default implementation of this method emits the ``invalidate``
+        event, see :meth:`~parce.util.Observable.connect`.
 
         """
         self.emit("invalidate", context)
@@ -621,8 +641,8 @@ class TreeBuilder(Observable):
         peek() to be called a second time. (A build is restarted when there are
         new changes close to the position the build originally started.)
 
-        The default implementation of this method calls the callbacks for the
-        ``peek`` event, see :meth:`add_callback`.
+        The default implementation of this method emits the ``peek`` event, see
+        :meth:`~parce.util.Observable.connect`.
 
         """
         self.emit("peek", start, tree)
@@ -639,8 +659,8 @@ class TreeBuilder(Observable):
     def process_started(self):
         """Called at the start ot the tree building process.
 
-        The default implementation of this method calls the callbacks for the
-        ``started`` event, see :meth:`add_callback`.
+        The default implementation of this method emits the ``started`` event,
+        see :meth:`~parce.util.Observable.connect`.
 
         """
         self.emit("started")
@@ -648,9 +668,9 @@ class TreeBuilder(Observable):
     def process_finished(self):
         """Called when tree building is done.
 
-        The default implementation of this method calls the callbacks for the
-        ``updated(start, end)`` and ``finished`` events, see
-        :meth:`add_callback`.
+        The default implementation of this method emits the ``updated(start,
+        end)`` and ``finished`` events, see
+        :meth:`~parce.util.Observable.connect`.
 
         """
         self.emit("updated", self.start, self.end)
