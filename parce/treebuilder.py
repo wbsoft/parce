@@ -45,7 +45,7 @@ threads.
 
 """
 
-
+import operator
 import threading
 
 from parce.lexer import Lexer
@@ -119,6 +119,7 @@ class TreeBuilder:
         self.root = Context(root_lexicon, None)
         self.busy = False
         self.changes = []
+        self._callbacks = {}
 
     def tree(self, text):
         """Convenience method to build a tree and return the root node."""
@@ -465,27 +466,38 @@ class TreeBuilder:
         """Called when child elements of this context are removed or added,
         of when a child context was invalidated.
 
-        The default implementation deletes the ``data`` attribute of the
-        Context, if it exists.
+        The default implementation of this method calls the callbacks
+        for the ``invalidate`` event, see :meth:`add_callback`.
 
         """
-        try:
-            del context.data
-        except AttributeError:
-            pass
+        self.callback("invalidate", context)
 
-    def get_root(self, wait=False, *args, **kwargs):
+    def get_root(self, wait=False, callback=None, args=(), kwargs={}):
         """Return the root element of the completed tree.
 
         This is simply the ``root`` instance attribute, but this method only
         returns the tree when the ``busy`` attribute is False.
 
-        If tree building is busy, returns None or calls :meth:`wait` if
-        ``wait`` is True. The default implementation ignores the other
-        arguments.
+        If wait is True, this call blocks until tokenizing is done, and the
+        full tree is returned. If wait is False, None is returned if the tree
+        is still busy being built.
+
+        If a callback is given and tokenizing is still busy, that callback is
+        called once when tokenizing is ready. If given, args and kwargs are the
+        arguments the callback is called with, defaulting to () and {},
+        respectively.
+
+        Note that, for the lifetime of a TreeBuilder, the root element is always
+        the same. The root element is also accessible in the `root` attribute.
+        But using this method you can be sure that you are dealing with a
+        complete and fully intact tree.
 
         """
         if self.busy:
+            if callback:
+                if args or kwargs:
+                    callback = lambda: callback(*args, **kwargs)
+                self.add_callback("finished", callback, True)
             if not wait:
                 return
             self.wait()
@@ -591,11 +603,11 @@ class TreeBuilder:
         peek() to be called a second time. (A build is restarted when there are
         new changes close to the position the build originally started.)
 
-        The default implementation of this method does nothing; the default
-        value of the  ``peek_threshold`` attribute is 0.
+        The default implementation of this method calls the callbacks for the
+        ``peek`` event, see :meth:`add_callback`.
 
         """
-        pass
+        self.callback("peek", start, tree)
 
     def lock(self, acquire):
         """Acquire lock (True) or release lock (False). Does nothing by default.
@@ -609,18 +621,79 @@ class TreeBuilder:
     def process_started(self):
         """Called at the start ot the tree building process.
 
-        Does nothing by default.
+        The default implementation of this method calls the callbacks for the
+        ``started`` event, see :meth:`add_callback`.
 
         """
-        pass
+        self.callback("started")
 
     def process_finished(self):
         """Called when tree building is done.
 
-        Does nothing by default.
+        The default implementation of this method calls the callbacks for the
+        ``updated(start, end)`` and ``finished`` events, see
+        :meth:`add_callback`.
 
         """
-        pass
+        self.callback("updated", self.start, self.end)
+        self.callback("finished")
+
+    def add_callback(self, event, func, once=False, priority=0):
+        """Register a function to be called when a certain event occurs.
+
+        The ``event`` types are listed below. The ``priority`` determines the
+        order the functions are called. Lower numbers are called first. If
+        ``once`` is set to True; the function is called once and then removed
+        from the list of callbacks.
+
+        A registered event handler is called with arguments depending on the
+        event:
+
+        ``started``:
+            the handler is called without arguments
+        ``finished``:
+            the handler is called without arguments
+        ``updated``:
+            the handler is called with two arguments: ``start``, ``end``
+        ``peek``:
+            the handler is called with two arguments: ``start``, ``tree``
+        ``invalidate``:
+            the handler is called with the Context that is invalidated
+
+        """
+        self._callbacks.setdefault(event, {})[func] = (priority, once)
+
+    def remove_callback(self, event, func):
+        """Remove a previously registered callback function."""
+        try:
+            del self._callbacks[event][func]
+            if not self._callbacks[event]:
+                del self._callbacks[event]
+        except KeyError:
+            pass
+
+    def has_callback(self, event):
+        """Return True when there is at least one callback registered for the event.
+
+        This can be used before performing some task, the task maybe then can
+        be optimized because we know nobody needs the events.
+
+        """
+        return event in self._callbacks
+
+    def callback(self, event, *args, **kwargs):
+        """Call all callbacks for the event."""
+        try:
+            d = self._callbacks[event]
+        except KeyError:
+            return
+        callbacks = sorted(((func, once, prio)
+                            for func, (prio, once) in d.items()),
+                           key=operator.itemgetter(2))
+        for func, once, prio in callbacks:
+            if once:
+                self.remove_callback(event, func)
+            func(*args, **kwargs)
 
 
 class BackgroundTreeBuilder(TreeBuilder):
@@ -632,14 +705,6 @@ class BackgroundTreeBuilder(TreeBuilder):
 
     You can continue adding changes while previous changes are processed;
     the tree builder will immediately adapt to the new changes.
-
-    You can add callbacks to the ``updated_callbacks`` attribute (using
-    ``add_build_updated_callback()``) that are called everytime the whole
-    document is tokenized.
-
-    You can also add callbacks to the ``finished_callbacks`` attribute, using
-    ``add_finished_callback()``; those are called once when all pending changes
-    are processed and then forgotten again.
 
     To be sure you get a completed tree, call ``get_root(True)``.
 
@@ -660,84 +725,9 @@ class BackgroundTreeBuilder(TreeBuilder):
         self.job = threading.Thread(target=super().start_processing)
         self.job.start()
 
-    def process_finished(self):
-        """Reimplemented to clear the job attribute and call the callbacks."""
-        self.job = None
-        for cb in self.updated_callbacks:
-            cb(self.start, self.end)
-        while self.finished_callbacks:
-            callback, args, kwargs = self.finished_callbacks.pop()
-            callback(*args, **kwargs)
-
     def wait(self):
         """Reimplemented to await our background thread if active."""
         job = self.job
         if job:
             job.join()
-
-    def get_root(self, wait=False, callback=None, args=None, kwargs=None):
-        """Get the root element of the completed tree.
-
-        If wait is True, this call blocks until tokenizing is done, and the
-        full tree is returned. If wait is False, None is returned if the tree
-        is still busy being built.
-
-        If a callback is given and tokenizing is still busy, that callback is
-        called once when tokenizing is ready. If given, args and kwargs are the
-        arguments the callback is called with, defaulting to () and {},
-        respectively.
-
-        Note that, for the lifetime of a TreeBuilder, the root element is always
-        the same. The root element is also accessible in the `root` attribute.
-        But using this method you can be sure that you are dealing with a
-        complete and fully intact tree.
-
-        """
-        if not self.job:
-            return self.root
-        if callback:
-            self.add_finished_callback(callback, args, kwargs)
-        if wait:
-            self.wait()
-            return self.root
-
-    def add_build_updated_callback(self, callback):
-        """Add a callback to be called when the whole text is tokenized.
-
-        The callback is called with two arguments (start, end) denoting
-        the range in the text that was tokenized again.
-
-        """
-        if callback not in self.updated_callbacks:
-            self.updated_callbacks.append(callback)
-
-    def remove_build_updated_callback(self, callback):
-        """Remove a previously registered callback to be called when the whole text is tokenized."""
-        if callback in self.updated_callbacks:
-            self.updated_callbacks.remove(callback)
-
-    def add_finished_callback(self, callback, args=None, kwargs=None):
-        """Add a callback to be called when tokenizing finishes.
-
-        This callback will be called once, directly after being called
-        it will be forgotten.
-
-        """
-        if args is None:
-            args = ()
-        if kwargs is None:
-            kwargs = {}
-        cb = (callback, args, kwargs)
-        if cb not in self.finished_callbacks:
-            self.finished_callbacks.append(cb)
-
-    def remove_finished_callback(self, callback, args=None, kwargs=None):
-        """Remove a callback that was registered to be called when tokenizing finishes."""
-        if args is None:
-            args = ()
-        if kwargs is None:
-            kwargs = {}
-        cb = (callback, args, kwargs)
-        if cb in self.finished_callbacks:
-            self.finished_callbacks.remove(cb)
 
