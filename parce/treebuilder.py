@@ -119,6 +119,12 @@ class TreeBuilder(Observable):
         emitted when a (re)build starts; the handler is called without
         arguments
 
+    ``"replace"``:
+        emitted just before the tree actually changes (while the new tree is
+        being built, the tree is still unchanged and accessible, but between
+        the ``"replace"`` and ``"finished"`` events the tree is in an
+        inconsistent state)
+
     ``"finished"``:
         emitted when a (re)build has finished; the handler is called without
         arguments
@@ -133,7 +139,8 @@ class TreeBuilder(Observable):
 
     ``"invalidate"``:
         emitted by the default implementation of the :meth:`invalidate_context`
-        method, the handler is called with the Context that is invalidated
+        method, the handler is called with the Context that needs to be
+        invalidated
 
     For example, to get notified when a build process starts::
 
@@ -596,6 +603,7 @@ class TreeBuilder(Observable):
             yield "build"
             result = self.build_new_tree(c.text, c.root_lexicon, c.start, c.removed, c.added)
             yield "replace"
+            self.emit("replace")
             r = self.replace_tree(result)
             start = r.start if start == -1 else min (start, r.start)
             end = r.end if end == -1 else max(c.new_position(end), r.end)
