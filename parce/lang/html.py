@@ -77,8 +77,7 @@ class XHtml(Xml):
     @lexicon
     def css_style_attribute(cls):
         """Stuff inside style=" ... " attrbute."""
-        yield r'"', String, -1
-        yield from Css.inline
+        yield r'([^"]*)(")', bygroup(using(Css.inline), String), -1
 
 
 class Html(XHtml):
