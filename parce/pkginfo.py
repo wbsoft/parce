@@ -35,7 +35,7 @@ Version = collections.namedtuple("Version", "major minor patch")
 name = "parce"
 
 #: the current version
-version = Version(0, 8, 5)
+version = Version(0, 9, 0)
 version_suffix = ""
 version_string = "{}.{}.{}".format(*version) + version_suffix
 
