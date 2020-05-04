@@ -220,6 +220,46 @@ class Observable:
     events; to keep this class simple and fast, no checking is performed
     whatsoever.
 
+    Example::
+
+        >>> o = Observable()
+        >>>
+        >>> def slot(arg):
+        ...     print("slot called:", arg)
+        ...
+        >>> o.connect('test', slot)
+        >>>
+        >>> o.emit('test', 1)   # in a method of your Observable subclass
+        slot called: 1
+
+
+    Is is also possible to use :meth:`emit` in a :python:ref:`with <with>`
+    context. In that case the return values of the connected functions are
+    collected and if they are a context manager, they are entered as well. An
+    example::
+
+        >>> import contextlib
+        >>>
+        >>> @contextlib.contextmanager
+        ... def f():
+        ...     print("one")
+        ...     yield
+        ...     print("two")
+        ...
+        >>> o=Observable()
+        >>> o.connect('test', f)
+        >>>
+        >>> with o.emit('test'):
+        ...     print("Yo!!!")
+        ...
+        one
+        Yo!!!
+        two
+
+    This enables you to announce events, and connected objects can perform a
+    task before the event's context starts and another task when the event's
+    context exits.
+
     """
     def __init__(self):
         self._callbacks = {}
