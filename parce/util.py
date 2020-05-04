@@ -209,8 +209,8 @@ class Observable:
 
     To announce an event from inside methods, use :meth:`emit`. In your
     documentation you should specify *which* arguments are used for *which*
-    events; to keep this class simple and fast, no checking is performed
-    whatsoever.
+    events; in order to keep this class simple and fast, no checking is
+    performed whatsoever.
 
     Example::
 
@@ -323,9 +323,10 @@ class Observable:
         """Call all callbacks for the event.
 
         Returns a list of the return values of all callbacks. When using this
-        list in a ``with`` context, all return values that are contextmanagers,
-        are entered. (The list is an :class:`_EmitResult` object that extends
-        Python's :class:`list` builtin.)
+        list in a ``with`` context, all return values that are context
+        managers, are entered. (The list is an :class:`_EmitResult` object that
+        extends Python's :class:`list` builtin, so that it can be used as a
+        context manager.)
 
         """
         try:
