@@ -339,8 +339,11 @@ class Observable:
             results.append(observer.call(self, *args, **kwargs))
             if observer.once:
                 disconnect.append(i)
-        for i in reversed(disconnect):
-            del slots[i]
+        if disconnect:
+            for i in reversed(disconnect):
+                del slots[i]
+            if not slots:
+                del self._callbacks[event]
         return results
 
 
