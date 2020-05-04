@@ -78,6 +78,7 @@ class XHtml(Xml):
     def css_style_attribute(cls):
         """Stuff inside style=" ... " attrbute."""
         yield r'([^"]*)(")', bygroup(using(Css.inline), String), -1
+        yield default_target, -1
 
 
 class Html(XHtml):
