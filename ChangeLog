@@ -4,6 +4,10 @@ ChangeLog
 
 current:
 
+- initial version of a transform module, that can transform a parce tree
+  to any structure you want using a Transform class, potentionally using
+  caching on contexts
+- added util.Observable, and use it in TreeBuilder to emit events
 - added unicharclass module
 - added using(), like in Pygments, it lexes a match with another lexicon
 - added Python console session parser (with prompts)
