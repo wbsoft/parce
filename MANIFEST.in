@@ -1,5 +1,6 @@
 include README.rst ChangeLog LICENSE
 graft docs
+graft tests
 prune docs/build
 global-exclude *~ *.py[cod] __pycache__
 
