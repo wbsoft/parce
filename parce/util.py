@@ -329,12 +329,12 @@ class Observable:
         context manager.)
 
         """
+        results = _EmitResult()
         try:
             slots = self._callbacks[event]
         except KeyError:
-            return
+            return results
         disconnect = []
-        results = _EmitResult()
         for i, observer in enumerate(slots):
             results.append(observer.call(self, *args, **kwargs))
             if observer.once:
