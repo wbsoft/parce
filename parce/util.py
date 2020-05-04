@@ -181,6 +181,34 @@ class _Observer:
         return super().__gt__(other)
 
 
+class _EmitContext:
+    """Encapsulates the results of an Observer.emit() call.
+
+    When is it used as a context manager, it enters all results
+    that are a context manager as well.
+
+    """
+    __slots__ = ('exits', 'results')
+
+    def __init__(self, results):
+        self.results = results
+
+    def __enter__(self):
+        managers = [r for r in self.results
+            if hasattr(r, '__enter__') and hasattr(r, '__exit__')]
+        self.exits = []
+        for m in managers:
+            self.exits.append(m.__exit__)
+            m.__enter__()
+
+    def __exit__(self, *exc):
+        while self.exits:
+            exit = self.exits.pop()
+            if exit(*exc):
+                exc = (None, None, None)
+        return exc == (None, None, None)
+
+
 class Observable:
     """Simple base class for objects that need to announce events.
 
@@ -267,12 +295,14 @@ class Observable:
         except KeyError:
             return
         disconnect = []
+        results = []
         for i, observer in enumerate(slots):
-            observer.call(self, *args, **kwargs)
+            results.append(observer.call(self, *args, **kwargs))
             if observer.once:
                 disconnect.append(i)
         for i in reversed(disconnect):
             del slots[i]
+        return _EmitContext(results)
 
 
 class Symbol:
