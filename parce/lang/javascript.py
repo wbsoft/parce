@@ -35,6 +35,7 @@ RE_JS_ESCAPE_CHAR = r'\\u[0-9a-fA-F]{4}'
 RE_JS_IDENT_TOKEN = _I_ = fr'(?:[{RE_JS_IDENT_STARTCHAR}]|{RE_JS_ESCAPE_CHAR})' \
                 fr'(?:[{RE_JS_IDENT_CHAR}]+|{RE_JS_ESCAPE_CHAR})*'
 
+RE_JS_REGEXP = r'/(?:\\[\[\\^$.|?*+()]|\[(?:\\[\\\[\]]|[^\]])+\]|[^/\[\n])*/[gimsuy]?'
 
 
 class JavaScript(Language):
@@ -69,6 +70,7 @@ class JavaScript(Language):
         yield r'\{', Bracket.Start, cls.scope
         yield r'\[', Bracket.Start, cls.array
         yield r'\(', Delimiter, cls.paren
+        yield RE_JS_REGEXP, Literal.Regexp
 
     @lexicon
     def scope(cls):
