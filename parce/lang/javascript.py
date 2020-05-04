@@ -97,14 +97,14 @@ class JavaScript(Language):
     @lexicon
     def array(cls):
         """An array [ ... ]."""
-        yield r'[,]', Separator
+        yield r',', Separator
         yield r'\]', Bracket.End, -1
         yield from cls.expression()
 
     @lexicon
     def paren(cls):
-        """An array [ ... ]."""
-        yield r'[,]', Separator
+        """An expression between ( ... )."""
+        yield r',', Separator
         yield r'\)', Delimiter, -1
         yield from cls.expression()
 
