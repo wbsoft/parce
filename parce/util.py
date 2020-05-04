@@ -182,21 +182,17 @@ class _Observer:
         return super().__gt__(other)
 
 
-class _EmitContext:
+class _EmitResult(list):
     """Encapsulates the results of an Observer.emit() call.
 
     When is it used as a context manager, it enters all results
     that are a context manager as well.
 
     """
-    __slots__ = ('exitstack', 'results')
-
-    def __init__(self, results):
-        self.results = results
-
+    __slots__ = ('exitstack')
     def __enter__(self):
         self.exitstack = s = contextlib.ExitStack()
-        for m in self.results:
+        for m in self:
             if hasattr(m, '__enter__') and hasattr(m, '__exit__'):
                 s.enter_context(m)
         return s.__enter__()
@@ -324,20 +320,27 @@ class Observable:
         return _Observer(func) in slots
 
     def emit(self, event, *args, **kwargs):
-        """Call all callbacks for the event."""
+        """Call all callbacks for the event.
+
+        Returns a list of the return values of all callbacks. When using this
+        list in a ``with`` context, all return values that are contextmanagers,
+        are entered. (The list is an :class:`_EmitResult` object that extends
+        Python's :class:`list` builtin.)
+
+        """
         try:
             slots = self._callbacks[event]
         except KeyError:
             return
         disconnect = []
-        results = []
+        results = _EmitResult()
         for i, observer in enumerate(slots):
             results.append(observer.call(self, *args, **kwargs))
             if observer.once:
                 disconnect.append(i)
         for i in reversed(disconnect):
             del slots[i]
-        return _EmitContext(results)
+        return results
 
 
 class Symbol:
