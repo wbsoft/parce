@@ -30,6 +30,7 @@ import re
 from parce import *
 from parce.lang.xml import Xml
 from parce.lang.css import Css
+from parce.lang.javascript import JavaScript
 
 
 # elements that do not start a new tag context
@@ -43,10 +44,10 @@ class XHtml(Xml):
     """XHtml, is also valid Xml."""
     @lexicon(re_flags=re.IGNORECASE)
     def root(cls):
-        yield r'(<)(style)\b(>|/\s*>)?', bygroup(Delimiter, Name.Tag, Delimiter), \
-            mapgroup(3, {
-                '>': cls.css_style_tag,
-                None: cls.attrs("css"),
+        yield r'(<)(style|script)\b(>|/\s*>)?', bygroup(Delimiter, Name.Tag, Delimiter), \
+            mapgroup(2, {
+                "style": mapgroup(3, {'>': cls.css_style_tag, None: cls.attrs("css")}),
+                "script": mapgroup(3, {'>': cls.script_tag, None: cls.attrs("js")}),
             })  # by default a close tag, stay in the context.
         yield from super().root
 
@@ -56,8 +57,16 @@ class XHtml(Xml):
         yield r'(style)\s*(=)\s*(")', bygroup(Name.Attribute, Operator, String), \
             cls.css_style_attribute
         yield r'>', Delimiter, -1, maparg({
-            "css": cls.css_style_tag, None: cls.tag})
+            "js": cls.script_tag,
+            "css": cls.css_style_tag,
+            None: cls.tag})
         yield from super().attrs
+
+    @lexicon
+    def script_tag(cls):
+        """Stuff between <script> and </script>."""
+        yield r'(<\s*/)\s*(script)\s*(>)', bygroup(Delimiter, Name.Tag, Delimiter), -1
+        yield from JavaScript.root
 
     @lexicon
     def css_style_tag(cls):
