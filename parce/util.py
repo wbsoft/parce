@@ -28,6 +28,7 @@ This module only depends on the Python standard library.
 import bisect
 import re
 import codecs
+import contextlib
 import functools
 import threading
 import weakref
@@ -188,29 +189,20 @@ class _EmitContext:
     that are a context manager as well.
 
     """
-    __slots__ = ('exits', 'results')
+    __slots__ = ('exitstack', 'results')
 
     def __init__(self, results):
         self.results = results
 
     def __enter__(self):
-        self.exits = []
+        self.exitstack = s = contextlib.ExitStack()
         for m in self.results:
-            mcls = type(m)
-            try:
-                enter = mcls.__enter__
-                exit_ = mcls.__exit__
-            except AttributeError:
-                continue
-            self.exits.append((exit_, m))
-            enter(m)
+            if hasattr(m, '__enter__') and hasattr(m, '__exit__'):
+                s.enter_context(m)
+        return s.__enter__()
 
     def __exit__(self, *exc):
-        while self.exits:
-            exit_, m = self.exits.pop()
-            if exit_(m, *exc):
-                exc = (None, None, None)
-        return exc == (None, None, None)
+        return self.exitstack.__exit__(*exc)
 
 
 class Observable:
