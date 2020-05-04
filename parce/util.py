@@ -194,17 +194,21 @@ class _EmitContext:
         self.results = results
 
     def __enter__(self):
-        managers = [r for r in self.results
-            if hasattr(r, '__enter__') and hasattr(r, '__exit__')]
         self.exits = []
-        for m in managers:
-            self.exits.append(m.__exit__)
-            m.__enter__()
+        for m in self.results:
+            mcls = type(m)
+            try:
+                enter = mcls.__enter__
+                exit_ = mcls.__exit__
+            except AttributeError:
+                continue
+            self.exits.append((exit_, m))
+            enter(m)
 
     def __exit__(self, *exc):
         while self.exits:
-            exit = self.exits.pop()
-            if exit(*exc):
+            exit_, m = self.exits.pop()
+            if exit_(m, *exc):
                 exc = (None, None, None)
         return exc == (None, None, None)
 
@@ -231,7 +235,6 @@ class Observable:
         >>>
         >>> o.emit('test', 1)   # in a method of your Observable subclass
         slot called: 1
-
 
     Is is also possible to use :meth:`emit` in a :python:ref:`with <with>`
     context. In that case the return values of the connected functions are
