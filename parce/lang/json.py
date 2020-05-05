@@ -35,6 +35,13 @@ import re
 from parce import *
 
 
+JSON_CONSTANTS = {
+    'true': True,
+    'false': False,
+    'null': None,
+}
+
+
 class Json(Language):
     @lexicon
     def root(cls):
@@ -46,7 +53,7 @@ class Json(Language):
         yield r"\[", Delimiter, cls.array
         yield '"', String, cls.string
         yield r"-?\d+(?:\.\d+)?(?:[Ee][+-]?\d+)?", Number
-        yield r"\b(?:true|false|null)\b", Name.Constant
+        yield words(JSON_CONSTANTS, r'\b', r'\b'), Name.Constant
 
     @lexicon
     def object(cls):
@@ -97,11 +104,7 @@ class JsonTransform(Transform):
                         n = int(n)
                     yield n
                 elif i.action == Name.Constant:
-                    yield {
-                        'true': True,
-                        'false': False,
-                        'null': None,
-                    }[i.text]
+                    yield JSON_CONSTANTS[i.text]
             else:
                 yield i.obj
 
