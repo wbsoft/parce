@@ -169,16 +169,16 @@ def arg(escape=True, prefix="", suffix="", default=None):
     return pattern.Arg(escape, prefix, suffix, default)
 
 
-def ifarg(pattern, else_pattern=None):
+def ifarg(if_pattern, else_pattern=None):
     r"""Return an :class:`~parce.pattern.IfArg` pattern yielding the specified
-    regular expression pattern (or nested Pattern instance) if the lexicon was
-    called with an argument.
+    regular expression ``if_pattern`` (or nested Pattern instance) if the
+    lexicon was called with an argument.
 
     If there is no argument in the current lexicon, ``else_pattern`` is
     yielded, which is None by default, resulting in the rule being skipped.
 
     """
-    return pattern.IfArg(pattern, else_pattern)
+    return pattern.IfArg(if_pattern, else_pattern)
 
 
 def byarg(predicate, *itemlists):
