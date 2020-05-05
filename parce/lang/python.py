@@ -64,20 +64,8 @@ class Python(Language):
         yield r'\{', Delimiter, cls.dict
 
         ## string literals
-        yield r'''[rRuUfF]{,2}["']$''', String.Invalid
-        yield r'''[rRbB]{,2}["']$''', Bytes.Invalid
-        yield r'(\b[rR])("""|'r"''')", bygroup(String.Prefix, String.Start), withgroup(2, cls.longstring_raw)
-        yield r'(\b(?:[fF][rR])|(?:[rR][fF]))("""|'r"''')", bygroup(String.Prefix, String.Start), withgroup(2, cls.longstring_raw_format)
-        yield r'(\b[uU])?("""|'r"''')", String.Start, withgroup(2, cls.longstring)
-        yield r'(\b[fF])("""|'r"''')", bygroup(String.Prefix, String.Start), withgroup(2, cls.longstring_format)
-        yield r'''(\b[rR])(['"])''', bygroup(String.Prefix, String.Start), withgroup(2, cls.string_raw)
-        yield r'''(\b(?:[fF][rR])|(?:[rR][fF]))(['"])''', bygroup(String.Prefix, String.Start), withgroup(2, cls.string_raw_format)
-        yield r'''(\b[uU])?(['"])''', bygroup(String.Prefix, String.Start), withgroup(2, cls.string)
-        yield r'''(\b[fF])(['"])''', bygroup(String.Prefix, String.Start), withgroup(2, cls.string_format)
-        yield r'(\b(?:[bB][rR])|(?:[rR][bB]))("""|'r"''')", bygroup(Bytes.Prefix, Bytes.Start), withgroup(2, cls.longbytes_raw)
-        yield r'(\b[bB])("""|'r"''')", bygroup(Bytes.Prefix, Bytes.Start), withgroup(2, cls.longbytes)
-        yield r'''(\b(?:[bB][rR])|(?:[rR][bB]))(['"])''', bygroup(Bytes.Prefix, Bytes.Start), withgroup(2, cls.bytes_raw)
-        yield r'''(\b[bB])(['"])''', bygroup(Bytes.Prefix, Bytes.Start), withgroup(2, cls.bytes)
+        yield from cls.find_string_literals()
+        yield from cls.find_bytes_literals()
 
         ## numerical values
         yield '0[oO](?:_?[0-7])+', Number
@@ -196,35 +184,80 @@ class Python(Language):
         yield from cls.common()
 
     ## ------- strings --------------
-    @lexicon(re_flags=re.MULTILINE)
+    @classmethod
+    def find_string_literals(cls, target=None):
+        """Find string literals."""
+        # short strings not closed on the same line are invalid
+        yield r'''[rRuUfF]{,2}["']$''', String.Invalid
+
+        if target is None:
+            target = cls.string
+
+        # long strings
+        yield r'(\b[rR])("""|'r"''')", \
+            bygroup(String.Prefix, String.Start), \
+            target, withgroup(2, cls.long_string_raw)
+        yield r'(\b(?:[fF][rR])|(?:[rR][fF]))("""|'r"''')", \
+            bygroup(String.Prefix, String.Start), \
+            target, withgroup(2, cls.long_string_raw_format)
+        yield r'(\b[uU])?("""|'r"''')", \
+            bygroup(String.Prefix, String.Start), \
+            target, withgroup(2, cls.long_string)
+        yield r'(\b[fF])("""|'r"''')", \
+            bygroup(String.Prefix, String.Start), \
+            target, withgroup(2, cls.long_string_format)
+
+        # short strings
+        yield r'''(\b[rR])(['"])''', \
+            bygroup(String.Prefix, String.Start), \
+            target, withgroup(2, cls.short_string_raw)
+        yield r'''(\b(?:[fF][rR])|(?:[rR][fF]))(['"])''', \
+            bygroup(String.Prefix, String.Start), \
+            target, withgroup(2, cls.short_string_raw_format)
+        yield r'''(\b[uU])?(['"])''', \
+            bygroup(String.Prefix, String.Start), \
+            target, withgroup(2, cls.short_string)
+        yield r'''(\b[fF])(['"])''', \
+            bygroup(String.Prefix, String.Start), \
+            target, withgroup(2, cls.short_string_format)
+
+    @lexicon
     def string(cls):
+        """All strings end here, check [slice] notation and concatenated literals."""
+        yield _SN_, skip    # todo allow newline inside arglists, tuples, etc
+        yield from cls.find_string_literals(0)
+        yield r'\[', Delimiter, cls.item
+        yield default_target, -1
+
+    @lexicon(re_flags=re.MULTILINE)
+    def short_string(cls):
         yield from cls.string_escape()
-        yield from cls.string_common()
+        yield from cls.short_string_common()
 
     @lexicon(re_flags=re.MULTILINE)
-    def string_raw(cls):
-        yield from cls.string_raw_common()
+    def short_string_raw(cls):
+        yield from cls.short_string_raw_common()
 
     @lexicon(re_flags=re.MULTILINE)
-    def string_format(cls):
+    def short_string_format(cls):
         yield from cls.string_formatstring()
         yield from cls.string_escape()
-        yield from cls.string_common()
+        yield from cls.short_string_common()
 
     @lexicon(re_flags=re.MULTILINE)
-    def string_raw_format(cls):
+    def short_string_raw_format(cls):
         yield from cls.string_formatstring()
-        yield from cls.string_raw_common()
+        yield from cls.short_string_raw_common()
 
     @classmethod
-    def string_common(cls):
+    def short_string_common(cls):
         yield arg(), String.End, -1
         predicate = lambda arg: arg == "'"
         yield byarg(predicate, r'[^"]*?$', r"[^']*?$"), String.Invalid, -1
         yield default_action, String
 
     @classmethod
-    def string_raw_common(cls):
+    def short_string_raw_common(cls):
         yield arg(), String.End, -1
         yield r'\\\\', String
         predicate = lambda arg: arg == "'"
@@ -233,32 +266,33 @@ class Python(Language):
         yield default_action, String
 
     @lexicon
-    def longstring(cls):
+    def long_string(cls):
         yield from cls.string_escape()
-        yield from cls.longstring_common()
+        yield from cls.long_string_common()
 
     @lexicon
-    def longstring_raw(cls):
+    def long_string_raw(cls):
         yield arg(prefix=r'\\'), String  # escape quote, but the \ remains
-        yield from cls.longstring_common()
+        yield from cls.long_string_common()
 
     @lexicon
-    def longstring_format(cls):
+    def long_string_format(cls):
         yield from cls.string_formatstring()
         yield from cls.string_escape()
-        yield from cls.longstring_common()
+        yield from cls.long_string_common()
 
     @lexicon
-    def longstring_raw_format(cls):
+    def long_string_raw_format(cls):
         yield arg(prefix=r'\\'), String  # escape quote, but the \ remains
         yield from cls.string_formatstring()
-        yield from cls.longstring_common()
+        yield from cls.long_string_common()
 
     @classmethod
-    def longstring_common(cls):
+    def long_string_common(cls):
         yield arg(), String.End, -1
         yield default_action, String
 
+    # ------ stuff common for short and long strings ---------
     @classmethod
     def string_escape(cls):
         yield from cls.bytes_escape(String.Escape)
@@ -289,33 +323,67 @@ class Python(Language):
         yield r'\}', Delimiter, -1
         yield from cls.common()
 
-    @lexicon(re_flags=re.MULTILINE)
+    # ----------------- bytes --------------------
+    @classmethod
+    def find_bytes_literals(cls, target=None):
+        """Find bytes literals."""
+        # short bytes not closed on the same line are invalid
+        yield r'''[rRbB]{,2}["']$''', Bytes.Invalid
+
+        if target is None:
+            target = cls.bytes
+
+        # long bytes
+        yield r'(\b(?:[bB][rR])|(?:[rR][bB]))("""|'r"''')", \
+            bygroup(Bytes.Prefix, Bytes.Start), \
+            target, withgroup(2, cls.long_bytes_raw)
+        yield r'(\b[bB])("""|'r"''')", \
+            bygroup(Bytes.Prefix, Bytes.Start), \
+            target, withgroup(2, cls.long_bytes)
+
+        # short bytes
+        yield r'''(\b(?:[bB][rR])|(?:[rR][bB]))(['"])''', \
+            bygroup(Bytes.Prefix, Bytes.Start), \
+            target, withgroup(2, cls.short_bytes_raw)
+        yield r'''(\b[bB])(['"])''', \
+            bygroup(Bytes.Prefix, Bytes.Start), \
+            target, withgroup(2, cls.short_bytes)
+
+    @lexicon
     def bytes(cls):
-        yield from cls.bytes_escape()
-        yield from cls.bytes_common()
+        """All bytes end here, check [slice] notation and concatenated literals."""
+        yield _SN_, skip    # todo allow newline inside arglists, tuples, etc
+        yield from cls.find_bytes_literals(0)
+        yield r'\[', Delimiter, cls.item
+        yield default_target, -1
 
     @lexicon(re_flags=re.MULTILINE)
-    def bytes_raw(cls):
-        yield from cls.bytes_raw_common()
-
-    @lexicon
-    def longbytes(cls):
+    def short_bytes(cls):
         yield from cls.bytes_escape()
-        yield from cls.longbytes_common()
+        yield from cls.short_bytes_common()
+
+    @lexicon(re_flags=re.MULTILINE)
+    def short_bytes_raw(cls):
+        yield from cls.short_bytes_raw_common()
 
     @lexicon
-    def longbytes_raw(cls):
-        yield from cls.longbytes_common()
+    def long_bytes(cls):
+        yield from cls.bytes_escape()
+        yield from cls.long_bytes_common()
+
+    @lexicon
+    def long_bytes_raw(cls):
+        yield from cls.long_bytes_common()
 
     @classmethod
-    def bytes_common(cls):
+    def short_bytes_common(cls):
         yield arg(), Bytes.End, -1
         predicate = lambda arg: arg == "'"
         yield byarg(predicate, r'[^"]*?$', r"[^']*?$"), Bytes.Invalid, -1
         yield default_action, Bytes
 
     @classmethod
-    def bytes_raw_common(cls):
+    def short_bytes_raw_common(cls):
         yield r'\\\\', Bytes
         predicate = lambda arg: arg == "'"
         yield byarg(predicate, fr'([^\\"]*?|\\"{_S_}*)$', fr"([^\\']*?|\\'{_S_}*)$"), Bytes.Invalid, -1
@@ -323,7 +391,7 @@ class Python(Language):
         yield from cls.longbytes_common()
 
     @classmethod
-    def longbytes_common(cls):
+    def long_bytes_common(cls):
         yield arg(), Bytes.End, -1
         yield default_action, Bytes
 
