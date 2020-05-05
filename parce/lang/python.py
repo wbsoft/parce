@@ -185,13 +185,13 @@ class Python(Language):
 
     ## ------- strings --------------
     @classmethod
-    def find_string_literals(cls, target=None):
+    def find_string_literals(cls, target=None, allow_newlines=None):
         """Find string literals."""
         # short strings not closed on the same line are invalid
         yield r'''[rRuUfF]{,2}["']$''', String.Invalid
 
         if target is None:
-            target = cls.string
+            target = cls.string(allow_newlines)
 
         # long strings
         yield r'(\b[rR])("""|'r"''')", \
@@ -224,7 +224,8 @@ class Python(Language):
     @lexicon
     def string(cls):
         """All strings end here, check [slice] notation and concatenated literals."""
-        yield _SN_, skip    # todo allow newline inside arglists, tuples, etc
+        yield _N_, Escape
+        yield ifarg(r'\s+', r'[ \t]+'), skip    # allow newline inside arglists, tuples, etc
         yield from cls.find_string_literals(0)
         yield r'\[', Delimiter, cls.item
         yield default_target, -1
@@ -325,13 +326,13 @@ class Python(Language):
 
     # ----------------- bytes --------------------
     @classmethod
-    def find_bytes_literals(cls, target=None):
+    def find_bytes_literals(cls, target=None, allow_newlines=None):
         """Find bytes literals."""
         # short bytes not closed on the same line are invalid
         yield r'''[rRbB]{,2}["']$''', Bytes.Invalid
 
         if target is None:
-            target = cls.bytes
+            target = cls.bytes(allow_newlines)
 
         # long bytes
         yield r'(\b(?:[bB][rR])|(?:[rR][bB]))("""|'r"''')", \
@@ -352,7 +353,8 @@ class Python(Language):
     @lexicon
     def bytes(cls):
         """All bytes end here, check [slice] notation and concatenated literals."""
-        yield _SN_, skip    # todo allow newline inside arglists, tuples, etc
+        yield _N_, Escape
+        yield ifarg(r'\s+', r'[ \t]+'), skip    # allow newline inside arglists, tuples, etc
         yield from cls.find_bytes_literals(0)
         yield r'\[', Delimiter, cls.item
         yield default_target, -1
