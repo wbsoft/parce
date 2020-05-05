@@ -93,4 +93,5 @@ class TreeDocumentMixin:
     def contents_changed(self, start, removed, added):
         """Called after modification of the text, retokenizes the modified part."""
         self.builder().rebuild(self.text(), False, start, removed, added)
+        super().contents_changed(start, removed, added)
 

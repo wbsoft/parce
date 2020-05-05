@@ -2,6 +2,11 @@ ChangeLog
 =========
 
 
+current:
+
+- parce.document.Document now inherits from Observable and emits events
+
+
 2020-05-04: parce-0.9.0
 
 - initial version of a transform module, that can transform a parce tree

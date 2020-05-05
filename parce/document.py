@@ -37,15 +37,32 @@ For tokenized documents, parce inherits from this base class.
 """
 
 
+import contextlib
 import itertools
 import re
 import reprlib
 import weakref
 
+from . import util
+
 
 class AbstractDocument:
     """Base class for a Document.
 
+    A Document is like a mutable string. E.g.:
+
+    .. code-block:: python
+
+        d = Document('some string')
+        with d:
+            d[5:5] = 'different '
+        d.text()  --> 'some different string'
+
+    You can also make modifications outside the a context, they will then
+    be applied immediately, which is slower.
+
+    You can enter a context multiple times, and changes will be applied when the
+    last exits.
     To make a Document work, you should at least implement:
 
      *   ``text()``
@@ -66,6 +83,7 @@ class AbstractDocument:
 
     """
     def __init__(self):
+        super().__init__()
         self._cursors = weakref.WeakSet()
         self._edit_context = 0
         self._changes = []
@@ -267,27 +285,32 @@ class AbstractDocument:
         pass
 
 
-class Document(AbstractDocument):
+class Document(AbstractDocument, util.Observable):
     """A basic Document with undo and modified status.
 
     This Document implements AbstractDocument by holding the text in a hidden
-    _text attribute. It also adds support for undo/redo and has a modified()
+    _text attribute. It adds support for undo/redo and has a :meth:`modified`
     state.
 
-    A Document is like a mutable string. E.g.:
+    It also inherits from :class:`~parce.util.Observable` and emits the
+    following events:
 
-    .. code-block:: python
+    ``"contents_change" (position, removed, added)``:
+        emitted with ``position``, ``removed``, ``added`` arguments whenever the
+        text changes
 
-        d = Document('some string')
-        with d:
-            d[5:5] = 'different '
-        d.text()  --> 'some different string'
+    ``"contents_changed"``:
+        emitted directly afther the previous event, but without arguments
 
-    You can also make modifications outside the a context, they will then
-    be applied immediately, which is slower.
+    ``"modification_changed" (bool)``:
+        emitted when the :meth:`modified` state changes; True means the document
+        was modified
 
-    You can enter a context multiple times, and changes will be applied when the
-    last exits.
+    ``"undo_available" (bool)``:
+        emitted when the availability of :meth:`undo` changes
+
+    ``"redo_available" (bool)``:
+        emitted when the availability of :meth:`redo` changes
 
     """
     undo_redo_enabled = True
@@ -306,9 +329,12 @@ class Document(AbstractDocument):
 
     def set_modified(self, modified):
         """Sets whether the text is modified, happens automatically normally."""
+        changed = modified != self._modified
         self._modified = modified
         if not modified and not self._in_undo:
             self._set_all_undo_redo_modified()
+        if changed:
+            self.emit("modification_changed", modified)
 
     def text(self):
         """Return all text."""
@@ -325,12 +351,13 @@ class Document(AbstractDocument):
                 result.append(text)
             tail = end
         text = "".join(result)
-        if self.undo_redo_enabled:
-            # store start, end, and text needed to undo this change
-            self._handle_undo(head, head + len(text), self._text[head:tail])
-        self._text = self._text[:head] + text + self._text[tail:]
-        if not self._in_undo:
-            self.set_modified(True) # othw this is handled by undo/redo
+        with self._check_undo_state():
+            if self.undo_redo_enabled:
+                # store start, end, and text needed to undo this change
+                self._handle_undo(head, head + len(text), self._text[head:tail])
+            self._text = self._text[:head] + text + self._text[tail:]
+            if not self._in_undo:
+                self.set_modified(True) # othw this is handled by undo/redo
 
     def _handle_undo(self, start, end, text):
         """Store start, end, and text needed to reconstruct the previous state."""
@@ -340,6 +367,25 @@ class Document(AbstractDocument):
             self._undo_stack.append([start, end, text, self.modified()])
             if self._in_undo != "redo":
                 self._redo_stack.clear()
+
+    @contextlib.contextmanager
+    def _check_undo_state(self):
+        """Context manager to perform operations that alter the undo / redo stack.
+
+        Emits "undo_available" and "redo_available" when they change.
+
+        """
+        can_undo = self.can_undo()
+        can_redo = self.can_redo()
+        try:
+            yield
+        finally:
+            new_can_undo = self.can_undo()
+            new_can_redo = self.can_redo()
+            if new_can_undo != can_undo:
+                self.emit("undo_available", new_can_undo)
+            if new_can_redo != can_redo:
+                self.emit("redo_available", new_can_redo)
 
     def _set_all_undo_redo_modified(self):
         """Called on set_modified(False). Set all undo/redo state to modified."""
@@ -368,8 +414,9 @@ class Document(AbstractDocument):
 
     def clear_undo_redo(self):
         """Clear the undo/redo stack."""
-        self._undo_stack.clear()
-        self._redo_stack.clear()
+        with self._check_undo_state():
+            self._undo_stack.clear()
+            self._redo_stack.clear()
 
     def can_undo(self):
         """Return True whether undo is possible."""
@@ -378,6 +425,16 @@ class Document(AbstractDocument):
     def can_redo(self):
         """Return True whether redo is possible."""
         return bool(self._redo_stack)
+
+    def contents_changed(self, position, removed, added):
+        """Called by _apply().
+
+        This implementation emit ``"contents_change"`` and
+        ``"contents_changed"`` events.
+
+        """
+        self.emit("contents_change", position, removed, added)
+        self.emit("contents_changed")
 
 
 class Cursor:
