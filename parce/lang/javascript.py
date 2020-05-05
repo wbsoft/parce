@@ -35,7 +35,7 @@ RE_JS_ESCAPE_CHAR = r'\\u[0-9a-fA-F]{4}'
 RE_JS_IDENT_TOKEN = _I_ = fr'(?:[{RE_JS_IDENT_STARTCHAR}]|{RE_JS_ESCAPE_CHAR})' \
                 fr'(?:[{RE_JS_IDENT_CHAR}]+|{RE_JS_ESCAPE_CHAR})*'
 
-RE_JS_DECIMAL_NUMBER = r'(?:\.\d(?:_?\d)*|\d(?:_?\d)*(?:\.(?:\d(?:_?\d)*)?)?)(?:[eE][-+]\d(?:_?\d)*)?'
+RE_JS_DECIMAL_NUMBER = r'\d+(?:_\d+)*n|(?:\.\d+(?:_\d+)*|\d+(?:_\d+)*(?:\.(?:\d+(?:_\d+)*)?)?)(?:[eE][-+]\d+(?:_\d+)*)?'
 RE_JS_REGEXP = r'/(?:\\[\[\\^$.|?*+()]|\[(?:\\[\\\[\]]|[^\]])+\]|[^/\[\n])*/[gimsuy]?'
 
 
@@ -64,9 +64,9 @@ class JavaScript(Language):
             mapgroup(2, {'(': cls.call, '[': cls.index})
         yield fr'{_I_}\b', bytext(str.isupper, Name.Variable, Name.Class)
         ## numerical values (recently, underscore support inside numbers was added)
-        yield '0[oO](?:_?[0-7])+', Number
-        yield '0[bB](?:_?[01])+', Number
-        yield '0[xX](?:_?[0-9a-fA-F])+', Number
+        yield '0[oO](?:_?[0-7])+n?', Number
+        yield '0[bB](?:_?[01])+n?', Number
+        yield '0[xX](?:_?[0-9a-fA-F])+n?', Number
         yield RE_JS_DECIMAL_NUMBER, Number
         yield r'\{', Bracket.Start, cls.scope
         yield r'\[', Bracket.Start, cls.array
