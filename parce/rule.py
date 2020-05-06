@@ -151,6 +151,21 @@ class PredicateArgItem(PredicateMixin, ArgItem):
         return self.itemlists[index]
 
 
+class ReplacedArgItem(PredicateMixin, ArgItem):
+    """Calls the predicate with the lexicon argument.
+
+    The predicate should return another predicate function that is then set in
+    the first DynamicItem in the first itemlist, which is returned. There
+    should not be other items.
+
+    """
+    def replace(self, arg):
+        item = self.itemlists[0][0]
+        assert isinstance(item, DynamicItem)
+        item.predicate = self.predicate(arg)
+        return item,
+
+
 ### dynamic items
 
 class TextItem(PredicateMixin, DynamicItem):
