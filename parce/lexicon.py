@@ -166,6 +166,7 @@ class Lexicon:
                     yield from replace_arg_items(i.replace(self.arg))
                 else:
                     if isinstance(i, Item):
+                        i = i.copy()
                         i.itemlists = [list(replace_arg_items(l)) for l in i.itemlists]
                     yield i
         def rules():

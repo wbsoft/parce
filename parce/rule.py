@@ -81,6 +81,12 @@ class Item:
     def __init__(self, *itemlists):
         self.itemlists = [i if isinstance(i, (tuple, list)) else (i,)
                           for i in itemlists]
+    def copy(self):
+        """Return a copy of this Item."""
+        cls = type(self)
+        copy = cls.__new__(cls)
+        copy.__dict__.update(self.__dict__)
+        return copy
 
     def replace(self, *args):
         """Called to get the replacement."""
@@ -160,7 +166,7 @@ class ReplacedArgItem(PredicateMixin, ArgItem):
 
     """
     def replace(self, arg):
-        item = self.itemlists[0][0]
+        item = self.itemlists[0][0].copy()
         assert isinstance(item, DynamicItem)
         item.predicate = self.predicate(arg)
         return item,
