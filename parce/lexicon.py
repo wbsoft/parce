@@ -229,7 +229,6 @@ class Lexicon:
         no_default_action = object()
         default_action = no_default_action
         default_target = None
-        arg = self.arg
 
         make_target = TargetFactory.make
 
@@ -249,7 +248,7 @@ class Lexicon:
         if isinstance(default_action, TextItem):
             def dynamic_default_action(text):
                 def replace_action(action):
-                    for a in action.replace(text, None, arg):
+                    for a in action.replace(text, None):
                         return replace_action(a) if isinstance(a, TextItem) else a
                 return replace_action(default_action)
 
@@ -354,7 +353,7 @@ class Lexicon:
             def inner_replace(items):
                 for i in items:
                     if isinstance(i, DynamicItem):
-                        yield from inner_replace(i.replace(m.group(), m, arg))
+                        yield from inner_replace(i.replace(m.group(), m))
                     else:
                         yield i
             action, *target = inner_replace(dynamic[m.lastindex])
