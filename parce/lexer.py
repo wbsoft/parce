@@ -161,7 +161,7 @@ class Lexer:
             if isinstance(action, DynamicAction):
                 yield from action.replace(self, pos, text, match)
             else:
-                for action in action.replace(text, match):
+                for action in action.replace(text, match, self.lexicons[-1].arg):
                     yield from self.filter_actions(action, pos, text, match)
         elif text:
             yield pos, text, action

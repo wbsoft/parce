@@ -35,7 +35,7 @@ These replacable objects can be used to define actions and targets. (For
 generated patterns, the :class:`~parce.pattern.Pattern` class from the
 :mod:`~parce.pattern` module must be used.)
 
-There are four moments when replaceable rule items are processed:
+There are three moments when replaceable rule items are processed:
 
 1. when yielding the rules of the lexicon, in the
    :meth:`~parce.lexicon.__iter__` method of :class:`~parce.lexicon.Lexicon`.
@@ -44,15 +44,15 @@ There are four moments when replaceable rule items are processed:
    ``replace()`` method with the lexicon argument (which is None for a vanilla
    lexicon).
 
-2. when constructing the :meth:`parse` method of the Lexicon, just before
-   the first parsing. At this stage, :class:`~parce.pattern.Pattern` objects
-   are built by the lexicon.
+   Also at this stage, :class:`~parce.pattern.Pattern` objects are built by the
+   lexicon.
 
-3. while parsing, when a rule's pattern matches the text. At this moment,
+2. while parsing, when a rule's pattern matches the text. At this moment,
    :class:`DynamicItem` instances are replaced by calling their ``replace()``
-   method with both the matched text and the match object (if available).
+   method with the matched text, the match object (if available) and the
+   lexicon argument (which is None for a vanilla lexicon).
 
-4. after parsing, :class:`ActionItem` instances are processed. A normal action
+3. after parsing, :class:`ActionItem` instances are processed. A normal action
    is just paired with the matched text to form a token, but an ActionItem can
    create zero or more tokens, e.g. to match subgroups in a regular expression,
    or to skip some types of text. This is done by the
@@ -113,7 +113,7 @@ class DynamicItem(Item):
     These items are replaced by the Lexicon in the :meth:`parse` method.
 
     """
-    def replace(self, text, match):
+    def replace(self, text, match, arg):
         """Called to get the replacement based on text and/or match object."""
         raise NotImplementedError()
 
@@ -159,7 +159,7 @@ class TextItem(PredicateMixin, DynamicItem):
     The predicate should return the index of the itemlists to return.
 
     """
-    def replace(self, text, match):
+    def replace(self, text, match, arg):
         index = self.predicate(text)
         return self.itemlists[index]
 
@@ -170,7 +170,7 @@ class MatchItem(PredicateMixin, DynamicItem):
     The predicate should return the index of the itemlists to return.
 
     """
-    def replace(self, text, match):
+    def replace(self, text, match, arg):
         index = self.predicate(match)
         return self.itemlists[index]
 
@@ -183,7 +183,7 @@ class LexiconTextItem(TextItem):
     is the first item in the first itemlist, there should not be other items.
 
     """
-    def replace(self, text, match):
+    def replace(self, text, match, arg):
         """Yield the derived lexicon with the result of predicate(text)."""
         result = self.predicate(text)
         return self.itemlists[0][0](result),
@@ -197,7 +197,7 @@ class LexiconMatchItem(MatchItem):
     is the first item in the first itemlist, there should not be other items.
 
     """
-    def replace(self, text, match):
+    def replace(self, text, match, arg):
         """Yield the derived lexicon with the result of predicate(match)."""
         result = self.predicate(match)
         return self.itemlists[0][0](result),
