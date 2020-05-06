@@ -196,11 +196,10 @@ def bymatch(predicate, *itemlists):
     """Return a :class:`~parce.rule.MatchItem` that chooses its output
     based on the match object.
 
-    The returned MatchItem calls the predicate function with the match object
+    The returned MatchItem calls the ``predicate`` function with the match object
     as argument. The function should return the index of the itemlist to
-    choose. If you provide two possible actions, the predicate function may
-    also return True or False, in which case True chooses the second itemlist
-    and False the first.
+    choose. It may also return True or False, which evaluate to 1 or 0,
+    respectively.
 
     This helper can be used both for action and target objects, or both
     at the same time.
@@ -213,9 +212,10 @@ def bytext(predicate, *itemlists):
     """Return a :class:`~parce.rule.TextItem` that chooses the itemlist
     based on the text.
 
-    The returned TextItem calls the predicate function with the matched text as
-    argument.  The function should return the index of the itemlist to choose,
-    in the same way as with :func:`~parce.bymatch`.
+    The returned TextItem calls the ``predicate`` function with the matched
+    text as argument. The function should return the index of the itemlist to
+    choose. It may also return True or False, which evaluate to 1 or 0,
+    respectively.
 
     This helper can be used both for action and target objects, or both
     at the same time.
