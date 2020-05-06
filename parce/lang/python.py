@@ -390,7 +390,7 @@ class Python(Language):
         predicate = lambda arg: arg == "'"
         yield byarg(predicate, fr'([^\\"]*?|\\"{_S_}*)$', fr"([^\\']*?|\\'{_S_}*)$"), Bytes.Invalid, -1
         yield arg(prefix=r'\\'), Bytes  # escape quote, but the \ remains
-        yield from cls.longbytes_common()
+        yield from cls.long_bytes_common()
 
     @classmethod
     def long_bytes_common(cls):
