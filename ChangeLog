@@ -5,6 +5,8 @@ ChangeLog
 current:
 
 - parce.document.Document now inherits from Observable and emits events
+- DynamicItem.replace() now gets the lexicon argument as third argument
+- fixed: AttributeError: 'str' object has no attribute 'IfArg'
 
 
 2020-05-04: parce-0.9.0
