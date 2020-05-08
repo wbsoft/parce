@@ -422,6 +422,10 @@ class ActionItem(SurvivingItem):
 
     """
     __slots__ = ()
+    ## when pre-evaluating with ARG, allow actions inside SubgroupAction
+    ## to be replaced. But not when evaluating. Then it's done by the lexer.
+    def evaluate(self, ns):
+        return self
 
 
 class pattern(SurvivingItem):
