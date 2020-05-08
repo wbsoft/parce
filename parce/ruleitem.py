@@ -75,6 +75,11 @@ class Item:
     """Base class for any replacable rule item."""
     __slots__ = ()
 
+    def __getitem__(self, n):
+        def get_item(text, n):
+            return text[n]
+        return call(get_item, self, n)
+
     def evaluate(self, ns):
         """Evaluate in namespace dict
 
@@ -109,138 +114,47 @@ class Item:
         return ()
 
 
-
 class RuleItem(Item):
-    """Base class for items that may become visible in rules.
-
-    """
+    """Base class for items that may become visible in rules."""
     __slots__ = ()
 
 
-class ActionItem(RuleItem):
-    """Base class for items that are dynamic actions.
-
-    """
+class VariableItem(Item):
+    """A named variable that's accessed in the namespace."""
     __slots__ = ()
-
-
-class TextItem(Item):
-    """Represents the ``text`` attribute in the namespace."""
-    __slots__ = ()
+    name = "name"
 
     def evaluate(self, ns):
         try:
-            return ns['text']
+            return ns[self.name]
         except KeyError as e:
-            raise EvaluationError("Can't find variable 'text'") from e
-
-    def __getitem__(self, n):
-        return TextSliceItem(n)
+            raise EvaluationError("Can't find variable '{name}'".format(self.name)) from e
 
     def __repr__(self):
-        return "TEXT"
+        return self.name.upper()
 
 
-class TextSliceItem(Item):
-    """Represents a slice of the ``text`` attribute in the namespace."""
-    __slots__ = ('n',)
-
-    def __init__(self, n):
-        self.n = n
-
-    def evaluate(self, ns):
-        try:
-            text = ns['text']
-        except KeyError as e:
-            raise EvaluationError("Can't find variable 'text'") from e
-        n = self.n
-        if isinstance(n, Item):
-            n = n.evaluate(ns)
-        return text[n]
-
-    def __repr__(self):
-        return 'TEXT[{}]'.format(repr(self.n))
-
-
-class ArgItem(Item):
+class ArgItem(VariableItem):
     """Represents the ``arg`` attribute in the namespace."""
     __slots__ = ()
-
-    def evaluate(self, ns):
-        try:
-            return ns['arg']
-        except KeyError as e:
-            raise EvaluationError("Can't find variable 'arg'") from e
-
-    def __repr__(self):
-        return "ARG"
+    name = "arg"
 
 
-class MatchItem(Item):
+class TextItem(VariableItem):
+    """Represents the ``text`` attribute in the namespace."""
+    __slots__ = ()
+    name = "text"
+
+
+class MatchItem(VariableItem):
     """Represents the ``match`` attribute in the namespace."""
     __slots__ = ()
-
-    def evaluate(self, ns):
-        try:
-            return ns['match']
-        except KeyError as e:
-            raise EvaluationError("Can't find variable 'match'") from e
+    name = "match"
 
     def __call__(self, n):
-        return MatchGroupItem(n)
-
-    def __repr__(self):
-        return "MATCH"
-
-
-class MatchGroupItem(Item):
-    """Represents a numbered group of the ``match`` attribute in the namespace."""
-    __slots__ = ('n',)
-
-    def __init__(self, n):
-        self.n = n
-
-    def evaluate(self, ns):
-        try:
-            match = ns['match']
-        except KeyError as e:
-            raise EvaluationError("Can't find variable 'match'") from e
-        n = self.n
-        if isinstance(n, Item):
-            n = n.evaluate(ns)
-        return match.group(match.lastindex + n)
-
-    def __getitem__(self, s):
-        return MatchGroupSliceItem(self.n, s)
-
-    def __repr__(self):
-        return 'MATCH({})'.format(repr(self.n))
-
-
-class MatchGroupSliceItem(Item):
-    """Represents a slice of the text matched by a group in a match object."""
-    __slots__ = ('n', 's')
-
-    def __init__(self, n, s):
-        self.n = n
-        self.s = s
-
-    def evaluate(self, ns):
-        try:
-            match = ns['match']
-        except KeyError as e:
-            raise EvaluationError("Can't find variable 'match'") from e
-        n = self.n
-        if isinstance(n, Item):
-            n = n.evaluate(ns)
-        text = match.group(match.lastindex + n)
-        s = self.s
-        if isinstance(s, Item):
-            s = s.evaluate(ns)
-        return text[s]
-
-    def __repr__(self):
-        return 'MATCH({})[{}]'.format(repr(self.n), repr(self.s))
+        def get_group(match, n):
+            return match.group(match.lastindex + n)
+        return call(get_group, self, n)
 
 
 ARG = ArgItem()
