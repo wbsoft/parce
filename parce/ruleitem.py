@@ -365,12 +365,14 @@ class pattern(SurvivingItem):
         self.value = value
 
     def evaluate(self, ns):
+        """Evaluate the value, but return self."""
         value = self._value
         if isinstance(value, Item):
             return type(self)(value.evaluate(ns))
         return self
 
     def pre_evaluate(self, ns):
+        """Try to evaluate the value, but return self."""
         value = self._value
         if isinstance(value, Item):
             value, ok = value.pre_evaluate(ns)
