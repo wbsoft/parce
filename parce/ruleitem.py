@@ -362,7 +362,7 @@ class pattern(SurvivingItem):
     __slots__ = ('_value',)
 
     def __init__(self, value):
-        self.value = value
+        self._value = value
 
     def evaluate(self, ns):
         """Evaluate the value, but return self."""
@@ -381,15 +381,49 @@ class pattern(SurvivingItem):
             return self, 0
         return self, 1
 
+    @property
+    def value(self):
+        """Get the pattern value."""
+        return self._value
+
     def _repr_args(self):
-        return self.value
+        return self._value,
 
 
+# helper function used for Item.__getitem__
 def _get_item(text, n):
     return text[n]
 
 
+# helper function to get the match group in MatchItem.__call__
 def _get_match_group(match, n):
+    # lastindex is always the index of the lexicon's match
     return match.group(match.lastindex + n)
+
+
+# TODO: probably move to rule.py
+def pre_evaluate_rule(rule, arg):
+    """Pre-evaluates items in the rule with the 'arg' variable.
+
+    Unrolls lists. Returns the rule as a tuple.
+
+    """
+    ns = {'arg': arg}
+    def unroll():
+        for item in rule:
+            if isinstance(item, RuleItem):
+                item = item.pre_evaluate(ns)[0]
+            if isinstance(item, list):
+                yield from item
+            else:
+                yield item
+    result = unroll()
+    # the first item may be a pattern instance; it should be evaluated by now
+    # TODO: do this now? or in the lexicon?
+    for item in result:
+        if isinstance(item, pattern):
+            item = item._value
+        return (item,) + tuple(result)
+    return ()
 
 
