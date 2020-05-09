@@ -96,7 +96,19 @@ class _EvaluationError(RuntimeError):
 
 
 class Item:
-    """Base class for any replacable rule item."""
+    """Base class for any replacable rule item.
+
+    An Item is considered to be immutable; you should never alter the
+    attributes after instantiation. When an Item can be partly pre-evaluated a
+    copy must be returned by calling ``type(self)(*args)``.
+
+    In some cases you can also return a different Item type when pre-evaluating
+    partly succeeds. For example, the :class:`choose` type simply returns the
+    chosen item if the index already can be evaluated, without evaluating the
+    other items.
+
+
+    """
     __slots__ = ()
 
     def __getitem__(self, n):
@@ -180,7 +192,8 @@ MATCH = _MatchItem()
 TEXT = _TextItem()
 
 
-del _ArgItem, _MatchItem, _TextItem, _VariableItem
+# these types are not needed anymore
+del _ArgItem, _MatchItem, _TextItem
 
 
 class call(Item):
