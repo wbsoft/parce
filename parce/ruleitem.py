@@ -90,6 +90,9 @@ although the *pre*-evaluation process may alter their attributes:
 """
 
 
+from . import util
+
+
 class _EvaluationError(RuntimeError):
     """Raised when an attribute is missing in the evaluation namespace."""
     pass
@@ -378,10 +381,15 @@ class target(RuleItem):
         return self
 
     def variations(self):
-        """Yield ``int`` and all lexicons that could be chosen."""
+        """Yield our possible variations.
+
+        If the value is evaluated, yield either the value or the chosen
+        lexicon. If not, yields ``a_number`` and all lexicons items.
+
+        """
         value = self._value
         if isinstance(value, Item):
-            yield int
+            yield a_number
             yield from self._lexicons
         elif isinstance(value, int):
             yield value
@@ -494,10 +502,10 @@ class pattern(SurvivingItem):
         return self._value
 
     def variations(self):
-        """If the value is evaluated, yield it, otherwise yields ``None`` and ``str``."""
+        """If the value is evaluated, yield it, otherwise yields ``None`` and ``a_string``."""
         if isinstance(self._value, Item):
             yield None
-            yield str
+            yield a_string
         else:
             yield self._value
 
@@ -543,16 +551,14 @@ def variations_tree(rule):
     """Return a tuple with the tree structure of all possible variations.
 
     Branches (choices) are indicated by a frozenset, which contains
-    zero or more than one tuples.
+    zero or more tuples.
 
     """
     items = tuple(rule)
     for i, item in enumerate(items):
         if isinstance(item, Item):
             branch = frozenset(variations_tree(unroll(v)) for v in item.variations())
-            # if only one branch, remove the frozenset.
-            branch = next(iter(branch)) if len(branch) == 1 else branch,
-            return items[:i] + branch + variations_tree(items[i+1:])
+            return (*items[:i], branch, *variations_tree(items[i+1:]))
     else:
         return items
 
@@ -567,4 +573,11 @@ def unroll(obj):
         yield from obj
     else:
         yield obj
+
+
+#: sentinel denoting that a variation is any integer
+a_number = util.Symbol("a_number")
+
+#: sentinel denoting that a variation is any string
+a_string = util.Symbol("a_string")
 
