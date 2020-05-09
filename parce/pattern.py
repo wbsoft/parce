@@ -38,7 +38,7 @@ def words(words, prefix="", suffix=""):
         if prefix or suffix:
             return prefix + '(?:' + expr + ')' + suffix
         return expr
-    return rule.pattern(call(build))
+    return rule.pattern(rule.call(build))
 
 
 def char(chars, positive=True):
@@ -51,7 +51,7 @@ def char(chars, positive=True):
     def build():
         negate = "" if positive else "^"
         return '[{}{}]'.format(negate, regex.make_charclass(chars))
-    return rule.pattern(call(build))
+    return rule.pattern(rule.call(build))
 
 
 def arg(escape=True, prefix="", suffix="", default=None):
@@ -75,7 +75,7 @@ def arg(escape=True, prefix="", suffix="", default=None):
                 arg = re.escape(arg)
             return prefix + arg + suffix
         return default
-    return rule.pattern(call(build, rule.ARG))
+    return rule.pattern(rule.call(build, rule.ARG))
 
 
 def ifarg(pattern, else_pattern=None):
