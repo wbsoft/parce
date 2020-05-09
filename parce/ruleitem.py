@@ -36,6 +36,9 @@ from) must also inherit from RuleItem.
 This way, we can be sure that we are able to validate a Lexicon beforehand,
 and know all actions or target lexicons that it might yield during parsing.
 
+A third evaluation stage happens in the lexer, for Item objects that inherit
+of ActionItem.
+
 The following fixed Item instances are defined here:
 
 ``ARG``
