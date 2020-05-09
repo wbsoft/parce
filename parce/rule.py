@@ -527,7 +527,6 @@ def _get_match_group(match, n):
     return match.group(match.lastindex + n)
 
 
-# TODO: probably move to rule.py
 def pre_evaluate_rule(rule, arg):
     """Pre-evaluates items in the rule with the 'arg' variable.
 
@@ -542,12 +541,31 @@ def pre_evaluate_rule(rule, arg):
             yield from unroll(item)
     result = items()
     # the first item may be a pattern instance; it should be evaluated by now
-    # TODO: do this now? or in the lexicon?
     for item in result:
         if isinstance(item, pattern):
-            item = item._value
+            item = item.value
         return (item,) + tuple(result)
     return ()
+
+
+def evaluate_rule(rule, match):
+    """Yield all items of the rule, evaluating leftover Items, unrolling list or tuple results."""
+    ns = {'text': match.group(), 'match': match}
+    for item in rule:
+        # TODO more finegrained
+        if isinstance(item, RuleItem) and not isinstance(item, SurvivingItem):
+            item = item.evaluate(ns)
+            yield from unroll(item)
+        else:
+            yield item
+
+
+def needs_evaluation(rule):
+    """Return True if there are items in the rule that need evaluating."""
+    # TODO more finegrained
+    return any(
+        isinstance(item, RuleItem) and not isinstance(item, SurvivingItem)
+        for item in rule)
 
 
 def variations_tree(rule):

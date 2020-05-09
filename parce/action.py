@@ -177,8 +177,7 @@ class DynamicAction(ActionItem):
     of the ``itemlists`` attribute.
 
     """
-    def __init__(self, *actions):
-        super().__init__(actions)
+    __slots__ = ()
 
     def replace(self, lexer, pos, text, match):
         raise NotImplementedError()
@@ -202,8 +201,12 @@ class SubgroupAction(DynamicAction):
     there are action attributes given to __init__().
 
     """
+    __slots__ = ('_actions',)
+    def __init__(self, *actions):
+        self._actions = actions
+
     def replace(self, lexer, pos, text, match):
-        for i, action in enumerate(self.itemlists[0], match.lastindex + 1):
+        for i, action in enumerate(self._actions, match.lastindex + 1):
             yield from lexer.filter_actions(action, match.start(i), match.group(i), match)
 
 
@@ -219,13 +222,13 @@ class DelegateAction(DynamicAction):
     does (almost) not enter other lexicons.
 
     """
+    __slots__ = ('_lexicon',)
     def __init__(self, lexicon):
-        super().__init__(lexicon)
+        self._lexicon = lexicon
 
     def replace(self, lexer, pos, text, match):
         """Use our lexicon to parse the matched text."""
-        lexicon = self.itemlists[0][0]
-        sublexer = type(lexer)([lexicon])
+        sublexer = type(lexer)([self._lexicon])
         for e in sublexer.events(text):
             for p, txt, action in e.tokens:
                 yield pos + p, txt, action

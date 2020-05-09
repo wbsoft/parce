@@ -64,7 +64,7 @@ import parce.regex
 from . import util
 from .pattern import ArgPattern, Pattern
 from .target import TargetFactory
-from .rule import Item, ArgItem, DynamicItem, TextItem
+from .rule import RuleItem, evaluate_rule, needs_evaluation, pre_evaluate_rule
 
 
 class LexiconDescriptor:
@@ -158,27 +158,14 @@ class Lexicon:
 
     @util.cached_property
     def _rules(self):
-        """Yield the rules, building the patterns and replacing the ArgItem instances."""
-        def replace_arg_items(items):
-            """Replace ArgRuleItem instances."""
-            for i in items:
-                if isinstance(i, ArgItem):
-                    yield from replace_arg_items(i.replace(self.arg))
-                else:
-                    if isinstance(i, Item):
-                        i = i.copy()
-                        i.itemlists = [list(replace_arg_items(l)) for l in i.itemlists]
-                    yield i
-        def rules():
-            for rule in self.lexicon.rules_func(self.language) or ():
-                pattern, *rule = replace_arg_items(rule)
-                while isinstance(pattern, Pattern):
-                    if isinstance(pattern, ArgPattern):
-                        pattern = pattern.build(self.arg)
-                    else:
-                        pattern = pattern.build()
-                yield (pattern, *rule)
-        return tuple(rules())
+        """Yield the rules.
+
+        Patterns are created and rule items that depend on the lexicon argument
+        are evaluated.
+
+        """
+        return tuple(pre_evaluate_rule(rule, self.arg)
+                for rule in self.lexicon.rules_func(self.language) or ())
 
     def __iter__(self):
         """Yield the rules.
@@ -245,13 +232,11 @@ class Lexicon:
                 rules.append(rule)
 
         # prepare to handle a dynamic default lexicon (if TextItem descendant)
-        dynamic_default_action = False
-        if isinstance(default_action, TextItem):
+        if isinstance(default_action, RuleItem):
             def dynamic_default_action(text):
-                def replace_action(action):
-                    for a in action.replace(text, None):
-                        return replace_action(a) if isinstance(a, TextItem) else a
-                return replace_action(default_action)
+                return default_action.evaluate({'text': text})
+        else:
+            dynamic_default_action = False
 
         # handle the empty lexicon case
         if not patterns:
@@ -337,7 +322,7 @@ class Lexicon:
         static = [None] * (indices[-1] + 1)
         dynamic = [None] * (indices[-1] + 1)
         for i, rule in zip(indices, rules):
-            if any(isinstance(item, Item) for item in rule):
+            if needs_evaluation(rule):
                 dynamic[i] = rule
             else:
                 action, *target = rule
@@ -351,13 +336,7 @@ class Lexicon:
 
         def replace(m):
             """Recursively replace dynamic rule items in the rule pointed to by match object."""
-            def inner_replace(items):
-                for i in items:
-                    if isinstance(i, DynamicItem):
-                        yield from inner_replace(i.replace(m.group(), m))
-                    else:
-                        yield i
-            action, *target = inner_replace(dynamic[m.lastindex])
+            action, *target = evaluate_rule(dynamic[m.lastindex], m)
             return action, make_target(self, target)
 
         if dynamic_default_action:
