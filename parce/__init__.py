@@ -178,7 +178,7 @@ def ifarg(if_pattern, else_pattern=None):
     yielded, which is None by default, resulting in the rule being skipped.
 
     """
-    return pattern.IfArg(if_pattern, else_pattern)
+    return pattern.ifarg(if_pattern, else_pattern)
 
 
 def byarg(predicate, *itemlists):

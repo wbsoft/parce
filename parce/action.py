@@ -213,6 +213,10 @@ class SubgroupAction(DynamicAction):
         """Yield the actions specified on init, used by pre_evaluate()."""
         yield from self._actions
 
+    def variations(self):
+        """Yield the possible actions."""
+        yield from self._actions
+
 
 class DelegateAction(DynamicAction, RuleItem):
     """This action uses a lexicon to parse the text.
@@ -242,6 +246,10 @@ class DelegateAction(DynamicAction, RuleItem):
         """Yield the lexicon specified on init, used by evaluate() and pre_evaluate()."""
         yield self._lexicon
 
+    def variations(self):
+        """Yield our lexicon."""
+        yield self._lexicon
+
 
 class SkipAction(DynamicAction):
     """A DynamicAction that yields nothing.
@@ -252,4 +260,9 @@ class SkipAction(DynamicAction):
     """
     def replace(self, lexer, pos, text, match):
         yield from ()
+
+    def variations(self):
+        """Yield no variations."""
+        return
+        yield
 

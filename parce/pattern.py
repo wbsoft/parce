@@ -68,7 +68,7 @@ def arg(escape=True, prefix="", suffix="", default=None):
     ``suffix`` are not used.
 
     """
-    def build(self, arg):
+    def build(arg):
         """Return the lexicon argument as regular expression."""
         if isinstance(arg, str):
             if escape:

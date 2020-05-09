@@ -368,7 +368,7 @@ class target(RuleItem):
                 lexicon, ok = lexicon.pre_evaluate(ns)
             if ok:
                 return lexicon(arg), 1
-            return type(self)((0, arg), *[lexicon]), 0
+            return type(self)((0, arg), lexicon), 0
         # pre-evaluate the lexicons
         lexicons, found = [], []
         for lexicon in self._lexicons:
@@ -379,7 +379,7 @@ class target(RuleItem):
             lexicons.append(lexicon)
             found.append(ok)
         if any(found):
-            return type(self)(value, lexicons), 0
+            return type(self)(value, *lexicons), 0
         return self
 
     def variations(self):
@@ -558,6 +558,21 @@ def variations_tree(rule):
             return (*items[:i], branch, *variations_tree(items[i+1:]))
     else:
         return items
+
+
+def variations(rule):
+    """Yield all possible variations of the rule."""
+    items = tuple(rule)
+    for i, item in enumerate(items):
+        if isinstance(item, Item):
+            prefix = items[:i]
+            for suffix in variations(items[i+1:]):
+                for v in item.variations():
+                    for l in variations(unroll(v)):
+                        yield prefix + l + suffix
+            break
+    else:
+        yield items
 
 
 def unroll(obj):

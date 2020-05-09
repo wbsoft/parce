@@ -24,8 +24,7 @@ import reprlib
 
 import parce
 from .lexicon import LexiconDescriptor, Lexicon
-from .pattern import Pattern
-from .rule import Item, variations
+from .rule import variations, a_number
 
 
 def validate_language(lang):
@@ -136,7 +135,7 @@ class LexiconValidator:
         # all possible rule paths
         for path in variations(rule):
             for target in path[1:]:     # the first item always is the action
-                if not isinstance(target, (int, Lexicon)):
+                if target is not a_number and not isinstance(target, (int, Lexicon)):
                     self.error("rule #{0}: invalid target: {1}".format(n, target))
 
     def check_default_target(self, target):
