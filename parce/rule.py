@@ -261,8 +261,7 @@ class call(Item):
 class RuleItem(Item):
     """Classes inheriting RuleItem are allowed in toplevel in rules.
 
-    They must either expose the objects they can yield, or inherit from
-    SurvivingItem, so they are not replaced by the lexicon.
+    They are evaluated by the lexicon when a rule matches.
 
     """
     __slots__ = ()
@@ -404,14 +403,17 @@ class target(RuleItem):
         return (self._value, *self._lexicons)
 
 
-class SurvivingItem(RuleItem):
-    """Allowed in a rule, but evaluation is postponed, although pre-evaluation
-    may occur."""
+class PostponedItem(Item):
+    """Mixin base class for items that keep alive after the Lexicon.
+
+    When inheriting from this class, implement the :meth:`evaluate_items`
+    method, which lists all values as they were given to the __init__ method.
+
+    """
     __slots__ = ()
 
     def evaluate(self, ns):
-        """Evaluate all values yielded by the evaluate_items() method, that
-        want to be evaluated.
+        """Evaluate all values yielded by the evaluate_items() method.
 
         If any value changes, a copy of the Item is returned, otherwise the
         Item ifself. If the evaluate_items() method does not yield any value,
@@ -419,7 +421,7 @@ class SurvivingItem(RuleItem):
 
         """
         items, found = [], 0
-        for item, evaluate in self.evaluate_items():
+        for item in self.evaluate_items():
             if evaluate and isinstance(item, Item):
                 item = item.evaluate(ns)
                 found = 1
@@ -436,55 +438,33 @@ class SurvivingItem(RuleItem):
 
         """
         items, found = [], []
-        for item, evaluate in self.evaluate_items():
+        for item in self.evaluate_items():
             if isinstance(item, Item):
                 item, ok = item.pre_evaluate(ns)
                 found.append(ok)
             items.append(item)
         if any(found):
             return type(self)(*items), int(all(found))
-        return self, 1
+        return self, 0 if found else 1
 
     def evaluate_items(self):
-        """Yield two-tuples (value, evaluate).
-
-        The values should be in the same order as in the __init__ method.
-        The ``value`` is the value; ``evaluate`` is True when you want the
-        value to be evaluated, False when you only want it to be pre-evaluated.
+        """Yield the current values as they are given to the __init__ method.
 
         This method should either yield *all( values that were given to the
-        __init__ method, or nothing. By default nothing is evaluated or
-        pre-evaluated.
+        __init__ method, or nothing. The default implementation yields nothing,
+        so nothing is evaluated or pre-evaluated.
 
         """
         return
         yield
 
-    def variations(self):
-        """Just yield self, to be handled depending of type."""
-        yield self
 
-
-class ActionItem(SurvivingItem):
-    """Base class for dynamic actions.
-
-    The actions are replaced, but the object itself remains alive after
-    building the rule.
-
-    """
+class ActionItem(PostponedItem):
+    """Mixin base class for dynamic actions."""
     __slots__ = ()
-    ## when pre-evaluating with ARG, allow actions inside SubgroupAction
-    ## to be replaced. But not when evaluating. Then it's done by the lexer.
-    def evaluate(self, ns):
-        """Evaluates sub-items, but returns self."""
-        return self
-
-    def replace(self, lexer, pos, text, match):
-        """Yield the action items."""
-        raise NotImplementedError
 
 
-class pattern(SurvivingItem):
+class pattern(PostponedItem):
     """Represents a pattern.
 
     This evaluates its value, but remains alive after building the rule.
@@ -495,14 +475,14 @@ class pattern(SurvivingItem):
     def __init__(self, value):
         self._value = value
 
-    def evaluate_items(self):
-        """Yield the value given on init."""
-        yield self._value, True
-
     @property
     def value(self):
         """Get the pattern value."""
         return self._value
+
+    def evaluate_items(self):
+        """Yield the pattern value."""
+        yield self._value
 
     def variations(self):
         """If the value is evaluated, yield it, otherwise yields ``None`` and ``a_string``."""
@@ -536,7 +516,7 @@ def pre_evaluate_rule(rule, arg):
     ns = {'arg': arg}
     def items():
         for item in rule:
-            if isinstance(item, RuleItem):
+            if isinstance(item, Item):
                 item = item.pre_evaluate(ns)[0]
             yield from unroll(item)
     result = items()
@@ -552,8 +532,7 @@ def evaluate_rule(rule, match):
     """Yield all items of the rule, evaluating leftover Items, unrolling list or tuple results."""
     ns = {'text': match.group(), 'match': match}
     for item in rule:
-        # TODO more finegrained
-        if isinstance(item, RuleItem) and not isinstance(item, SurvivingItem):
+        if isinstance(item, RuleItem):
             item = item.evaluate(ns)
             yield from unroll(item)
         else:
@@ -562,10 +541,7 @@ def evaluate_rule(rule, match):
 
 def needs_evaluation(rule):
     """Return True if there are items in the rule that need evaluating."""
-    # TODO more finegrained
-    return any(
-        isinstance(item, RuleItem) and not isinstance(item, SurvivingItem)
-        for item in rule)
+    return any(isinstance(item, RuleItem) for item in rule)
 
 
 def variations_tree(rule):

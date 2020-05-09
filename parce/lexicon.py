@@ -170,8 +170,8 @@ class Lexicon:
     def __iter__(self):
         """Yield the rules.
 
-        Pattern objects are built, and the ArgItem instances replaced when this
-        method is called for the first time.
+        Patterns are created and rule items that depend on the lexicon argument
+        are evaluated when this method is called for the first time.
 
         """
         yield from self._rules
@@ -231,7 +231,7 @@ class Lexicon:
                 patterns.append(pattern)
                 rules.append(rule)
 
-        # prepare to handle a dynamic default lexicon (if TextItem descendant)
+        # prepare to handle a dynamic default lexicon
         if isinstance(default_action, RuleItem):
             def dynamic_default_action(text):
                 return default_action.evaluate({'text': text})

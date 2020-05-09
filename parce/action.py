@@ -115,7 +115,7 @@ Language to other objects, which could even be methods or functions.
 import threading
 
 
-from .rule import ActionItem
+from .rule import ActionItem, RuleItem
 
 
 # we use a global lock for standardaction creation, it seems overkill
@@ -209,8 +209,12 @@ class SubgroupAction(DynamicAction):
         for i, action in enumerate(self._actions, match.lastindex + 1):
             yield from lexer.filter_actions(action, match.start(i), match.group(i), match)
 
+    def evaluate_items(self):
+        """Yield the actions specified on init, used by pre_evaluate()."""
+        yield from self._actions
 
-class DelegateAction(DynamicAction):
+
+class DelegateAction(DynamicAction, RuleItem):
     """This action uses a lexicon to parse the text.
 
     All tokens are yielded as one group, flattened, ignoring the tree
@@ -223,6 +227,7 @@ class DelegateAction(DynamicAction):
 
     """
     __slots__ = ('_lexicon',)
+
     def __init__(self, lexicon):
         self._lexicon = lexicon
 
@@ -232,6 +237,10 @@ class DelegateAction(DynamicAction):
         for e in sublexer.events(text):
             for p, txt, action in e.tokens:
                 yield pos + p, txt, action
+
+    def evaluate_items(self):
+        """Yield the lexicon specified on init, used by evaluate() and pre_evaluate()."""
+        yield self._lexicon
 
 
 class SkipAction(DynamicAction):
