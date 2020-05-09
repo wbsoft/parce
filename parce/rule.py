@@ -312,7 +312,7 @@ class choose(RuleItem):
             items.append(i)
             found.append(ok)
         if any(found):
-            return type(self)(index, items), 0
+            return type(self)(index, *items), 0
         return self, 0      # nothing changed
 
     def variations(self):
