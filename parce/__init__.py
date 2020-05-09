@@ -138,7 +138,7 @@ def words(words, prefix="", suffix=""):
     recommended to be sure the match ends at a word end.
 
     """
-    return pattern.Words(words, prefix, suffix)
+    return pattern.words(words, prefix, suffix)
 
 
 def char(chars, positive=True):
@@ -149,7 +149,7 @@ def char(chars, positive=True):
     Pattern matches any single character that is not in the specified string.
 
     """
-    return pattern.Char(chars, positive)
+    return pattern.char(chars, positive)
 
 
 def arg(escape=True, prefix="", suffix="", default=None):
@@ -166,7 +166,7 @@ def arg(escape=True, prefix="", suffix="", default=None):
     ``suffix`` are not used.
 
     """
-    return pattern.Arg(escape, prefix, suffix, default)
+    return pattern.arg(escape, prefix, suffix, default)
 
 
 def ifarg(if_pattern, else_pattern=None):
@@ -189,7 +189,7 @@ def byarg(predicate, *itemlists):
     normal Lexicon, but can have another value for a derivative Lexicon.
 
     """
-    return rule.PredicateArgItem(predicate, *itemlists)
+    return rule.choose(rule.call(predicate, rule.ARG), *itemlists)
 
 
 def bymatch(predicate, *itemlists):
@@ -205,7 +205,7 @@ def bymatch(predicate, *itemlists):
     at the same time.
 
     """
-    return rule.MatchItem(predicate, *itemlists)
+    return rule.choose(rule.call(predicate, rule.MATCH), *itemlists)
 
 
 def bytext(predicate, *itemlists):
@@ -221,7 +221,7 @@ def bytext(predicate, *itemlists):
     at the same time.
 
     """
-    return rule.TextItem(predicate, *itemlists)
+    return rule.choose(rule.call(predicate, rule.TEXT), *itemlists)
 
 
 def ifgroup(n, itemlist, else_itemlist=()):
@@ -462,12 +462,12 @@ def withgroup(n, lexicon, mapping=None):
 
     """
     if mapping:
-        def predicate(match):
-            return mapping.get(match.group(match.lastindex + n))
+        def predicate(text):
+            return 0, mapping.get(text)
     else:
-        def predicate(match):
-            return match.group(match.lastindex + n)
-    return rule.LexiconMatchItem(predicate, lexicon)
+        def predicate(text):
+            return 0, text
+    return rule.target(rule.call(predicate, rule.MATCH(n)), lexicon)
 
 
 def withtext(lexicon, mapping=None):
@@ -479,8 +479,13 @@ def withtext(lexicon, mapping=None):
     call the lexicon with.
 
     """
-    predicate = mapping.get if mapping else lambda t: t
-    return rule.LexiconTextItem(predicate, lexicon)
+    if mapping:
+        def predicate(text):
+            return 0, mapping.get(text)
+    else:
+        def predicate(text):
+            return 0, text
+    return rule.target(rule.call(predicate, rule.TEXT), lexicon)
 
 
 def witharg(lexicon):
@@ -491,7 +496,7 @@ def witharg(lexicon):
     lexicon.
 
     """
-    return rule.LexiconArgItem(lexicon)
+    return rule.target(rule.call((lambda a: 0, a), rule.ARG), lexicon)
 
 
 def lexicon(rules_func=None, **kwargs):

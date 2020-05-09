@@ -62,7 +62,6 @@ import threading
 
 import parce.regex
 from . import util
-from .pattern import ArgPattern, Pattern
 from .target import TargetFactory
 from .rule import RuleItem, evaluate_rule, needs_evaluation, pre_evaluate_rule
 
