@@ -21,52 +21,76 @@
 """
 Replacable rule item objects.
 
-In planning/sketching phase, will replace current rule.py items.
+When the Lexicon builds its internal representation of the rules,
+RuleItem instances are evaluated in two stages. First, the items
+are pre-elevated: meaning that the items that depend on the lexicon
+argument (the ARG variable) are evaluated.
 
+When a rule matches during parsing, the rest of the items are evaluated
+using the TEXT and the MATCH variables.
 
-Items:
+Only Items that inherit from RuleItem may directly appear in a rule,
+and items that they expose (such as the items a :class:`choose` Item chooses
+from) must also inherit from RuleItem.
+
+This way, we can be sure that we are able to validate a Lexicon beforehand,
+and know all actions or target lexicons that it might yield during parsing.
+
+The following fixed Item instances are defined here:
 
 ``ARG``
     represents the lexicon argument
 ``MATCH``
     represents the match object of a regular expression match
+``TEXT``
+    represents the matched text
+
+The match and text variables have some additional functionality:
+
 ``MATCH(n)``
     represents the text in a subgroup of the match (subgroups start with 1)
 ``MATCH(n)[s]``
     represents a slice of the text in a subgroup (fails if the group is None)
-``TEXT``
-    represents the matched text
 ``TEXT[s]``
     represents a slice of the matched text
 
+Very often you want to use a predicate function on one of the above
+variables, then you need the ``call`` item type:
 
 ``call(callable, *arguments)``
     gets the result of calling callable with zero or more arguments
 
+Callable and arguments may also be Item instances.
+The ``call`` item type is not allowed directly in a rule, because is not clear
+what value it will return. Use it in combination with ``choose``, ``target``,
+``pattern`` or dynamic actions (see below).
 
-these are RuleItem types(allowed in toplevel a rule)
+The following items are RuleItem types (allowed in toplevel in a rule):
 
 ``choose(index, *items)``
-    chooses the item pointed to by the value in index. When an item ends up in
-    a rule; it is unrolled when it is a list.
+    chooses the item pointed to by the value in index. The item that ends up in
+    a rule is unrolled when it is a list.
 ``target(value, *lexicons)``
     has a special handling: if the value is an integer, return it (pop or push
     value). If it is a two-tuple(index, arg): derive the lexicon at index with
     arg.
 
-these survive evaluating, although the *pre*-evaluation process may alter their
-attributes:
+And the following items may also appear in a rule, they survive evaluating,
+although the *pre*-evaluation process may alter their attributes:
 
 ``pattern(value)``
     only allowed as the first item in a rule; is expected to create a string
-    or None, causing the rule to be skipped.
+    or None. If None, the whole rule is skipped.
 
 ``ActionItem(*items)``
+    base class for dynamic actions. Those are not evaluated by the Lexicon,
+    although the items they contain may be. The lexer takes care of these
+    items.
 
 """
 
 
-class EvaluationError(Exception):
+class _EvaluationError(RuntimeError):
     """Raised when an attribute is missing in the evaluation namespace."""
     pass
 
@@ -79,24 +103,21 @@ class Item:
         return call(_get_item, self, n)
 
     def evaluate(self, ns):
-        """Evaluate item in namespace dict.
-
-        The namespace has 'text', 'arg' and/or 'match; attributes. If one that
-        it needed is not there, EvaluationError is raised.
-
-        """
+        """Evaluate item in namespace dict."""
         raise NotImplementedError
 
     def pre_evaluate(self, ns):
         """Try to evaluate; return a two-tuple(obj, success).
 
-        If success, the obj is the result, if not; obj is self. Specific items
-        my implement this to replace successfully evaluated sub-attributes.
+        If success = 1, the obj is the result, if 0; obj is the item itself, or
+        a partially evaluated copy of the item. Specific items may re-implement
+        this to return a copy with successfully evaluated sub-attributes
+        replaced.
 
         """
         try:
             return self.evaluate(ns), 1
-        except EvaluationError:
+        except _EvaluationError:
             return self, 0
 
     def __repr__(self):
@@ -113,7 +134,7 @@ class RuleItem(Item):
     __slots__ = ()
 
 
-class VariableItem(Item):
+class _VariableItem(Item):
     """A named variable that's accessed in the namespace."""
     __slots__ = ()
     name = "name"
@@ -123,25 +144,25 @@ class VariableItem(Item):
         try:
             return ns[self.name]
         except KeyError as e:
-            raise EvaluationError("Can't find variable '{name}'".format(self.name)) from e
+            raise _EvaluationError("Can't find variable '{}'".format(self.name)) from e
 
     def __repr__(self):
         return self.name.upper()
 
 
-class ArgItem(VariableItem):
+class _ArgItem(_VariableItem):
     """Represents the ``arg`` attribute in the namespace."""
     __slots__ = ()
     name = "arg"
 
 
-class TextItem(VariableItem):
+class _TextItem(_VariableItem):
     """Represents the ``text`` attribute in the namespace."""
     __slots__ = ()
     name = "text"
 
 
-class MatchItem(VariableItem):
+class _MatchItem(_VariableItem):
     """Represents the ``match`` attribute in the namespace."""
     __slots__ = ()
     name = "match"
@@ -150,16 +171,16 @@ class MatchItem(VariableItem):
         return call(_get_match_group, self, n)
 
 #: the lexicon argument
-ARG = ArgItem()
+ARG = _ArgItem()
 
 #: the regular expression match (or None)
-MATCH = MatchItem()
+MATCH = _MatchItem()
 
 #: the matched text
-TEXT = TextItem()
+TEXT = _TextItem()
 
 
-del ArgItem, MatchItem, TextItem, VariableItem
+del _ArgItem, _MatchItem, _TextItem, _VariableItem
 
 
 class call(Item):
@@ -207,7 +228,12 @@ class call(Item):
 
 
 class RuleItem(Item):
-    """Classes inheriting RuleItem are allowed in toplevel in rules."""
+    """Classes inheriting RuleItem are allowed in toplevel in rules.
+
+    They must either expose the objects they can yield, or inherit from
+    SurvivingItem, so they are not replaced by the lexicon.
+
+    """
     __slots__ = ()
 
 
