@@ -21,247 +21,566 @@
 """
 Replacable rule item objects.
 
-A normal rule consists of a pattern, action and zero or more targets.
+When the Lexicon builds its internal representation of the rules,
+RuleItem instances are evaluated in two stages. First, the items
+are pre-elevated: meaning that the items that depend on the lexicon
+argument (the ARG variable) are evaluated.
 
-An action may be any object, a target is either an integer or a lexicon. The
-lexicon may be a derived lexicon (i.e. created by calling a vanilla lexicon
-with an argument).
+When a rule matches during parsing, the rest of the items are evaluated
+using the TEXT and the MATCH variables.
 
-This module defines some classes for replacable rule item objects, which can
-be used in a rule, and which generate other objects, ultimately resulting in a
-normal rule.
+Only Items that inherit from RuleItem may directly appear in a rule,
+and items that they expose (such as the items a :class:`choose` Item chooses
+from) must also inherit from RuleItem.
 
-These replacable objects can be used to define actions and targets. (For
-generated patterns, the :class:`~parce.pattern.Pattern` class from the
-:mod:`~parce.pattern` module must be used.)
+This way, we can be sure that we are able to validate a Lexicon beforehand,
+and know all actions or target lexicons that it might yield during parsing.
 
-There are four moments when replaceable rule items are processed:
+A third evaluation stage happens in the lexer, for Item objects that inherit
+of ActionItem.
 
-1. when yielding the rules of the lexicon, in the
-   :meth:`~parce.lexicon.__iter__` method of :class:`~parce.lexicon.Lexicon`.
+The following fixed Item instances are defined here:
 
-   At this stage, :class:`ArgItem` instances are replaced, by calling their
-   ``replace()`` method with the lexicon argument (which is None for a vanilla
-   lexicon).
+``ARG``
+    represents the lexicon argument
+``MATCH``
+    represents the match object of a regular expression match
+``TEXT``
+    represents the matched text
 
-2. when constructing the :meth:`parse` method of the Lexicon, just before
-   the first parsing. At this stage, :class:`~parce.pattern.Pattern` objects
-   are built by the lexicon.
+The match and text variables have some additional functionality:
 
-3. while parsing, when a rule's pattern matches the text. At this moment,
-   :class:`DynamicItem` instances are replaced by calling their ``replace()``
-   method with both the matched text and the match object (if available).
+``MATCH(n)``
+    represents the text in a subgroup of the match (subgroups start with 1)
+``MATCH(n)[s]``
+    represents a slice of the text in a subgroup (fails if the group is None)
+``TEXT[s]``
+    represents a slice of the matched text
 
-4. after parsing, :class:`ActionItem` instances are processed. A normal action
-   is just paired with the matched text to form a token, but an ActionItem can
-   create zero or more tokens, e.g. to match subgroups in a regular expression,
-   or to skip some types of text. This is done by the
-   :class:`~parce.lexer.Lexer` from the :mod:`~parce.lexer` module.
+Very often you want to use a predicate function on one of the above
+variables, then you need the ``call`` item type:
 
-   When the lexer replaces ``ActionItem`` objects, the replacement objects
-   are scanned for ``DynamicItem`` instances as well.
+``call(callable, *arguments)``
+    gets the result of calling callable with zero or more arguments
 
-All three Item subclasses, :class:`ArgItem`, :class:`DynamicItem` and
-:class:`ActionItem` have their possible replacement objects in their
-``itemlists`` attribute. So there are never unexpected objects in a rule, and
-rules can always be validated, and e.g. all possible actions can be determined
-beforehand.
+Callable and arguments may also be Item instances.
+The ``call`` item type is not allowed directly in a rule, because is not clear
+what value it will return. Use it in combination with ``choose``, ``target``,
+``pattern`` or dynamic actions (see below).
+
+The following items are RuleItem types (allowed in toplevel in a rule):
+
+``choose(index, *items)``
+    chooses the item pointed to by the value in index. The item that ends up in
+    a rule is unrolled when it is a list.
+``target(value, *lexicons)``
+    has a special handling: if the value is an integer, return it (pop or push
+    value). If it is a two-tuple(index, arg): derive the lexicon at index with
+    arg.
+
+And the following items may also appear in a rule, they survive evaluating,
+although the *pre*-evaluation process may alter their attributes:
+
+``pattern(value)``
+    only allowed as the first item in a rule; is expected to create a string
+    or None. If None, the whole rule is skipped.
+
+``ActionItem(*items)``
+    base class for dynamic actions. Those are not evaluated by the Lexicon,
+    although the items they contain may be. The lexer takes care of these
+    items.
 
 """
 
 
-### abstract base classes
+from . import util
+
+
+class _EvaluationError(RuntimeError):
+    """Raised when an attribute is missing in the evaluation namespace."""
+    pass
+
 
 class Item:
-    """Abstract base class for all items from rules that are replaced.
+    """Base class for any replacable rule item.
 
-    Don't inherit from Item directly; use ArgItem, DynamicItem, or ActionItem.
+    An Item is considered to be immutable; you should never alter the
+    attributes after instantiation. When an Item can be partly pre-evaluated a
+    copy must be returned by calling ``type(self)(*args)``.
 
-    """
-    def __init__(self, *itemlists):
-        self.itemlists = [i if isinstance(i, (tuple, list)) else (i,)
-                          for i in itemlists]
-    def copy(self):
-        """Return a copy of this Item."""
-        cls = type(self)
-        copy = cls.__new__(cls)
-        copy.__dict__.update(self.__dict__)
-        return copy
-
-    def replace(self, *args):
-        """Called to get the replacement."""
-        raise NotImplementedError()
-
-
-class PredicateMixin:
-    """Mixin class providing ``predicate`` handling."""
-    def __init__(self, predicate, *itemlists):
-        super().__init__(*itemlists)
-        self.predicate = predicate
-
-
-class ArgItem(Item):
-    """Abstract base class for items replaced before parsing.
-
-    These items are replaced by the Lexicon in the :meth:`__iter__` method,
-    when yielding the rules, before constructing the Lexicons's :meth:`parse`
-    method.
-
-    """
-    def replace(self, arg):
-        """Called to get the replacement based on lexicon argument."""
-        raise NotImplementedError()
-
-
-class DynamicItem(Item):
-    """Abstract base class for items replaced during parsing.
-
-    These items are replaced by the Lexicon in the :meth:`parse` method.
-
-    """
-    def replace(self, text, match):
-        """Called to get the replacement based on text and/or match object."""
-        raise NotImplementedError()
-
-
-class ActionItem(Item):
-    """Abstract base class for items replaced after parsing.
-
-    :class:`~parce.action.DynamicAction` inherits from this class. Dynamic
-    actions are replaced by the lexer. See the :mod:`~parce.lexer` module.
-
-    """
-
-
-### argument items
-
-class LexiconArgItem(ArgItem):
-    """Return a derived Lexicon with the same argument as the current lexicon.
-
-    The lexicon is the first item in the first itemlist, there should not be
+    In some cases you can also return a different Item type when pre-evaluating
+    partly succeeds. For example, the :class:`choose` type simply returns the
+    chosen item if the index already can be evaluated, without evaluating the
     other items.
 
-    """
-    def replace(self, arg):
-        return self.itemlists[0][0](arg),
-
-
-class PredicateArgItem(PredicateMixin, ArgItem):
-    """Calls the predicate with the lexicon argument.
-
-    The predicate should return the index of the itemlists to return.
 
     """
-    def replace(self, arg):
-        index = self.predicate(arg)
-        return self.itemlists[index]
+    __slots__ = ()
+
+    def __getitem__(self, n):
+        return call(_get_item, self, n)
+
+    def evaluate(self, ns):
+        """Evaluate item in namespace dict."""
+        raise NotImplementedError
+
+    def pre_evaluate(self, ns):
+        """Try to evaluate; return a two-tuple(obj, success).
+
+        If success = 1, the obj is the result, if 0; obj is the item itself, or
+        a partially evaluated copy of the item. Specific items may re-implement
+        this to return a copy with successfully evaluated sub-attributes
+        replaced.
+
+        """
+        try:
+            return self.evaluate(ns), 1
+        except _EvaluationError:
+            return self, 0
+
+    def variations(self):
+        """Yield the possible results for this item.
+
+        This is used to build a decision tree for a rule, to see which actions
+        and targets it could bring.
+
+        The default implementation raises a RuntimeError; only RuleItem
+        objects can yield variations.
+
+        """
+        raise RuntimeError("Item '{}' can't be used directly in a rule".format(repr(self)))
+
+    def __repr__(self):
+        return "{}({})".format(
+            self.__class__.__name__,
+            ', '.join(map(repr, self._repr_args())))
+
+    def _repr_args(self):
+        return ()
 
 
-class ReplacedArgItem(PredicateMixin, ArgItem):
-    """Calls the predicate with the lexicon argument.
+class RuleItem(Item):
+    """Base class for items that may become visible in rules."""
+    __slots__ = ()
 
-    The predicate should return another predicate function that is then set in
-    the first DynamicItem in the first itemlist, which is returned. There
-    should not be other items.
+
+class _VariableItem(Item):
+    """A named variable that's accessed in the namespace."""
+    __slots__ = ()
+    name = "name"
+
+    def evaluate(self, ns):
+        """Get the variable from the namespace dict."""
+        try:
+            return ns[self.name]
+        except KeyError as e:
+            raise _EvaluationError("Can't find variable '{}'".format(self.name)) from e
+
+    def __repr__(self):
+        return self.name.upper()
+
+
+class _ArgItem(_VariableItem):
+    """Represents the ``arg`` attribute in the namespace."""
+    __slots__ = ()
+    name = "arg"
+
+
+class _TextItem(_VariableItem):
+    """Represents the ``text`` attribute in the namespace."""
+    __slots__ = ()
+    name = "text"
+
+
+class _MatchItem(_VariableItem):
+    """Represents the ``match`` attribute in the namespace."""
+    __slots__ = ()
+    name = "match"
+
+    def __call__(self, n):
+        return call(_get_match_group, self, n)
+
+#: the lexicon argument
+ARG = _ArgItem()
+
+#: the regular expression match (or None)
+MATCH = _MatchItem()
+
+#: the matched text
+TEXT = _TextItem()
+
+
+# these types are not needed anymore
+del _ArgItem, _MatchItem, _TextItem
+
+
+class call(Item):
+    """Call predicate with arguments."""
+    __slots__ = ('_predicate', '_arguments')
+    def __init__(self, predicate, *arguments):
+        self._predicate = predicate
+        self._arguments = arguments
+
+    def evaluate(self, ns):
+        """Call predicate with the arguments."""
+        predicate = self._predicate
+        if isinstance(predicate, Item):
+            predicate = predicate.evaluate(ns)
+        arguments = []
+        for a in self._arguments:
+            if isinstance(a, Item):
+                a = a.evaluate(ns)
+            arguments.append(a)
+        return predicate(*arguments)
+
+    def pre_evaluate(self, ns):
+        """Optimize by pre-evaluating what can be pre-evaluated."""
+        predicate = self._predicate
+        if isinstance(predicate, Item):
+            predicate, pred_ok = predicate.pre_evaluate(ns)
+        else:
+            pred_ok = 1
+        arguments, found = [], []
+        for a in self._arguments:
+            if isinstance(a, Item):
+                a, ok = a.pre_evaluate(ns)
+            else:
+                ok = 1
+            arguments.append(a)
+            found.append(ok)
+        if pred_ok and all(found):
+            return predicate(*arguments), 1
+        if pred_ok or any(found):
+            return type(self)(predicate, *arguments), 0
+        return self, 0      # nothing changed
+
+    def _repr_args(self):
+        return (self._predicate, *self._arguments)
+
+
+class RuleItem(Item):
+    """Classes inheriting RuleItem are allowed in toplevel in rules.
+
+    They must either expose the objects they can yield, or inherit from
+    SurvivingItem, so they are not replaced by the lexicon.
 
     """
-    def replace(self, arg):
-        item = self.itemlists[0][0].copy()
-        assert isinstance(item, DynamicItem)
-        item.predicate = self.predicate(arg)
-        return item,
+    __slots__ = ()
 
 
-### dynamic items
+class choose(RuleItem):
+    """Chooses one of the items.
 
-class TextItem(PredicateMixin, DynamicItem):
-    """Calls the predicate with the matched text.
-
-    The predicate should return the index of the itemlists to return.
+    If an item is a list, it is unrolled when replacing the item in a rule.
 
     """
-    def replace(self, text, match):
-        index = self.predicate(text)
-        return self.itemlists[index]
+    __slots__ = ('_index', '_items')
+
+    def __init__(self, index, *items):
+        self._index = index
+        self._items = items
+
+    def evaluate(self, ns):
+        """Return items[index]."""
+        index = self._index
+        if isinstance(index, Item):
+            index = index.evaluate(ns)
+        item = self._items[index]
+        if isinstance(item, Item):
+            item = item.evaluate(ns)
+        return item
+
+    def pre_evaluate(self, ns):
+        """Optimize by pre-evaluating what can be pre-evaluated."""
+        index, ok = self._index, 1
+        if isinstance(index, Item):
+            index, ok = index.pre_evaluate(ns)
+        if ok:
+            # we know the index, only one item needs to be evaluated
+            # and can be returned.
+            item = self._items[index]
+            if isinstance(item, Item):
+                return item.pre_evaluate(ns)
+            return item, 1
+        # we don't yet know the index, pre-evaluate every item
+        # is possible.
+        items, found = [], []
+        for i in self._items:
+            if isinstance(i, Item):
+                i, ok = i.pre_evaluate(ns)
+            else:
+                ok = 1
+            items.append(i)
+            found.append(ok)
+        if any(found):
+            return type(self)(index, items), 0
+        return self, 0      # nothing changed
+
+    def variations(self):
+        """Yield all the items that could be chosen (unevaluated)."""
+        yield from self._items
+
+    def _repr_args(self):
+        return (self._index, *self._items)
 
 
-class MatchItem(PredicateMixin, DynamicItem):
-    """Calls the predicate with the match object.
+class target(RuleItem):
+    """target(value, *lexicons)
 
-    The predicate should return the index of the itemlists to return.
+    Has a special handling: if the value is an integer, it is used as the
+    result value (to push/pop contexts).
+
+    If it is a two-tuple(index, argument): The index points to the lexicon the
+    argument is used as lexicon argument.
 
     """
-    def replace(self, text, match):
-        index = self.predicate(match)
-        return self.itemlists[index]
+    __slots__ = ('_value', '_lexicons')
+
+    def __init__(self, value, *lexicons):
+        self._value = value
+        self._lexicons = lexicons
+
+    def evaluate(self, ns):
+        """Return value if integer, otherwise lexicons[value[0]](value[1])."""
+        value = self._value
+        if isinstance(value, Item):
+            value = value.evaluate(ns)
+        if isinstance(value, int):
+            return value
+        index, arg = value
+        lexicon = self._lexicons[index]
+        if isinstance(lexicon, Item):
+            lexicon = lexicon.evaluate(ns)
+        if arg is not None:
+            return lexicon(arg)
+        return lexicon
+
+    def pre_evaluate(self, ns):
+        """Optimize by pre-evaluating what can be pre-evaluated."""
+        value, ok = self._value, 1
+        if isinstance(value, Item):
+            value, ok = value.pre_evaluate(ns)
+        if ok:
+            if isinstance(value, int):
+                return value, 1
+            index, arg = value
+            lexicon = self._lexicons[index]
+            if isinstance(lexicon, Item):
+                lexicon, ok = lexicon.pre_evaluate(ns)
+            if ok:
+                return lexicon(arg), 1
+            return type(self)((0, arg), *[lexicon]), 0
+        # pre-evaluate the lexicons
+        lexicons, found = [], []
+        for lexicon in self._lexicons:
+            if isinstance(lexicon, Item):
+                lexicon, ok = lexicon.pre_evaluate(ns)
+            else:
+                ok = 1
+            lexicons.append(lexicon)
+            found.append(ok)
+        if any(found):
+            return type(self)(value, lexicons), 0
+        return self
+
+    def variations(self):
+        """Yield our possible variations.
+
+        If the value is evaluated, yield either the value or the chosen
+        lexicon. If not, yields ``a_number`` and all lexicons items.
+
+        """
+        value = self._value
+        if isinstance(value, Item):
+            yield a_number
+            yield from self._lexicons
+        elif isinstance(value, int):
+            yield value
+        else:
+            index, arg = value
+            yield self._lexicons[index]
+
+    def _repr_args(self):
+        return (self._value, *self._lexicons)
 
 
-class LexiconTextItem(TextItem):
-    """Return a derived Lexicon using the result of a predicate.
+class SurvivingItem(RuleItem):
+    """Allowed in a rule, but evaluation is postponed, although pre-evaluation
+    may occur."""
+    __slots__ = ()
 
-    The predicate is called with the matched text. The lexicon is then called
-    with the result of the predicate, yielding a derived Lexicon. The lexicon
-    is the first item in the first itemlist, there should not be other items.
+    def evaluate(self, ns):
+        """Evaluate all values yielded by the evaluate_items() method, that
+        want to be evaluated.
+
+        If any value changes, a copy of the Item is returned, otherwise the
+        Item ifself. If the evaluate_items() method does not yield any value,
+        this Item is always returned unchanged.
+
+        """
+        items, found = [], 0
+        for item, evaluate in self.evaluate_items():
+            if evaluate and isinstance(item, Item):
+                item = item.evaluate(ns)
+                found = 1
+            items.append(item)
+        if found:
+            return type(self)(*items)
+        return self
+
+    def pre_evaluate(self, ns):
+        """Pre-evaluate all values yielded by the evaluate_items() method.
+
+        If any value changes, a copy of the Item is returned, otherwise the
+        Item ifself.
+
+        """
+        items, found = [], []
+        for item, evaluate in self.evaluate_items():
+            if isinstance(item, Item):
+                item, ok = item.pre_evaluate(ns)
+                found.append(ok)
+            items.append(item)
+        if any(found):
+            return type(self)(*items), int(all(found))
+        return self, 1
+
+    def evaluate_items(self):
+        """Yield two-tuples (value, evaluate).
+
+        The values should be in the same order as in the __init__ method.
+        The ``value`` is the value; ``evaluate`` is True when you want the
+        value to be evaluated, False when you only want it to be pre-evaluated.
+
+        This method should either yield *all( values that were given to the
+        __init__ method, or nothing. By default nothing is evaluated or
+        pre-evaluated.
+
+        """
+        return
+        yield
+
+    def variations(self):
+        """Just yield self, to be handled depending of type."""
+        yield self
+
+
+class ActionItem(SurvivingItem):
+    """Base class for dynamic actions.
+
+    The actions are replaced, but the object itself remains alive after
+    building the rule.
 
     """
-    def replace(self, text, match):
-        """Yield the derived lexicon with the result of predicate(text)."""
-        result = self.predicate(text)
-        return self.itemlists[0][0](result),
+    __slots__ = ()
+    ## when pre-evaluating with ARG, allow actions inside SubgroupAction
+    ## to be replaced. But not when evaluating. Then it's done by the lexer.
+    def evaluate(self, ns):
+        """Evaluates sub-items, but returns self."""
+        return self
+
+    def replace(self, lexer, pos, text, match):
+        """Yield the action items."""
+        raise NotImplementedError
 
 
-class LexiconMatchItem(MatchItem):
-    """Return a derived Lexicon using the result of a predicate.
+class pattern(SurvivingItem):
+    """Represents a pattern.
 
-    The predicate is called with the match object. The lexicon is then called
-    with the result of the predicate, yielding a derived Lexicon. The lexicon
-    is the first item in the first itemlist, there should not be other items.
-
-    """
-    def replace(self, text, match):
-        """Yield the derived lexicon with the result of predicate(match)."""
-        result = self.predicate(match)
-        return self.itemlists[0][0](result),
-
-
-def variations(rule):
-    """Yield lists with all possible variations on the rule.
-
-    Every DynamicItem and every ArgItem is recursively replaced with all of its
-    alternatives. Note that DynamicAction is an ActionItem subclass, and that
-    is not unfolded.
+    This evaluates its value, but remains alive after building the rule.
 
     """
-    items = list(rule)
-    for i, item in enumerate(items):
-        if isinstance(item, (DynamicItem, ArgItem)):
-            prefix = items[:i]
-            for suffix in variations(items[i+1:]):
-                for itemlist in item.itemlists:
-                    for l in variations(itemlist):
-                        yield prefix + l + suffix
-            break
-    else:
-        yield items
+    __slots__ = ('_value',)
+
+    def __init__(self, value):
+        self._value = value
+
+    def evaluate_items(self):
+        """Yield the value given on init."""
+        yield self._value, True
+
+    @property
+    def value(self):
+        """Get the pattern value."""
+        return self._value
+
+    def variations(self):
+        """If the value is evaluated, yield it, otherwise yields ``None`` and ``a_string``."""
+        if isinstance(self._value, Item):
+            yield None
+            yield a_string
+        else:
+            yield self._value
+
+    def _repr_args(self):
+        return self._value,
+
+
+# helper function used for Item.__getitem__
+def _get_item(text, n):
+    return text[n]
+
+
+# helper function to get the match group in MatchItem.__call__
+def _get_match_group(match, n):
+    # lastindex is always the index of the lexicon's match
+    return match.group(match.lastindex + n)
+
+
+# TODO: probably move to rule.py
+def pre_evaluate_rule(rule, arg):
+    """Pre-evaluates items in the rule with the 'arg' variable.
+
+    Unrolls lists. Returns the rule as a tuple.
+
+    """
+    ns = {'arg': arg}
+    def items():
+        for item in rule:
+            if isinstance(item, RuleItem):
+                item = item.pre_evaluate(ns)[0]
+            yield from unroll(item)
+    result = items()
+    # the first item may be a pattern instance; it should be evaluated by now
+    # TODO: do this now? or in the lexicon?
+    for item in result:
+        if isinstance(item, pattern):
+            item = item._value
+        return (item,) + tuple(result)
+    return ()
 
 
 def variations_tree(rule):
     """Return a tuple with the tree structure of all possible variations.
 
-    Unlike :func:`variations`, this function unfolds *all* Item instances.
     Branches (choices) are indicated by a frozenset, which contains
-    one or more tuples.
-
-    A DynamicAction can be recognized as a frozenset with only one member.
-    For the SkipAction that member is an empty tuple.
+    zero or more tuples.
 
     """
     items = tuple(rule)
     for i, item in enumerate(items):
         if isinstance(item, Item):
-            return items[:i] + (
-                    frozenset(variations_tree(l) for l in item.itemlists),
-                    *variations_tree(items[i+1:]))
+            branch = frozenset(variations_tree(unroll(v)) for v in item.variations())
+            return (*items[:i], branch, *variations_tree(items[i+1:]))
     else:
         return items
+
+
+def unroll(obj):
+    """Yield the obj.
+
+    If the obj is a tuple or list, yields their members separately.
+
+    """
+    if isinstance(obj, (tuple, list)):
+        yield from obj
+    else:
+        yield obj
+
+
+#: sentinel denoting that a variation is any integer
+a_number = util.Symbol("a_number")
+
+#: sentinel denoting that a variation is any string
+a_string = util.Symbol("a_string")
 

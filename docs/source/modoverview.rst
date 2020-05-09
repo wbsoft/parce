@@ -19,7 +19,6 @@ Overview of all modules
    regex.rst
    registry.rst
    rule.rst
-   ruleitem.rst
    target.rst
    theme.rst
    themes.rst
