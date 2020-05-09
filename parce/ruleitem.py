@@ -76,12 +76,10 @@ class Item:
     __slots__ = ()
 
     def __getitem__(self, n):
-        def get_item(text, n):
-            return text[n]
-        return call(get_item, self, n)
+        return call(_get_item, self, n)
 
     def evaluate(self, ns):
-        """Evaluate in namespace dict
+        """Evaluate in namespace dict.
 
         The namespace has 'text', 'arg' and/or 'match; attributes.
         If one that it needed is not there, EvaluationError is raised.
@@ -95,9 +93,8 @@ class Item:
     def pre_evaluate(self, ns):
         """Try to evaluate; return a two-tuple(obj, success).
 
-        If success, the obj is the result, if not; obj is self
-        Specific items my implement this to replaced successfully evaluated
-        sub-attributes.
+        If success, the obj is the result, if not; obj is self. Specific items
+        my implement this to replace successfully evaluated sub-attributes.
 
         """
         try:
@@ -125,6 +122,7 @@ class VariableItem(Item):
     name = "name"
 
     def evaluate(self, ns):
+        """Get the variable from the namespace dict."""
         try:
             return ns[self.name]
         except KeyError as e:
@@ -152,29 +150,35 @@ class MatchItem(VariableItem):
     name = "match"
 
     def __call__(self, n):
-        def get_group(match, n):
-            return match.group(match.lastindex + n)
-        return call(get_group, self, n)
+        return call(_get_match_group, self, n)
 
-
+#: the lexicon argument
 ARG = ArgItem()
+
+#: the regular expression match (or None)
 MATCH = MatchItem()
+
+#: the matched text
 TEXT = TextItem()
+
+
+del ArgItem, MatchItem, TextItem, VariableItem
 
 
 class call(Item):
     """Call predicate with arguments."""
-    __slots__ = ('predicate', 'arguments')
+    __slots__ = ('_predicate', '_arguments')
     def __init__(self, predicate, *arguments):
-        self.predicate = predicate
-        self.arguments = arguments
+        self._predicate = predicate
+        self._arguments = arguments
 
     def evaluate(self, ns):
-        predicate = self.predicate
+        """Call predicate with the arguments."""
+        predicate = self._predicate
         if isinstance(predicate, Item):
             predicate = predicate.evaluate(ns)
         arguments = []
-        for a in self.arguments:
+        for a in self._arguments:
             if isinstance(a, Item):
                 a = a.evaluate(ns)
             arguments.append(a)
@@ -182,13 +186,13 @@ class call(Item):
 
     def pre_evaluate(self, ns):
         """Optimize by pre-evaluating what can be pre-evaluated."""
-        predicate = self.predicate
+        predicate = self._predicate
         if isinstance(predicate, Item):
             predicate, pred_ok = predicate.pre_evaluate(ns)
         else:
             pred_ok = 1
         arguments, found = [], []
-        for a in self.arguments:
+        for a in self._arguments:
             if isinstance(a, Item):
                 a, ok = a.pre_evaluate(ns)
             else:
@@ -202,7 +206,7 @@ class call(Item):
         return self, 0      # nothing changed
 
     def _repr_args(self):
-        return (self.predicate, *self.arguments)
+        return (self._predicate, *self._arguments)
 
 
 class RuleItem(Item):
@@ -216,37 +220,38 @@ class choose(RuleItem):
     If an item is a list, it is unrolled when replacing the item in a rule.
 
     """
-    __slots__ = ('index', 'items')
+    __slots__ = ('_index', '_items')
 
     def __init__(self, index, *items):
-        self.index = index
-        self.items = items
+        self._index = index
+        self._items = items
 
     def evaluate(self, ns):
-        index = self.index
+        """Return items[index]."""
+        index = self._index
         if isinstance(index, Item):
             index = index.evaluate(ns)
-        item = self.items[index]
+        item = self._items[index]
         if isinstance(item, Item):
             item = item.evaluate(ns)
         return item
 
     def pre_evaluate(self, ns):
         """Optimize by pre-evaluating what can be pre-evaluated."""
-        index, ok = self.index, 1
+        index, ok = self._index, 1
         if isinstance(index, Item):
             index, ok = index.pre_evaluate(ns)
         if ok:
             # we know the index, only one item needs to be evaluated
             # and can be returned.
-            item = self.items[index]
+            item = self._items[index]
             if isinstance(item, Item):
                 return item.pre_evaluate(ns)
             return item, 1
         # we don't yet know the index, pre-evaluate every item
         # is possible.
         items, found = [], []
-        for i in self.items:
+        for i in self._items:
             if isinstance(i, Item):
                 i, ok = i.pre_evaluate(ns)
             else:
@@ -258,7 +263,7 @@ class choose(RuleItem):
         return self, 0      # nothing changed
 
     def _repr_args(self):
-        return (self.index, *self.items)
+        return (self._index, *self._items)
 
 
 class target(RuleItem):
@@ -271,20 +276,21 @@ class target(RuleItem):
     argument is used as lexicon argument.
 
     """
-    __slots__ = ('value', 'lexicons')
+    __slots__ = ('_value', '_lexicons')
 
     def __init__(self, value, *lexicons):
-        self.value = value
-        self.lexicons = lexicons
+        self._value = value
+        self._lexicons = lexicons
 
     def evaluate(self, ns):
-        value = self.value
+        """Return value if integer, otherwise lexicons[value[0]](value[1])."""
+        value = self._value
         if isinstance(value, Item):
             value = value.evaluate(ns)
         if isinstance(value, int):
             return value
         index, arg = value
-        lexicon = self.lexicons[index]
+        lexicon = self._lexicons[index]
         if isinstance(lexicon, Item):
             lexicon = lexicon.evaluate(ns)
         if arg is not None:
@@ -292,14 +298,15 @@ class target(RuleItem):
         return lexicon
 
     def pre_evaluate(self, ns):
-        value, ok = self.value, 1
+        """Optimize by pre-evaluating what can be pre-evaluated."""
+        value, ok = self._value, 1
         if isinstance(value, Item):
             value, ok = value.pre_evaluate(ns)
         if ok:
             if isinstance(value, int):
                 return value, 1
             index, arg = value
-            lexicon = self.lexicons[index]
+            lexicon = self._lexicons[index]
             if isinstance(lexicon, Item):
                 lexicon, ok = lexicon.pre_evaluate(ns)
             if ok:
@@ -307,7 +314,7 @@ class target(RuleItem):
             return type(self)((0, arg), *[lexicon]), 0
         # pre-evaluate the lexicons
         lexicons, found = [], []
-        for lexicon in self.lexicons:
+        for lexicon in self._lexicons:
             if isinstance(lexicon, Item):
                 lexicon, ok = lexicon.pre_evaluate(ns)
             else:
@@ -317,6 +324,9 @@ class target(RuleItem):
         if any(found):
             return type(self)(value, lexicons), 0
         return self
+
+    def _repr_args(self):
+        return (self._value, *self._lexicons)
 
 
 class SurvivingItem(RuleItem):
@@ -339,6 +349,7 @@ class ActionItem(SurvivingItem):
     ## when pre-evaluating with ARG, allow actions inside SubgroupAction
     ## to be replaced. But not when evaluating. Then it's done by the lexer.
     def evaluate(self, ns):
+        """Evaluates sub-items, but returns self."""
         return self
 
 
@@ -348,23 +359,35 @@ class pattern(SurvivingItem):
     This evaluates its value, but remains alive after building the rule.
 
     """
-    __slots__ = ('value')
+    __slots__ = ('_value',)
 
     def __init__(self, value):
         self.value = value
 
     def evaluate(self, ns):
-        value = self.value
+        value = self._value
         if isinstance(value, Item):
             return type(self)(value.evaluate(ns))
         return self
 
     def pre_evaluate(self, ns):
-        value = self.value
+        value = self._value
         if isinstance(value, Item):
             value, ok = value.pre_evaluate(ns)
             if ok:
                 return type(self)(value), 1
             return self, 0
         return self, 1
+
+    def _repr_args(self):
+        return self.value
+
+
+def _get_item(text, n):
+    return text[n]
+
+
+def _get_match_group(match, n):
+    return match.group(match.lastindex + n)
+
 
