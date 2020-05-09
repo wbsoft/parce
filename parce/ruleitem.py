@@ -79,16 +79,13 @@ class Item:
         return call(_get_item, self, n)
 
     def evaluate(self, ns):
-        """Evaluate in namespace dict.
+        """Evaluate item in namespace dict.
 
-        The namespace has 'text', 'arg' and/or 'match; attributes.
-        If one that it needed is not there, EvaluationError is raised.
-
-        The default implementation returns self.
+        The namespace has 'text', 'arg' and/or 'match; attributes. If one that
+        it needed is not there, EvaluationError is raised.
 
         """
-        return self
-
+        raise NotImplementedError
 
     def pre_evaluate(self, ns):
         """Try to evaluate; return a two-tuple(obj, success).
@@ -335,7 +332,55 @@ class SurvivingItem(RuleItem):
     __slots__ = ()
 
     def evaluate(self, ns):
+        """Evaluate all values yielded by the evaluate_items() method, that
+        want to be evaluated.
+
+        If any value changes, a copy of the Item is returned, otherwise the
+        Item ifself. If the evaluate_items() method does not yield any value,
+        this Item is always returned unchanged.
+
+        """
+        items, found = [], 0
+        for item, evaluate in self.evaluate_items():
+            if evaluate and isinstance(item, Item):
+                item = item.evaluate(ns)
+                found = 1
+            items.append(item)
+        if found:
+            return type(self)(*items)
         return self
+
+    def pre_evaluate(self, ns):
+        """Pre-evaluate all values yielded by the evaluate_items() method.
+
+        If any value changes, a copy of the Item is returned, otherwise the
+        Item ifself.
+
+        """
+        items, found = [], []
+        for item, evaluate in self.evaluate_items():
+            if isinstance(item, Item):
+                item, ok = item.pre_evaluate(ns)
+                found.append(ok)
+            items.append(item)
+        if any(found):
+            return type(self)(*items), int(all(found))
+        return self, 1
+
+    def evaluate_items(self):
+        """Yield two-tuples (value, evaluate).
+
+        The values should be in the same order as in the __init__ method.
+        The ``value`` is the value; ``evaluate`` is True when you want the
+        value to be evaluated, False when you only want it to be pre-evaluated.
+
+        This method should either yield *all( values that were given to the
+        __init__ method, or nothing. By default nothing is evaluated or
+        pre-evaluated.
+
+        """
+        return
+        yield
 
 
 class ActionItem(SurvivingItem):
@@ -352,6 +397,10 @@ class ActionItem(SurvivingItem):
         """Evaluates sub-items, but returns self."""
         return self
 
+    def replace(self, lexer, pos, text, match):
+        """Yield the action items."""
+        raise NotImplementedError
+
 
 class pattern(SurvivingItem):
     """Represents a pattern.
@@ -364,22 +413,9 @@ class pattern(SurvivingItem):
     def __init__(self, value):
         self._value = value
 
-    def evaluate(self, ns):
-        """Evaluate the value, but return self."""
-        value = self._value
-        if isinstance(value, Item):
-            return type(self)(value.evaluate(ns))
-        return self
-
-    def pre_evaluate(self, ns):
-        """Try to evaluate the value, but return self."""
-        value = self._value
-        if isinstance(value, Item):
-            value, ok = value.pre_evaluate(ns)
-            if ok:
-                return type(self)(value), 1
-            return self, 0
-        return self, 1
+    def evaluate_items(self):
+        """Yield the value given on init."""
+        yield self._value, True
 
     @property
     def value(self):
