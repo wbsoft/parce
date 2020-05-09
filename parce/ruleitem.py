@@ -132,6 +132,18 @@ class Item:
         except _EvaluationError:
             return self, 0
 
+    def variations(self):
+        """Yield the possible results for this item.
+
+        This is used to build a decision tree for a rule, to see which actions
+        and targets it could bring.
+
+        The default implementation raises a RuntimeError; only RuleItem
+        objects can yield variations.
+
+        """
+        raise RuntimeError("Item '{}' can't be used directly in a rule".format(repr(self)))
+
     def __repr__(self):
         return "{}({})".format(
             self.__class__.__name__,
@@ -298,6 +310,10 @@ class choose(RuleItem):
             return type(self)(index, items), 0
         return self, 0      # nothing changed
 
+    def variations(self):
+        """Yield all the items that could be chosen (unevaluated)."""
+        yield from self._items
+
     def _repr_args(self):
         return (self._index, *self._items)
 
@@ -361,6 +377,18 @@ class target(RuleItem):
             return type(self)(value, lexicons), 0
         return self
 
+    def variations(self):
+        """Yield ``int`` and all lexicons that could be chosen."""
+        value = self._value
+        if isinstance(value, Item):
+            yield int
+            yield from self._lexicons
+        elif isinstance(value, int):
+            yield value
+        else:
+            index, arg = value
+            yield self._lexicons[index]
+
     def _repr_args(self):
         return (self._value, *self._lexicons)
 
@@ -421,6 +449,10 @@ class SurvivingItem(RuleItem):
         return
         yield
 
+    def variations(self):
+        """Just yield self, to be handled depending of type."""
+        yield self
+
 
 class ActionItem(SurvivingItem):
     """Base class for dynamic actions.
@@ -461,6 +493,14 @@ class pattern(SurvivingItem):
         """Get the pattern value."""
         return self._value
 
+    def variations(self):
+        """If the value is evaluated, yield it, otherwise yields ``None`` and ``str``."""
+        if isinstance(self._value, Item):
+            yield None
+            yield str
+        else:
+            yield self._value
+
     def _repr_args(self):
         return self._value,
 
@@ -484,15 +524,12 @@ def pre_evaluate_rule(rule, arg):
 
     """
     ns = {'arg': arg}
-    def unroll():
+    def items():
         for item in rule:
             if isinstance(item, RuleItem):
                 item = item.pre_evaluate(ns)[0]
-            if isinstance(item, list):
-                yield from item
-            else:
-                yield item
-    result = unroll()
+            yield from unroll(item)
+    result = items()
     # the first item may be a pattern instance; it should be evaluated by now
     # TODO: do this now? or in the lexicon?
     for item in result:
@@ -501,4 +538,33 @@ def pre_evaluate_rule(rule, arg):
         return (item,) + tuple(result)
     return ()
 
+
+def variations_tree(rule):
+    """Return a tuple with the tree structure of all possible variations.
+
+    Branches (choices) are indicated by a frozenset, which contains
+    zero or more than one tuples.
+
+    """
+    items = tuple(rule)
+    for i, item in enumerate(items):
+        if isinstance(item, Item):
+            branch = frozenset(variations_tree(unroll(v)) for v in item.variations())
+            # if only one branch, remove the frozenset.
+            branch = next(iter(branch)) if len(branch) == 1 else branch,
+            return items[:i] + branch + variations_tree(items[i+1:])
+    else:
+        return items
+
+
+def unroll(obj):
+    """Yield the obj.
+
+    If the obj is a tuple or list, yields their members separately.
+
+    """
+    if isinstance(obj, (tuple, list)):
+        yield from obj
+    else:
+        yield obj
 
