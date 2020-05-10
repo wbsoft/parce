@@ -127,11 +127,8 @@ def events(root_lexicon, text):
 
 
 def words(words, prefix="", suffix=""):
-    r"""Return a :class:`~parce.pattern.Words` pattern matching any of the
+    r"""Create an optimized regular expression pattern matching any of the
     words.
-
-    The returned Pattern builds an optimized regular expression matching any of
-    the words contained in the `words` list.
 
     A ``prefix`` or ``suffix`` can be given, which will be added to the regular
     expression. Using the word boundary character ``\b`` as suffix is
@@ -142,23 +139,22 @@ def words(words, prefix="", suffix=""):
 
 
 def char(chars, positive=True):
-    """Return a :class:`~parce.pattern.Char` pattern matching one of the
-    characters in the specified string.
+    """Return a regular expression pattern matching one of the characters in
+    the specified string.
 
     If `positive` is False, the set of characters is complemented, i.e. the
-    Pattern matches any single character that is not in the specified string.
+    pattern matches any single character that is not in the specified string.
 
     """
     return pattern.char(chars, positive)
 
 
 def arg(escape=True, prefix="", suffix="", default=None):
-    r"""Return an :class:`~parce.pattern.Arg` pattern that contains the
-    argument the current Lexicon was called with.
+    r"""Return a regular expression pattern that contains the argument the
+    current Lexicon was called with.
 
-    If there is no argument in the current lexicon, this Pattern yields the
-    default value, which is by default None, resulting in the rule being
-    skipped.
+    If there is no argument in the current lexicon, the default value, which is
+    by default None, is yielded, resulting in the rule being skipped.
 
     When there is an argument, it is escaped using :func:`re.escape` (when
     ``escape`` was set to True), and if given, ``prefix`` is prepended and
@@ -170,9 +166,7 @@ def arg(escape=True, prefix="", suffix="", default=None):
 
 
 def ifarg(if_pattern, else_pattern=None):
-    r"""Return an :class:`~parce.pattern.IfArg` pattern yielding the specified
-    regular expression ``if_pattern`` (or nested Pattern instance) if the
-    lexicon was called with an argument.
+    r"""Return the ``if_pattern`` if the lexicon was called with an argument.
 
     If there is no argument in the current lexicon, ``else_pattern`` is
     yielded, which is None by default, resulting in the rule being skipped.
@@ -181,23 +175,23 @@ def ifarg(if_pattern, else_pattern=None):
     return pattern.ifarg(if_pattern, else_pattern)
 
 
-def byarg(predicate, *itemlists):
-    """Return an :class:`~parce.rule.PredicateArgItem` that chooses its output
+def byarg(predicate, *items):
+    """Return a :class:`~parce.rule.RuleItem` that chooses its output
     based on the lexicon argument.
 
     The predicate is called with the lexicon argument (which is None for a
     normal Lexicon, but can have another value for a derivative Lexicon.
 
     """
-    return rule.choose(rule.call(predicate, rule.ARG), *itemlists)
+    return rule.choose(rule.call(predicate, rule.ARG), *items)
 
 
-def bymatch(predicate, *itemlists):
-    """Return a :class:`~parce.rule.MatchItem` that chooses its output
+def bymatch(predicate, *items):
+    """Return a :class:`~parce.rule.RuleItem` that chooses its output
     based on the match object.
 
-    The returned MatchItem calls the ``predicate`` function with the match object
-    as argument. The function should return the index of the itemlist to
+    The returned RuleItem calls the ``predicate`` function with the match
+    object as argument. The function should return the index of the itemlist to
     choose. It may also return True or False, which evaluate to 1 or 0,
     respectively.
 
@@ -205,14 +199,14 @@ def bymatch(predicate, *itemlists):
     at the same time.
 
     """
-    return rule.choose(rule.call(predicate, rule.MATCH), *itemlists)
+    return rule.choose(rule.call(predicate, rule.MATCH), *items)
 
 
-def bytext(predicate, *itemlists):
-    """Return a :class:`~parce.rule.TextItem` that chooses the itemlist
-    based on the text.
+def bytext(predicate, *items):
+    """Return a :class:`~parce.rule.RuleItem` that chooses its output based on
+    the text.
 
-    The returned TextItem calls the ``predicate`` function with the matched
+    The returned RuleItem calls the ``predicate`` function with the matched
     text as argument. The function should return the index of the itemlist to
     choose. It may also return True or False, which evaluate to 1 or 0,
     respectively.
@@ -221,11 +215,11 @@ def bytext(predicate, *itemlists):
     at the same time.
 
     """
-    return rule.choose(rule.call(predicate, rule.TEXT), *itemlists)
+    return rule.choose(rule.call(predicate, rule.TEXT), *items)
 
 
 def ifgroup(n, itemlist, else_itemlist=()):
-    r"""Return a :class:`~parce.rule.MatchItem` that yields ``itemlist`` if
+    r"""Return a :class:`~parce.rule.RuleItem` that yields ``itemlist`` if
     group n in the match is not None.
 
     If group ``n`` in the match object is None, ``else_itemlist`` is yielded.
@@ -244,12 +238,12 @@ def ifgroup(n, itemlist, else_itemlist=()):
     (See also :func:`bygroup`.)
 
     """
-    predicate = lambda m: m.group(m.lastindex + n) is None
-    return bymatch(predicate, itemlist, else_itemlist)
+    predicate = lambda group: group is None
+    return rule.choose(rule.call(predicate, rule.MATCH(n)), itemlist, else_itemlist)
 
 
 def ifmember(sequence, itemlist, else_itemlist=()):
-    r"""Return a :class:`~parce.rule.TextItem` that yields ``itemlist`` if
+    r"""Return a :class:`~parce.rule.RuleItem` that yields ``itemlist`` if
     the text is in sequence.
 
     If text is not in sequence, ``else_itemlist`` is yielded.
@@ -267,13 +261,12 @@ def ifmember(sequence, itemlist, else_itemlist=()):
     speed up membership testing.
 
     """
-    sequence_set = frozenset(sequence)
-    predicate = sequence_set.__contains__
-    return bytext(predicate, else_itemlist, itemlist)
+    predicate = frozenset(sequence).__contains__
+    return rule.choose(rule.call(predicate, rule.TEXT), else_itemlist, itemlist)
 
 
 def ifgroupmember(n, sequence, itemlist, else_itemlist=()):
-    """Return a :class:`~parce.rule.MatchItem` that yields ``itemlist`` if
+    """Return a :class:`~parce.rule.RuleItem` that yields ``itemlist`` if
     group ``n`` is in sequence.
 
     If group ``n`` is not in sequence, ``else_itemlist`` is yielded.
@@ -282,10 +275,8 @@ def ifgroupmember(n, sequence, itemlist, else_itemlist=()):
     speed up membership testing.
 
     """
-    sequence_set = frozenset(sequence)
-    def predicate(m):
-        return m.group(m.lastindex + n) in sequence_set
-    return bymatch(predicate, else_itemlist, itemlist)
+    predicate = frozenset(sequence).__contains__
+    return rule.choose(rule.call(predicate, rule.MATCH(n)), else_itemlist, itemlist)
 
 
 def _get_sequences_map(pairs, default):
@@ -327,8 +318,8 @@ def mapmember(pairs, default=()):
     dictionary.
 
     """
-    predicate, itemlists = _get_sequences_map(pairs, default)
-    return bytext(predicate, *itemlists)
+    predicate, items = _get_sequences_map(pairs, default)
+    return rule.choose(rule.call(predicate, rule.TEXT), *items)
 
 
 def mapgroupmember(n, pairs, default=()):
@@ -339,11 +330,8 @@ def mapgroupmember(n, pairs, default=()):
     dictionary.
 
     """
-    text_predicate, itemlists = _get_sequences_map(pairs, default)
-    def predicate(m):
-        return text_predicate(m.group(m.lastindex + n))
-    return bymatch(predicate, *itemlists)
-
+    predicate, items = _get_sequences_map(pairs, default)
+    return rule.choose(rule.call(predicate, rule.MATCH(n)), *items)
 
 
 def _get_items_map(dictionary, default):
@@ -362,7 +350,7 @@ def _get_items_map(dictionary, default):
 
 
 def maptext(dictionary, default=()):
-    r"""Return a :class:`~parce.rule.TextItem` that yields the itemlist
+    r"""Return a :class:`~parce.rule.RuleItem` that yields the itemlist
     from the dictionary, using the text as key.
 
     If the dict does not contain the key, the default value is yielded.
@@ -379,12 +367,12 @@ def maptext(dictionary, default=()):
     This matches any text blob, but some text items get their own action.
 
     """
-    predicate, itemlists = _get_items_map(dictionary, default)
-    return bytext(predicate, *itemlists)
+    predicate, items = _get_items_map(dictionary, default)
+    return rule.choose(rule.call(predicate, rule.TEXT), *items)
 
 
 def mapgroup(n, dictionary, default=()):
-    """Return a :class:`~parce.rule.MatchItem` that yields the itemlist
+    """Return a :class:`~parce.rule.RuleItem` that yields the itemlist
     from the dictionary, using the specified match group as key.
 
     If the dict does not contain the key, the default value is yielded.
@@ -393,21 +381,19 @@ def mapgroup(n, dictionary, default=()):
     the case the group was not present in the match.
 
     """
-    get, itemlists = _get_items_map(dictionary, default)
-    def predicate(m):
-        return get(m.group(m.lastindex + n))
-    return bymatch(predicate, *itemlists)
+    predicate, items = _get_items_map(dictionary, default)
+    return rule.choose(rule.call(predicate, rule.MATCH(n)), *items)
 
 
 def maparg(dictionary, default=()):
-    r"""Return a :class:`~parce.rule.PredicateArgItem` that yields the itemlist
+    r"""Return a :class:`~parce.rule.RuleItem` that yields the itemlist
     from the dictionary, using the current lexicon argument as key.
 
     If the dict does not contain the key, the default value is yielded.
 
     """
-    predicate, itemlists = _get_items_map(dictionary, default)
-    return byarg(predicate, *itemlists)
+    predicate, items = _get_items_map(dictionary, default)
+    return rule.choose(rule.call(predicate, rule.ARG), *items)
 
 
 def bygroup(*actions):
@@ -448,13 +434,13 @@ def using(lexicon):
 
 
 def withgroup(n, lexicon, mapping=None):
-    r"""Return a :class:`~parce.rule.LexiconMatchItem` rule item that calls
-    the ``lexicon`` with the matched text from group ``n``.
+    r"""Return a :class:`~parce.rule.target` rule item that calls the
+    ``lexicon`` with the matched text from group ``n``.
 
     Calling a Lexicon creates a derived Lexicon, i.e. one that has the same set
     of rules and the same name, but the patterns and/or rules may differ by
-    using ArgRuleItem instances in the rule, which base their replacement
-    output on the argument the initial Lexicon was called with.
+    using RuleItem instances in the rule, which base their replacement output
+    on the argument the initial Lexicon was called with.
 
     If a ``mapping`` dictionary is specified, the matched text from group ``n``
     is used as key, and the result of the mapping (None if not present) gives
@@ -462,17 +448,15 @@ def withgroup(n, lexicon, mapping=None):
 
     """
     if mapping:
-        def predicate(text):
-            return 0, mapping.get(text)
+        predicate = lambda t: (0, mapping.get(t))
     else:
-        def predicate(text):
-            return 0, text
+        predicate = lambda t: (0, t)
     return rule.target(rule.call(predicate, rule.MATCH(n)), lexicon)
 
 
 def withtext(lexicon, mapping=None):
-    r"""Return a :class:`~parce.rule.LexiconTextItem` rule item that calls
-    the ``lexicon`` with the matched text.
+    r"""Return a :class:`~parce.rule.target` rule item that calls the
+    ``lexicon`` with the matched text.
 
     If a ``mapping`` dictionary is specified, the matched text is used as key,
     and the result of the mapping (None if not present) gives the argument to
@@ -480,23 +464,25 @@ def withtext(lexicon, mapping=None):
 
     """
     if mapping:
-        def predicate(text):
-            return 0, mapping.get(text)
+        predicate = lambda t: (0, mapping.get(t))
     else:
-        def predicate(text):
-            return 0, text
+        predicate = lambda t: (0, t)
     return rule.target(rule.call(predicate, rule.TEXT), lexicon)
 
 
-def witharg(lexicon):
-    r"""Return a :class:`~parce.rule.LexiconArgItem` rule item that calls the
+def witharg(lexicon, mapping=None):
+    r"""Return a :class:`~parce.rule.target` rule item that calls the
     ``lexicon`` with the current lexicon's argument.
 
     Use this to get a derived lexicon with the same argument as the current
     lexicon.
 
     """
-    return rule.target(rule.call((lambda a: 0, a), rule.ARG), lexicon)
+    if mapping:
+        predicate = lambda t: (0, mapping.get(t))
+    else:
+        predicate = lambda t: (0, t)
+    return rule.target(rule.call(predicate, rule.ARG), lexicon)
 
 
 def lexicon(rules_func=None, **kwargs):
