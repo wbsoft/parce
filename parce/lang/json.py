@@ -76,7 +76,7 @@ class Json(Language):
     def array(cls):
         yield from cls.values()
         yield ",", Delimiter
-        yield "\]", Delimiter, -1
+        yield r"\]", Delimiter, -1
 
     @lexicon
     def string(cls):

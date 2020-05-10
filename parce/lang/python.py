@@ -433,7 +433,7 @@ def isclassname(text):
     for c in text:
         if c.isupper():
             return True
-        elif c is not '_':
+        elif c != '_':
             return False
     return False
 
