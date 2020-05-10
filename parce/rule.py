@@ -96,6 +96,13 @@ although the *pre*-evaluation process may alter their attributes:
 from . import util
 
 
+# pre_evaluate flags
+_CHANGED = 0
+_COMPLETE = 1
+_UNCHANGED  = 2
+
+
+
 class _EvaluationError(RuntimeError):
     """Raised when an attribute is missing in the evaluation namespace."""
     pass
@@ -127,16 +134,16 @@ class Item:
     def pre_evaluate(self, ns):
         """Try to evaluate; return a two-tuple(obj, success).
 
-        If success = 1, the obj is the result, if 0; obj is the item itself, or
-        a partially evaluated copy of the item. Specific items may re-implement
-        this to return a copy with successfully evaluated sub-attributes
-        replaced.
+        Success can be:
+
+        1: the object has been evaluated sucessfully
+        2: the object could not be evaluated
 
         """
         try:
-            return self.evaluate(ns), 1
+            return self.evaluate(ns), _COMPLETE
         except _EvaluationError:
-            return self, 0
+            return self, _UNCHANGED
 
     def variations(self):
         """Yield the possible results for this item.
@@ -223,36 +230,20 @@ class call(Item):
 
     def evaluate(self, ns):
         """Call predicate with the arguments."""
-        predicate = self._predicate
-        if isinstance(predicate, Item):
-            predicate = predicate.evaluate(ns)
-        arguments = []
-        for a in self._arguments:
-            if isinstance(a, Item):
-                a = a.evaluate(ns)
-            arguments.append(a)
+        predicate = evaluate(self._predicate, ns)
+        arguments = evaluate(self._arguments, ns)
         return predicate(*arguments)
 
     def pre_evaluate(self, ns):
         """Optimize by pre-evaluating what can be pre-evaluated."""
-        predicate = self._predicate
-        if isinstance(predicate, Item):
-            predicate, pred_ok = predicate.pre_evaluate(ns)
-        else:
-            pred_ok = 1
-        arguments, found = [], []
-        for a in self._arguments:
-            if isinstance(a, Item):
-                a, ok = a.pre_evaluate(ns)
-            else:
-                ok = 1
-            arguments.append(a)
-            found.append(ok)
-        if pred_ok and all(found):
-            return predicate(*arguments), 1
-        if pred_ok or any(found):
-            return type(self)(predicate, *arguments), 0
-        return self, 0      # nothing changed
+        predicate, pred_ok = pre_evaluate(self._predicate, ns)
+        arguments, arg_ok  = pre_evaluate(self._arguments, ns)
+        ok = pred_ok & arg_ok
+        if ok & _COMPLETE:
+            return predicate(*arguments), _COMPLETE
+        if ok & _UNCHANGED:
+            return self, _UNCHANGED
+        return type(self)(predicate, *arguments), _CHANGED
 
     def _repr_args(self):
         return (self._predicate, *self._arguments)
@@ -281,39 +272,21 @@ class choose(RuleItem):
 
     def evaluate(self, ns):
         """Return items[index]."""
-        index = self._index
-        if isinstance(index, Item):
-            index = index.evaluate(ns)
-        item = self._items[index]
-        if isinstance(item, Item):
-            item = item.evaluate(ns)
+        index = evaluate(self._index, ns)
+        item = evaluate(self._items[index], ns)
         return item
 
     def pre_evaluate(self, ns):
         """Optimize by pre-evaluating what can be pre-evaluated."""
-        index, ok = self._index, 1
-        if isinstance(index, Item):
-            index, ok = index.pre_evaluate(ns)
-        if ok:
-            # we know the index, only one item needs to be evaluated
-            # and can be returned.
-            item = self._items[index]
-            if isinstance(item, Item):
-                return item.pre_evaluate(ns)
-            return item, 1
-        # we don't yet know the index, pre-evaluate every item
-        # is possible.
-        items, found = [], []
-        for i in self._items:
-            if isinstance(i, Item):
-                i, ok = i.pre_evaluate(ns)
-            else:
-                ok = 1
-            items.append(i)
-            found.append(ok)
-        if any(found):
-            return type(self)(index, *items), 0
-        return self, 0      # nothing changed
+        index, ok = pre_evaluate(self._index, ns)
+        if ok & _COMPLETE:
+            item, ok = pre_evaluate(self._items[index], ns)
+            return item, ok & _COMPLETE
+        items, items_ok = pre_evaluate(self._items, ns)
+        ok &= items_ok
+        if ok & _UNCHANGED:
+            return self, _UNCHANGED
+        return type(self)(index, *items), _CHANGED
 
     def variations(self):
         """Yield all the items that could be chosen (unevaluated)."""
@@ -341,46 +314,30 @@ class target(RuleItem):
 
     def evaluate(self, ns):
         """Return value if integer, otherwise lexicons[value[0]](value[1])."""
-        value = self._value
-        if isinstance(value, Item):
-            value = value.evaluate(ns)
+        value = evaluate(self._value, ns)
         if isinstance(value, int):
             return value
         index, arg = value
-        lexicon = self._lexicons[index]
-        if isinstance(lexicon, Item):
-            lexicon = lexicon.evaluate(ns)
-        if arg is not None:
-            return lexicon(arg)
-        return lexicon
+        lexicon = evaluate(self._lexicons[index], ns)
+        return lexicon if arg is None else lexicon(arg)
 
     def pre_evaluate(self, ns):
         """Optimize by pre-evaluating what can be pre-evaluated."""
-        value, ok = self._value, 1
-        if isinstance(value, Item):
-            value, ok = value.pre_evaluate(ns)
-        if ok:
+        value, ok = pre_evaluate(self._value, ns)
+        if ok & _COMPLETE:
             if isinstance(value, int):
-                return value, 1
+                return value, _COMPLETE
             index, arg = value
-            lexicon = self._lexicons[index]
-            if isinstance(lexicon, Item):
-                lexicon, ok = lexicon.pre_evaluate(ns)
-            if ok:
-                return lexicon(arg), 1
-            return type(self)((0, arg), lexicon), 0
+            lexicon, ok = pre_evaluate(self._lexicons[index], ns)
+            if ok & _COMPLETE:
+                return (lexicon if arg is None else lexicon(arg), _COMPLETE)
+            return type(self)((0, arg), lexicon), _CHANGED
         # pre-evaluate the lexicons
-        lexicons, found = [], []
-        for lexicon in self._lexicons:
-            if isinstance(lexicon, Item):
-                lexicon, ok = lexicon.pre_evaluate(ns)
-            else:
-                ok = 1
-            lexicons.append(lexicon)
-            found.append(ok)
-        if any(found):
-            return type(self)(value, *lexicons), 0
-        return self
+        lexicons, l_ok = pre_evaluate(self._lexicons, ns)
+        ok &= l_ok
+        if ok & _UNCHANGED:
+            return self, ok
+        return type(self)(value, *lexicons), ok
 
     def variations(self):
         """Yield our possible variations.
@@ -420,14 +377,11 @@ class PostponedItem(Item):
         this Item is always returned unchanged.
 
         """
-        items, found = [], 0
-        for item in self.evaluate_items():
-            if evaluate and isinstance(item, Item):
-                item = item.evaluate(ns)
-                found = 1
-            items.append(item)
-        if found:
-            return type(self)(*items)
+        items = tuple(self.evaluate_items())
+        if items:
+            items, ok = pre_evaluate(items, ns)
+            if not ok & _UNCHANGED:
+                return type(self)(*items)
         return self
 
     def pre_evaluate(self, ns):
@@ -437,15 +391,13 @@ class PostponedItem(Item):
         Item ifself.
 
         """
-        items, found = [], []
-        for item in self.evaluate_items():
-            if isinstance(item, Item):
-                item, ok = item.pre_evaluate(ns)
-                found.append(ok)
-            items.append(item)
-        if any(found):
-            return type(self)(*items), int(all(found))
-        return self, 0 if found else 1
+        items = tuple(self.evaluate_items())
+        if not items:
+            return self, _COMPLETE
+        items, ok = pre_evaluate(items, ns)
+        if not ok & _UNCHANGED:
+            return type(self)(*items), _CHANGED
+        return self, _UNCHANGED
 
     def evaluate_items(self):
         """Yield the current values as they are given to the __init__ method.
@@ -507,6 +459,47 @@ def _get_match_group(match, n):
     return match.group(match.lastindex + n)
 
 
+def evaluate(obj, ns):
+    """Evaluate an object, that may or may not be an Item.
+
+    A list or a tuple of items is also evaluated and always becomes a tuple.
+
+    """
+    if isinstance(obj, Item):
+        return obj.evaluate(ns)
+    if type(obj) in (list, tuple):
+        return tuple(evaluate(o, ns) for o in obj)
+    return obj
+
+
+def pre_evaluate(obj, ns):
+    """Pre-evaluate an object, that may or may not be an Item.
+
+    Returns a two-tuple(result, success).
+
+    Success can be one of four:
+
+    0: the object has changed but is not completely evaluated
+    1: the object has changed and is fully evaluated
+    2: the object needs evaluation but is not changed/evaluated
+    3: the object is already fully evaluated (or no Item at all)
+
+    _COMPLETE = 1
+    _UNCHANGED = 2
+
+    """
+    if isinstance(obj, Item):
+        return obj.pre_evaluate(ns)
+    if type(obj) in (list, tuple):
+        objs, success  = [], 3
+        for o in obj:
+            res, ok = pre_evaluate(o, ns)
+            objs.append(res)
+            success &= ok
+        return tuple(objs), success
+    return obj, 3
+
+
 def pre_evaluate_rule(rule, arg):
     """Pre-evaluates items in the rule with the 'arg' variable.
 
@@ -516,8 +509,7 @@ def pre_evaluate_rule(rule, arg):
     ns = {'arg': arg}
     def items():
         for item in rule:
-            if isinstance(item, Item):
-                item = item.pre_evaluate(ns)[0]
+            item = pre_evaluate(item, ns)[0]
             yield from unroll(item)
     result = items()
     # the first item may be a pattern instance; it should be evaluated by now
@@ -532,11 +524,8 @@ def evaluate_rule(rule, match):
     """Yield all items of the rule, evaluating leftover Items, unrolling list or tuple results."""
     ns = {'text': match.group(), 'match': match}
     for item in rule:
-        if isinstance(item, RuleItem):
-            item = item.evaluate(ns)
-            yield from unroll(item)
-        else:
-            yield item
+        item = evaluate(item, ns)
+        yield from unroll(item)
 
 
 def needs_evaluation(rule):
