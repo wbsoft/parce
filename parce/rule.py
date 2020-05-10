@@ -530,7 +530,12 @@ def evaluate_rule(rule, match):
 
 def needs_evaluation(rule):
     """Return True if there are items in the rule that need evaluating."""
-    return any(isinstance(item, RuleItem) for item in rule)
+    for item in rule:
+        if isinstance(item, RuleItem) or \
+           (isinstance(item, PostponedItem) and item.evaluate_items()) or \
+           (type(item) in (tuple, list) and needs_evaluation(item)):
+            return True
+    return False
 
 
 def variations_tree(rule):
@@ -570,7 +575,7 @@ def unroll(obj):
     If the obj is a tuple or list, yields their members separately.
 
     """
-    if isinstance(obj, (tuple, list)):
+    if type(obj) in (tuple, list):
         yield from obj
     else:
         yield obj
