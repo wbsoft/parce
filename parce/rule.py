@@ -364,7 +364,7 @@ class target(RuleItem):
         return (self._value, *self._lexicons)
 
 
-class PostponedItem(Item):
+class PostponedItem(RuleItem):
     """Mixin base class for items that keep alive after the Lexicon.
 
     When inheriting from this class, implement the :meth:`evaluate_items`
@@ -472,6 +472,14 @@ def evaluate(obj, ns):
     return obj
 
 
+def evaluate_rule(rule, match):
+    """Yield all items of the rule, evaluating leftover Items, unrolling list or tuple results."""
+    ns = {'text': match.group(), 'match': match}
+    for item in rule:
+        item = evaluate(item, ns)
+        yield from unroll(item)
+
+
 def pre_evaluate(obj, ns):
     """Pre-evaluate any object, that may or may not be an Item.
 
@@ -520,20 +528,14 @@ def pre_evaluate_rule(rule, arg):
     return ()
 
 
-def evaluate_rule(rule, match):
-    """Yield all items of the rule, evaluating leftover Items, unrolling list or tuple results."""
-    ns = {'text': match.group(), 'match': match}
-    for item in rule:
-        item = evaluate(item, ns)
-        yield from unroll(item)
-
-
 def needs_evaluation(rule):
     """Return True if there are items in the rule that need evaluating."""
     for item in rule:
-        if isinstance(item, RuleItem) or \
-           (isinstance(item, PostponedItem) and item.evaluate_items()) or \
-           (type(item) in (tuple, list) and needs_evaluation(item)):
+        if isinstance(item, PostponedItem):
+            if item.evaluate_items():
+                return True
+        elif isinstance(item, RuleItem) or \
+             (type(item) in (tuple, list) and needs_evaluation(item)):
             return True
     return False
 

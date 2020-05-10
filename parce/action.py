@@ -218,7 +218,7 @@ class SubgroupAction(DynamicAction):
         yield from self._actions
 
 
-class DelegateAction(DynamicAction, RuleItem):
+class DelegateAction(DynamicAction):
     """This action uses a lexicon to parse the text.
 
     All tokens are yielded as one group, flattened, ignoring the tree
