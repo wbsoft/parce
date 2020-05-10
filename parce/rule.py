@@ -285,7 +285,7 @@ class choose(RuleItem):
         index, ok = pre_evaluate(self._index, ns)
         if ok & _COMPLETE:
             item, ok = pre_evaluate(self._items[index], ns)
-            return item, ok & _COMPLETE
+            return item, ok & _COMPLETE     # mask unchanged state
         items, items_ok = pre_evaluate(self._items, ns)
         ok &= items_ok
         if ok & _UNCHANGED:
