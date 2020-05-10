@@ -176,46 +176,46 @@ def ifarg(if_pattern, else_pattern=None):
 
 
 def byarg(predicate, *items):
-    """Return a :class:`~parce.rule.RuleItem` that chooses its output
+    """Return a :class:`~parce.rule.RuleItem` that selects its output
     based on the lexicon argument.
 
     The predicate is called with the lexicon argument (which is None for a
     normal Lexicon, but can have another value for a derivative Lexicon.
 
     """
-    return rule.choose(rule.call(predicate, rule.ARG), *items)
+    return rule.select(rule.call(predicate, rule.ARG), *items)
 
 
 def bymatch(predicate, *items):
-    """Return a :class:`~parce.rule.RuleItem` that chooses its output
+    """Return a :class:`~parce.rule.RuleItem` that selects its output
     based on the match object.
 
     The returned RuleItem calls the ``predicate`` function with the match
     object as argument. The function should return the index of the itemlist to
-    choose. It may also return True or False, which evaluate to 1 or 0,
+    select. It may also return True or False, which evaluate to 1 or 0,
     respectively.
 
     This helper can be used both for action and target objects, or both
     at the same time.
 
     """
-    return rule.choose(rule.call(predicate, rule.MATCH), *items)
+    return rule.select(rule.call(predicate, rule.MATCH), *items)
 
 
 def bytext(predicate, *items):
-    """Return a :class:`~parce.rule.RuleItem` that chooses its output based on
+    """Return a :class:`~parce.rule.RuleItem` that selects its output based on
     the text.
 
     The returned RuleItem calls the ``predicate`` function with the matched
     text as argument. The function should return the index of the itemlist to
-    choose. It may also return True or False, which evaluate to 1 or 0,
+    select. It may also return True or False, which evaluate to 1 or 0,
     respectively.
 
     This helper can be used both for action and target objects, or both
     at the same time.
 
     """
-    return rule.choose(rule.call(predicate, rule.TEXT), *items)
+    return rule.select(rule.call(predicate, rule.TEXT), *items)
 
 
 def ifgroup(n, itemlist, else_itemlist=()):
@@ -239,7 +239,7 @@ def ifgroup(n, itemlist, else_itemlist=()):
 
     """
     predicate = lambda group: group is None
-    return rule.choose(rule.call(predicate, rule.MATCH(n)), itemlist, else_itemlist)
+    return rule.select(rule.call(predicate, rule.MATCH(n)), itemlist, else_itemlist)
 
 
 def ifmember(sequence, itemlist, else_itemlist=()):
@@ -262,7 +262,7 @@ def ifmember(sequence, itemlist, else_itemlist=()):
 
     """
     predicate = frozenset(sequence).__contains__
-    return rule.choose(rule.call(predicate, rule.TEXT), else_itemlist, itemlist)
+    return rule.select(rule.call(predicate, rule.TEXT), else_itemlist, itemlist)
 
 
 def ifgroupmember(n, sequence, itemlist, else_itemlist=()):
@@ -276,7 +276,7 @@ def ifgroupmember(n, sequence, itemlist, else_itemlist=()):
 
     """
     predicate = frozenset(sequence).__contains__
-    return rule.choose(rule.call(predicate, rule.MATCH(n)), else_itemlist, itemlist)
+    return rule.select(rule.call(predicate, rule.MATCH(n)), else_itemlist, itemlist)
 
 
 def _get_sequences_map(pairs, default):
@@ -319,7 +319,7 @@ def mapmember(pairs, default=()):
 
     """
     predicate, items = _get_sequences_map(pairs, default)
-    return rule.choose(rule.call(predicate, rule.TEXT), *items)
+    return rule.select(rule.call(predicate, rule.TEXT), *items)
 
 
 def mapgroupmember(n, pairs, default=()):
@@ -331,7 +331,7 @@ def mapgroupmember(n, pairs, default=()):
 
     """
     predicate, items = _get_sequences_map(pairs, default)
-    return rule.choose(rule.call(predicate, rule.MATCH(n)), *items)
+    return rule.select(rule.call(predicate, rule.MATCH(n)), *items)
 
 
 def _get_items_map(dictionary, default):
@@ -369,7 +369,7 @@ def maptext(dictionary, default=()):
     """
     value = rule.TEXT
     predicate, items = _get_items_map(dictionary, default)
-    return rule.choose(rule.call(predicate, value), *items)
+    return rule.select(rule.call(predicate, value), *items)
 
 
 def mapgroup(n, dictionary, default=()):
@@ -384,7 +384,7 @@ def mapgroup(n, dictionary, default=()):
     """
     value = rule.MATCH(n)
     predicate, items = _get_items_map(dictionary, default)
-    return rule.choose(rule.call(predicate, value), *items)
+    return rule.select(rule.call(predicate, value), *items)
 
 
 def maparg(dictionary, default=()):
@@ -396,7 +396,7 @@ def maparg(dictionary, default=()):
     """
     value = rule.ARG
     predicate, items = _get_items_map(dictionary, default)
-    return rule.choose(rule.call(predicate, value), *items)
+    return rule.select(rule.call(predicate, value), *items)
 
 
 def bygroup(*actions):

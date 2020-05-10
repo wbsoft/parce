@@ -86,6 +86,6 @@ def ifarg(pattern, else_pattern=None):
     yielded, which is None by default, resulting in the rule being skipped.
 
     """
-    return rule.pattern(rule.choose(rule.call(bool, rule.ARG), else_pattern, pattern))
+    return rule.pattern(rule.select(rule.call(bool, rule.ARG), else_pattern, pattern))
 
 

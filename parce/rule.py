@@ -30,7 +30,7 @@ When a rule matches during parsing, the rest of the items are evaluated
 using the TEXT and the MATCH variables.
 
 Only Items that inherit from RuleItem may directly appear in a rule,
-and items that they expose (such as the items a :class:`choose` Item chooses
+and items that they expose (such as the items a :class:`select` Item selects
 from) must also inherit from RuleItem.
 
 This way, we can be sure that we are able to validate a Lexicon beforehand,
@@ -65,13 +65,13 @@ variables, then you need the ``call`` item type:
 
 Callable and arguments may also be Item instances.
 The ``call`` item type is not allowed directly in a rule, because is not clear
-what value it will return. Use it in combination with ``choose``, ``target``,
+what value it will return. Use it in combination with ``select``, ``target``,
 ``pattern`` or dynamic actions (see below).
 
 The following items are RuleItem types (allowed in toplevel in a rule):
 
-``choose(index, *items)``
-    chooses the item pointed to by the value in index. The item that ends up in
+``select(index, *items)``
+    selects the item pointed to by the value in index. The item that ends up in
     a rule is unrolled when it is a list.
 ``target(value, *lexicons)``
     has a special handling: if the value is an integer, return it (pop or push
@@ -115,7 +115,7 @@ class Item:
     copy must be returned by calling ``type(self)(*args)``.
 
     In some cases you can also return a different Item type when pre-evaluating
-    partly succeeds. For example, the :class:`choose` type simply returns the
+    partly succeeds. For example, the :class:`select` type simply returns the
     chosen item if the index already can be evaluated, without evaluating the
     other items.
 
@@ -262,7 +262,7 @@ class RuleItem(Item):
     __slots__ = ()
 
 
-class choose(RuleItem):
+class select(RuleItem):
     """Chooses one of the items.
 
     If an item is a list, it is unrolled when replacing the item in a rule.
@@ -532,7 +532,7 @@ def needs_evaluation(rule):
     """Return True if there are items in the rule that need evaluating."""
     for item in rule:
         if isinstance(item, PostponedItem):
-            if item.evaluate_items():
+            if needs_evaluation(item.evaluate_items()):
                 return True
         elif isinstance(item, RuleItem) or \
              (type(item) in (tuple, list) and needs_evaluation(item)):
