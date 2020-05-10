@@ -99,8 +99,7 @@ from . import util
 # pre_evaluate flags
 _CHANGED = 0
 _COMPLETE = 1
-_UNCHANGED  = 2
-
+_UNCHANGED = 2
 
 
 class _EvaluationError(RuntimeError):
