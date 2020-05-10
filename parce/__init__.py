@@ -350,7 +350,7 @@ def _get_items_map(dictionary, default):
 
 
 def maptext(dictionary, default=()):
-    r"""Return a :class:`~parce.rule.RuleItem` that yields the itemlist
+    r"""Return a :class:`~parce.rule.RuleItem` that yields the items
     from the dictionary, using the text as key.
 
     If the dict does not contain the key, the default value is yielded.
@@ -367,12 +367,13 @@ def maptext(dictionary, default=()):
     This matches any text blob, but some text items get their own action.
 
     """
+    value = rule.TEXT
     predicate, items = _get_items_map(dictionary, default)
-    return rule.choose(rule.call(predicate, rule.TEXT), *items)
+    return rule.choose(rule.call(predicate, value), *items)
 
 
 def mapgroup(n, dictionary, default=()):
-    """Return a :class:`~parce.rule.RuleItem` that yields the itemlist
+    """Return a :class:`~parce.rule.RuleItem` that yields the items
     from the dictionary, using the specified match group as key.
 
     If the dict does not contain the key, the default value is yielded.
@@ -381,19 +382,21 @@ def mapgroup(n, dictionary, default=()):
     the case the group was not present in the match.
 
     """
+    value = rule.MATCH(n)
     predicate, items = _get_items_map(dictionary, default)
-    return rule.choose(rule.call(predicate, rule.MATCH(n)), *items)
+    return rule.choose(rule.call(predicate, value), *items)
 
 
 def maparg(dictionary, default=()):
-    r"""Return a :class:`~parce.rule.RuleItem` that yields the itemlist
+    r"""Return a :class:`~parce.rule.RuleItem` that yields the items
     from the dictionary, using the current lexicon argument as key.
 
     If the dict does not contain the key, the default value is yielded.
 
     """
+    value = rule.ARG
     predicate, items = _get_items_map(dictionary, default)
-    return rule.choose(rule.call(predicate, rule.ARG), *items)
+    return rule.choose(rule.call(predicate, value), *items)
 
 
 def bygroup(*actions):
@@ -447,11 +450,10 @@ def withgroup(n, lexicon, mapping=None):
     the argument to call the lexicon with.
 
     """
+    value = rule.MATCH(n)
     if mapping:
-        predicate = lambda t: (0, mapping.get(t))
-    else:
-        predicate = lambda t: (0, t)
-    return rule.target(rule.call(predicate, rule.MATCH(n)), lexicon)
+        value = rule.call(mapping.get, value)
+    return rule.target((0, value), lexicon)
 
 
 def withtext(lexicon, mapping=None):
@@ -463,11 +465,10 @@ def withtext(lexicon, mapping=None):
     call the lexicon with.
 
     """
+    value = rule.TEXT
     if mapping:
-        predicate = lambda t: (0, mapping.get(t))
-    else:
-        predicate = lambda t: (0, t)
-    return rule.target(rule.call(predicate, rule.TEXT), lexicon)
+        value = rule.call(mapping.get, value)
+    return rule.target((0, value), lexicon)
 
 
 def witharg(lexicon, mapping=None):
@@ -478,11 +479,10 @@ def witharg(lexicon, mapping=None):
     lexicon.
 
     """
+    value = rule.ARG
     if mapping:
-        predicate = lambda t: (0, mapping.get(t))
-    else:
-        predicate = lambda t: (0, t)
-    return rule.target(rule.call(predicate, rule.ARG), lexicon)
+        value = rule.call(mapping.get, value)
+    return rule.target((0, value), lexicon)
 
 
 def lexicon(rules_func=None, **kwargs):
