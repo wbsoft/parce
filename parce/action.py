@@ -210,8 +210,8 @@ class SubgroupAction(DynamicAction):
             yield from lexer.filter_actions(action, match.start(i), match.group(i), match)
 
     def evaluate_items(self):
-        """Yield the actions specified on init, used by pre_evaluate()."""
-        yield from self._actions
+        """Return the actions specified on init, used by pre_evaluate()."""
+        return self._actions
 
     def variations(self):
         """Yield the possible actions."""
@@ -243,8 +243,8 @@ class DelegateAction(DynamicAction, RuleItem):
                 yield pos + p, txt, action
 
     def evaluate_items(self):
-        """Yield the lexicon specified on init, used by evaluate() and pre_evaluate()."""
-        yield self._lexicon
+        """Return the lexicon specified on init, used by evaluate() and pre_evaluate()."""
+        return self._lexicon,
 
     def variations(self):
         """Yield our lexicon."""

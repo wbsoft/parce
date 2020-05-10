@@ -120,7 +120,6 @@ class Item:
     chosen item if the index already can be evaluated, without evaluating the
     other items.
 
-
     """
     __slots__ = ()
 
@@ -128,16 +127,22 @@ class Item:
         return call(_get_item, self, n)
 
     def evaluate(self, ns):
-        """Evaluate item in namespace dict."""
+        """Evaluate item in namespace dict ``ns``."""
         raise NotImplementedError
 
     def pre_evaluate(self, ns):
-        """Try to evaluate; return a two-tuple(obj, success).
+        """Try to evaluate item in namespace dict ``ns``.
 
-        Success can be:
+        Return a two-tuple(obj, success).
 
-        1: the object has been evaluated sucessfully
-        2: the object could not be evaluated
+        Success is a two-bit value indicating whether the result is completely
+        evaluated and whether something has changed. Bit 0 is set when the item
+        is completely evaluated, and bit 1 is set when there was no
+        modification. So all possible return values are:
+
+        | 0: the object has changed but it is not yet completely evaluated
+        | 1: the object has changed and now it is fully evaluated
+        | 2: the object needs evaluation but is not changed
 
         """
         try:
@@ -366,49 +371,43 @@ class PostponedItem(Item):
     When inheriting from this class, implement the :meth:`evaluate_items`
     method, which lists all values as they were given to the __init__ method.
 
+    If this method returns values, those are evaluated, and a new PostponedItem
+    is returned with the contents evaluated.
+
     """
     __slots__ = ()
 
     def evaluate(self, ns):
-        """Evaluate all values yielded by the evaluate_items() method.
+        """Evaluate all values returned by the evaluate_items() method.
 
         If any value changes, a copy of the Item is returned, otherwise the
         Item ifself. If the evaluate_items() method does not yield any value,
         this Item is always returned unchanged.
 
         """
-        items = tuple(self.evaluate_items())
-        if items:
-            items, ok = pre_evaluate(items, ns)
-            if not ok & _UNCHANGED:
-                return type(self)(*items)
-        return self
+        items, ok = pre_evaluate(self.evaluate_items(), ns)
+        return self if ok & _UNCHANGED else type(self)(*items)
 
     def pre_evaluate(self, ns):
-        """Pre-evaluate all values yielded by the evaluate_items() method.
+        """Pre-evaluate all values returned by the evaluate_items() method.
 
         If any value changes, a copy of the Item is returned, otherwise the
         Item ifself.
 
         """
-        items = tuple(self.evaluate_items())
-        if not items:
-            return self, _COMPLETE
-        items, ok = pre_evaluate(items, ns)
-        if not ok & _UNCHANGED:
-            return type(self)(*items), _CHANGED
-        return self, _UNCHANGED
+        items, ok = pre_evaluate(self.evaluate_items(), ns)
+        return self if ok & _UNCHANGED else type(self)(*items), ok
 
     def evaluate_items(self):
-        """Yield the current values as they are given to the __init__ method.
+        """Return a tuple of the values as given to the __init__ method,
+        when they need to be evaluated inside this PostponedItem.
 
         This method should either yield *all( values that were given to the
         __init__ method, or nothing. The default implementation yields nothing,
         so nothing is evaluated or pre-evaluated.
 
         """
-        return
-        yield
+        return ()
 
 
 class ActionItem(PostponedItem):
@@ -434,7 +433,7 @@ class pattern(PostponedItem):
 
     def evaluate_items(self):
         """Yield the pattern value."""
-        yield self._value
+        return self._value,
 
     def variations(self):
         """If the value is evaluated, yield it, otherwise yields ``None`` and ``a_string``."""
@@ -462,7 +461,9 @@ def _get_match_group(match, n):
 def evaluate(obj, ns):
     """Evaluate an object, that may or may not be an Item.
 
-    A list or a tuple of items is also evaluated and always becomes a tuple.
+    The namespace `ns` is a dictionary containing text, match and/or arg
+    variables. A list or a tuple of items is also evaluated and always becomes
+    a tuple.
 
     """
     if isinstance(obj, Item):
@@ -473,19 +474,19 @@ def evaluate(obj, ns):
 
 
 def pre_evaluate(obj, ns):
-    """Pre-evaluate an object, that may or may not be an Item.
+    """Pre-evaluate any object, that may or may not be an Item.
 
-    Returns a two-tuple(result, success).
+    Returns a two-tuple(result, success). The namespace `ns` is a dictionary
+    containing text, match and/or arg variables.
 
-    Success can be one of four:
+    * If the object is an Item, returns ``object.pre_evaluate(ns)``.
+    * If the object is a list or tuple, evaluates the contents and returns a
+      tuple.
+    * If the object is none of the above, simply returns the object unchanged.
 
-    0: the object has changed but is not completely evaluated
-    1: the object has changed and is fully evaluated
-    2: the object needs evaluation but is not changed/evaluated
-    3: the object is already fully evaluated (or no Item at all)
-
-    _COMPLETE = 1
-    _UNCHANGED = 2
+    The ``success`` value can be one of the values described in
+    :meth:`Item.pre_evaluate`, or it is 3, meaning that the object is returned
+    unchanged and needs no evaluation.
 
     """
     if isinstance(obj, Item):
