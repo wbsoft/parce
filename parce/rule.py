@@ -526,11 +526,15 @@ def pre_evaluate_rule(rule, arg):
 
     """
     ns = {'arg': arg}
-    def items():
-        for item in rule:
-            item = pre_evaluate(item, ns)[0]
-            yield from unroll(item)
-    result = items()
+    def pre_eval_rule_items(objs):
+        for obj in objs:
+            if isinstance(obj, RuleItem):
+                yield from unroll(obj.pre_evaluate(ns)[0])
+            elif type(obj) in (list, tuple):
+                yield from pre_eval_rule_items(obj)
+            else:
+                yield obj
+    result = pre_eval_rule_items(rule)
     # the first item may be a pattern instance; it should be evaluated by now
     for item in result:
         if isinstance(item, pattern):
