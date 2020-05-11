@@ -475,8 +475,14 @@ def evaluate(obj, ns):
 def evaluate_rule(rule, match):
     """Yield all items of the rule, evaluating leftover Items, unrolling list or tuple results."""
     ns = {'text': match.group(), 'match': match}
+    def eval_rule_item(obj):
+        if isinstance(obj, RuleItem):
+            return obj.evaluate(ns)
+        if type(obj) in (list, tuple):
+            return tuple(map(eval_rule_item, obj))
+        return obj
     for item in rule:
-        item = evaluate(item, ns)
+        item = eval_rule_item(item)
         yield from unroll(item)
 
 
