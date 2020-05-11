@@ -13,7 +13,6 @@ Overview of all modules
    language.rst
    lexer.rst
    lexicon.rst
-   pattern.rst
    pkginfo.rst
    query.rst
    regex.rst

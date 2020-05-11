@@ -42,7 +42,7 @@ also available in the ``parce`` module namespace. See for the full list
 
 
 from . import (
-    action, document, lexer, pattern, rule, treebuilder, treedocument, util)
+    action, document, lexer, rule, treebuilder, treedocument, util)
 from . import lexicon as lexicon_
 from .document import Cursor
 from .language import Language
