@@ -24,7 +24,7 @@ import reprlib
 
 import parce
 from .lexicon import LexiconDescriptor, Lexicon
-from .rule import variations, a_number
+from .ruleitem import variations, a_number
 
 
 def validate_language(lang):

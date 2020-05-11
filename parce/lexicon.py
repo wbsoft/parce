@@ -63,7 +63,8 @@ import threading
 import parce.regex
 from . import util
 from .target import TargetFactory
-from .rule import Item, RuleItem, evaluate_rule, needs_evaluation, pre_evaluate_rule
+from .ruleitem import (
+    Item, RuleItem, evaluate_rule, needs_evaluation, pre_evaluate_rule)
 
 
 class LexiconDescriptor:

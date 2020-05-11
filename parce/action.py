@@ -115,7 +115,7 @@ Language to other objects, which could even be methods or functions.
 import threading
 
 
-from .rule import ActionItem, RuleItem
+from .ruleitem import ActionItem, RuleItem
 
 
 # we use a global lock for standardaction creation, it seems overkill
