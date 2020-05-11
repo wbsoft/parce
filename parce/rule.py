@@ -583,13 +583,15 @@ def variations(rule):
 
 
 def unroll(obj):
-    """Yield the obj.
+    """Unroll a tuple or list.
 
-    If the obj is a tuple or list, yields their members separately.
+    If the object is a tuple or list, yields the unrolled members recursively.
+    Otherwise just the object itself is yielded.
 
     """
     if type(obj) in (tuple, list):
-        yield from obj
+        for i in obj:
+            yield from unroll(i)
     else:
         yield obj
 
