@@ -326,11 +326,6 @@ class PostponedItem(RuleItem):
         return ()
 
 
-class ActionItem(PostponedItem):
-    """Mixin base class for dynamic actions."""
-    __slots__ = ()
-
-
 class pattern(PostponedItem):
     """Represents a pattern.
 
@@ -361,6 +356,95 @@ class pattern(PostponedItem):
 
     def _repr_args(self):
         return self._value,
+
+
+class ActionItem(PostponedItem):
+    """Mixin base class for dynamic actions."""
+    __slots__ = ()
+
+
+class SubgroupAction(ActionItem):
+    """Yield actions from subgroups in a match.
+
+    A SubgroupAction looks at subgroups in the regular expression match and
+    returns the same amount of tokens as there are subgroups, using the specified
+    action for every subgroup.
+
+    For example, the rule::
+
+        "(0x)([0-9a-f]+)", SubgroupAction(Number.Prefix, Number.Hexadecimal)
+
+    yields two tokens in case of a match, one for "0x" and the other for the
+    other group of the match.
+
+    There should be the same number of subgroups in the regular expression as
+    there are action attributes given to __init__().
+
+    """
+    __slots__ = ('_actions',)
+    def __init__(self, *actions):
+        self._actions = actions
+
+    def replace(self, lexer, pos, text, match):
+        for i, action in enumerate(self._actions, match.lastindex + 1):
+            yield from lexer.filter_actions(action, match.start(i), match.group(i), match)
+
+    def evaluate_items(self):
+        """Return the actions specified on init, used by pre_evaluate()."""
+        return self._actions
+
+    def variations(self):
+        """Yield the possible actions."""
+        yield from self._actions
+
+
+class DelegateAction(ActionItem):
+    """This action uses a lexicon to parse the text.
+
+    All tokens are yielded as one group, flattened, ignoring the tree
+    structure, so this is not efficient for large portions of text, as the
+    whole region is parsed again on every modification.
+
+    But it can be useful when you want to match a not too large text blob first
+    that's difficult to capture otherwise, and then lex it with a lexicon that
+    does (almost) not enter other lexicons.
+
+    """
+    __slots__ = ('_lexicon',)
+
+    def __init__(self, lexicon):
+        self._lexicon = lexicon
+
+    def replace(self, lexer, pos, text, match):
+        """Use our lexicon to parse the matched text."""
+        sublexer = type(lexer)([self._lexicon])
+        for e in sublexer.events(text):
+            for p, txt, action in e.tokens:
+                yield pos + p, txt, action
+
+    def evaluate_items(self):
+        """Return the lexicon specified on init, used by evaluate() and pre_evaluate()."""
+        return self._lexicon,
+
+    def variations(self):
+        """Yield our lexicon."""
+        yield self._lexicon
+
+
+class SkipAction(ActionItem):
+    """A DynamicAction that yields nothing.
+
+    A SkipAction() is stored in the module variable ``skip`` and causes the rule
+    to silently ignore the matched text.
+
+    """
+    def replace(self, lexer, pos, text, match):
+        yield from ()
+
+    def variations(self):
+        """Yield no variations."""
+        return
+        yield
 
 
 def evaluate(obj, ns):

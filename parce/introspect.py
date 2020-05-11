@@ -22,7 +22,7 @@ Helper functions to inspect and document objects.
 """
 
 
-from .rule import DynamicItem, variations_tree
+from .ruleitem import DynamicItem, variations_tree
 from .action import StandardAction
 from .lexicon import LexiconDescriptor, Lexicon
 

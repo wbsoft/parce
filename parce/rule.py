@@ -19,106 +19,361 @@
 
 
 """
-Replacable rule item objects.
+Replacable rule item objects and helper functions.
 
-When the Lexicon builds its internal representation of the rules,
-RuleItem instances are evaluated in two stages. First, the items
-are pre-elevated: meaning that the items that depend on the lexicon
-argument (the ARG variable) are evaluated.
+Instead of a fixed pattern, action and target you can use dynamic rule items,
+which are replaced before, during and after lexing the text.
 
-When a rule matches during parsing, the rest of the items are evaluated
-using the TEXT and the MATCH variables.
+Dynamic rule items can adjust the rule to the lexicon argument, the match
+object of the regular expression match (if a rule matches) or the matched text.
 
-Only Items that inherit from RuleItem may directly appear in a rule,
-and items that they expose (such as the items a :class:`select` Item selects
-from) must also inherit from RuleItem.
+Rule items that depend on the lexicon argument are already evaluated *before*
+the lexicon is first used. Rule items that depend on the text or the match
+object are evaluated *during* lexing when a rule matches. *Dynamic actions*
+are evaluated *after* lexing, when generating tokens.
 
-This way, we can be sure that we are able to validate a Lexicon beforehand,
-and know all actions or target lexicons that it might yield during parsing.
+Rule items may not inject arbitrary values in rules; for validation purposes it
+must always be clear what kind of items a rule could contain before it is used.
+So in most cases a :func:`select` function will be used with a predicate that
+returns the index of the item to select.
 
-A third evaluation stage happens in the lexer, for Item objects that inherit
-of ActionItem.
+There are also some helper functions that generate output directly, with no
+special behaviour afterwards.
 
-The following fixed Item instances are defined here:
-
-``ARG``
-    represents the lexicon argument
-``MATCH``
-    represents the match object of a regular expression match
-``TEXT``
-    represents the matched text
-
-The match and text variables have some additional functionality:
-
-``MATCH(n)``
-    represents the text in a subgroup of the match (subgroups start with 1)
-``MATCH(n)[s]``
-    represents a slice of the text in a subgroup (fails if the group is None)
-``TEXT[s]``
-    represents a slice of the matched text
-
-Very often you want to use a predicate function on one of the above
-variables, then you need the ``call`` item type:
-
-``call(callable, *arguments)``
-    gets the result of calling callable with zero or more arguments
-
-Callable and arguments may also be Item instances.
-The ``call`` item type is not allowed directly in a rule, because is not clear
-what value it will return. Use it in combination with ``select``, ``target``,
-``pattern`` or dynamic actions (see below).
-
-The following items are RuleItem types (allowed in toplevel in a rule):
-
-``select(index, *items)``
-    selects the item pointed to by the value in index. The item that ends up in
-    a rule is unrolled when it is a list.
-``target(value, *lexicons)``
-    has a special handling: if the value is an integer, return it (pop or push
-    value). If it is a two-tuple(index, arg): derive the lexicon at index with
-    arg.
-
-And the following items may also appear in a rule, they survive evaluating,
-although the *pre*-evaluation process may alter their attributes:
-
-``pattern(value)``
-    only allowed as the first item in a rule; is expected to create a string
-    or None. If None, the whole rule is skipped.
-
-``ActionItem(*items)``
-    base class for dynamic actions. Those are not evaluated by the Lexicon,
-    although the items they contain may be. The lexer takes care of these
-    items.
+The following rule items and helper functions are available:
 
 """
 
 
+import operator
+
+from . import regex
 from . import ruleitem
 
 
-#: the lexicon argument
 ARG = ruleitem.VariableItem('arg')
+"""The lexicon argument.
 
-#: the regular expression match (or None)
+"""
+
 MATCH = ruleitem.VariableItem('match', (lambda m, n: m.group(m.lastindex + n)))
+"""The regular expression match object.
 
-#: the matched text
+You can access a specific group using :obj:`MATCH(n)`; groups start with 1.
+Even :obj:`MATCH(n)[s]` is possible, which yields a slice of the matched text
+in group ``n``.
+
+"""
+
 TEXT = ruleitem.VariableItem('text')
+"""The matched text.
 
+You can use :obj:`TEXT[n]` to get a slice of the matched text.
+
+"""
 
 def call(predicate, *arguments):
+    """Yield the result of calling the predicate with arguments."""
     return ruleitem.call(predicate, *arguments)
 
 
 def select(index, *items):
+    """Yield the item pointed to by the index.
+
+    In most use cases the index will be the result of a predicate function,
+    which returns an integer value (or True or False, which evaluate to 1 and 0,
+    repectively).
+
+    The following example yields Keyword when the matched text could be found
+    in the keywords_list, and otherwise Name.Command::
+
+        keywords_list = ['def', 'class', 'for', 'if', 'else', 'return']
+        def predicate(text):
+            return text in keywords_list
+        select(call(predicate, TEXT), Name.Command, Keyword)
+
+    If the selected item is a list or tuple, it is unrolled when injected
+    into the rule.
+
+    """
     return ruleitem.select(index, *items)
 
 
 def pattern(value):
+    """Yield the value (string or None), usable as regular expression.
+
+    If None, the whole rule is skipped. This rule item may only be used as
+    the first item in a rule, and of course, it may not depend on the TEXT
+    or MATCH variables, but it may depend on the ARG variable (which enables
+    you to create patterns that depend on the lexicon argument).
+
+    """
     return ruleitem.pattern(value)
 
 
 def target(value, *lexicons):
+    """Yield either an integer target value, or a (possibly derived) Lexicon.
+
+    Using this rule item you can have one predicate function decide whether to
+    push the same lexicon again, or to pop, or to target another lexicon, which
+    may also be derived.
+
+    This is how it works: when the value is an integer, it is returned.
+    Otherwise the value must be a two-tuple(index, argument). The index then
+    selects one of the provided lexicons and the argument (if not None), calls
+    the lexicon to get a derived lexicon, which is then yielded as result of
+    this rule item.
+
+    Here are some examples::
+
+        target(-1)
+
+    yields -1. And::
+
+        target((1, "bla"), MyLang.lexicon1, MyLang.lexicon2)
+
+    yields ``MyLang.lexicon2("bla")``.
+
+    The following two incantations are equivalent (where n can be any
+    expression)::
+
+        target((n, None), MyLang.lexicon1, MyLang.lexicon2)
+        select(n, MyLang.lexicon1, MyLang.lexicon2)
+
+    Finally::
+
+        target(call(my_predicate, TEXT), MyLang.lexicon1, MyLang.lexicon2)
+
+    calls ``my_predicate`` with the matched text, and then uses the return
+    value to either directly return or choose a lexicon.
+
+    """
     return ruleitem.target(value, *lexicons)
+
+
+### Helpers that create rule items
+
+def ifeq(a, b, result, else_result=()):
+    r"""Yield ``result`` if ``a == b``, else ``else_result``.
+
+    This example selects actions and target based on the contents of the
+    second subgroup in the match object::
+
+        yield r'([^\W\d]\w*)\s*([\(\]])', \
+            ifeq(MATCH(2), '(',
+                 (bygroup(Name.Function, Delimiter), cls.func_call),
+                 (bygroup(Name.Variable, Delimiter), cls.subscript))
+
+
+    """
+    return select(call(operator.eq, a, b), else_result, result)
+
+
+def ifmember(item, sequence, result, else_result=()):
+    r"""Yield ``result`` if ``item in sequence``, else ``else_result``.
+
+    Example::
+
+
+        commands = ['begin', 'end', 'if']
+        yield r'\\\w+', ifmember(TEXT[1:], commands, Keyword, Name.Variable)
+
+    This example matches any command that starts with a backslash, e.g.
+    ``\begin``, but checks membership in a list without the backslash
+    prepended.
+
+    """
+    return select(call(operator.contains, frozenset(sequence), item),
+        else_result, result)
+
+
+def pair(item, mapping, default=()):
+    r"""Yield the ``item`` from the specified ``mapping`` (dictionary).
+
+    If the item can't be found in the mapping, returns ``default``.
+
+    An example from the LilyPond music language definition::
+
+        RE_LILYPOND_LYRIC_TEXT = r'[^{}"\\\s$#\d]+'
+        yield RE_LILYPOND_LYRIC_TEXT, pair(TEXT, {
+            "--": LyricHyphen,
+            "__": LyricExtender,
+            "_": LyricSkip,
+        }, LyricText)
+
+    This matches any text blob, but some text items get their own action.
+
+    """
+    d = {}
+    item = [default]
+    for i, (key, value) in enumerate(mapping.items(), 1):
+        d[key] = i
+        items.append(value)
+    def get_index(text):
+        return d.get(text, 0)
+    return select(call(get_index, item), *items)
+
+
+def derive(lexicon, argument):
+    r"""Yield a derived lexicon with argument.
+
+    Example::
+
+        yield "['\"]", String, derive(cls.string, TEXT)
+
+    This enters the lexicon ``string`` with a double quote as argument when a
+    double quote is encountered, but with a single quote when a single quote
+    was encountered.
+
+    (Deriving a lexicon is not possible with the ``call`` statement, because
+    that is not allowed as toplevel rule item.)
+
+    """
+    return target((0, argument), lexicon)
+
+
+def findmember(item, pairs, default=()):
+    r"""Yield the item corresponding to the first sequence the item is found in.
+
+    The ``pairs`` argument is an iterable of tuples(sequence, result).
+    When a sequence contains the item, ``result`` is yielded. When no sequence
+    contained the item, ``default`` is yielded.
+
+    The ``pairs`` argument can also be a dictionary, in case the order does not
+    matter.
+
+    """
+    sequences = []
+    items = []
+    all_items = set()
+    try:
+        pairs = pairs.items()   # succeeds if it's a dict
+    except AttributeError:
+        pass
+    for s, i in pairs:
+        s = frozenset(set(s) - all_items)
+        all_items |= s
+        sequences.append(s)
+        items.append(i)
+    last = len(items)
+    items.append(default)
+    def predicate(text):
+        for i, sequence in enumerate(sequences):
+            if text in sequence:
+                return i
+        return last
+    return select(call(predicate, item), *items)
+
+
+### Pattern helpers
+
+
+def words(words, prefix="", suffix=""):
+    r"""Return an optimized regular expression pattern matching any of the
+    words.
+
+    A ``prefix`` or ``suffix`` can be given, which will be added to the regular
+    expression. Using the word boundary character ``\b`` as suffix is
+    recommended to be sure the match ends at a word end.
+
+    """
+    expr = regex.words2regexp(words)
+    if prefix or suffix:
+        return prefix + '(?:' + expr + ')' + suffix
+    return expr
+
+
+def char(chars, positive=True):
+    """Return a regular expression pattern matching one of the characters in
+    the specified string.
+
+    If `positive` is False, the set of characters is complemented, i.e. the
+    pattern matches any single character that is not in the specified string.
+
+    """
+    negate = "" if positive else "^"
+    return '[{}{}]'.format(negate, regex.make_charclass(chars))
+
+
+### Dynamic patterns (depending on ARG)
+
+
+def arg(escape=True, prefix="", suffix="", default=None):
+    r"""Create a pattern that contains the argument the current Lexicon was
+    called with.
+
+    If there is no argument in the current lexicon, this Pattern yields the
+    default value, which is by default None, resulting in the rule being
+    skipped.
+
+    When there is an argument, it is escaped using :func:`re.escape` (when
+    ``escape`` was set to True), and if given, ``prefix`` is prepended and
+    ``suffix`` is appended. When the default value is used, ``prefix`` and
+    ``suffix`` are not used.
+
+    """
+    def build(arg):
+        """Return the lexicon argument as regular expression."""
+        if isinstance(arg, str):
+            if escape:
+                arg = re.escape(arg)
+            return prefix + arg + suffix
+        return default
+    return pattern(call(build, ARG))
+
+
+def ifarg(pattern, else_pattern=None):
+    r"""Create a pattern that returns the specified regular expression pattern
+    if the lexicon was called with an argument.
+
+    If there is no argument in the current lexicon, ``else_pattern`` is
+    yielded, which is None by default, resulting in the rule being skipped.
+
+    """
+    return pattern(select(call(bool, ARG), else_pattern, pattern))
+
+
+### Dynamic actions
+
+
+def bygroup(*actions):
+    r"""Return a :class:`~parce.ruleitem.SubgroupAction` that yields tokens for
+    each subgroup in a regular expression.
+
+    This action uses capturing subgroups in the regular expression pattern
+    and creates a Token for every subgroup, with that action. You should
+    provide the same number of actions as there are capturing subgroups in
+    the pattern. Use non-capturing subgroups for the parts you're not
+    interested in, or the special ``skip`` action.
+
+    An example from the CSS language definition::
+
+        yield r"(url)(\()", bygroup(Name, Delimiter), cls.url_function
+
+    If this rule matches, it generates two tokens, one for "url" and the other
+    for the opening parenthesis, each with their own action.
+
+    """
+    return ruleitem.SubgroupAction(*actions)
+
+
+def using(lexicon):
+    r"""Return a :class:`~parce.ruleitem.DelegateAction` that yields tokens
+    using the specified lexicon.
+
+    All tokens are yielded as one group, flattened, ignoring the tree
+    structure, so this is not efficient for large portions of text, as the
+    whole region is parsed again on every modification.
+
+    But it can be useful when you want to match a not too large text blob first
+    that's difficult to capture otherwise, and then lex it with a lexicon that
+    does (almost) not enter other lexicons.
+
+    """
+    return ruleitem.DelegateAction(lexicon)
+
+
+skip = ruleitem.SkipAction()
+"""A SkipAction that yields no tokens, thereby ignoring the matched text."""
 
 
