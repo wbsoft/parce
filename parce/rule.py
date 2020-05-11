@@ -520,9 +520,11 @@ def pre_evaluate(obj, ns):
 
 
 def pre_evaluate_rule(rule, arg):
-    """Pre-evaluates items in the rule with the 'arg' variable.
+    """Evaluate all RuleItem objects that can be evaluated in the rule.
 
-    Unrolls lists. Returns the rule as a tuple.
+    The specified ``arg`` provides the value for the ARG variable. Rule items
+    that depend on the match object are not yet evaluated. Lists and tuples are
+    unrolled. Returns the rule as a tuple.
 
     """
     ns = {'arg': arg}
