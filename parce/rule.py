@@ -480,16 +480,15 @@ def evaluate_rule(rule, match):
 
     """
     ns = {'text': match.group(), 'match': match}
-    def eval_rule_item(obj):
-        if isinstance(obj, RuleItem):
-            yield from unroll(obj.evaluate(ns))
-        elif type(obj) in (list, tuple):
-            for item in obj:
-                yield from eval_rule_item(item)
-        else:
-            yield obj
-    for item in rule:
-        yield from eval_rule_item(item)
+    def eval_rule_items(objs):
+        for obj in objs:
+            if isinstance(obj, RuleItem):
+                yield from unroll(obj.evaluate(ns))
+            elif type(obj) in (list, tuple):
+                yield from eval_rule_items(obj)
+            else:
+                yield obj
+    yield from eval_rule_items(rule)
 
 
 def pre_evaluate(obj, ns):
