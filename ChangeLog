@@ -4,6 +4,8 @@ ChangeLog
 
 current:
 
+- dynamic rule item infrastructure completely rewritten, rule items
+  are simpler, more powerful and fine-grained
 - parce.document.Document now inherits from Observable and emits events
 - fixed: AttributeError: 'str' object has no attribute 'IfArg'
 
