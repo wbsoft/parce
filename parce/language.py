@@ -32,6 +32,7 @@ import os
 
 import parce
 import parce.lang
+from parce.action import Comment
 
 
 class Language:
@@ -52,10 +53,10 @@ class Language:
         Most bundled languages use this method for their comment lexicons.
 
         """
-        yield r'\b\w+(?:[._%+-]\w+)*@\w+(?:[._-]\w+)*\b', parce.Comment.Email
-        yield r'(?:(?:https?|ftp):/|\bwww\.)(?:[\w_~:/#-]+([.?=][\w_~:/#-]+)*|\([\w._~:?/#-]*\))+', parce.Comment.Url
-        yield r"\b(ALERT|BUG|FIXME|TEMP|TODO|XXX+)\b", parce.Comment.Alert
-        yield parce.default_action, parce.Comment
+        yield r'\b\w+(?:[._%+-]\w+)*@\w+(?:[._-]\w+)*\b', Comment.Email
+        yield r'(?:(?:https?|ftp):/|\bwww\.)(?:[\w_~:/#-]+([.?=][\w_~:/#-]+)*|\([\w._~:?/#-]*\))+', Comment.Url
+        yield r"\b(ALERT|BUG|FIXME|TEMP|TODO|XXX+)\b", Comment.Alert
+        yield parce.default_action, Comment
 
 
 def get_all_modules():

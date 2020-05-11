@@ -28,6 +28,7 @@ import re
 
 
 from parce import *
+from parce.action import Comment, Data, Delimiter, Escape, Name, Operator
 
 
 class Ini(Language):

@@ -26,6 +26,8 @@ import re
 
 from parce import *
 from parce.rule import *
+from parce.action import *
+
 from parce.unicharclass import categories
 from .javascript_words import *
 

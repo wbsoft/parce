@@ -25,6 +25,7 @@ Parse Python.
 import re
 
 from parce import *
+from parce.action import *
 from parce.rule import *
 
 from . import python_words

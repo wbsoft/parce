@@ -28,6 +28,7 @@ https://www.gnu.org/software/texinfo/
 import re
 
 from parce import *
+from parce.action import *
 from parce.rule import *
 
 

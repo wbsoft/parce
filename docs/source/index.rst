@@ -18,7 +18,7 @@ This manual documents `parce` version |release|.
    doc.rst
 
    langs.rst
-   stdactions.rst
+   action.rst
    modoverview.rst
 
 

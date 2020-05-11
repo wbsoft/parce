@@ -36,18 +36,16 @@ to get easy access to all the actions and the helper functions.
 
 Besides the classes and functions below, a large amount of *standard actions* is
 also available in the ``parce`` module namespace. See for the full list
-:doc:`stdactions`.
+:doc:`action`.
 
 """
 
 
-from . import (
-    action, document, lexer, rule, treebuilder, treedocument, util)
+from . import document, lexer, rule, treebuilder, treedocument, util
 from . import lexicon as lexicon_
 from .document import Cursor
 from .language import Language
 from .pkginfo import version, version_string
-from .stdactions import *
 
 
 class Document(treedocument.TreeDocumentMixin, document.Document):

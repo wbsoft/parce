@@ -26,6 +26,7 @@ Parser for LilyPond syntax.
 import re
 
 from parce import *
+from parce.action import *
 from parce.rule import *
 
 from . import lilypond_words

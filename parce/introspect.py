@@ -23,7 +23,7 @@ Helper functions to inspect and document objects.
 
 
 from .ruleitem import Item, variations_tree
-from .action import StandardAction
+from .standardaction import StandardAction
 from .lexicon import LexiconDescriptor, Lexicon
 
 

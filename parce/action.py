@@ -17,118 +17,121 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-
 """
-This module defines standard actions.
-
-A StandardAction is a singleton object. Acessing an attribute (without
-underscore) creates that attribute as a new instance, with the current instance
-as _parent.
-
-This way a new action type can be created that shares its parent with other
-types, a concept borrowed from pygments. An example::
-
-    >>> Comment = StandardAction("Comment")
-    >>> Literal = StandardAction("Literal")
-    >>> String = Literal.String
-    >>> String.DoubleQuotedString
-    Literal.String.DoubleQuotedString
-    >>> String.SingleQuotedString
-    Literal.String.SingleQuotedString
-
-StandardAction instances support iteration and membership methods.
-Iteration yields the instance ifself and then the parents::
-
-    >>> for i in String.DoubleQuoted:
-    ...     print(i)
-    ...
-    Literal.String.DoubleQuoted
-    Literal.String
-    Literal
-
-And the :keyword:`in` operator returns True when a standard action belongs to
-another one, i.e. the other one is one of the ancestors of the current action::
-
-    >>> String.DoubleQuotedString in String
-    True
-    >>> Literal in String
-    False
-
-The :keyword:`in` operator also works with a string::
-
-    >>> 'String' in Literal.String.DoubleQuoted
-    True
-    >>> 'Literal' in String
-    True
-
-The last one could be surprising, but String is defined as ``Literal.String``::
-
-    >>> String
-    Literal.String
-
-Finally, the `&` operator returns the common ancestor, if any::
-
-    >>> String & Number
-    Literal
-    >>> String & Text
-    >>>
-
-See for the full list of pre-defined standard actions :doc:`stdactions`.
-
-
+Standard actions defined in the parce module namespace.
 """
 
+from . import standardaction
 
-import threading
+# Note: the marked part below of this file is literally shown in the
+# documentation (stdactions.rst)
 
-# we use a global lock for standardaction creation, it seems overkill
-# to me to equip every instance with one.
-_lock = threading.Lock()
+# BEGIN_ACTIONS
 
-_toplevel_actions = {}       # store the "root" actions
+a = standardaction.StandardAction
+
+# Base actions, derive from these:
+
+Text            = a("Text")
+Whitespace      = a("Whitespace")
+Keyword         = a("Keyword")
+Delimiter       = a("Delimiter")
+Name            = a("Name")             # see below for many derived actions
+Literal         = a("Literal")          # see below for many derived actions
+Comment         = a("Comment")
 
 
-class StandardAction:
-    """Factory for standard action singletons."""
-    def __new__(cls, name, parent=None):
-        d = parent.__dict__ if parent else _toplevel_actions
-        with _lock:
-            try:
-                return d[name]
-            except KeyError:
-                new = d[name] = object.__new__(cls)
-                new._name = name
-                new._parent = parent
-                return new
+# Mixin actions, yield subtle style changes:
 
-    def __getattr__(self, name):
-        if name.startswith('_'):
-            raise AttributeError("{} has no attribute {}".format(self, repr(name)))
-        return type(self)(name, self)
+Alert           = a("Alert")
+Important       = a("Important")
+Unimportant     = a("Unimportant")
+Special         = a("Special")
 
-    def __repr__(self):
-        return ".".join(reversed([n._name for n in self]))
+Definition      = a("Definition")       # a thing is defined (vs referred to)
+Invalid         = a("Invalid")          # invalid input
+Escape          = a("Escape")           # escaped text like \n in a string
+Template        = a("Template")         # a template for something else
+Pseudo          = a("Pseudo")           # e.g. a pseudo-class or -comment
+Preprocessed    = a("Preprocessed")
 
-    def __iter__(self):
-        node = self
-        while node:
-            yield node
-            node = node._parent
+Inserted        = a("Inserted")         # inserted text (e.g. in a diff)
+Deleted         = a("Deleted")          # deleted text (e.g. in a diff)
+Quoted          = a("Quoted")           # e.g. a blockquote
+Bold            = a("Bold")             # Bold text
+Emphasized      = a("Emphasized")       # Emphasized text
 
-    def __contains__(self, other):
-        if isinstance(other, str):
-            return any(t._name == other for t in self)
-        return any(t is self for t in other)
 
-    def __and__(self, other):
-        ancestors = frozenset(other)
-        for t in self:
-            if t in ancestors:
-                return t
+# Mixin actions that are not styled by default:
 
-    def __copy__(self):
-        return self
+Start           = a("Start")            # start of something
+End             = a("End")              # end of something
+Indent          = a("Indent")           # denotes an indent
+Dedent          = a("Dedent")           # denotes a dedent
 
-    def __deepcopy__(self, memo):
-        return self
 
+# Actions that derive of Name:
+
+Name.Attribute
+Name.Builtin
+Name.Class
+Name.Command
+Name.Constant
+Name.Decorator
+Name.Entity
+Name.Exception
+Name.Function
+Name.Identifier
+Name.Macro
+Name.Markup
+Name.Method
+Name.Namespace
+Name.Object
+Name.Property
+Name.Symbol
+Name.Tag
+Name.Type
+Name.Variable
+
+
+# Actions that derive of Literal:
+
+Data            = Literal.Data
+Verbatim        = Literal.Verbatim
+String          = Literal.String        # a quoted string
+Character       = Literal.Character     # a single character
+Number          = Literal.Number        # a numeric value
+Fraction        = Number.Fraction       # a fraction/rational value
+Boolean         = Number.Boolean        # a boolean value
+Literal.Color
+Literal.Email
+Literal.Url
+Literal.Timestamp
+Literal.Input
+Literal.Output
+Literal.Error
+Literal.Prompt
+
+
+# Actions that derive of String:
+
+String.Double
+String.Single
+
+
+# Actions that derive of Delimiter:
+
+Connection      = Delimiter.Connection  # connects things
+Direction       = Delimiter.Direction   # implicates a direction
+Bracket         = Delimiter.Bracket     # for { }, ( ), [ ] etc.
+ModeChange      = Delimiter.ModeChange  # a special char that changes mode
+Operator        = Delimiter.Operator    # an arithmetic operator
+Quote           = Delimiter.Quote       # a quote, e.g. " or «
+Separator       = Delimiter.Separator   # a separator, like \\ or | in LaTeX
+
+Operator.Assignment                     # e.g. = to denote an assignment
+
+
+del a
+# END_ACTIONS
+del standardaction

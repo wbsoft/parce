@@ -31,6 +31,7 @@ highlighting formats in css files.
 import re
 
 from parce import *
+from parce.action import *
 from parce.rule import TEXT, bygroup, ifmember, skip
 
 
