@@ -123,6 +123,7 @@ class Item:
     __slots__ = ()
 
     def __getitem__(self, n):
+        """Return a new Item that performs item[n]. n is evaluated as well."""
         return call(_get_item, self, n)
 
     def evaluate(self, ns):
@@ -142,6 +143,9 @@ class Item:
         | 0: the object has changed but it is not yet completely evaluated
         | 1: the object has changed and now it is fully evaluated
         | 2: the object needs evaluation but is not changed
+
+        Specific items may reimplement this method to return partially
+        evaluated items.
 
         """
         try:
@@ -170,59 +174,50 @@ class Item:
         return ()
 
 
+# helper function used for Item.__getitem__
+def _get_item(text, n):
+    return text[n]
+
+
 class RuleItem(Item):
     """Base class for items that may become visible in rules."""
     __slots__ = ()
 
 
-class _VariableItem(Item):
-    """A named variable that's accessed in the namespace."""
-    __slots__ = ()
-    name = "name"
+class VariableItem(Item):
+    """A named variable that's accessed in the namespace.
+
+    If a predicate is given, it is called when this item is called, with this
+    item as first argument, and then the other arguments that were specified.
+
+    """
+    __slots__ = ('_name', '_predicate')
+    def __init__(self, name, predicate=None):
+        self._name = name
+        self._predicate = predicate
+
+    def __call__(self, *args):
+        return call(self._predicate, self, *args)
 
     def evaluate(self, ns):
         """Get the variable from the namespace dict."""
         try:
-            return ns[self.name]
+            return ns[self._name]
         except KeyError as e:
-            raise _EvaluationError("Can't find variable '{}'".format(self.name)) from e
+            raise _EvaluationError("Can't find variable '{}'".format(self._name)) from e
 
     def __repr__(self):
-        return self.name.upper()
+        return self._name.upper()
 
-
-class _ArgItem(_VariableItem):
-    """Represents the ``arg`` attribute in the namespace."""
-    __slots__ = ()
-    name = "arg"
-
-
-class _TextItem(_VariableItem):
-    """Represents the ``text`` attribute in the namespace."""
-    __slots__ = ()
-    name = "text"
-
-
-class _MatchItem(_VariableItem):
-    """Represents the ``match`` attribute in the namespace."""
-    __slots__ = ()
-    name = "match"
-
-    def __call__(self, n):
-        return call(_get_match_group, self, n)
 
 #: the lexicon argument
-ARG = _ArgItem()
+ARG = VariableItem('arg')
 
 #: the regular expression match (or None)
-MATCH = _MatchItem()
+MATCH = VariableItem('match', (lambda m, n: m.group(m.lastindex + n)))
 
 #: the matched text
-TEXT = _TextItem()
-
-
-# these types are not needed anymore
-del _ArgItem, _MatchItem, _TextItem
+TEXT = VariableItem('text')
 
 
 class call(Item):
@@ -444,17 +439,6 @@ class pattern(PostponedItem):
 
     def _repr_args(self):
         return self._value,
-
-
-# helper function used for Item.__getitem__
-def _get_item(text, n):
-    return text[n]
-
-
-# helper function to get the match group in MatchItem.__call__
-def _get_match_group(match, n):
-    # lastindex is always the index of the lexicon's match
-    return match.group(match.lastindex + n)
 
 
 def evaluate(obj, ns):
