@@ -18,13 +18,13 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 """
-Standard actions defined in the parce module namespace.
+Standard actions defined in the parce.action module namespace.
 """
 
 from . import standardaction
 
 # Note: the marked part below of this file is literally shown in the
-# documentation (stdactions.rst)
+# documentation (action.rst)
 
 # BEGIN_ACTIONS
 

@@ -28,7 +28,7 @@ import re
 
 
 from parce import *
-from parce.action import *
+from parce.action import Delimiter, Name, Operator, String
 from parce.rule import *
 
 from parce.lang.xml import Xml

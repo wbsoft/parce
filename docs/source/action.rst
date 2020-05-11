@@ -2,7 +2,7 @@ Standard actions
 ================
 
 This is the full overview of pre-defined standard actions, available in the
-global ``parce`` module namespace.
+``parce.action`` module namespace.
 
 The bundled language definitions use these, and the bundled CSS themes provide
 styling for these. But you are free to add your own definitions and use your

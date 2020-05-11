@@ -19,7 +19,7 @@
 
 
 """
-This module defines standard actions.
+This module defines StandardAction.
 
 A StandardAction is a singleton object. Acessing an attribute (without
 underscore) creates that attribute as a new instance, with the current instance
@@ -73,7 +73,7 @@ Finally, the `&` operator returns the common ancestor, if any::
     >>> String & Text
     >>>
 
-See for the full list of pre-defined standard actions :doc:`stdactions`.
+See for the full list of pre-defined standard actions :doc:`action`.
 
 
 """

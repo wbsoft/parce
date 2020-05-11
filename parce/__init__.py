@@ -35,7 +35,7 @@ is sufficient. Inside a language definition, it is easier to just use::
 to get easy access to all the actions and the helper functions.
 
 Besides the classes and functions below, a large amount of *standard actions* is
-also available in the ``parce`` module namespace. See for the full list
+available in the ``parce.action`` module namespace. See for the full list
 :doc:`action`.
 
 """
