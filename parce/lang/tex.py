@@ -24,6 +24,7 @@ TeX and LaTeX.
 import re
 
 from parce import *
+from parce.rule import *
 
 
 MATH_ENVIRONMENTS = (
@@ -42,7 +43,8 @@ class Latex(Language):
         yield r'(\\begin)(?:\s*(\{)(.*?)(\})|(?=[\W\d]))', \
             bygroup(Name.Builtin, Delimiter, Name.Tag, Delimiter), \
             cls.get_environment_target()
-        yield r'(\\[^\W\d]+)(?:\s*(\[))?', bygroup(Name.Command, Delimiter.Bracket), ifgroup(2, cls.option)
+        yield r'(\\[^\W\d]+)(?:\s*(\[))?', bygroup(Name.Command, Delimiter.Bracket), \
+            ifneq(MATCH(2), None, cls.option)
         yield r'\{\\(oe|OE|ae|AE|aa|AA|o|O|l|L|ss|SS)\}', Escape
         yield r"[!?]'", Escape
         yield r"""\\[`'^"~=.]([a-zA-Z]{1,2}|\\[ij])(?=[\W\d])""", Escape
@@ -106,7 +108,7 @@ class Latex(Language):
     @classmethod
     def get_environment_target(cls):
         """Return environment target, can be overridden to support special environments."""
-        return ifgroupmember(3, MATH_ENVIRONMENTS, cls.environment_math, cls.environment)
+        return ifmember(MATCH(3), MATH_ENVIRONMENTS, cls.environment_math, cls.environment)
 
     # ----------------------------- comments ---------------------------------
     @lexicon(re_flags=re.MULTILINE)

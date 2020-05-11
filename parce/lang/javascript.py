@@ -25,6 +25,7 @@ Parse JavaScript.
 import re
 
 from parce import *
+from parce.rule import *
 from parce.unicharclass import categories
 from .javascript_words import *
 
@@ -57,12 +58,12 @@ class JavaScript(Language):
         yield words(JAVASCRIPT_BUILTINS, prefix=r'\b', suffix=r'\b'), Name.Builtin
         yield words(JAVASCRIPT_PROTOTYPES, prefix=r'\b', suffix=r'\b'), Name.Builtin
         yield fr'(\.)\s*({_I_})\b(?:\s*([\(\[]))?', bygroup(Delimiter,
-                mapgroup(3, {'(': Name.Method}, Name.Attribute), Delimiter), \
-            mapgroup(3, {'(': cls.call, '[': cls.index})
+                pair(MATCH(3), {'(': Name.Method}, Name.Attribute), Delimiter), \
+            pair(MATCH(3), {'(': cls.call, '[': cls.index})
         yield fr'({_I_})\b(?:\s*([\(\[]))?', bygroup(
-                mapgroup(2, {'(': Name.Function}, Name.Variable), Delimiter), \
-            mapgroup(2, {'(': cls.call, '[': cls.index})
-        yield fr'{_I_}\b', bytext(str.isupper, Name.Variable, Name.Class)
+                pair(MATCH(2), {'(': Name.Function}, Name.Variable), Delimiter), \
+            pair(MATCH(2), {'(': cls.call, '[': cls.index})
+        yield fr'{_I_}\b', select(call(str.isupper, TEXT), Name.Variable, Name.Class)
         ## numerical values (recently, underscore support inside numbers was added)
         yield '0[oO](?:_?[0-7])+n?', Number
         yield '0[bB](?:_?[01])+n?', Number

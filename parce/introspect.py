@@ -22,7 +22,7 @@ Helper functions to inspect and document objects.
 """
 
 
-from .ruleitem import DynamicItem, variations_tree
+from .ruleitem import Item, variations_tree
 from .action import StandardAction
 from .lexicon import LexiconDescriptor, Lexicon
 
@@ -53,12 +53,13 @@ def lexicons(lang):
 
 
 def rule_items(lang):
-    """Yield all rule items in a language, flattening all DynamicItem instances."""
+    """Yield all rule items in a language, flattening all RuleItem instances."""
     def flatten(items):
         for i in items:
-            if isinstance(i, DynamicItem):
-                for l in i.itemlists:
-                    yield from flatten(l)
+            if isinstance(i, Item):
+                yield from flatten(i.variations())
+            elif type(i) in (list, tuple):
+                yield from flatten(i)
             else:
                 yield i
     for lexicon in lexicons(lang):

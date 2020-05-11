@@ -28,6 +28,7 @@ https://www.gnu.org/software/texinfo/
 import re
 
 from parce import *
+from parce.rule import *
 
 
 class Texinfo(Language):
@@ -42,12 +43,12 @@ class Texinfo(Language):
         yield r'@html', Keyword, cls.html
         yield r'(@lilypond)\b(?:(\[)([^\n\]]*)(\]))?(\{)?', bygroup(
             Name.Function, Bracket, Name.Property, Bracket, Bracket.Start), \
-            ifgroup(5, cls.lilypond_brace, cls.lilypond_block)
+            ifneq(MATCH(5), None, cls.lilypond_brace, cls.lilypond_block)
         yield r'(@[a-zA-Z]+)(?:(\{)(\})?)?', bygroup(
-                ifgroup(2, ifgroup(3, Name.Symbol, Name.Function), Name.Command),
+                ifneq(MATCH(2), None, ifneq(MATCH(3), None, Name.Symbol, Name.Function), Name.Command),
                 Bracket.Start,
                 Bracket.End), \
-            ifgroup(2, ifgroup(3, (), cls.brace))
+            ifneq(MATCH(2), None, ifeq(MATCH(3), None, cls.brace))
 
     @lexicon
     def brace(cls):

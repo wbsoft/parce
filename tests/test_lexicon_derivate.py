@@ -25,11 +25,12 @@ import sys
 sys.path.insert(0, '.')
 
 from parce import *
+from parce.rule import arg, derive, MATCH
 
 class MyLang(Language):
     @lexicon
     def root(cls):
-        yield r"@([a-z]+)@", Name, withgroup(1, cls.here)
+        yield r"@([a-z]+)@", Name, derive(cls.here, MATCH(1))
         yield r"\w+", Text
 
     @lexicon

@@ -22,6 +22,7 @@ import re
 
 
 from parce import *
+from parce.rule import *
 
 RE_SCHEME_RIGHT_BOUND = r"(?=$|[)\s])"
 RE_SCHEME_FRACTION = r"-?\d+/\d+" + RE_SCHEME_RIGHT_BOUND
@@ -71,7 +72,7 @@ class Scheme(Language):
     def get_word_action(cls):
         """Return a dynamic action that is chosen based on the text."""
         from . import scheme_words
-        return ifmember(scheme_words.keywords, Keyword, Name)
+        return ifmember(TEXT, scheme_words.keywords, Keyword, Name)
 
     # -------------- String ---------------------
     @lexicon

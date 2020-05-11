@@ -25,6 +25,7 @@ Parse Python.
 import re
 
 from parce import *
+from parce.rule import *
 
 from . import python_words
 
@@ -41,16 +42,16 @@ Bytes = Data.Bytes
 class Python(Language):
     @lexicon(re_flags=re.MULTILINE)
     def root(cls):
-        yield fr'^{_S_}+($|(?=#))?', ifgroup(1, Whitespace, Whitespace.Indent)
+        yield fr'^{_S_}+($|(?=#))?', ifneq(MATCH(1), None, Whitespace, Whitespace.Indent)
         yield r'@', Name.Decorator, cls.decorator
         yield fr'(class\b){_S_}*({_I_})', bygroup(Keyword,
-            ifgroupmember(2, python_words.keywords, Invalid, Name.Class.Definition)), cls.classdef
+            ifmember(MATCH(2), python_words.keywords, Invalid, Name.Class.Definition)), cls.classdef
         yield fr'(def\b){_S_}*({_I_})', bygroup(Keyword,
-            ifgroupmember(2, python_words.keywords, Invalid, Name.Function.Definition)), cls.funcdef
+            ifmember(MATCH(2), python_words.keywords, Invalid, Name.Function.Definition)), cls.funcdef
         yield fr':(?={_S_}*(?:$|#))', Delimiter.Indent
         yield fr'({_I_})\s*(=)', bygroup(
-            bytext(str.isupper,
-                   bytext(isclassname, Name.Variable, Name.Class),
+            select(call(str.isupper, TEXT),
+                   select(call(isclassname, TEXT), Name.Variable, Name.Class),
                    Name.Constant),
             Operator.Assignment)
         yield from cls.common()
@@ -77,32 +78,32 @@ class Python(Language):
         yield words(python_words.keywords, prefix=r'\b', suffix=r'\b'), Keyword
         yield words(python_words.constants, prefix=r'\b', suffix=r'\b'), Name.Constant
         yield fr'\b(self|cls)\b(?:{_SN_}*([\[\(]))?', Name.Variable.Special, \
-            mapgroup(2, {'(': cls.call, '[': cls.item})
+            pair(MATCH(2), {'(': cls.call, '[': cls.item})
         # method, class or attribute (keywords after a . are also caught)
         yield fr'(\.){_SN_}*\b({_I_})\b(?:{_SN_}*([\[\(]))?', \
             bygroup(
                 Delimiter,
-                ifgroupmember(2, python_words.keywords,
+                ifmember(MATCH(2), python_words.keywords,
                     Keyword,
-                    mapgroup(3, {'(': bytext(isclassname, Name.Method, Name.Class)},
-                         bytext(str.isupper,
-                             bytext(isclassname, Name.Attribute, Name.Class),
+                    pair(MATCH(3), {'(': select(call(isclassname, TEXT), Name.Method, Name.Class)},
+                         select(call(str.isupper, TEXT),
+                             select(call(isclassname, TEXT), Name.Attribute, Name.Class),
                              Name.Constant))),
                 Delimiter), \
-            mapgroup(3, {'(': cls.call, '[': cls.item})
+            pair(MATCH(3), {'(': cls.call, '[': cls.item})
         # function, class or variable
         yield fr'\b({_I_})\b(?:{_SN_}*([\[\(]))?', \
             bygroup(
-                mapgroupmember(1,
+                findmember(MATCH(1),
                     ((python_words.builtins, Name.Builtin),
                      (python_words.exceptions, Name.Exception)),
-                    bytext(str.isupper,
-                        bytext(isclassname,
-                            mapgroup(2, {'(': Name.Function}, Name.Variable),
+                    select(call(str.isupper, TEXT),
+                        select(call(isclassname, TEXT),
+                            pair(MATCH(2), {'(': Name.Function}, Name.Variable),
                             Name.Class),
                         Name.Constant)),
                 Delimiter), \
-            mapgroup(2, {'(': cls.call, '[': cls.item})
+            pair(MATCH(2), {'(': cls.call, '[': cls.item})
 
         ## delimiters, operators
         yield r'\.\.\.', Delimiter.Special.Ellipsis
@@ -196,30 +197,30 @@ class Python(Language):
         # long strings
         yield r'(\b[rR])("""|'r"''')", \
             bygroup(String.Prefix, String.Start), \
-            target, withgroup(2, cls.long_string_raw)
+            target, derive(cls.long_string_raw, MATCH(2))
         yield r'(\b(?:[fF][rR])|(?:[rR][fF]))("""|'r"''')", \
             bygroup(String.Prefix, String.Start), \
-            target, withgroup(2, cls.long_string_raw_format)
+            target, derive(cls.long_string_raw_format, MATCH(2))
         yield r'(\b[uU])?("""|'r"''')", \
             bygroup(String.Prefix, String.Start), \
-            target, withgroup(2, cls.long_string)
+            target, derive(cls.long_string, MATCH(2))
         yield r'(\b[fF])("""|'r"''')", \
             bygroup(String.Prefix, String.Start), \
-            target, withgroup(2, cls.long_string_format)
+            target, derive(cls.long_string_format, MATCH(2))
 
         # short strings
         yield r'''(\b[rR])(['"])''', \
             bygroup(String.Prefix, String.Start), \
-            target, withgroup(2, cls.short_string_raw)
+            target, derive(cls.short_string_raw, MATCH(2))
         yield r'''(\b(?:[fF][rR])|(?:[rR][fF]))(['"])''', \
             bygroup(String.Prefix, String.Start), \
-            target, withgroup(2, cls.short_string_raw_format)
+            target, derive(cls.short_string_raw_format, MATCH(2))
         yield r'''(\b[uU])?(['"])''', \
             bygroup(String.Prefix, String.Start), \
-            target, withgroup(2, cls.short_string)
+            target, derive(cls.short_string, MATCH(2))
         yield r'''(\b[fF])(['"])''', \
             bygroup(String.Prefix, String.Start), \
-            target, withgroup(2, cls.short_string_format)
+            target, derive(cls.short_string_format, MATCH(2))
 
     @lexicon
     def string(cls):
@@ -253,16 +254,14 @@ class Python(Language):
     @classmethod
     def short_string_common(cls):
         yield arg(), String.End, -1
-        predicate = lambda arg: arg == "'"
-        yield byarg(predicate, r'[^"]*?$', r"[^']*?$"), String.Invalid, -1
+        yield pattern(ifeq(ARG, "'", r"[^']*?$", r'[^"]*?$')), String.Invalid, -1
         yield default_action, String
 
     @classmethod
     def short_string_raw_common(cls):
         yield arg(), String.End, -1
         yield r'\\\\', String
-        predicate = lambda arg: arg == "'"
-        yield byarg(predicate, fr'([^\\"]*?|\\"{_S_}*)$', fr"([^\\']*?|\\'{_S_}*)$"), String.Invalid, -1
+        yield pattern(ifeq(ARG, "'", fr"([^\\']*?|\\'{_S_}*)$", fr'([^\\"]*?|\\"{_S_}*)$')), String.Invalid, -1
         yield arg(prefix=r'\\'), String  # escape quote, but the \ remains
         yield default_action, String
 
@@ -337,18 +336,18 @@ class Python(Language):
         # long bytes
         yield r'(\b(?:[bB][rR])|(?:[rR][bB]))("""|'r"''')", \
             bygroup(Bytes.Prefix, Bytes.Start), \
-            target, withgroup(2, cls.long_bytes_raw)
+            target, derive(cls.long_bytes_raw, MATCH(2))
         yield r'(\b[bB])("""|'r"''')", \
             bygroup(Bytes.Prefix, Bytes.Start), \
-            target, withgroup(2, cls.long_bytes)
+            target, derive(cls.long_bytes, MATCH(2))
 
         # short bytes
         yield r'''(\b(?:[bB][rR])|(?:[rR][bB]))(['"])''', \
             bygroup(Bytes.Prefix, Bytes.Start), \
-            target, withgroup(2, cls.short_bytes_raw)
+            target, derive(cls.short_bytes_raw, MATCH(2))
         yield r'''(\b[bB])(['"])''', \
             bygroup(Bytes.Prefix, Bytes.Start), \
-            target, withgroup(2, cls.short_bytes)
+            target, derive(cls.short_bytes, MATCH(2))
 
     @lexicon
     def bytes(cls):
@@ -380,15 +379,13 @@ class Python(Language):
     @classmethod
     def short_bytes_common(cls):
         yield arg(), Bytes.End, -1
-        predicate = lambda arg: arg == "'"
-        yield byarg(predicate, r'[^"]*?$', r"[^']*?$"), Bytes.Invalid, -1
+        yield pattern(ifeq(ARG, "'", r"[^']*?$", r'[^"]*?$')), Bytes.Invalid, -1
         yield default_action, Bytes
 
     @classmethod
     def short_bytes_raw_common(cls):
         yield r'\\\\', Bytes
-        predicate = lambda arg: arg == "'"
-        yield byarg(predicate, fr'([^\\"]*?|\\"{_S_}*)$', fr"([^\\']*?|\\'{_S_}*)$"), Bytes.Invalid, -1
+        yield pattern(ifeq(ARG, "'", fr"([^\\']*?|\\'{_S_}*)$", fr'([^\\"]*?|\\"{_S_}*)$')), Bytes.Invalid, -1
         yield arg(prefix=r'\\'), Bytes  # escape quote, but the \ remains
         yield from cls.long_bytes_common()
 

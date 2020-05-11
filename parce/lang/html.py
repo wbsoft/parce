@@ -28,6 +28,8 @@ import re
 
 
 from parce import *
+from parce.rule import *
+
 from parce.lang.xml import Xml
 from parce.lang.css import Css
 from parce.lang.javascript import JavaScript
@@ -45,9 +47,9 @@ class XHtml(Xml):
     @lexicon(re_flags=re.IGNORECASE)
     def root(cls):
         yield r'(<)(style|script)\b(>|/\s*>)?', bygroup(Delimiter, Name.Tag, Delimiter), \
-            mapgroup(2, {
-                "style": mapgroup(3, {'>': cls.css_style_tag, None: cls.attrs("css")}),
-                "script": mapgroup(3, {'>': cls.script_tag, None: cls.attrs("js")}),
+            pair(MATCH(2), {
+                "style": pair(MATCH(3), {'>': cls.css_style_tag, None: cls.attrs("css")}),
+                "script": pair(MATCH(3), {'>': cls.script_tag, None: cls.attrs("js")}),
             })  # by default a close tag, stay in the context.
         yield from super().root
 
@@ -56,7 +58,7 @@ class XHtml(Xml):
         """Reimplemented to recognize style attributes and switch to style tag."""
         yield r'(style)\s*(=)\s*(")', bygroup(Name.Attribute, Operator, String), \
             cls.css_style_attribute
-        yield r'>', Delimiter, -1, maparg({
+        yield r'>', Delimiter, -1, pair(ARG, {
             "js": cls.script_tag,
             "css": cls.css_style_tag,
             None: cls.tag})
@@ -88,7 +90,8 @@ class Html(XHtml):
         yield words(HTML_VOID_ELEMENTS, prefix=r'(<\s*?/)\s*((?:\w+:)?', suffix=r')\s*(>)'), \
             bygroup(Delimiter, Name.Tag, Delimiter) # don't leave no-closing tags
         yield words(HTML_VOID_ELEMENTS, prefix=r'(<)\s*(', suffix=r')(?:\s*((?:/\s*)?>))?'), \
-            bygroup(Delimiter, Name.Tag, Delimiter), mapgroup(3, {
+            bygroup(Delimiter, Name.Tag, Delimiter), pair(MATCH(3), {
                 None: cls.attrs("noclose"), # no ">" or "/>": go to attrs/noclose
             })                          # by default ("/>"): stay in context
         yield from super().root
+

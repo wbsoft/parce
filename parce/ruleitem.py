@@ -389,10 +389,6 @@ class SubgroupAction(ActionItem):
         for i, action in enumerate(self._actions, match.lastindex + 1):
             yield from lexer.filter_actions(action, match.start(i), match.group(i), match)
 
-    def evaluate_items(self):
-        """Return the actions specified on init, used by pre_evaluate()."""
-        return self._actions
-
     def variations(self):
         """Yield the possible actions."""
         yield from self._actions

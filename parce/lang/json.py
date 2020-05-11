@@ -33,6 +33,7 @@ import re
 
 
 from parce import *
+from parce.rule import words, skip
 
 
 JSON_CONSTANTS = {

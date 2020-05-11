@@ -27,6 +27,7 @@ https://www.gnu.org/software/groff/
 import re
 
 from parce import *
+from parce.rule import *
 
 
 class Troff(Language):

@@ -46,6 +46,7 @@ The following rule items and helper functions are available:
 
 
 import operator
+import re
 
 from . import regex
 from . import ruleitem
@@ -164,9 +165,13 @@ def ifeq(a, b, result, else_result=()):
                  (bygroup(Name.Function, Delimiter), cls.func_call),
                  (bygroup(Name.Variable, Delimiter), cls.subscript))
 
-
     """
     return select(call(operator.eq, a, b), else_result, result)
+
+
+def ifneq(a, b, result, else_result=()):
+    r"""Yield ``result`` if ``a != b``, else ``else_result``."""
+    return select(call(operator.ne, a, b), else_result, result)
 
 
 def ifmember(item, sequence, result, else_result=()):
@@ -205,7 +210,7 @@ def pair(item, mapping, default=()):
 
     """
     d = {}
-    item = [default]
+    items = [default]
     for i, (key, value) in enumerate(mapping.items(), 1):
         d[key] = i
         items.append(value)
@@ -322,15 +327,15 @@ def arg(escape=True, prefix="", suffix="", default=None):
     return pattern(call(build, ARG))
 
 
-def ifarg(pattern, else_pattern=None):
-    r"""Create a pattern that returns the specified regular expression pattern
+def ifarg(pat, else_pat=None):
+    r"""Create a pattern that returns the specified regular expression ``pat``
     if the lexicon was called with an argument.
 
-    If there is no argument in the current lexicon, ``else_pattern`` is
+    If there is no argument in the current lexicon, ``else_pat`` is
     yielded, which is None by default, resulting in the rule being skipped.
 
     """
-    return pattern(select(call(bool, ARG), else_pattern, pattern))
+    return pattern(select(call(bool, ARG), else_pat, pat))
 
 
 ### Dynamic actions

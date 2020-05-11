@@ -26,6 +26,7 @@ Parser for LilyPond syntax.
 import re
 
 from parce import *
+from parce.rule import *
 
 from . import lilypond_words
 
@@ -181,11 +182,11 @@ class LilyPond(Language):
                bygroup(Name.Builtin, cls.ifpitch(), Octave, cls.ifpitch(), Octave)
         yield r"\\tempo(?![^\W\d])", Name.Builtin, cls.tempo
         yield r"(\\chord(?:s|mode))\b\s*(\{)?", bygroup(Keyword, Bracket.Start), \
-            ifgroup(2, cls.chordmode)
+            ifneq(MATCH(2), None, cls.chordmode)
         yield from cls.notemode_rule()
         yield from cls.lyricmode_rules()
         yield from cls.drummode_rule()
-        yield RE_LILYPOND_COMMAND, mapgroupmember(1, (
+        yield RE_LILYPOND_COMMAND, findmember(MATCH(1), (
             (lilypond_words.keywords, Keyword),
             (lilypond_words.music_commands, Name.Builtin),
             (lilypond_words.all_articulations, Articulation),
@@ -267,7 +268,7 @@ class LilyPond(Language):
         yield words(lilypond_words.contexts), Context
         yield r'[.,]', Delimiter
         yield r"(=)(?:\s*(" + RE_FRACTION + r"|\d+))?", bygroup(Operator.Assignment, Number)
-        yield RE_LILYPOND_SYMBOL + r"(?=\s*([,.=])?)", Name.Variable.Definition, ifgroup(1, (), -1)
+        yield RE_LILYPOND_SYMBOL + r"(?=\s*([,.=])?)", Name.Variable.Definition, ifeq(MATCH(1), None, -1)
         yield default_target, -1
 
     @lexicon
@@ -278,7 +279,7 @@ class LilyPond(Language):
         yield words(lilypond_words.grobs), Grob
         yield r'[.,]', Delimiter
         yield r"=", Operator.Assignment, -1
-        yield RE_LILYPOND_SYMBOL + r"(?=\s*([,.=])?)", Name.Variable, ifgroup(1, (), -1)
+        yield RE_LILYPOND_SYMBOL + r"(?=\s*([,.=])?)", Name.Variable, ifeq(MATCH(1), None, -1)
         yield from cls.scheme()
         yield default_target, -1
 
@@ -292,12 +293,12 @@ class LilyPond(Language):
     # ------------------ pitch --------------------------
     @classmethod
     def ifpitch(cls, itemlist=None, else_itemlist=None):
-        """Return a TextRuleItem that by default yields Name.Pitch for a pitch, else Name.Symbol."""
+        """Return a rule item that by default yields Name.Pitch for a pitch, else Name.Symbol."""
         if itemlist is None:
             itemlist = Name.Pitch
         if else_itemlist is None:
             else_itemlist = Name.Symbol
-        return ifmember(lilypond_words.all_pitch_names, itemlist, else_itemlist)
+        return ifmember(TEXT, lilypond_words.all_pitch_names, itemlist, else_itemlist)
 
     @lexicon
     def pitch(cls):
@@ -332,7 +333,7 @@ class LilyPond(Language):
         yield from cls.common()
         yield r">>|\}", Bracket.End, -1
         yield r"<<|\{", Bracket.Start, 1
-        yield RE_LILYPOND_LYRIC_TEXT, maptext({
+        yield RE_LILYPOND_LYRIC_TEXT, pair(TEXT, {
                 "--": LyricHyphen,
                 "__": LyricExtender,
                 "_": LyricSkip,
@@ -355,7 +356,7 @@ class LilyPond(Language):
     def lyricmode_rules(cls):
         yield r"(\\(?:lyric(?:mode|s)|addlyrics))\b\s*(\\s(?:equential|imultaneous)\b)?\s*(\{|<<)?", \
             bygroup(Keyword.Lyric, Keyword, Bracket.Start), \
-            ifgroup(3, cls.lyricmode)
+            ifneq(MATCH(3), None, cls.lyricmode)
         yield r"\\lyricsto\b", Keyword.Lyric, cls.lyricsto
 
     # ---------------------- notemode ---------------------
@@ -368,7 +369,7 @@ class LilyPond(Language):
     def notemode_rule(cls):
         """Yield the rule for \\notemode / \\notes."""
         yield r"(\\note(?:s|mode))\b\s*(\{|<<)?", bygroup(Keyword, Bracket.Start), \
-            mapgroup(2, {
+            pair(MATCH(2), {
                 "{": (cls.notemode, cls.sequential),
                 "<<": (cls.notemode, cls.simultaneous),
             })
@@ -386,7 +387,7 @@ class LilyPond(Language):
         yield r"<<", Bracket.Start, cls.drummode_simultaneous
         yield r"\}|>>", Bracket.End, -1
         yield RE_LILYPOND_REST, Rest
-        yield RE_LILYPOND_PITCHWORD, ifmember(lilypond_words.drum_pitch_names_set, Pitch.Drum, Name.Symbol)
+        yield RE_LILYPOND_PITCHWORD, ifmember(TEXT, lilypond_words.drum_pitch_names_set, Pitch.Drum, Name.Symbol)
         yield from cls.music()
 
     @lexicon
@@ -401,7 +402,7 @@ class LilyPond(Language):
     def drummode_rule(cls):
         """Yield the rule for \\drummode / \\drums."""
         yield r"(\\drum(?:s|mode))\b\s*(\{|<<)?", bygroup(Keyword.Drum, Bracket.Start), \
-            mapgroup(2, {
+            pair(MATCH(2), {
                 "{": (cls.drummode, cls.drummode_sequential),
                 "<<": (cls.drummode, cls.drummode_simultaneous),
             })
@@ -456,19 +457,12 @@ class LilyPond(Language):
         """Markup without environment. Try to guess the n of arguments."""
         yield r'\{', Bracket.Markup.Start, -1, cls.markuplist
         yield r"(\\score)\s*(\{)", bygroup(Name.Function.Markup, Bracket.Start), -1, cls.score
-        yield RE_LILYPOND_COMMAND, cls.get_markup_action(), cls.get_markup_target()
+        yield RE_LILYPOND_COMMAND, cls.get_markup_action(), \
+            select(call(cls.get_markup_argument_count, MATCH(1)), -1, 0, 1, 2, 3)
         yield r'"', String, -1, cls.string
         yield from cls.scheme(-1)
         yield from cls.comments()
         yield RE_LILYPOND_MARKUP_TEXT, Text, -1
-
-    @classmethod
-    def get_markup_target(cls):
-        """Get the target for a markup command."""
-        def test(m):
-            command = m.group(m.lastindex + 1)
-            return cls.get_markup_argument_count(command)
-        return bymatch(test, -1, 0, 1, 2, 3)
 
     @classmethod
     def get_markup_argument_count(cls, command):
@@ -491,7 +485,7 @@ class LilyPond(Language):
     @classmethod
     def get_markup_action(cls):
         r"""Get the action for a command in \markup { }."""
-        return ifgroupmember(1, lilypond_words.markup_commands, Name.Function.Markup, Name.Function)
+        return ifmember(MATCH(1), lilypond_words.markup_commands, Name.Function.Markup, Name.Function)
 
     # -------------- Scheme ---------------------
     @classmethod

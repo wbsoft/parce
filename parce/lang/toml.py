@@ -26,6 +26,7 @@ import re
 
 
 from parce import *
+from parce.rule import *
 
 
 # https://tools.ietf.org/html/rfc3339#section-5.6
@@ -56,13 +57,13 @@ class Toml(Language):
     @lexicon
     def table(cls):
         yield r'(?:(\.)[ \t]*)?(\])([^\n#]*)', \
-            bygroup(Invalid, Bracket, bytext(str.isspace, Invalid, skip)), -1
+            bygroup(Invalid, Bracket, select(call(str.isspace, TEXT), Invalid, skip)), -1
         yield from cls.keys()
 
     @lexicon
     def array_table(cls):
         yield r'(?:(\.)[ \t]*)?(\]\])([^\n#]*)', \
-            bygroup(Invalid, Bracket, bytext(str.isspace, Invalid, skip)), -1
+            bygroup(Invalid, Bracket, select(call(str.isspace, TEXT), Invalid, skip)), -1
         yield from cls.keys()
 
     @lexicon(re_flags=re.MULTILINE)
@@ -108,7 +109,7 @@ class Toml(Language):
 
     @lexicon
     def array(cls):
-        yield r'(\])([^,}#\n\]]*)', bygroup(Bracket, bytext(str.isspace, Invalid, skip)), -1
+        yield r'(\])([^,}#\n\]]*)', bygroup(Bracket, select(call(str.isspace, TEXT), Invalid, skip)), -1
         yield r',', Separator
         yield from cls.values()
 

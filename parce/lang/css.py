@@ -31,6 +31,7 @@ highlighting formats in css files.
 import re
 
 from parce import *
+from parce.rule import TEXT, bygroup, ifmember, skip
 
 
 RE_CSS_ESCAPE = r"\\(?:[0-9A-Fa-f]{1,6} ?|.)"
@@ -155,7 +156,7 @@ class Css(Language):
         """A CSS property."""
         from .css_words import CSS3_ALL_PROPERTIES
         yield from cls.identifier_common(
-            ifmember(CSS3_ALL_PROPERTIES, Name.Property.Definition, Name.Property))
+            ifmember(TEXT, CSS3_ALL_PROPERTIES, Name.Property.Definition, Name.Property))
 
     @lexicon
     def attribute(cls):
@@ -235,7 +236,7 @@ class Css(Language):
         from .css_words import CSS3_NAMED_COLORS
         yield r"\(", Delimiter, -1, cls.function
         yield RE_CSS_ESCAPE, Escape
-        yield r"[\w-]+", ifmember(CSS3_NAMED_COLORS, Literal.Color, Name.Symbol)
+        yield r"[\w-]+", ifmember(TEXT, CSS3_NAMED_COLORS, Literal.Color, Name.Symbol)
         yield default_target, -1
 
     @lexicon
