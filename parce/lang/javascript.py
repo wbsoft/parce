@@ -26,7 +26,9 @@ import re
 
 from parce import *
 from parce.rule import *
-from parce.action import *
+from parce.action import (
+    Bracket, Comment, Delimiter, Keyword, Literal, Name, Number, Operator,
+    Separator, String)
 
 from parce.unicharclass import categories
 from .javascript_words import *
