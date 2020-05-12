@@ -179,7 +179,6 @@ def ifmember(item, sequence, result, else_result=()):
 
     Example::
 
-
         commands = ['begin', 'end', 'if']
         yield r'\\\w+', ifmember(TEXT[1:], commands, Keyword, Name.Variable)
 
@@ -194,6 +193,13 @@ def ifmember(item, sequence, result, else_result=()):
 
 def ifgroup(n, result, else_result=()):
     """Yield ``result`` if match group ``n`` is not None.
+
+    A regular expression match group is None when the group did not contribute
+    to the match. For example, in the first expression the second group is
+    None, while in the second expression the second group is the empty string::
+
+        re.match(r'(a)(b)?', "ac").group(2) # → None
+        re.match(r'(a)(b?)', "ac").group(2) # → ''
 
     Shortcut for::
 
@@ -387,9 +393,5 @@ def using(lexicon):
 
     """
     return ruleitem.DelegateAction(lexicon)
-
-
-skip = ruleitem.SkipAction()
-"""A SkipAction that yields no tokens, thereby ignoring the matched text."""
 
 

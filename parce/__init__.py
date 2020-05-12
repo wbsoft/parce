@@ -21,27 +21,49 @@
 """
 The parce Python module.
 
-For parsing tasks and writing language definitions, or using existing language
-definitions, the main ``parce`` module provides all that's needed.
+The main module provides the listed classes and functions, enough to build
+a basic language definition or to use the bundled language definitions.
 
-So a simple::
+The standard actions that are used by the bundled language definitions to
+specify the type of parsed text fragments are in the :mod:`action` module.
+
+It is recommended to import *parce* like this::
 
     import parce
 
-is sufficient. Inside a language definition, it is easier to just use::
+although in a language definition it can be easier to do this::
 
     from parce import *
+    import parce.action as a
 
-to get easy access to all the actions and the helper functions.
-
-Besides the classes and functions below, a large amount of *standard actions* is
-available in the ``parce.action`` module namespace. See for the full list
-:doc:`action`.
+Then you get the ``Language`` class and ``lexicon`` decorator from parce, and
+all standard actions can be accessed via the ``a`` prefix, like ``a.Text``.
 
 """
 
+# imported when using from parce import *
+__all__ = (
+    # important classes
+    'Cursor',
+    'Document',
 
-from . import document, lexer, rule, treebuilder, treedocument, util
+    # often used names when defining languages
+    'default_action',
+    'default_target',
+    'Language',
+    'lexicon',
+    'skip',
+
+    # toplevel functions
+    'events',
+    'find',
+    'root',
+    'theme_by_name',
+    'theme_from_file',
+    'tokens',
+)
+
+from . import document, lexer, rule, ruleitem, treebuilder, treedocument, util
 from . import lexicon as lexicon_
 from .document import Cursor
 from .language import Language
@@ -169,5 +191,9 @@ def theme_from_file(filename):
 # these can be used in rules where a pattern is expected
 default_action = util.Symbol("default_action")   #: denotes a default action for unmatched text
 default_target = util.Symbol("default_target")   #: denotes a default target when no text matches
+
+
+skip = ruleitem.SkipAction()
+"""A dynamic action that yields no tokens, thereby ignoring the matched text."""
 
 

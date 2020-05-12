@@ -318,7 +318,7 @@ class PostponedItem(RuleItem):
         """Return a tuple of the values as given to the __init__ method,
         when they need to be evaluated inside this PostponedItem.
 
-        This method should either yield *all( values that were given to the
+        This method should either yield *all* values that were given to the
         __init__ method, or nothing. The default implementation yields nothing,
         so nothing is evaluated or pre-evaluated.
 

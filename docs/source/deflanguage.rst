@@ -11,26 +11,28 @@ Let's look closer again at the example from the :doc:`gettingstarted` section::
 
 
     import re
+
     from parce import *
+    import parce.action as a    # use the standard actions
 
     class Nonsense(Language):
         @lexicon
         def root(cls):
-            yield r'\d+', Number
-            yield r'\w+', Text
-            yield r'"', String, cls.string
-            yield r'%', Comment, cls.comment
-            yield r'[.,:?!]', Delimiter
+            yield r'\d+', a.Number
+            yield r'\w+', a.Text
+            yield r'"', a.String, cls.string
+            yield r'%', a.Comment, cls.comment
+            yield r'[.,:?!]', a.Delimiter
 
         @lexicon
         def string(cls):
-            yield r'"', String, -1
-            yield default_action, String
+            yield r'"', a.String, -1
+            yield default_action, a.String
 
         @lexicon(re_flags=re.MULTILINE)
         def comment(cls):
-            yield r'$', Comment, -1
-            yield default_action, Comment
+            yield r'$', a.Comment, -1
+            yield default_action, a.Comment
 
 
 The :attr:`@lexicon <parce.lexicon>` decorated methods behave like
@@ -46,10 +48,10 @@ languages.
 The pattern
 -----------
 
-The first item in a normal rule is the pattern, which is either a string
-containing a regular expression, or an object inheriting from
-:class:`~parce.pattern.Pattern`. Some simple regular expressions can be seen
-in the ``root`` lexicon of the above example:
+The first item in a normal rule is the pattern, which is a string containing a
+regular expression, or a function call or dynamic rule item that creates a
+regular expression. Some simple regular expressions can be seen in the ``root``
+lexicon of the above example:
 
     :regexp:`\d+`
         matches one or more decimal digits (0 - 9)
@@ -66,11 +68,8 @@ if a later rule would produce a longer match. So if you for example want to
 look for keywords such as ``else`` and ``elseif``, be sure to either put the
 longer one first, or use a boundary matching sequence such as ``\b``.
 
-When using a Pattern instance, `parce` obtains the regular expression by
-calling its :meth:`~parce.pattern.Pattern.build` method, which only happens one
-time, when the lexicon is first used for parsing. You can use a Pattern object
-where manually writing a regular expression is too tedious. More information
-below under `Dynamic patterns`_.
+See below for more information about helper functions and dynamic rule items
+that create a regular expression.
 
 
 The action
@@ -84,16 +83,16 @@ There are, however, two action types provided by `parce`:
 
 1. a standard action type. A standard action looks like ``String``, etc. and
    is a singleton object that is either created using the
-   :class:`~parce.action.StandardAction` class or by accessing a nonexistent
-   attribute of an existing standard action. This concept is borrowed from the
-   `pygments` module. A standard action defined in the latter way can be seen as
-   a "child" of the action it was created from.
+   :class:`~parce.standardaction.StandardAction` class or by accessing a
+   nonexistent attribute of an existing standard action. This concept is
+   borrowed from the `pygments` module. A standard action defined in the latter
+   way can be seen as a "child" of the action it was created from.
 
    A standard action always creates one Token from the pattern's match (if the
    match contained text).
 
    Language definitions included in `parce` use these standard actions.
-   For a list of pre-defined standard actions see :doc:`stdactions`.
+   For the list of pre-defined standard actions see :doc:`action`.
 
 2. Dynamic actions. These actions are created dynamically when a rule's
    pattern has matched, and they can create zero or more Token instances with
@@ -151,6 +150,9 @@ to match, but induce other behaviour:
 
     An example::
 
+        from parce import *
+        from parce.action import Number, Text
+
         class MyLang(Language):
             @lexicon
             def root(cls):
@@ -167,28 +169,32 @@ to match, but induce other behaviour:
 
     In this example, the text "``numbers:``" causes the parser to switch to the
     ``MyLang.numbers`` lexicon, which collects Number tokens and skips
-    whitespace, but pops back to ``root`` on any other text.
+    whitespace (see below for more information about the ``'skip'`` action),
+    but pops back to ``root`` on any other text.
 
 
 Dynamic patterns
 ----------------
 
-A Pattern instance can be used where manually writing a regular expression is
-too difficult or cumbersome. You can also construct the regular expression in
-your lexicon code body, just before yielding it, but the advantage of a Pattern
-object is that is is only created when the lexicon is used for parsing for the
-first time.
+When manually writing a regular expression is too difficult or cumbersome, you
+can use a helper function or a dynamic rule item to construct it.
 
-There are convenient functions for creating some types of Pattern instances:
+All dynamic helper functions and rule items are in the :mod:`~parce.rule`
+module. If you want to use those, you can safely::
 
-.. autofunction:: parce.words
+    from parce.rule import *    # or specify the names you want to use
+
+There are two convenient functions for creating some types of regular
+expressions:
+
+.. autofunction:: parce.rule.words
     :noindex:
 
-.. autofunction:: parce.char
+.. autofunction:: parce.rule.char
     :noindex:
 
-See for more information about Pattern objects the documentation of the
-:mod:`~parce.pattern` module.
+It is also possible to use dynamic rule items to create a regular expression
+pattern, see below.
 
 
 Dynamic actions and targets
@@ -196,67 +202,47 @@ Dynamic actions and targets
 
 After the pattern, one action and zero or more target items are expected to be
 in a normal rule. When you put items in a rule that inherit from
-:class:`~parce.rule.DynamicItem`, those are replaced during parsing by the
-lexicon, based on the match object or the matched text. This is done
-by supplying a predicate function that chooses the replacement(s) from
-given itemlists (lists or tuples which can contain zero or more items).
+:class:`~parce.ruleitem.RuleItem`, those are evaluated when the rule's pattern
+matches. Dynamic rule items enable to to take decisions based on the match
+object or the matched text. Most rule items do this by choosing the replacement
+from a list, based on the output of a predicate function.
 
-So one dynamic rule item can yield multiple items, for example an action and a
-target. Dynamic items can be nested.
+The replacement can be an action or a target. When the replacement is a list or
+tuple, it is unrolled, so one dynamic rule item can yield multiple items, for
+example an action and a target. Dynamic items can be nested.
 
-There are a few convenient functions to create dynamic actions and/or targets:
+The building blocks for dynamic rule items are explained in the documentation
+of the :mod:`~parce.rule` module. Often you'll use a combination of the
+:func:`~parce.rule.call` and :func:`~parce.rule.select` items, and the variable
+placeholders :obj:`~parce.rule.TEXT` and :obj:`~parce.rule.MATCH`.
 
-.. autofunction:: parce.bymatch
+Using ``call(predicate, TEXT)`` you can arrange for a predicate to be called
+with the matched text, and using ``select(value, *items)`` you can use an
+integer value to select one of the supplied items.
+
+(You might wonder why the predicate function cannot directly return the action
+or target(s). This is done to be able to know all actions and/or targets
+beforehand, and to be able to translate actions using a mapping before parsing,
+and not each time when parsing a document. So the actions are not hardwired
+even if they appear verbatim in the lexicon's rules.)
+
+These are the basic four building block items:
+
+.. autodata:: parce.rule.TEXT
     :noindex:
 
-.. autofunction:: parce.bytext
+.. autodata:: parce.rule.MATCH
     :noindex:
 
-(You might wonder why the predicate functions used by :func:`~parce.bymatch`
-and :func:`~parce.bytext` would not directly return the action or target(s).
-This is done to be able to know all actions and/or targets beforehand, and to
-be able to translate actions using a mapping before parsing, and not each time
-when parsing a document. So the actions are not hardwired even if they appear
-verbatim in the lexicon's rules.)
-
-The following functions all use the same mechanism under the hood, but they
-also create the predicate function for you:
-
-.. autofunction:: parce.ifgroup
+.. autofunction:: parce.rule.call
     :noindex:
 
-.. autofunction:: parce.ifmember
+.. autofunction:: parce.rule.select
     :noindex:
 
-.. autofunction:: parce.ifgroupmember
-    :noindex:
-
-.. autofunction:: parce.maptext
-    :noindex:
-
-.. autofunction:: parce.mapgroup
-    :noindex:
-
-.. autofunction:: parce.mapmember
-    :noindex:
-
-.. autofunction:: parce.mapgroupmember
-    :noindex:
-
-Instead of a list or tuple of items, a single action or target item can also be
-given. These functions can also be used for mapping an action *and* target
-based on the text or match object at the same time. So instead of::
-
-    predicate = lambda m: m.group() in some_list
-    yield "pattern", bymatch(predicate, action1, action2), bymatch(predicate, target1, target2)
-
-you can write::
-
-    predicate = lambda m: m.group() in some_list
-    yield "pattern", bymatch(predicate, (action1, target1), (action2, target2))
-
-which is more efficient, because the predicate is evaluated only once. See for
-more information the documentation of the :mod:`~parce.rule` module.
+Of these four, only ``select`` can be used directly in a rule. There are many
+helper functions that build on this base, see the documentation of the
+:mod:`~parce.rule` module.
 
 
 Dynamic actions
@@ -266,23 +252,24 @@ Besides the general dynamic rule items, there is a special category of dynamic
 actions, which only create actions, and in this way influence the number of
 tokens generated from a single regular expression match.
 
-The function :func:`~parce.bygroup` can be used to yield zero or more actions,
+The function :func:`~parce.rule.bygroup` can be used to yield zero or more actions,
 yielding a token for every non-empty match in a group:
 
-.. autofunction:: parce.bygroup
+.. autofunction:: parce.rule.bygroup
     :noindex:
 
-The function :func:`~parce.using` can be used to lex the matched text with
+The function :func:`~parce.rule.using` can be used to lex the matched text with
 another lexicon:
 
-.. autofunction:: parce.using
+.. autofunction:: parce.rule.using
     :noindex:
 
-Finally, there exists a special :class:`~parce.action.DynamicAction` in the
-``skip`` object, it's an instance of :class:`~parce.action.SkipAction` and it
-yields no actions, so in effect creating no tokens. Use it if you want to match
-text, but do not need the tokens. See for more information the documentation of
-the :mod:`~parce.action` module.
+Finally, there exists a special :class:`~parce.ruleitem.ActionItem` in the
+:obj:`~parce.skip` object, it's an instance of
+:class:`~parce.ruleitem.SkipAction` and it yields no actions, so in effect
+creating no tokens. Use it if you want to match text, but do not need the
+tokens. See for more information the documentation of the
+:mod:`~parce.ruleitem` module.
 
 
 Lexicon parameters
@@ -310,16 +297,18 @@ Calling a Lexicon with such an argument creates a derived Lexicon, which behaves
 just as the normal Lexicon, but which has the specified argument in the ``arg``
 attribute. The derived Lexicon is cached as well.
 
-It is then possible to access the argument using :class:`~parce.rule.ArgItem`
-objects. This way it is possible to change anything in a rule based on the
+It is then possible to access the argument using the :obj:`~parce.rule.ARG`
+variable. This way it is possible to change anything in a rule based on the
 argument of the derived lexicon. An example, taken from the tests directory::
 
-    from parce import *
+    from parce import Language, lexicon
+    from parce.action import Name, Text
+    from parce.rule import arg, derive, MATCH
 
     class MyLang(Language):
         @lexicon
         def root(cls):
-            yield r"@([a-z]+)@", Name, withgroup(1, cls.here)
+            yield r"@([a-z]+)@", Name, derive(cls.here, MATCH(1))
             yield r"\w+", Text
 
         @lexicon
@@ -342,10 +331,10 @@ argument of the derived lexicon. An example, taken from the tests directory::
      ├╴<Token 'bla' at 26:29 (Text)>
      ╰╴<Token 'bla' at 30:33 (Text)>
 
-What happens: the :func:`~parce.withgroup` helper switches to the ``here``
+What happens: the :func:`~parce.rule.derive` helper switches to the ``here``
 lexicon when the text ``@mark@`` is encountered. The part ``mark`` is captured
 in the match group 1, and given as argument to the ``here`` lexicon. The
-:func:`~parce.arg` parce built-in yields the argument (``"mark"``) as a regular
+:func:`~parce.rule.arg` parce built-in yields the argument (``"mark"``) as a regular
 expression pattern, with word boundaries, which causes the lexer to pop back to
 the root context.
 
@@ -361,34 +350,16 @@ possibilities and future logic to replace items in rules before parsing.)
 There are two helper functions that create the Pattern based on the contents
 of the lexicon argument:
 
-.. autofunction:: parce.arg
+.. autofunction:: parce.rule.arg
     :noindex:
 
-.. autofunction:: parce.ifarg
+.. autofunction:: parce.rule.ifarg
     :noindex:
 
-There are three helper functions that create a target lexicon using an
+There are is one helper function that creates a target lexicon using an
 argument:
 
-.. autofunction:: parce.withgroup
-    :noindex:
-
-.. autofunction:: parce.withtext
-    :noindex:
-
-.. autofunction:: parce.witharg
-    :noindex:
-
-And there is a helper function that calls a predicate with the lexicon argument
-to choose rule items:
-
-.. autofunction:: parce.byarg
-    :noindex:
-
-And a function that chooses rule items from a dictionary the lexicon argument
-is looked up in:
-
-.. autofunction:: parce.maparg
+.. autofunction:: parce.rule.derive
     :noindex:
 
 

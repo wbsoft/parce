@@ -32,7 +32,7 @@ import re
 
 from parce import *
 from parce.action import *
-from parce.rule import TEXT, bygroup, ifmember, skip
+from parce.rule import TEXT, bygroup, ifmember
 
 
 RE_CSS_ESCAPE = r"\\(?:[0-9A-Fa-f]{1,6} ?|.)"

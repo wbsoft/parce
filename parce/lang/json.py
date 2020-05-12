@@ -34,7 +34,7 @@ import re
 
 from parce import *
 from parce.action import Delimiter, Name, Number, String
-from parce.rule import words, skip
+from parce.rule import words
 
 
 JSON_CONSTANTS = {

@@ -22,31 +22,34 @@ We define a simple language to get started::
 
     import re
 
+    from parce import *
+    import parce.action as a    # use the standard actions
+
     class Nonsense(Language):
         @lexicon
         def root(cls):
-            yield r'\d+', Number
-            yield r'\w+', Text
-            yield r'"', String, cls.string
-            yield r'%', Comment, cls.comment
-            yield r'[.,:?!]', Delimiter
+            yield r'\d+', a.Number
+            yield r'\w+', a.Text
+            yield r'"', a.String, cls.string
+            yield r'%', a.Comment, cls.comment
+            yield r'[.,:?!]', a.Delimiter
 
         @lexicon
         def string(cls):
-            yield r'"', String, -1
-            yield default_action, String
+            yield r'"', a.String, -1
+            yield default_action, a.String
 
         @lexicon(re_flags=re.MULTILINE)
         def comment(cls):
-            yield r'$', Comment, -1
-            yield default_action, Comment
+            yield r'$', a.Comment, -1
+            yield default_action, a.Comment
 
-``Language``, ``Text``, ``Number``, ``lexicon``, etcetera are objects imported
-from parce. ``Language`` is the base class for all language definitions.
-``Text``, ``Number``, ``String``, ``Delimiter`` and ``Comment`` are so-called
-standard actions. Standard actions are simple named objects that identify the
-type of the matched text. They have no behaviour and are essentially singleton
-objects using virtually no memory.
+``Language`` and ``lexicon``, are objects imported from *parce*. ``Language``
+is the base class for all language definitions. ``Text``, ``Number``,
+``String``, ``Delimiter`` and ``Comment`` are so-called standard actions.
+Standard actions are simple named objects that identify the type of the matched
+text. They have no behaviour and are essentially singleton objects using
+virtually no memory.
 
 The ``lexicon`` decorator makes a function into a ``Lexicon`` object, which
 encapsulates the parsing of text using the rules supplied in the function.
@@ -92,7 +95,7 @@ probably a good convention. Let's ``dump()`` the tree to look what's inside!
      ├╴<Token '1' at 30:31 (Literal.Number)>
      ├╴<Token '"' at 32:33 (Literal.String)>
      ├╴<Context Nonsense.string at 33-67 (2 children)>
-     │  ├╴<Token 'string inside\nover multiple '... at 33:66 (Literal.String)>
+     │  ├╴<Token 'string insid...ultiple lines' at 33:66 (Literal.String)>
      │  ╰╴<Token '"' at 66:67 (Literal.String)>
      ├╴<Token ',' at 67:68 (Delimiter)>
      ├╴<Token 'and' at 69:72 (Text)>
@@ -106,6 +109,7 @@ probably a good convention. Let's ``dump()`` the tree to look what's inside!
      ├╴<Token 'newline' at 100:107 (Text)>
      ╰╴<Token '.' at 107:108 (Delimiter)>
     >>>
+
 
 We see that the returned object is a ``Context`` containing ``Token`` and other
 ``Context`` instances. A Context is just a Python list, containing the tokens
@@ -132,7 +136,7 @@ Context have a ``query`` property that unleashes these powers::
     3
     >>> tree.query.all(Nonsense.string).dump()
     <Context Nonsense.string at 33-67 (2 children)>
-     ├╴<Token 'string inside\nover multiple '... at 33:66 (Literal.String)>
+     ├╴<Token 'string insid...ultiple lines' at 33:66 (Literal.String)>
      ╰╴<Token '"' at 66:67 (Literal.String)>
 
 See the :mod:`~parce.query` module for more information.
