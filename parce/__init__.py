@@ -25,7 +25,8 @@ The main module provides the listed classes and functions, enough to build
 a basic language definition or to use the bundled language definitions.
 
 The standard actions that are used by the bundled language definitions to
-specify the type of parsed text fragments are in the :mod:`action` module.
+specify the type of parsed text fragments are in the :mod:`~parce.action`
+module.
 
 It is recommended to import *parce* like this::
 
