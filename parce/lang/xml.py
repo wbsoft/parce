@@ -178,7 +178,7 @@ class Dtd(_XmlBase):
         yield words(('CDATA', 'ID', 'IDREF', 'IDREFS', 'ENTITY', 'ENTITIES',
             'NMTOKEN', 'NMTOKENS'), prefix=r'\b', suffix=r'\b'), Name.Type
         yield r'\b(NOTATION)\b(?:\s+(\())', bygroup(Name.Type, Bracket), \
-            ifneq(MATCH(2), None, cls.attlist_notation)
+            ifgroup(2, cls.attlist_notation)
         yield _N_, Name.Attribute.Definition
         yield r'\(', Bracket, cls.attlist_enumeration
         yield from cls.common_defs()

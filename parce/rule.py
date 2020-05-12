@@ -192,6 +192,17 @@ def ifmember(item, sequence, result, else_result=()):
         else_result, result)
 
 
+def ifgroup(n, result, else_result=()):
+    """Yield ``result`` if match group ``n`` is not None.
+
+    Shortcut for::
+
+        select(call(operator.ne, MATCH(n), None), else_result, result)
+
+    """
+    return select(call(operator.ne, MATCH(n), None), else_result, result)
+
+
 def dselect(item, mapping, default=()):
     r"""Yield the ``item`` from the specified ``mapping`` (dictionary).
 

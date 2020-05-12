@@ -183,7 +183,7 @@ class LilyPond(Language):
                bygroup(Name.Builtin, cls.ifpitch(), Octave, cls.ifpitch(), Octave)
         yield r"\\tempo(?![^\W\d])", Name.Builtin, cls.tempo
         yield r"(\\chord(?:s|mode))\b\s*(\{)?", bygroup(Keyword, Bracket.Start), \
-            ifneq(MATCH(2), None, cls.chordmode)
+            ifgroup(2, cls.chordmode)
         yield from cls.notemode_rule()
         yield from cls.lyricmode_rules()
         yield from cls.drummode_rule()
@@ -357,7 +357,7 @@ class LilyPond(Language):
     def lyricmode_rules(cls):
         yield r"(\\(?:lyric(?:mode|s)|addlyrics))\b\s*(\\s(?:equential|imultaneous)\b)?\s*(\{|<<)?", \
             bygroup(Keyword.Lyric, Keyword, Bracket.Start), \
-            ifneq(MATCH(3), None, cls.lyricmode)
+            ifgroup(3, cls.lyricmode)
         yield r"\\lyricsto\b", Keyword.Lyric, cls.lyricsto
 
     # ---------------------- notemode ---------------------

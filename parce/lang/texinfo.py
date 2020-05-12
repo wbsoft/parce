@@ -44,12 +44,12 @@ class Texinfo(Language):
         yield r'@html', Keyword, cls.html
         yield r'(@lilypond)\b(?:(\[)([^\n\]]*)(\]))?(\{)?', bygroup(
             Name.Function, Bracket, Name.Property, Bracket, Bracket.Start), \
-            ifneq(MATCH(5), None, cls.lilypond_brace, cls.lilypond_block)
+            ifgroup(5, cls.lilypond_brace, cls.lilypond_block)
         yield r'(@[a-zA-Z]+)(?:(\{)(\})?)?', bygroup(
-                ifneq(MATCH(2), None, ifneq(MATCH(3), None, Name.Symbol, Name.Function), Name.Command),
+                ifgroup(2, ifgroup(3, Name.Symbol, Name.Function), Name.Command),
                 Bracket.Start,
                 Bracket.End), \
-            ifneq(MATCH(2), None, ifeq(MATCH(3), None, cls.brace))
+            ifgroup(2, ifgroup(3, (), cls.brace))
 
     @lexicon
     def brace(cls):

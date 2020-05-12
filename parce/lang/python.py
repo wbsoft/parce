@@ -43,7 +43,7 @@ Bytes = Data.Bytes
 class Python(Language):
     @lexicon(re_flags=re.MULTILINE)
     def root(cls):
-        yield fr'^{_S_}+($|(?=#))?', ifneq(MATCH(1), None, Whitespace, Whitespace.Indent)
+        yield fr'^{_S_}+($|(?=#))?', ifgroup(1, Whitespace, Whitespace.Indent)
         yield r'@', Name.Decorator, cls.decorator
         yield fr'(class\b){_S_}*({_I_})', bygroup(Keyword,
             ifmember(MATCH(2), python_words.keywords, Invalid, Name.Class.Definition)), cls.classdef

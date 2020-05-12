@@ -45,7 +45,7 @@ class Latex(Language):
             bygroup(Name.Builtin, Delimiter, Name.Tag, Delimiter), \
             cls.get_environment_target()
         yield r'(\\[^\W\d]+)(?:\s*(\[))?', bygroup(Name.Command, Delimiter.Bracket), \
-            ifneq(MATCH(2), None, cls.option)
+            ifgroup(2, cls.option)
         yield r'\{\\(oe|OE|ae|AE|aa|AA|o|O|l|L|ss|SS)\}', Escape
         yield r"[!?]'", Escape
         yield r"""\\[`'^"~=.]([a-zA-Z]{1,2}|\\[ij])(?=[\W\d])""", Escape
