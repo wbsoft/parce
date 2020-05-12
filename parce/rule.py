@@ -324,9 +324,9 @@ def arg(escape=True, prefix="", suffix="", default=None):
     r"""Create a pattern that contains the argument the current Lexicon was
     called with.
 
-    If there is no argument in the current lexicon, this Pattern yields the
-    default value, which is by default None, resulting in the rule being
-    skipped.
+    If there is no argument in the current lexicon, this
+    :class:`~parce.ruleitem.pattern` yields the default value, which is by
+    default None, resulting in the rule being skipped.
 
     When there is an argument, it is escaped using :func:`re.escape` (when
     ``escape`` was set to True), and if given, ``prefix`` is prepended and
