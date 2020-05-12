@@ -334,7 +334,7 @@ class LilyPond(Language):
         yield from cls.common()
         yield r">>|\}", Bracket.End, -1
         yield r"<<|\{", Bracket.Start, 1
-        yield RE_LILYPOND_LYRIC_TEXT, pair(TEXT, {
+        yield RE_LILYPOND_LYRIC_TEXT, dselect(TEXT, {
                 "--": LyricHyphen,
                 "__": LyricExtender,
                 "_": LyricSkip,
@@ -370,7 +370,7 @@ class LilyPond(Language):
     def notemode_rule(cls):
         """Yield the rule for \\notemode / \\notes."""
         yield r"(\\note(?:s|mode))\b\s*(\{|<<)?", bygroup(Keyword, Bracket.Start), \
-            pair(MATCH(2), {
+            dselect(MATCH(2), {
                 "{": (cls.notemode, cls.sequential),
                 "<<": (cls.notemode, cls.simultaneous),
             })
@@ -403,7 +403,7 @@ class LilyPond(Language):
     def drummode_rule(cls):
         """Yield the rule for \\drummode / \\drums."""
         yield r"(\\drum(?:s|mode))\b\s*(\{|<<)?", bygroup(Keyword.Drum, Bracket.Start), \
-            pair(MATCH(2), {
+            dselect(MATCH(2), {
                 "{": (cls.drummode, cls.drummode_sequential),
                 "<<": (cls.drummode, cls.drummode_simultaneous),
             })

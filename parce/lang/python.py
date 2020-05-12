@@ -79,19 +79,19 @@ class Python(Language):
         yield words(python_words.keywords, prefix=r'\b', suffix=r'\b'), Keyword
         yield words(python_words.constants, prefix=r'\b', suffix=r'\b'), Name.Constant
         yield fr'\b(self|cls)\b(?:{_SN_}*([\[\(]))?', Name.Variable.Special, \
-            pair(MATCH(2), {'(': cls.call, '[': cls.item})
+            dselect(MATCH(2), {'(': cls.call, '[': cls.item})
         # method, class or attribute (keywords after a . are also caught)
         yield fr'(\.){_SN_}*\b({_I_})\b(?:{_SN_}*([\[\(]))?', \
             bygroup(
                 Delimiter,
                 ifmember(MATCH(2), python_words.keywords,
                     Keyword,
-                    pair(MATCH(3), {'(': select(call(isclassname, TEXT), Name.Method, Name.Class)},
+                    dselect(MATCH(3), {'(': select(call(isclassname, TEXT), Name.Method, Name.Class)},
                          select(call(str.isupper, TEXT),
                              select(call(isclassname, TEXT), Name.Attribute, Name.Class),
                              Name.Constant))),
                 Delimiter), \
-            pair(MATCH(3), {'(': cls.call, '[': cls.item})
+            dselect(MATCH(3), {'(': cls.call, '[': cls.item})
         # function, class or variable
         yield fr'\b({_I_})\b(?:{_SN_}*([\[\(]))?', \
             bygroup(
@@ -100,11 +100,11 @@ class Python(Language):
                      (python_words.exceptions, Name.Exception)),
                     select(call(str.isupper, TEXT),
                         select(call(isclassname, TEXT),
-                            pair(MATCH(2), {'(': Name.Function}, Name.Variable),
+                            dselect(MATCH(2), {'(': Name.Function}, Name.Variable),
                             Name.Class),
                         Name.Constant)),
                 Delimiter), \
-            pair(MATCH(2), {'(': cls.call, '[': cls.item})
+            dselect(MATCH(2), {'(': cls.call, '[': cls.item})
 
         ## delimiters, operators
         yield r'\.\.\.', Delimiter.Special.Ellipsis

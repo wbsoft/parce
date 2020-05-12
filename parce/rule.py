@@ -192,7 +192,7 @@ def ifmember(item, sequence, result, else_result=()):
         else_result, result)
 
 
-def pair(item, mapping, default=()):
+def dselect(item, mapping, default=()):
     r"""Yield the ``item`` from the specified ``mapping`` (dictionary).
 
     If the item can't be found in the mapping, returns ``default``.
@@ -200,7 +200,7 @@ def pair(item, mapping, default=()):
     An example from the LilyPond music language definition::
 
         RE_LILYPOND_LYRIC_TEXT = r'[^{}"\\\s$#\d]+'
-        yield RE_LILYPOND_LYRIC_TEXT, pair(TEXT, {
+        yield RE_LILYPOND_LYRIC_TEXT, dselect(TEXT, {
             "--": LyricHyphen,
             "__": LyricExtender,
             "_": LyricSkip,
