@@ -22,10 +22,10 @@ r"""
 A Lexicon groups rules to match.
 
 A Lexicon is created by decorating a method yielding rules with the
-:attr:`@lexicon <parce.lexicon>` decorator. (Although this actually creates a
-LexiconDescriptor. When a LexiconDescriptor is accessed for the first time via
-a Language subclass, a Lexicon for that class is created and cached, and
-returned each time that attribute is accessed.)
+:attr:`@lexicon <lexicon>` decorator. (Although this actually
+creates a LexiconDescriptor. When a LexiconDescriptor is accessed for the first
+time via a Language subclass, a Lexicon for that class is created and cached,
+and returned each time that attribute is accessed.)
 
 The Lexicon can parse text according to the rules. When its :func:`parse`
 function is called for the first time, the rules-function is run with the
