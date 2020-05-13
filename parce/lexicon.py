@@ -49,7 +49,7 @@ anyway)
     ``'parce.lang.xml.Xml.root'``.
 ``language``
     The Language class the lexicon belongs to.
-``lexicon``
+``descriptor``
     The LexiconDescriptor the Lexicon was created by.
 ``re_flags``
     The ``re_flags`` set by the @lexicon decorator.
@@ -102,13 +102,21 @@ class LexiconDescriptor:
 
 
 class Lexicon:
-    """A Lexicon is tied to a particular class.
+    """A Lexicon parses text according to rules.
 
-    This makes it possible to inherit from a Language class and change
-    only some Lexicons.
+    A Lexicon is tied to a particular class, which makes it possible to inherit
+    from a Language class and change only some Lexicons.
 
-    Call Lexicon.parse(text, pos) to do the actual parsing work.
-    This function is created as soon as it is called for the first time.
+    .. py:function:: parse(text, pos=0)
+
+        Start parsing ``text`` from the specified position.
+        Yields five-tuples ``(pos, text, matchobj, action, target)``
+
+        The ``pos`` is the start position a match was found, ``text`` is the
+        matched text, ``matchobj`` the match object (which can be None for
+        default actions), ``action`` the action that was specified in the
+        matching rule, and ``target`` is either None or a
+        :class:`~parce.target.Target` object.
 
     """
     def __init__(self, descriptor, language, arg=None):
