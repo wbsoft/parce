@@ -7,6 +7,8 @@ ChangeLog
 - fix NameError: name 'Escape' is not defined in parce/css.py
 - in the bundled languages __all__ is defined and from import * is not used
   anymore
+- documentation improvements
+
 
 2020-05-13: parce-0.10.0
 
