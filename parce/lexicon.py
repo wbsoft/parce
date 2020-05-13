@@ -21,38 +21,45 @@
 """
 A Lexicon groups rules to match.
 
-A LexiconDescriptor is created by decorating a function yielding rules with the
-`@lexicon` decorator. When a LexiconDescriptor is accessed for the first time
-via a Language subclass, a Lexicon for that class is created and cached, and
-returned each time that attribute is accessed.
+A Lexicon is created by decorating a function yielding rules with the
+:attr:`@lexicon <parce.lexicon>` decorator. (Although this actually creates a
+LexiconDescriptor. When a LexiconDescriptor is accessed for the first time via
+a Language subclass, a Lexicon for that class is created and cached, and
+returned each time that attribute is accessed.)
 
-The Lexicon can parse text according to the rules. When parsing for the first
-time, the rules-function is run with the language class as argument, and the
-rules it creates are cached.
+The Lexicon can parse text according to the rules. When its :func:`parse`
+function is called for the first time, the rules-function is run with the
+language class as argument, and the rules it creates are cached.
 
 This makes it possible to inherit from a Language class and only re-implement
 some lexicons, the others keep working as in the base class.
 
-Every Lexicon has the following attributes: (they are almost never needed, but
-anyway)
+Example:
 
-``arg``
-    The argument the lexicon was called with (creating a derived Lexicon).
-    None for a normal lexicon.
-``name``
-    The short name (name of the method it was defined with)
-``fullname``
-    The short name with the Language name prepended, like
-    ``'Language.lexicon'``.
-``qualname``
-    The full name with the Language's module prepended, like
-    ``'parce.lang.xml.Xml.root'``.
-``language``
-    The Language class the lexicon belongs to.
-``descriptor``
-    The LexiconDescriptor the Lexicon was created by.
-``re_flags``
-    The ``re_flags`` set by the @lexicon decorator.
+    >>> from parce import Language, lexicon
+    >>>
+    >>> class MyLang(Language):
+    ...     @lexicon
+    ...     def numbers(cls):
+    ...         yield r'\d+', "A number"
+    ...         yield r'\w+', "A word"
+    ...
+    >>> MyLang.numbers
+    MyLang.numbers
+    >>> type(MyLang.numbers)
+    <class 'parce.lexicon.Lexicon'>
+    >>> for i in MyLang.numbers.parse("1 a2 d3 4 p 5", 0):
+    ...  print(i)
+    ...
+    (0, '1', <re.Match object; span=(0, 1), match='1'>, 'A number', None)
+    (2, 'a2', <re.Match object; span=(2, 4), match='a2'>, 'A word', None)
+    (5, 'd3', <re.Match object; span=(5, 7), match='d3'>, 'A word', None)
+    (8, '4', <re.Match object; span=(8, 9), match='4'>, 'A number', None)
+    (10, 'p', <re.Match object; span=(10, 11), match='p'>, 'A word', None)
+    (12, '5', <re.Match object; span=(12, 13), match='5'>, 'A number', None)
+
+Lexing is done by a :class:`~parce.lexer.Lexer` instance, which switches
+Lexicon when a target is encountered.
 
 """
 
@@ -69,7 +76,7 @@ from .ruleitem import (
 
 class LexiconDescriptor:
     """The LexiconDescriptor creates a Lexicon when called via a class."""
-    __slots__ = ('rules_func', 'lexicons', '_lock', 're_flags')
+    __slots__ = ('rules_func', '_lexicons', '_lock', 're_flags')
 
     def __init__(self, rules_func,
                        re_flags=0,
@@ -80,9 +87,9 @@ class LexiconDescriptor:
         the pattern, action, target, ... tuples.
 
         """
-        self.rules_func = rules_func
-        self.re_flags = re_flags
-        self.lexicons = {}
+        self.rules_func = rules_func    #: the function yielding the rules
+        self.re_flags = re_flags        #: the re_flags set on init
+        self._lexicons = {}
         self._lock = threading.Lock()
 
     def __get__(self, instance, owner):
@@ -90,14 +97,14 @@ class LexiconDescriptor:
         if instance:
             raise RuntimeError('Language should never be instantiated')
         try:
-            return self.lexicons[owner]
+            return self._lexicons[owner]
         except KeyError:
             # prevent instantiating the same Lexicon multiple times
             with self._lock:
                 try:
-                    lexicon = self.lexicons[owner]
+                    lexicon = self._lexicons[owner]
                 except KeyError:
-                    lexicon = self.lexicons[owner] = Lexicon(self, owner)
+                    lexicon = self._lexicons[owner] = Lexicon(self, owner)
                 return lexicon
 
 
@@ -107,10 +114,10 @@ class Lexicon:
     A Lexicon is tied to a particular class, which makes it possible to inherit
     from a Language class and change only some Lexicons.
 
-    .. py:function:: parse(text, pos=0)
+    .. py:function:: parse(text, pos)
 
         Start parsing ``text`` from the specified position.
-        Yields five-tuples ``(pos, text, matchobj, action, target)``
+        Yields five-tuples ``(pos, text, matchobj, action, target)``.
 
         The ``pos`` is the start position a match was found, ``text`` is the
         matched text, ``matchobj`` the match object (which can be None for
@@ -120,11 +127,20 @@ class Lexicon:
 
     """
     def __init__(self, descriptor, language, arg=None):
+        #: The LexiconDescriptor this Lexicon was created by.
         self.descriptor = descriptor
+        #: The Language class the lexicon belongs to.
         self.language = language
+        #: The argument the lexicon was called with (creating a derived
+        #: Lexicon). None for a normal lexicon.
         self.arg = arg
+        #: The short name (name of the method this Lexicon was defined with)
         self.name = descriptor.rules_func.__name__
+        #: The short name with the Language name prepended, like
+        #: ``'Language.lexicon'``.
         self.fullname = language.__name__ + '.' + self.name
+        #: The full name with the Language's module prepended, like
+        #: ``'parce.lang.xml.Xml.root'``.
         self.qualname = language.__module__ + '.' + self.fullname
         self.__doc__ = descriptor.rules_func.__doc__
         self._derived = {}
