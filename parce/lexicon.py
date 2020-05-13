@@ -111,14 +111,14 @@ class Lexicon:
     This function is created as soon as it is called for the first time.
 
     """
-    def __init__(self, lexicon, language, arg=None):
-        self.lexicon = lexicon
+    def __init__(self, descriptor, language, arg=None):
+        self.descriptor = descriptor
         self.language = language
         self.arg = arg
-        self.name = lexicon.rules_func.__name__
+        self.name = descriptor.rules_func.__name__
         self.fullname = language.__name__ + '.' + self.name
         self.qualname = language.__module__ + '.' + self.fullname
-        self.__doc__ = lexicon.rules_func.__doc__
+        self.__doc__ = descriptor.rules_func.__doc__
         self._derived = {}
         # lock is used when creating a derivate and/or the parse() instance function
         self._lock = threading.Lock()
@@ -149,12 +149,12 @@ class Lexicon:
                 try:
                     lexicon = self._derived[arg]
                 except KeyError:
-                    lexicon = self._derived[arg] = Lexicon(self.lexicon, self.language, arg)
+                    lexicon = self._derived[arg] = Lexicon(self.descriptor, self.language, arg)
             return lexicon
 
     def equals(self, other):
         """Return True if we are the same lexicon or a derivate from the same."""
-        return self.lexicon is other.lexicon and self.language is other.language
+        return self.descriptor is other.descriptor and self.language is other.language
 
     @util.cached_property
     def _rules(self):
@@ -165,7 +165,7 @@ class Lexicon:
 
         """
         return tuple(pre_evaluate_rule(rule, self.arg)
-                for rule in self.lexicon.rules_func(self.language) or ())
+                for rule in self.descriptor.rules_func(self.language) or ())
 
     def __iter__(self):
         """Yield the rules.
@@ -201,7 +201,7 @@ class Lexicon:
     @property
     def re_flags(self):
         """The re_flags set on instantiation."""
-        return self.lexicon.re_flags
+        return self.descriptor.re_flags
 
     def get_instance_attributes(self):
         """Compile the pattern rules and return instance attributes.
@@ -382,5 +382,4 @@ class Lexicon:
                 """Parse text, skipping unknown text."""
                 return map(token, finditer(text, pos))
         return parse
-
 

@@ -38,7 +38,7 @@ def decision_tree(lexicon, build=False):
     instances are replaced.
 
     """
-    rules = lexicon if build else lexicon.lexicon.rules_func(lexicon.language)
+    rules = lexicon if build else lexicon.descriptor.rules_func(lexicon.language)
     for rule in rules:
         yield variations_tree(rule)
 
