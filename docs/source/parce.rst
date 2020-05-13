@@ -5,3 +5,4 @@ The main parce module
     :members:
     :undoc-members:
     :show-inheritance:
+    :noindex:

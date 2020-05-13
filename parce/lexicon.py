@@ -425,3 +425,34 @@ class Lexicon:
                 return map(token, finditer(text, pos))
         return parse
 
+
+def lexicon(rules_func=None, **kwargs):
+    """Lexicon factory decorator.
+
+    Use this decorator to make a function in a Language class definition a
+    LexiconDescriptor object. The LexiconDescriptor is a descriptor, and when
+    calling it via the Language class attribute, a Lexicon is created, cached
+    and returned.
+
+    You can specify keyword arguments, that will be passed on to the Lexicon
+    object as soon as it is created.
+
+    The following keyword arguments are supported:
+
+    ``re_flags``:
+        The flags that are passed to the regular expression compiler
+
+    The code body of the function should return (yield) the rules of the
+    lexicon, and is run with the Language class as first argument, as soon as
+    the lexicon is used for the first time.
+
+    You can also call the Lexicon object just as an ordinary classmethod, to
+    get the rules, e.g. for inclusion in a different lexicon.
+
+    """
+    if rules_func and not kwargs:
+        return LexiconDescriptor(rules_func)
+    def lexicon(rules_func):
+        return LexiconDescriptor(rules_func, **kwargs)
+    return lexicon
+

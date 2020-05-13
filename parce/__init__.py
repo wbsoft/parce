@@ -26,7 +26,8 @@ a basic language definition or to use the bundled language definitions.
 
 The standard actions that are used by the bundled language definitions to
 specify the type of parsed text fragments are in the :mod:`~parce.action`
-module.
+module. The helper functions for dynamic rule items are in the
+:mod:`~parce.rule` module.
 
 It is recommended to import *parce* like this::
 
@@ -34,11 +35,20 @@ It is recommended to import *parce* like this::
 
 although in a language definition it can be easier to do this::
 
-    from parce import *
+    from parce import Language, lexicon, skip, default_action, default_target
+    from parce.rule import words, bygroup   # whichever you need
     import parce.action as a
 
 Then you get the ``Language`` class and ``lexicon`` decorator from parce, and
 all standard actions can be accessed via the ``a`` prefix, like ``a.Text``.
+
+.. py:data:: version
+
+   The version as a three-tuple(major, minor, patch). See :mod:`~parce.pkginfo`.
+
+.. py:data:: version_string
+
+   The version as a string.
 
 """
 
@@ -65,9 +75,9 @@ __all__ = (
 )
 
 from . import document, lexer, rule, ruleitem, treebuilder, treedocument, util
-from . import lexicon as lexicon_
-from .document import Cursor
+from .lexicon import lexicon
 from .language import Language
+from .document import Cursor
 from .pkginfo import version, version_string
 
 
@@ -145,36 +155,6 @@ def tokens(root_lexicon, text):
 def events(root_lexicon, text):
     """Convenience function that yields all the events from the text."""
     return lexer.Lexer([root_lexicon]).events(text)
-
-
-def lexicon(rules_func=None, **kwargs):
-    """Lexicon factory decorator.
-
-    Use this decorator to make a function in a Language class definition a
-    LexiconDescriptor object. The LexiconDescriptor is a descriptor, and when
-    calling it via the Language class attribute, a Lexicon is created, cached
-    and returned.
-
-    You can specify keyword arguments, that will be passed on to the Lexicon
-    object as soon as it is created.
-
-    The following keyword arguments are supported:
-
-    re_flags: The flags that are passed to the regular expression compiler
-
-    The code body of the function should return (yield) the rules of the
-    lexicon, and is run with the Language class as first argument, as soon as
-    the lexicon is used for the first time.
-
-    You can also call the Lexicon object just as an ordinary classmethod, to
-    get the rules, e.g. for inclusion in a different lexicon.
-
-    """
-    if rules_func and not kwargs:
-        return lexicon_.LexiconDescriptor(rules_func)
-    def lexicon(rules_func):
-        return lexicon_.LexiconDescriptor(rules_func, **kwargs)
-    return lexicon
 
 
 def theme_by_name(name="default"):

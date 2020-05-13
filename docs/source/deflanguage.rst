@@ -35,7 +35,7 @@ Let's look closer again at the example from the :doc:`gettingstarted` section::
             yield default_action, a.Comment
 
 
-The :attr:`@lexicon <parce.lexicon>` decorated methods behave like
+The :attr:`@lexicon <parce.lexicon.lexicon>` decorated methods behave like
 classmethods, i.e. when you call the method through the class definition, it
 yields the rules, and the code yielding the rules knows the current Language
 class via the ``cls`` argument. So the rules are able to in their target point
@@ -275,11 +275,12 @@ tokens. See for more information the documentation of the
 Lexicon parameters
 ------------------
 
-The :attr:`@lexicon <parce.lexicon>` decorator optionally accepts arguments.
-Currently one argument is supported:
+The :attr:`@lexicon <parce.lexicon.lexicon>` decorator optionally accepts
+arguments. Currently one argument is supported:
 
-    ``re_flags``, to set the regular expression flags for the pattern
-        the lexicon will create.
+``re_flags``:
+    to set the regular expression flags for the pattern the lexicon will
+    create.
 
 See for more information the documentation of the :mod:`~parce.lexicon`
 module.

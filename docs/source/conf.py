@@ -27,6 +27,7 @@ import parce.pkginfo
 from sphinx.ext.autodoc import ClassLevelDocumenter
 from sphinx.util.inspect import getdoc
 from sphinx.util.docstrings import prepare_docstring
+from parce.lexicon import Lexicon
 class LexiconDocumenter(ClassLevelDocumenter):
     objtype = 'lexicon'
     directivetype = 'attribute'
@@ -34,7 +35,7 @@ class LexiconDocumenter(ClassLevelDocumenter):
 
     @classmethod
     def can_document_member(cls, member, membername, isattr, parent):
-        return isinstance(member, parce.lexicon_.Lexicon)
+        return isinstance(member, Lexicon)
 
     def get_doc(self, encoding=None, ignore=1):
         docstring = getdoc(self.object.descriptor.rules_func, self.get_attr,
@@ -67,7 +68,7 @@ extensions = [
 ]
 
 # autodoc
-autodoc_member_order = 'bysource'
+#autodoc_member_order = 'bysource'
 autodoc_default_options = {
     'member-order': 'bysource',
 }
