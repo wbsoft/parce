@@ -73,6 +73,7 @@ import re
 from . import *
 from . import util
 from .lang.css import Css
+from .action import Comment, Delimiter, Escape, Literal, Number, String
 from .query import Query
 
 

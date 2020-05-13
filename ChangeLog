@@ -2,7 +2,12 @@ ChangeLog
 =========
 
 
-2020-05-13: parce.0.10.0
+2020-05-13: parce-0.11.0
+
+- fix NameError: name 'Escape' is not defined in parce/css.py
+
+
+2020-05-13: parce-0.10.0
 
 - dynamic rule item infrastructure completely rewritten, rule items
   are simpler, more powerful and fine-grained
