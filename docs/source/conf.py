@@ -37,7 +37,7 @@ class LexiconDocumenter(ClassLevelDocumenter):
         return isinstance(member, parce.lexicon_.Lexicon)
 
     def get_doc(self, encoding=None, ignore=1):
-        docstring = getdoc(self.object.lexicon.rules_func, self.get_attr,
+        docstring = getdoc(self.object.descriptor.rules_func, self.get_attr,
                            self.env.config.autodoc_inherit_docstrings)
         return [prepare_docstring(docstring, ignore)] if docstring else []
 
