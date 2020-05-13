@@ -18,10 +18,10 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 
-"""
+r"""
 A Lexicon groups rules to match.
 
-A Lexicon is created by decorating a function yielding rules with the
+A Lexicon is created by decorating a method yielding rules with the
 :attr:`@lexicon <parce.lexicon>` decorator. (Although this actually creates a
 LexiconDescriptor. When a LexiconDescriptor is accessed for the first time via
 a Language subclass, a Lexicon for that class is created and cached, and
@@ -29,7 +29,7 @@ returned each time that attribute is accessed.)
 
 The Lexicon can parse text according to the rules. When its :func:`parse`
 function is called for the first time, the rules-function is run with the
-language class as argument, and the rules it creates are cached.
+language class as argument, and the rules it yields are cached.
 
 This makes it possible to inherit from a Language class and only re-implement
 some lexicons, the others keep working as in the base class.
@@ -58,8 +58,8 @@ Example:
     (10, 'p', <re.Match object; span=(10, 11), match='p'>, 'A word', None)
     (12, '5', <re.Match object; span=(12, 13), match='5'>, 'A number', None)
 
-Lexing is done by a :class:`~parce.lexer.Lexer` instance, which switches
-Lexicon when a target is encountered.
+Parsing (better: lexing) is done by a :class:`~parce.lexer.Lexer` instance,
+which switches Lexicon when a target is encountered.
 
 """
 
@@ -76,7 +76,7 @@ from .ruleitem import (
 
 class LexiconDescriptor:
     """The LexiconDescriptor creates a Lexicon when called via a class."""
-    __slots__ = ('rules_func', '_lexicons', '_lock', 're_flags')
+    __slots__ = ('rules_func', '_lexicons', '_lock', '_re_flags')
 
     def __init__(self, rules_func,
                        re_flags=0,
@@ -88,7 +88,7 @@ class LexiconDescriptor:
 
         """
         self.rules_func = rules_func    #: the function yielding the rules
-        self.re_flags = re_flags        #: the re_flags set on init
+        self._re_flags = re_flags
         self._lexicons = {}
         self._lock = threading.Lock()
 
@@ -211,8 +211,8 @@ class Lexicon:
     def __iter__(self):
         """Yield the rules.
 
-        Patterns are created and when this method is called for the first time.
-        If this is a derived lexicon, dynamic rule items that depend on the
+        Patterns are created when this method is called for the first time. If
+        this is a derived lexicon, dynamic rule items that depend on the
         argument are already evaluated.
 
         """
@@ -237,15 +237,15 @@ class Lexicon:
                 try:
                     return object.__getattribute__(self, name)
                 except AttributeError:
-                    self.parse = self.get_instance_attributes()
+                    self.parse = self._get_instance_attributes()
         return object.__getattribute__(self, name)
 
     @property
     def re_flags(self):
-        """The re_flags set on instantiation."""
-        return self.descriptor.re_flags
+        """The re_flags that were set on instantiation."""
+        return self.descriptor._re_flags
 
-    def get_instance_attributes(self):
+    def _get_instance_attributes(self):
         """Compile the pattern rules and return instance attributes.
 
         These are:
@@ -273,7 +273,7 @@ class Lexicon:
                 patterns.append(pattern)
                 rules.append(rule)
 
-        # prepare to handle a dynamic default lexicon
+        # prepare to handle a dynamic default action
         if isinstance(default_action, RuleItem):
             def dynamic_default_action(text):
                 return default_action.evaluate({'text': text})
