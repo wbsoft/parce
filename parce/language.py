@@ -47,10 +47,10 @@ class Language:
     def comment_common(cls):
         """Provides subtle highlighting within comments.
 
-        The default implementation highlight TODO, XXX and TEMP
+        The default implementation highlights words like TODO, XXX, TEMP, etc.
         using Comment.Alert, and highlights URLs and email addresses with the
-        Comment.Url and Comment.Email action respectively.
-        Most bundled languages use this method for their comment lexicons.
+        Comment.Url and Comment.Email action respectively. Most bundled
+        languages use this method for their comment lexicons.
 
         """
         yield r'\b\w+(?:[._%+-]\w+)*@\w+(?:[._-]\w+)*\b', Comment.Email
