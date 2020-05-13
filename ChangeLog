@@ -2,10 +2,15 @@ ChangeLog
 =========
 
 
-current:
+2020-05-13: parce.0.10.0
 
 - dynamic rule item infrastructure completely rewritten, rule items
   are simpler, more powerful and fine-grained
+- some modules have been renamed:
+  action → StandardAction is now in standardaction, ActionItem in ruleitem
+  stdactions → action
+- the rule item helpers are not in the parce namepace, but in parce.rule
+- the standard actions are not in the parce namespace, but in parce.action
 - parce.document.Document now inherits from Observable and emits events
 - fixed: AttributeError: 'str' object has no attribute 'IfArg'
 
