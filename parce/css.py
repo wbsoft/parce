@@ -748,19 +748,19 @@ class Element(AbstractElement, list):
 
 class LxmlElement(AbstractElement):
     """An Element wrapping an element from a lxml.etree tree."""
-    def __init__(self, e):
-        self.element = e
+    def __init__(self, element):
+        self.e = element
 
     def get_name(self):
-        """Implement to return the element's name."""
+        """Return the element's name."""
         return self.e.tag
 
     def get_parent(self):
-        """Implement to return the parent Element or None."""
+        """Return the parent Element or None."""
         return type(self)(self.e.getparent())
 
     def get_attributes(self):
-        """Implement to return a dictionary of attributes, keys and values are str."""
+        """Return a dictionary of attributes, keys and values are str."""
         return self.e.attrib
 
     def get_pseudo_classes(self):
@@ -772,21 +772,21 @@ class LxmlElement(AbstractElement):
         return []
 
     def children(self):
-        """Implemented to yield our children."""
+        """Yield our children."""
         for n in self.e:
             yield type(self)(n)
 
     def get_child_count(self):
-        """Implemented to return the number of children."""
+        """Return the number of children."""
         return len(self.e)
 
     def previous_siblings(self):
-        """Implement to yield our previous siblings in backward order."""
+        """Yield our previous siblings in backward order."""
         for n in self.e.itersiblings(preceding=True):
             yield type(self)(n)
 
     def next_siblings(self):
-        """Implement to yield our next siblings in forward order."""
+        """Yield our next siblings in forward order."""
         for n in self.e.itersiblings():
             yield type(self)(n)
 
