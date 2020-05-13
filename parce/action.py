@@ -18,13 +18,24 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 """
-Standard actions defined in the parce.action module namespace.
+This module defines a fairly large amount of standard actions.
+Most are used by the bundled language definitions and may also be used
+or inherited from by your own language definitions.
+
+The themes built into *parce* also use the names of these standard actions
+to determine the visual appearance of parsed text pieces.
+
+See for a full listing :doc:`stdactions`.
+
+See the :mod:`~parce.standardaction` for more information about standard
+actions.
+
 """
 
 from . import standardaction
 
 # Note: the marked part below of this file is literally shown in the
-# documentation (action.rst)
+# documentation (stdactions.rst)
 
 # BEGIN_ACTIONS
 
@@ -132,6 +143,5 @@ Separator       = Delimiter.Separator   # a separator, like \\ or | in LaTeX
 Operator.Assignment                     # e.g. = to denote an assignment
 
 
-del a
 # END_ACTIONS
-del standardaction
+del a, standardaction

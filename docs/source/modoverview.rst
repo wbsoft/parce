@@ -5,6 +5,7 @@ Overview of all modules
    :maxdepth: 1
 
    parce.rst
+   action.rst
    css.rst
    document.rst
    formatter.rst

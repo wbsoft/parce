@@ -73,7 +73,7 @@ Finally, the `&` operator returns the common ancestor, if any::
     >>> String & Text
     >>>
 
-See for the full list of pre-defined standard actions :doc:`action`.
+See for the full list of pre-defined standard actions :doc:`stdactions`.
 
 
 """
