@@ -25,8 +25,9 @@ import sys
 
 sys.path.insert(0, ".")
 
-from parce import *
-from parce.lang.css import *
+from parce import root
+from parce.action import Name, Number
+from parce.lang.css import Css
 
 def test_main():
     css = r"""

@@ -22,11 +22,17 @@ Parse Python.
 
 """
 
+__all__ = ('Python', 'PythonConsole')
+
 import re
 
-from parce import *
-from parce.action import *
-from parce.rule import *
+from parce import lexicon, Language, skip, default_action, default_target
+from parce.action import (
+    Character, Comment, Data, Delimiter, Escape, Invalid, Keyword, Literal,
+    Name, Number, Operator, String, Whitespace)
+from parce.rule import (
+    ARG, MATCH, TEXT, arg, bygroup, call, derive, dselect, findmember, ifarg,
+    ifeq, ifgroup, ifmember, pattern, select, words)
 
 from . import python_words
 
@@ -427,7 +433,11 @@ class PythonConsole(Python):
 
 
 def isclassname(text):
-    """Return True is text is an uppercased name (skipping starting underscores)."""
+    """Return True if text starts with uppercase letter.
+
+    Starting underscores are skipped.
+
+    """
     for c in text:
         if c.isupper():
             return True

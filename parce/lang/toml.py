@@ -22,12 +22,15 @@ Tom's Obvious, Minimal Language.
 https://github.com/toml-lang/toml
 """
 
+__all__ = ('Toml',)
+
 import re
 
-
-from parce import *
-from parce.action import *
-from parce.rule import *
+from parce import Language, lexicon, skip, default_action, default_target
+from parce.action import (
+    Bracket, Comment, Delimiter, Invalid, Literal, Number, Name, Operator,
+    Separator, String, Whitespace)
+from parce.rule import TEXT, bygroup, call, select
 
 
 # https://tools.ietf.org/html/rfc3339#section-5.6

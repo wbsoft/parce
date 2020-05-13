@@ -25,11 +25,14 @@ https://www.gnu.org/software/texinfo/
 
 """
 
+__all__ = ('Texinfo',)
+
 import re
 
-from parce import *
-from parce.action import *
-from parce.rule import *
+from parce import Language, lexicon, default_action
+from parce.action import (
+    Bracket, Comment, Delimiter, Escape, Keyword, Name, Verbatim, Text)
+from parce.rule import bygroup, ifgroup
 
 
 class Texinfo(Language):

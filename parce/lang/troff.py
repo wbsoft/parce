@@ -23,12 +23,14 @@ https://www.gnu.org/software/groff/
 
 """
 
+__all__ = ('Troff',)
 
 import re
 
-from parce import *
-from parce.action import *
-from parce.rule import *
+from parce import Language, lexicon, skip, default_action, default_target
+from parce.action import (
+        Comment, Delimiter, Name, Number, Operator, String, Text)
+from parce.rule import bygroup
 
 
 class Troff(Language):

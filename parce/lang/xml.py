@@ -22,12 +22,16 @@ Parse XML.
 
 """
 
+__all__ = ('Dtd', 'Xml')
+
 import re
 
-
-from parce import *
-from parce.action import *
-from parce.rule import *
+from parce import Language, lexicon, skip, default_action
+from parce.action import (
+    Bracket, Comment, Data, Delimiter, Escape, Invalid, Keyword, Name,
+    Operator, String, Text, Whitespace)
+from parce.rule import (
+    MATCH, TEXT, bygroup, call, dselect, ifgroup, select, words)
 
 
 # source: https://www.w3.org/TR/xml/#NT-NameStartChar

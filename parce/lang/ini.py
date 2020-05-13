@@ -24,10 +24,11 @@ The base parser supports escaped characters and line continuations for values.
 
 """
 
+__all__ = ('Ini',)
+
 import re
 
-
-from parce import *
+from parce import Language, lexicon, default_action, default_target
 from parce.action import Comment, Data, Delimiter, Escape, Name, Operator
 
 

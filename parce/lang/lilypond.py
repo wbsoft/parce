@@ -22,12 +22,17 @@
 Parser for LilyPond syntax.
 """
 
+__all__ = ('LilyPond',)
 
 import re
 
-from parce import *
-from parce.action import *
-from parce.rule import *
+from parce import Language, lexicon, skip, default_action, default_target
+from parce.action import (
+    Bracket, Character, Comment, Delimiter, Direction, Keyword, Name, Number,
+    Operator, Separator, String, Text)
+from parce.rule import (
+    MATCH, TEXT, bygroup, call, dselect, findmember, ifeq, ifgroup, ifmember,
+    select, words)
 
 from . import lilypond_words
 

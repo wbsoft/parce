@@ -17,13 +17,20 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+"""
+Scheme.
+"""
+
+__all__ = ('Scheme', 'SchemeLily')
 
 import re
 
 
-from parce import *
-from parce.action import *
-from parce.rule import *
+from parce import Language, lexicon, skip, default_action, default_target
+from parce.action import (
+    Boolean, Bracket, Character, Comment, Delimiter, Keyword, Name, Number,
+    String)
+from parce.rule import TEXT, ifmember
 
 RE_SCHEME_RIGHT_BOUND = r"(?=$|[)\s])"
 RE_SCHEME_FRACTION = r"-?\d+/\d+" + RE_SCHEME_RIGHT_BOUND

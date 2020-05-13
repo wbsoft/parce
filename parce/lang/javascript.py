@@ -22,16 +22,18 @@ Parse JavaScript.
 
 """
 
+__all__ = ('JavaScript',)
+
 import re
 
-from parce import *
-from parce.rule import *
+from parce import Language, lexicon, skip, default_action
+from parce.rule import TEXT, MATCH, arg, bygroup, call, dselect, select, words
 from parce.action import (
     Bracket, Comment, Delimiter, Keyword, Literal, Name, Number, Operator,
     Separator, String)
 
 from parce.unicharclass import categories
-from .javascript_words import *
+from . import javascript_words as js
 
 
 RE_JS_IDENT_STARTCHAR = r'$_' + ''.join(map(categories.get, ['Lu', 'Ll', 'Lt', 'Lm', 'Lo', 'Nl']))
@@ -55,12 +57,12 @@ class JavaScript(Language):
         yield fr'(const|let|var)\s+({_I_})\b', bygroup(Keyword, Name.Variable.Definition)
         yield fr'(function)\s+({_I_})\b', bygroup(Keyword, Name.Function.Definition)
         yield fr'(new)\s+({_I_})\b', bygroup(Keyword, Name.Class.Definition)
-        yield words(JAVASCRIPT_KEYWORDS, prefix=r'\b', suffix=r'\b'), Keyword
-        yield words(JAVASCRIPT_DECLARATORS, prefix=r'\b', suffix=r'\b'), Keyword
-        yield words(JAVASCRIPT_RESERVED_KEYWORDS, prefix=r'\b', suffix=r'\b'), Keyword.Reserved
-        yield words(JAVASCRIPT_CONSTANTS, prefix=r'\b', suffix=r'\b'), Name.Constant
-        yield words(JAVASCRIPT_BUILTINS, prefix=r'\b', suffix=r'\b'), Name.Builtin
-        yield words(JAVASCRIPT_PROTOTYPES, prefix=r'\b', suffix=r'\b'), Name.Builtin
+        yield words(js.JAVASCRIPT_KEYWORDS, prefix=r'\b', suffix=r'\b'), Keyword
+        yield words(js.JAVASCRIPT_DECLARATORS, prefix=r'\b', suffix=r'\b'), Keyword
+        yield words(js.JAVASCRIPT_RESERVED_KEYWORDS, prefix=r'\b', suffix=r'\b'), Keyword.Reserved
+        yield words(js.JAVASCRIPT_CONSTANTS, prefix=r'\b', suffix=r'\b'), Name.Constant
+        yield words(js.JAVASCRIPT_BUILTINS, prefix=r'\b', suffix=r'\b'), Name.Builtin
+        yield words(js.JAVASCRIPT_PROTOTYPES, prefix=r'\b', suffix=r'\b'), Name.Builtin
         yield fr'(\.)\s*({_I_})\b(?:\s*([\(\[]))?', bygroup(Delimiter,
                 dselect(MATCH(3), {'(': Name.Method}, Name.Attribute), Delimiter), \
             dselect(MATCH(3), {'(': cls.call, '[': cls.index})

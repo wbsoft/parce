@@ -24,12 +24,13 @@ Recognizes CSS in style tags and attributes.
 
 """
 
+__all__ = ('Html', 'XHtml')
+
 import re
 
-
-from parce import *
+from parce import Language, lexicon, default_target
 from parce.action import Delimiter, Name, Operator, String
-from parce.rule import *
+from parce.rule import ARG, MATCH, bygroup, dselect, using, words
 
 from parce.lang.xml import Xml
 from parce.lang.css import Css

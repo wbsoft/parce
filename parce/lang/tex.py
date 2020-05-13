@@ -21,16 +21,18 @@
 TeX and LaTeX.
 """
 
+__all__ = ('Latex',)
+
 import re
 
-from parce import *
-from parce.action import *
-from parce.rule import *
+from parce import Language, lexicon, default_action
+from parce.action import (
+    Comment, Delimiter, Escape, Name, Number, Operator, Pseudo, Text)
+from parce.rule import arg, MATCH, bygroup, ifgroup, ifmember
 
 
 MATH_ENVIRONMENTS = (
     "math", "displaymath", "equation", "eqnarray", "aqnarray*")
-
 
 
 class Latex(Language):

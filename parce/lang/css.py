@@ -28,10 +28,14 @@ highlighting formats in css files.
 
 """
 
+__all__ = ('Css',)
+
 import re
 
-from parce import *
-from parce.action import *
+from parce import Language, lexicon, skip, default_action, default_target
+from parce.action import (
+    Bracket, Comment, Delimiter, Escape, Invalid, Keyword, Literal, Name,
+    Number, Operator, String)
 from parce.rule import TEXT, bygroup, ifmember
 
 
