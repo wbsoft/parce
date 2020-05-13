@@ -82,7 +82,7 @@ class LexiconValidator:
         self.warnings.clear()
         default_act, default_tg = None, None
         patterns = set()
-        for n, rule in enumerate(self.lexicon, 1):
+        for n, rule in enumerate(self.lexicon.rules, 1):
             if not isinstance(rule, (tuple, list)):
                 self.error("rule #{}: invalid rule; should be tuple or list".format(n))
                 continue

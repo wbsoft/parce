@@ -133,15 +133,24 @@ class Lexicon:
         parse time, which is useful for things like here documents, where you
         only get to know the end token after the start token has been found.
 
-        When comparing Lexicons with ``equals()``, a derivative lexicon
-        compares equal with the Lexicon that created them, although they
-        co-exist as separate objects.
+        When comparing Lexicons with ``equals()``, a derived lexicon compares
+        equal with the Lexicon that created them, although they co-exist as
+        separate objects.
+
+        When yielding the rules from a derived lexicon, the dynamic rule items
+        that depend on the Lexicon argument are already evaluated. When
+        yielding the rules from a vanilla lexicon, they are not evaluated, so
+        they adjust themselves to the lexicon they are included in (which will
+        then evaluate the rules of course).
 
         If arg is None, self is returned.
 
         """
-        if arg is None or self.arg is not None:
+        if arg is None:
             return self
+        elif self.arg is not None:
+            vanilla = self.descriptor.__get__(None, self.language)
+            return vanilla(arg)
         try:
             return self._derived[arg]
         except KeyError:
@@ -160,8 +169,16 @@ class Lexicon:
     def _rules(self):
         """Yield the rules.
 
-        Patterns are created and rule items that depend on the lexicon argument
-        are evaluated.
+        Rule items that depend on the lexicon argument are not yet evaluated.
+
+        """
+        return tuple(self.descriptor.rules_func(self.language) or ())
+
+    @util.cached_property
+    def rules(self):
+        """Return all rules in a tuple.
+
+        Rule items that depend on the lexicon argument are already evaluated.
 
         """
         return tuple(pre_evaluate_rule(rule, self.arg)
@@ -170,15 +187,16 @@ class Lexicon:
     def __iter__(self):
         """Yield the rules.
 
-        Patterns are created and rule items that depend on the lexicon argument
-        are evaluated when this method is called for the first time.
+        Patterns are created and when this method is called for the first time.
+        If this is a derived lexicon, dynamic rule items that depend on the
+        argument are already evaluated.
 
         """
-        yield from self._rules
+        yield from self.rules if self.arg else self._rules
 
     def __repr__(self):
         s = self.fullname
-        if self.arg is not None:
+        if self.arg:
             s += '*'
         return s
 
@@ -221,7 +239,7 @@ class Lexicon:
         make_target = TargetFactory.make
 
         # make lists of pattern, action and possible targets
-        for pattern, *rule in self:
+        for pattern, *rule in self.rules:
             if pattern is parce.default_action:
                 default_action = rule[0]
             elif pattern is parce.default_target:
