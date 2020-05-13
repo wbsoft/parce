@@ -25,10 +25,8 @@ or inherited from by your own language definitions.
 The themes built into *parce* also use the names of these standard actions
 to determine the visual appearance of parsed text pieces.
 
-See for a full listing :doc:`stdactions`.
-
-See the :mod:`~parce.standardaction` for more information about standard
-actions.
+See for a full listing :doc:`stdactions`. See the :mod:`~parce.standardaction`
+module for more information about standard actions.
 
 """
 
