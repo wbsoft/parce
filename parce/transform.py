@@ -109,6 +109,8 @@ class Transformer:
         events = parce.lexer.Lexer([root_lexicon]).events(text, pos)
         lexicon = root_lexicon
 
+        no_object = object()                # sentinel for missing method
+
         def get_object_item(items):
             """Get the object item, may update curlang and transform variables."""
             nonlocal curlang, transform
@@ -119,7 +121,7 @@ class Transformer:
             try:
                 meth = getattr(transform, name)
             except AttributeError:
-                return Item(lexicon, None)
+                return no_object
             else:
                 return Item(lexicon, meth(items))
 
@@ -128,7 +130,8 @@ class Transformer:
                 for _ in range(e.target.pop, 0):
                     item = get_object_item(items)
                     lexicon, items = stack.pop()
-                    items.append(item)
+                    if item is not no_object:
+                        items.append(item)
                 for l in e.target.push:
                     stack.append((lexicon, items))
                     items = []
@@ -136,12 +139,13 @@ class Transformer:
             items.extend(make_tokens(e))
 
         # unwind
-        while True:
+        while stack:
             item = get_object_item(items)
-            if not stack:
-                return item.obj
             lexicon, items = stack.pop()
-            items.append(item)
+            if item is not no_object:
+                items.append(item)
+        item = get_object_item(items)
+        return None if item is no_object else item.obj
 
     def transform_tree(self, tree):
         """Evaluate a tree structure."""
