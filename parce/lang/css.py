@@ -296,8 +296,13 @@ class Css(Language):
 
 
 
+#: An at-rule. For nested atrules the nested stylesheet is in a list ``block``,
+#: for other at-rules that end with a rule with properties, the properties
+#: dict is in ``block``; when there is no block, ``block`` is None.
+Atrule = collections.namedtuple("Atrule", "keyword contents block")
 
-
+#: A normal rule
+Rule = collections.namedtuple("Rule", "prelude rule")
 
 #: A named tuple holding the r, g, b, a value of a color.
 Color = collections.namedtuple("Color", "r g b a")
@@ -335,16 +340,18 @@ class Value:
 class CssTransform(Transform):
     """Transform a CSS stylesheet into a simpler data structure."""
     def root(self, items):
-        """Contains atrule and prelude + rule child contexts."""
+        """Return a list of Rule or Atrule tuples."""
         result = []
-        prel = None
+        prelude = None
         for i in items:
             if not i.is_token:
                 if i.name == "prelude":
-                    prel = i.obj
+                    prelude = i.obj
                 elif i.name == "rule":
-                    result.append((prel, i.obj))
-                    prel = None
+                    result.append(Rule(prelude, i.obj))
+                    prelude = None
+                elif i.name == "atrule":
+                    result.append(i.obj)
         return result
 
     def prelude(self, items):
@@ -357,7 +364,7 @@ class CssTransform(Transform):
         combinator operators in between. The operators can be: ``" "`` (space),
         ``">"``, ``"~"``, ``"+"``, or ``"||"``.
 
-        Every selector is a dictionary, and inbetween can be Operator Tokens. A
+        Every selector is a dictionary, and inbetween are operator strings. A
         comma in the selector causes the prelude to contain more than one list.
         Every selector list consists of selector dicts with an operator or
         whitespace in between.
@@ -420,7 +427,7 @@ class CssTransform(Transform):
                 if i and not i.is_token and i.name == "selector_list":
                     selector_list = i.obj
                     i = next(items, None)
-                d['selector_list'].append((name, selector_list))
+                d['pseudo_class'].append((name, selector_list))
                 continue
             else:
                 d[i.name].append(i.obj)
@@ -431,8 +438,7 @@ class CssTransform(Transform):
         # skip the closing ) which is normally there
         if items and items[-1] == ')':
             items = items[:-1]
-        return tuple(i if isinstance(i, Value) else i.text
-            for i in self.common(items))
+        return tuple(self.common(items))
 
     def rule(self, items):
         """A Css rule, between { ... }."""
@@ -457,10 +463,8 @@ class CssTransform(Transform):
         for i in items:
             if not i.is_token and i.name == "property":
                 propname = i.obj
-                values = [
-                    i if isinstance(i, Value) else i.text
-                    for i in self.common(i
-                        for i in items if i not in (':', ';'))]
+                values = list(self.common(i
+                        for i in items if i not in (':', ';')))
                 return propname, values
 
     def unit(self, items):
@@ -509,19 +513,49 @@ class CssTransform(Transform):
         return self.get_ident_token(items)[0]
 
     def atrule(self, items):
-        return items
+        """Return a Atrule named tuple."""
+        if items and not items[0].is_token and items[0].name == "atrule_keyword":
+            keyword = items[0].obj
+            del items[0]
+        else:
+            keyword = None
+        block = None
+        for n, i in enumerate(items):
+            if not i.is_token:
+                if i.name == "atrule_nested":
+                    contents, block = i.obj
+                    break
+                elif i.name == "atrule_block":
+                    block = i.obj   # the properties dict
+                    contents = tuple(self.common(items[:n-1]))  # skip {
+                    break
+            elif i == ';':
+                contents = tuple(self.common(items[:n]))
+                break
+        else:
+            contents = tuple(self.common(items))
+        return Atrule(keyword, contents, block)
 
     def atrule_nested(self, items):
-        return items
+        """Return a two-tuple: the stuff before the nested block and the nested block."""
+        result = []
+        nested = None
+        if items and not items[-1].is_token and items[-1].name == "atrule_nested_block":
+            nested = items[-1].obj
+            del items[-1]
+        return tuple(self.common(items)), nested
 
     def atrule_keyword(self, items):
-        return items
+        """Return the name of the atrule keyword."""
+        return self.get_ident_token(items)[0]
 
     def atrule_block(self, items):
-        return items
+        """Return the properties dict in an atrule block."""
+        return self.inline(items)
 
     def atrule_nested_block(self, items):
-        return items
+        """Return a list of Rule or Atrule tuples."""
+        return self.root(items)
 
     def identifier(self, items):
         """Return a Value.
@@ -559,12 +593,12 @@ class CssTransform(Transform):
 
     def dqstring(self, items):
         if items and items[-1] == '"':
-            items = items[-1:]
+            items = items[:-1]
         return ''.join(self.get_string(items))
 
     def sqstring(self, items):
         if items and items[-1] == "'":
-            items = items[-1:]
+            items = items[:-1]
         return ''.join(self.get_string(items))
 
     ### we don't implement comment, so all comments are ignored
@@ -597,7 +631,9 @@ class CssTransform(Transform):
                     color = self.get_hex_color(i.text[1:])
                     yield Value(color=color)
                 elif i.action is Keyword or i.action in Delimiter:
-                    yield i
+                    yield i.text
+                elif i.action is Name and i.text == "url":
+                    next(items, None)   # skip (
             elif i.name == 'identifier':
                 # a Value with text, but it may be a function call
                 value = i.obj
@@ -609,6 +645,12 @@ class CssTransform(Transform):
                     continue
             elif i.name in ('sqstring', 'dqstring'):
                 yield Value(text=i.obj, quoted=True)
+            elif i.name in ('url_function',):
+                yield i.obj
+            elif i.name == 'pseudo_class':
+                yield i.obj
+            elif i.name == 'selector_list':
+                yield i.obj
             i = next(items, None)
 
     def get_css_function_call(self, name, arguments):
