@@ -47,6 +47,7 @@ language. But I'm not yet sure how it would be specified.
 
 import collections
 import functools
+import sys
 
 import parce.lexer
 
@@ -153,37 +154,40 @@ class Transformer:
         transform = self.get_transform(curlang)
 
         stack = []
-        node = tree
-        items = []
+        node, items, i = tree, [], 0
         while True:
-            for i in range(len(items), len(node)):
+            for i in range(i, len(node)):
                 n = node[i]
                 if n.is_token:
                     items.append(n)
                 else:
-                    try:
-                        items.append(Item(n.lexicon, n.cached))
-                    except AttributeError:
-                        stack.append(items)
-                        items = []
-                        node = n
-                        break
+                    # a context; do we have a method for it?
+                    if curlang is not n.lexicon.language:
+                        curlang = n.lexicon.language
+                        transform = self.get_transform(curlang)
+                    name = n.lexicon.name
+                    meth = getattr(transform, name, None)
+                    # don't bother going in this context is there is no method
+                    if meth:
+                        try:
+                            items.append(Item(n.lexicon, n.cached))
+                        except AttributeError:
+                            stack.append((items, i + 1))
+                            node, items, i = n, [], 0
+                            break
             else:
                 if curlang is not node.lexicon.language:
                     curlang = node.lexicon.language
                     transform = self.get_transform(curlang)
                 name = node.lexicon.name
-                try:
-                    meth = getattr(transform, name)
-                except AttributeError:
-                    obj = None
-                else:
-                    obj = meth(items)
+                meth = getattr(transform, name, None)
+                obj = meth(items) if meth else None
+                print(obj, bool(meth))
                 # caching the obj on the node can be enabled as soon as tree.Node
                 # (or tree.Context) supports it
                 #node.cached = obj
                 if stack:
-                    items = stack.pop()
+                    items, i = stack.pop()
                     items.append(Item(node.lexicon, obj))
                     node = node.parent
                 else:
@@ -193,26 +197,46 @@ class Transformer:
     def get_transform(self, language):
         """Return a Transform class instance for the specified language."""
         try:
-            return self._transforms[language]
+            tf = self._transforms[language]
         except KeyError:
-            return None
+            tf = self._transforms[language] = self.find_transform(language)
+        return tf
 
     def add_transform(self, language, transform):
         """Add a Transform instance for the specified language."""
         self._transforms[language] = transform
 
+    def find_transform(self, language):
+        """If no Transform was added, try to find a predefined one.
 
-def transform_tree(tree, transform):
+        This is done by looking for a Transform subclass in the language's
+        module, with the same name as the language with "Transform" appended.
+        So for a language class named "Css", this method tries to find a Transform
+        in the same module with the name "CssTransform".
+
+        """
+        module = sys.modules[language.__module__]
+        tfname = language.__name__ + "Transform"
+        tf = getattr(module, tfname, None)
+        return tf() if issubclass(tf, Transform) else None
+
+
+
+
+
+def transform_tree(tree, transform=None):
     """TEMP Convenience function that transforms tree using Transform."""
     t = Transformer()
-    t.add_transform(tree.lexicon.language, transform)
+    if transform:
+        t.add_transform(tree.lexicon.language, transform)
     return t.transform_tree(tree)
 
 
-def transform_text(root_lexicon, text, transform, pos=0):
+def transform_text(root_lexicon, text, transform=None, pos=0):
     """TEMP Convenience function that transforms text directly using Transform."""
     t = Transformer()
-    t.add_transform(root_lexicon.language, transform)
+    if transform:
+        t.add_transform(root_lexicon.language, transform)
     return t.transform_text(root_lexicon, text, pos)
 
 
