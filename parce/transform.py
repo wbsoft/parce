@@ -29,6 +29,9 @@ context, where sub-contexts already have been replaced with the result of
 that context's lexicon's transformation method.
 So a Transform class can closely mimic a corresponding Language class.
 
+If there is no method for a particular lexicon, the contents of the lexicon
+are completely ignored.
+
 The actual task of transformation (evaluation) is performed by a Transformer.
 The Transformer has infrastructure to choose the Transform class based on the
 current Language.
@@ -68,6 +71,11 @@ class Item:
         self.lexicon = lexicon
         self.obj = obj
 
+    @property
+    def name(self):
+        """The lexicon's name."""
+        return self.lexicon.name
+
 
 class Transform:
     """This is the base class for a transform class.
@@ -99,6 +107,9 @@ class Transformer:
         and the tokens don't have a parent.
 
         """
+        if not root_lexicon:
+            return  # a root lexicon can be None, but then there are no children
+
         from parce.tree import make_tokens  # local lookup is faster
 
         curlang = root_lexicon.language
@@ -149,6 +160,9 @@ class Transformer:
 
     def transform_tree(self, tree):
         """Evaluate a tree structure."""
+        if not tree.lexicon:
+            return  # a root lexicon can be None, but then there are no children
+
         try:
             return tree.cached
         except AttributeError:
@@ -186,7 +200,6 @@ class Transformer:
                 name = node.lexicon.name
                 meth = getattr(transform, name, None)
                 obj = meth(items) if meth else None
-                print(obj, bool(meth))
                 # caching the obj on the node can be enabled as soon as tree.Node
                 # (or tree.Context) supports it
                 #node.cached = obj
@@ -223,9 +236,6 @@ class Transformer:
         tfname = language.__name__ + "Transform"
         tf = getattr(module, tfname, None)
         return tf() if issubclass(tf, Transform) else None
-
-
-
 
 
 def transform_tree(tree, transform=None):
