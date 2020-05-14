@@ -376,7 +376,7 @@ class CssTransform(Transform):
                 elif i.action is Operator:
                     if result and isinstance(result[-1], dict):
                         # dont append operator at start, or two operators
-                        result.append(i)
+                        result.append(i.text)
             elif i.name == "selector":
                 if result and isinstance(result[-1], dict):
                     # append descendant combinator if no operator was there
@@ -431,7 +431,8 @@ class CssTransform(Transform):
         # skip the closing ) which is normally there
         if items and items[-1] == ')':
             items = items[:-1]
-        return tuple(self.common(items))
+        return tuple(i if isinstance(i, Value) else i.text
+            for i in self.common(items))
 
     def rule(self, items):
         """A Css rule, between { ... }."""
@@ -447,11 +448,20 @@ class CssTransform(Transform):
         return d
 
     def declaration(self, items):
+        """Return a two-tuple(property, value).
+
+        The value is a list of Value instances from :meth:`common`.
+
+        """
         items = iter(items)
         for i in items:
             if not i.is_token and i.name == "property":
                 propname = i.obj
-                return propname, list(self.common(i for i in items if i not in (':', ';')))
+                values = [
+                    i if isinstance(i, Value) else i.text
+                    for i in self.common(i
+                        for i in items if i not in (':', ';'))]
+                return propname, values
 
     def unit(self, items):
         """Return the name of the unit in itens."""
@@ -586,7 +596,7 @@ class CssTransform(Transform):
                     # a hexadecimal color (a named color is an identifier)
                     color = self.get_hex_color(i.text[1:])
                     yield Value(color=color)
-                elif i.action in Delimiter:
+                elif i.action is Keyword or i.action in Delimiter:
                     yield i
             elif i.name == 'identifier':
                 # a Value with text, but it may be a function call
