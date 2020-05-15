@@ -604,36 +604,33 @@ class AbstractElement:
             return False
         # attrs?
         attributes = self.get_attributes()
-        for a in selector.get('attribute_selector', ()):
-            if a:
-                attrname, *rest = a
-                try:
-                    value = attributes[attrname]
-                except KeyError:
-                    return False
-                if len(rest) > 1:
-                    operator, text, *flag = rest[:3]
-                    if 'i' in flag or 'I' in flag:
-                        text = text.lower()
-                        value = value.lower()
-                    if operator == "=":
-                        if text != value:
-                            return False
-                    elif operator == "~=":
-                        if text not in value.split():
-                            return False
-                    elif operator == "|=":
-                        if text != value and not value.startswith(text + "-"):
-                            return False
-                    elif operator == "^=":
-                        if not value.startswith(text):
-                            return False
-                    elif operator == "$=":
-                        if not value.endswith(text):
-                            return False
-                    elif operator == "*=":
-                        if text not in value:
-                            return False
+        for attrname, operator, text, flag in selector.get('attribute_selector', ()):
+            try:
+                value = attributes[attrname]
+            except KeyError:
+                return False
+            if operator and text:
+                if flag in ('i', 'I'):
+                    text = text.lower()
+                    value = value.lower()
+                if operator == "=":
+                    if text != value:
+                        return False
+                elif operator == "~=":
+                    if text not in value.split():
+                        return False
+                elif operator == "|=":
+                    if text != value and not value.startswith(text + "-"):
+                        return False
+                elif operator == "^=":
+                    if not value.startswith(text):
+                        return False
+                elif operator == "$=":
+                    if not value.endswith(text):
+                        return False
+                elif operator == "*=":
+                    if text not in value:
+                        return False
 
         # pseudo_class?
         pseudo_classes = self.get_pseudo_classes()

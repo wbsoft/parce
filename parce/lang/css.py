@@ -513,20 +513,26 @@ class CssTransform(Transform):
         return self.get_ident_token(items)[0]
 
     def attribute_selector(self, items):
-        """Return a tuple with the contents between [ and ]."""
-        # skip the closing ] which is normally there
-        if items and items[-1] == ']':
-            items = items[:-1]
-        result = []
+        """Return a four-tuple representing the contents between [ and ].
+
+        The tuple: (attribute, operator, value, flag).
+
+        """
+        attr = op = val = flag = None
         for i in items:
             if i.is_token:
                 if i.action is Operator:
-                    result.append(i.text)
+                    op = i.text
             elif i.name in ('sqstring', 'dqstring'):
-                result.append(i.obj)
-            elif i.name == 'identifier':
-                result.append(i.obj.text)
-        return tuple(result)
+                val = i.obj
+            elif i.name == 'attribute':
+                attr = i.obj
+            elif i.name == 'ident_token':
+                if val:
+                    flag = i.obj
+                else:
+                    val = i.obj
+        return  attr, op, val, flag
 
     def pseudo_class(self, items):
         """Return the name of the pseudo class.
