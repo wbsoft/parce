@@ -437,6 +437,9 @@ class AbstractElement:
     time.
 
     """
+
+    _pseudo_class = util.Dispatcher()
+
     def __bool__(self):
         """Always return True."""
         return True
@@ -510,28 +513,34 @@ class AbstractElement:
         for e in self.previous_siblings():
             return e
 
+    @_pseudo_class('first-child')
     def is_first_child(self):
         """Return True if we are the first child."""
         return not self.previous_sibling()
 
+    @_pseudo_class('last-child')
     def is_last_child(self):
         """Return True if we are the last child."""
         return not self.next_sibling()
 
+    @_pseudo_class('only-child')
     def is_only_child(self):
         """Return True if we are the only child."""
         return not self.next_sibling() and not self.previous_sibling()
 
+    @_pseudo_class('first-of-type')
     def is_first_of_type(self):
         """Return True if we are the first of our type."""
         name = self.get_name()
         return not any(e.get_name() == name for e in self.previous_siblings())
 
+    @_pseudo_class('last-of-type')
     def is_last_of_type(self):
         """Return True if we are the last of our type."""
         name = self.get_name()
         return not any(e.get_name() == name for e in self.next_siblings())
 
+    @_pseudo_class('empty')
     def is_empty(self):
         """Return True if we have no child elements."""
         return not self.get_child_count()
@@ -634,20 +643,12 @@ class AbstractElement:
 
         # pseudo_class?
         pseudo_classes = self.get_pseudo_classes()
-        switch = {
-            "first-child": self.is_first_child,
-            "last-child": self.is_last_child,
-            "only-child": self.is_only_child,
-            "first-of-type": self.is_first_of_type,
-            "last-of-type": self.is_last_of_type,
-            "empty": self.is_empty,
-        }
         for c, selector_list in selector.get('pseudo_class', ()):
-            method = switch.get(c)
-            if method:
-                if not method():
+            result = self._pseudo_class(c)
+            if result is None:
+                if c not in pseudo_classes:
                     return False
-            elif c not in pseudo_classes:
+            elif result is False:
                 return False
 
         # pseudo_element?
