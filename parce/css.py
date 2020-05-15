@@ -642,7 +642,7 @@ class AbstractElement:
             "last-of-type": self.is_last_of_type,
             "empty": self.is_empty,
         }
-        for c in selector.get('pseudo_class', ()):
+        for c, selector_list in selector.get('pseudo_class', ()):
             method = switch.get(c)
             if method:
                 if not method():

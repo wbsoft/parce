@@ -99,7 +99,7 @@ class Css(Language):
     @lexicon
     def selector_list(cls):
         """The list of selectors in :is(bla, bla), etc."""
-        yield r"\)", Delimiter, -1
+        yield r"\)", Delimiter, -2  # also leave the pseudo_class context
         yield from cls.selectors()
 
     @lexicon
@@ -194,7 +194,7 @@ class Css(Language):
     @lexicon
     def pseudo_class(cls):
         """Things like :first-child etc."""
-        yield r"\(", Delimiter, -1, cls.selector_list
+        yield r"\(", Delimiter, cls.selector_list
         yield from cls.identifier_common(Name.Class.Pseudo)
 
     @lexicon
@@ -428,36 +428,24 @@ class CssTransform(Transform):
 
         If present, the value is a list of objects created by that context.
         Most objects are simple strings, but for pseudo_class it is a (name,
-        selector_list) tuple, and for attribute_selector it is a tuple of the
-        contents between the ``[`` and ``]``.
+        selector_list) tuple, and for attribute_selector it is a four-tuple of
+        the contents between the ``[`` and ``]``.
 
         "*" is ignored, '|' is not yet handled.
 
         """
         d = collections.defaultdict(list)
-        items = iter(items)
-        i = next(items, None)
-        while i is not None:
-            if i.is_token:
-                pass
-            elif i.name ==  "pseudo_class":
-                name, selector_list = i.obj, None
-                i = next(items, None)
-                if i and not i.is_token and i.name == "selector_list":
-                    selector_list = i.obj
-                    i = next(items, None)
-                d['pseudo_class'].append((name, selector_list))
-                continue
-            else:
+        for i in items:
+            if not i.is_token:
                 d[i.name].append(i.obj)
-            i = next(items, None)
         return dict(d)
 
     def selector_list(self, items):
+        """Stuff inside :not(), :is(), etc."""
         # skip the closing ) which is normally there
         if items and items[-1] == ')':
             items = items[:-1]
-        return tuple(self.common(items))
+        return self.prelude(items)
 
     def rule(self, items):
         """A Css rule, between { ... }."""
@@ -535,12 +523,18 @@ class CssTransform(Transform):
         return  attr, op, val, flag
 
     def pseudo_class(self, items):
-        """Return the name of the pseudo class.
+        """Return a tuple(name, selector_list).
 
-        This item can be followed by a selector_list item.
+        The ``name`` is the name of the pseudo class, the selector_list
+        is a list of selectors like the ``prelude`` of a rule. For pseudo
+        classes without arguments, the selector_list is None.
 
         """
-        return self.get_ident_token(items)[0]
+        name = self.get_ident_token(items)[0]
+        selector_list = None
+        if items and not items[-1].is_token and items[-1].name == "selector_list":
+            selector_list = items[-1].obj
+        return name, selector_list
 
     def pseudo_element(self, items):
         """Return the name of the pseudo element."""
