@@ -53,6 +53,7 @@ class Texinfo(Language):
                 Bracket.Start,
                 Bracket.End), \
             ifgroup(2, ifgroup(3, (), cls.brace))
+        yield default_action, Text
 
     @lexicon
     def brace(cls):
