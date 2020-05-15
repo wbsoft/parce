@@ -815,3 +815,7 @@ def quote_if_needed(s):
     return s
 
 
+def escape(char):
+    """Escape the specified character for CSS."""
+    return "".join(r"\{:x} ".format(ord(c)) for c in char)
+
