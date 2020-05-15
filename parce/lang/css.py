@@ -299,6 +299,13 @@ class Css(Language):
 class CssTransform(Transform):
     r"""Transform a CSS stylesheet into a simpler data structure.
 
+    The data structure created by this Transform only contains plain Python
+    strings, lists, (named) tuples, dictionaries and :class:`Value` objects.
+    :class:`Value` represents any item from a property value list. Most
+    notably, a CSS color (hexadecimal, named or via the CSS
+    ``rgb()``/``rgba()`` functions) is converted to a named :class:`Color`
+    four-tuple.
+
     A tree created by the Css.root lexicon becomes a list of tuples
     that are either a Rule or an Atrule named tuple.
 
@@ -646,7 +653,7 @@ class CssTransform(Transform):
                 elif i.action is Literal.Color:
                     # a hexadecimal color (a named color is an identifier)
                     color = self.get_hex_color(i.text[1:])
-                    yield Value(color=color)
+                    yield Value(color=color, text=i.text)
                 elif i.action is Keyword or i.action in Delimiter:
                     yield i.text
                 elif i.action is Name and i.text == "url":
@@ -736,7 +743,7 @@ class CssTransform(Transform):
     def get_hex_color(self, text):
         """Return a named four-tuple Color(r, g, b, a) describing color and alpha.
 
-        The ``text`` is a hexadecimal color like "FA0042".
+        The ``text`` is a hexadecimal color without the hash, like "FA0042".
         The r, g, b values are in the range 0..255, a in 0..1; 1.0 is fully
         opaque.
 
@@ -829,7 +836,32 @@ Color = collections.namedtuple("Color", "r g b a")
 
 
 class Value:
-    """Any value that can occur in a CSS property declaration."""
+    """Any value that can occur in a CSS property declaration.
+
+    The value of a CSS property is always a list of Value instances.
+
+    For a *numerial* value, the ``number`` attribute contains the numeric value,
+    and the ``text`` attribute the textual representation as present in the CSS
+    file. A unit (or "``%``") that was specified, is in the ``unit`` attribute.
+
+    For a *color* value, the color is in the ``color`` attribute as a
+    :class:`Color` four-tuple. When a CSS3 named color was specified, the name
+    of the color is in the ``text`` attribute, or when a hexadecimal color was
+    specified, the hexadecimal notation is also in the ``text`` attribute.
+
+    For a value that can either be a *quoted string* or an *ident_token*, the
+    value is in the ``text`` attribute. If it originally was a quoted string,
+    the ``quoted`` attribute is set to True.
+
+    If the value represents a *URL* specified via the ``url()`` function, the
+    URL is in the ``url`` attribute.
+
+    If the value represents a *function call*, the name of the function is in
+    the ``funcname`` attribute, and the argument list in the ``arguments``
+    attribute. Except for the ``url()``, the ``rgb()`` and ``rgba()``
+    functions, which are handled by the CssTransform class.
+
+    """
     def __init__(self,
             text = None,
             number = None,
