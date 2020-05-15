@@ -187,7 +187,7 @@ class Css(Language):
         yield r"[~|^$*]?=", Operator
         yield r'"', String, cls.dqstring
         yield r"'", String, cls.sqstring
-        yield RE_CSS_IDENTIFIER_LA, None, cls.identifier
+        yield RE_CSS_IDENTIFIER_LA, None, cls.ident_token
         yield r'\s+', skip
         yield default_action, Invalid
 
@@ -242,19 +242,22 @@ class Css(Language):
         yield r'(?=</)', None, -1   # leave atrule when </style tag follows
 
     @lexicon
+    def ident_token(cls):
+        """An ident-token where quoted or unquoted text is allowed."""
+        yield from cls.identifier_common(Name.Symbol)
+
+    @lexicon
     def identifier(cls):
-        """An ident-token is always just a context, it contains all parts."""
+        """An ident-token that could be a color or a function()."""
         from .css_words import CSS3_NAMED_COLORS
-        yield r"\(", Delimiter, -1, cls.function
-        yield RE_CSS_ESCAPE, Escape
-        yield r"[\w-]+", ifeq(TEXT, "transparent", Literal.Color,
-            ifmember(TEXT, CSS3_NAMED_COLORS, Literal.Color, Name.Symbol))
-        yield default_target, -1
+        yield r"\(", Delimiter, cls.function
+        yield from cls.identifier_common(ifeq(TEXT, "transparent", Literal.Color,
+            ifmember(TEXT, CSS3_NAMED_COLORS, Literal.Color, Name.Symbol)))
 
     @lexicon
     def function(cls):
         """Contents between identifier( ... )."""
-        yield r"\)", Delimiter, -1
+        yield r"\)", Delimiter, -2  # go straight out of the identifier context
         yield r"\(", Delimiter, 1
         yield from cls.common()
         yield r"[*/+-]", Operator
@@ -580,15 +583,27 @@ class CssTransform(Transform):
         """Return a list of Rule or Atrule tuples."""
         return self.root(items)
 
+    def ident_token(self, items):
+        """Return the ident_token."""
+        return self.get_ident_token(items)[0]
+
     def identifier(self, items):
         """Return a Value.
 
         For a color name, returns a Value with a color, otherwise
         a Value with the text.
 
+        If the identifier also has a function sub-context, a Value representing
+        a function call is returned (this is done by the
+        :func:`get_css_function_call` function, which is capable of
+        interpreting ``url``, ``rgb`` and ``rgba`` function calls).
+
         """
-        from .css_words import CSS3_NAMED_COLORS
         text, action = self.get_ident_token(items)
+        if items and not items[-1].is_token and items[-1].name == "function":
+            funcargs = items[-1].obj
+            return self.get_css_function_call(text, funcargs)
+        from .css_words import CSS3_NAMED_COLORS
         if action is Literal.Color or text in CSS3_NAMED_COLORS:
             color = self.get_named_color(text)
             return Value(color=color, text=text)
@@ -658,24 +673,15 @@ class CssTransform(Transform):
                     yield i.text
                 elif i.action is Name and i.text == "url":
                     next(items, None)   # skip (
-            elif i.name == 'identifier':
-                # a Value with text, but it may be a function call
-                value = i.obj
-                i = next(items, None)
-                if i and not i.is_token and i.name == "function":
-                    yield self.get_css_function_call(value.text, i.obj)
-                else:
-                    yield value
-                    continue
             elif i.name in ('sqstring', 'dqstring'):
                 yield Value(text=i.obj, quoted=True)
-            elif i.name in ('url_function',):
-                yield i.obj
-            elif i.name == 'pseudo_class':
-                yield i.obj
-            elif i.name == 'selector_list':
-                yield i.obj
-            elif i.name == 'attribute':
+            elif i.name in (
+                    'url_function',
+                    'identifier',
+                    'pseudo_class',
+                    'attribute',
+                    'selector_list',
+                 ):
                 yield i.obj
             i = next(items, None)
 
