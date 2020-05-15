@@ -141,7 +141,7 @@ class Css(Language):
 
     @lexicon
     def unit(cls):
-        """Unit directly after a nunber, e.g. 100px, also %."""
+        """Unit directly after a number, e.g. the ``px`` in 100px, also ``%``."""
         yield "%", Operator.Percent, -1
         yield from cls.identifier_common(Name.Unit)
 
