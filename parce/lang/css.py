@@ -338,7 +338,57 @@ class Value:
 
 
 class CssTransform(Transform):
-    """Transform a CSS stylesheet into a simpler data structure."""
+    r"""Transform a CSS stylesheet into a simpler data structure.
+
+    A tree created by the Css.root lexicon becomes a list of tuples
+    that are either a Rule or an Atrule named tuple.
+
+    An :class:`Atrule` named tuple corresponds to an @-rule and consists of
+    three items, the ``keyword`` which contains the name, the ``contents``,
+    which contains all items after the name, and the ``block`` which contains
+    the part between { and }.
+
+    There are three at-rule types:
+
+    1. Nested at-rule: the ``keyword`` is either ``"media"``, ``"supports"`` or
+       ``"document"``, the ``contents`` contains the query strings and Value
+       instances; the ``block`` contains the list of nested Rule/Atrule tuples.
+
+    2. At-rules with a properties block, like ``@page:left { ... }``: the
+       keyword can be anything, the block is a dictionary of properties like
+       the ``properties`` dictionary of a normal Rule (see below). The
+       ``contents`` contains the stuff between the block and the initial
+       keyword.
+
+    3. At-rules without a block; like ``@import url("filename.css");``, the
+       ``block`` is None for these at-rules.
+
+    A :class:`Rule` named tuple corresponds to a normal CSS rule and consists
+    of two items, the ``prelude``, which contains the selectors, and the
+    ``properties`` dictionary.
+
+    The *prelude* is a list of selector groups. Each selector group is also
+    a list, containing at least one selector dictionary and optionally
+    operator strings and more selector dictionaries. See the :meth:`prelude`
+    method.
+
+    The *properties* is a dictionary mapping property names to lists of
+    :class:`Value` instances. A Value can express any CSS property value, like
+    a quoted string, unquoted name, number with or without unit, url, etc. It
+    also recognizes named, `rgb/rgba` and hexadecimal colors, which can be
+    found as a :class:`Color` tuple in the :attr:`Value.color` attribute. It
+    does not yet parse ``calc()`` function calls.
+
+    For example::
+
+        >>> from parce import root
+        >>> from parce.transform import transform_tree
+        >>> from parce.lang.css import Css
+        >>> transform_tree(root(Css.root, 'h1 { color: red; }'))
+        [Rule(prelude=[[{'element_selector': ['h1']}]], properties={'color':
+        [<Value text='red', color=Color(r=255, g=0, b=0, a=1.0)>]})]
+
+    """
     def root(self, items):
         """Return a list of Rule or Atrule tuples."""
         result = []
