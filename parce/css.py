@@ -77,7 +77,6 @@ from .transform import transform_tree
 
 
 Condition = collections.namedtuple("Condition", "keyword node style")
-Color = collections.namedtuple("Color", "r g b a")
 
 
 def style_query(func):
