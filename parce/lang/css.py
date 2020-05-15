@@ -302,9 +302,9 @@ class Css(Language):
 Atrule = collections.namedtuple("Atrule", "keyword contents block")
 
 #: A normal rule
-Rule = collections.namedtuple("Rule", "prelude rule")
+Rule = collections.namedtuple("Rule", "prelude properties")
 
-#: A named tuple holding the r, g, b, a value of a color.
+#: A named tuple holding the (r, g, b, a) value of a color.
 Color = collections.namedtuple("Color", "r g b a")
 
 
@@ -515,8 +515,7 @@ class CssTransform(Transform):
     def atrule(self, items):
         """Return a Atrule named tuple."""
         if items and not items[0].is_token and items[0].name == "atrule_keyword":
-            keyword = items[0].obj
-            del items[0]
+            keyword = items.pop(0).obj
         else:
             keyword = None
         block = None
@@ -538,11 +537,10 @@ class CssTransform(Transform):
 
     def atrule_nested(self, items):
         """Return a two-tuple: the stuff before the nested block and the nested block."""
-        result = []
         nested = None
         if items and not items[-1].is_token and items[-1].name == "atrule_nested_block":
-            nested = items[-1].obj
-            del items[-1]
+            nested = items.pop().obj
+            items.pop() # skip {
         return tuple(self.common(items)), nested
 
     def atrule_keyword(self, items):
