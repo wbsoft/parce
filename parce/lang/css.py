@@ -185,7 +185,11 @@ class Css(Language):
         """Stuff between [ and ]."""
         yield r"\]", Delimiter, -1
         yield r"[~|^*&]?=", Operator
-        yield from cls.common()
+        yield r'"', String, cls.dqstring
+        yield r"'", String, cls.sqstring
+        yield RE_CSS_IDENTIFIER_LA, None, cls.identifier
+        yield r'\s+', skip
+        yield default_action, Invalid
 
     @lexicon
     def pseudo_class(cls):
@@ -503,7 +507,16 @@ class CssTransform(Transform):
         # skip the closing ] which is normally there
         if items and items[-1] == ']':
             items = items[:-1]
-        return tuple(self.common(items))
+        result = []
+        for i in items:
+            if i.is_token:
+                if i.action is Operator:
+                    result.append(i.text)
+            elif i.name in ('sqstring', 'dqstring'):
+                result.append(i.obj)
+            elif i.name == 'identifier':
+                result.append(i.obj.text)
+        return tuple(result)
 
     def pseudo_class(self, items):
         """Return the name of the pseudo class.
@@ -623,13 +636,12 @@ class CssTransform(Transform):
         while i is not None:
             if i.is_token:
                 if i.action is Number:
-                    value = self.get_number(i.text)
+                    value = Value(text=i.text, number=self.get_number(i.text))
                     i = next(items, None)
                     if i and not i.is_token and i.name == "unit":
-                        yield Value(number=value, unit=i.obj)
+                        value.unit = i.obj
                         i = next(items, None)
-                    else:
-                        yield Value(number=value)
+                    yield value
                     continue
                 elif i.action is Literal.Color:
                     # a hexadecimal color (a named color is an identifier)
@@ -655,6 +667,8 @@ class CssTransform(Transform):
             elif i.name == 'pseudo_class':
                 yield i.obj
             elif i.name == 'selector_list':
+                yield i.obj
+            elif i.name == 'attribute':
                 yield i.obj
             i = next(items, None)
 

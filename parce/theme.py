@@ -448,17 +448,15 @@ class TextFormat:
     @dispatch("color")
     def read_color(self, values):
         for v in values:
-            c = v.get_color()
-            if c:
-                self.color = c
+            if v.color:
+                self.color = v.color
                 return
 
     @dispatch("background-color")
     def read_background_color(self, values):
         for v in values:
-            c = v.get_color()
-            if c:
-                self.background_color = c
+            if v.color:
+                self.background_color = v.color
                 return
 
     @dispatch("background")
@@ -468,9 +466,8 @@ class TextFormat:
     @dispatch("text-decoration-color")
     def read_text_decoration_color(self, values):
         for v in values:
-            c = v.get_color()
-            if c:
-                self.text_decoration_color = c
+            if v.color:
+                self.text_decoration_color = v.color
                 return
 
     @dispatch("text-decoration-line")
