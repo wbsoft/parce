@@ -184,7 +184,7 @@ class Css(Language):
     def attribute_selector(cls):
         """Stuff between [ and ]."""
         yield r"\]", Delimiter, -1
-        yield r"[~|^*&]?=", Operator
+        yield r"[~|^$*]?=", Operator
         yield r'"', String, cls.dqstring
         yield r"'", String, cls.sqstring
         yield RE_CSS_IDENTIFIER_LA, None, cls.identifier
