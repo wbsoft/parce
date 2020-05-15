@@ -28,7 +28,7 @@ highlighting formats in css files.
 
 """
 
-__all__ = ('Css',)
+__all__ = ('Css', 'CssTransform', 'Rule', 'Atrule', 'Color', 'Value')
 
 import collections
 import re
@@ -290,51 +290,6 @@ class Css(Language):
         """A comment."""
         yield r"\*/", Comment, -1
         yield from cls.comment_common()
-
-
-
-
-
-
-#: An at-rule. For nested atrules the nested stylesheet is in a list ``block``,
-#: for other at-rules that end with a rule with properties, the properties
-#: dict is in ``block``; when there is no block, ``block`` is None.
-Atrule = collections.namedtuple("Atrule", "keyword contents block")
-
-#: A normal rule
-Rule = collections.namedtuple("Rule", "prelude properties")
-
-#: A named tuple holding the (r, g, b, a) value of a color.
-Color = collections.namedtuple("Color", "r g b a")
-
-
-class Value:
-    """Any value that can occur in a CSS property declaration."""
-    def __init__(self,
-            text = None,
-            number = None,
-            unit = None,
-            url = None,
-            color = None,
-            funcname = None,
-            quoted = None,
-            arguments = (),
-            ):
-        self.text = text
-        self.number = number
-        self.unit = unit
-        self.url = url
-        self.color = color
-        self.funcname = funcname
-        self.quoted = quoted
-        self.arguments = list(arguments)
-
-    def __repr__(self):
-        def gen():
-            for name, value in self.__dict__.items():
-                if value not in (None, []):
-                    yield '{}={}'.format(name, repr(value))
-        return '<{} {}>'.format(self.__class__.__name__, ', '.join(gen()))
 
 
 class CssTransform(Transform):
@@ -640,11 +595,13 @@ class CssTransform(Transform):
         return Value(url=''.join(gen()))
 
     def dqstring(self, items):
+        """Return the contents of a double-quoted string."""
         if items and items[-1] == '"':
             items = items[:-1]
         return ''.join(self.get_string(items))
 
     def sqstring(self, items):
+        """Return the contents of a single-quoted string."""
         if items and items[-1] == "'":
             items = items[:-1]
         return ''.join(self.get_string(items))
@@ -731,7 +688,11 @@ class CssTransform(Transform):
         return chr(codepoint)
 
     def get_string(self, items):
-        """Yield the parts of a string. Called by sqstring() and dqstring()."""
+        """Yield the parts of a string.
+
+        Called by :meth:`sqstring` and :meth:`dqstring`.
+
+        """
         for i in items:
             if i.is_token:
                 if i.action is String:
@@ -742,7 +703,7 @@ class CssTransform(Transform):
     def get_ident_token(self, items):
         """Return a two-tuple(name, action).
 
-        Combines tokens in an identifier context, (see Css.identifier_common()).
+        Combines tokens in an identifier context, (see :meth:`Css.identifier_common`).
 
         """
         actions = [None]
@@ -839,4 +800,46 @@ class CssTransform(Transform):
         if n < 0: n = 0
         if n > maximum: n = maximum
         return n
+
+
+#: An at-rule. For nested atrules the nested stylesheet is in a list ``block``,
+#: for other at-rules that end with a rule with properties, the properties
+#: dict is in ``block``; when there is no block, ``block`` is None.
+Atrule = collections.namedtuple("Atrule", "keyword contents block")
+
+#: A normal rule
+Rule = collections.namedtuple("Rule", "prelude properties")
+
+#: A named tuple holding the (r, g, b, a) value of a color.
+Color = collections.namedtuple("Color", "r g b a")
+
+
+class Value:
+    """Any value that can occur in a CSS property declaration."""
+    def __init__(self,
+            text = None,
+            number = None,
+            unit = None,
+            url = None,
+            color = None,
+            funcname = None,
+            quoted = None,
+            arguments = (),
+            ):
+        self.text = text
+        self.number = number
+        self.unit = unit
+        self.url = url
+        self.color = color
+        self.funcname = funcname
+        self.quoted = quoted
+        self.arguments = list(arguments)
+
+    def __repr__(self):
+        def gen():
+            for name, value in self.__dict__.items():
+                if value not in (None, []):
+                    yield '{}={}'.format(name, repr(value))
+        return '<{} {}>'.format(self.__class__.__name__, ', '.join(gen()))
+
 
