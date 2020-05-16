@@ -16,6 +16,7 @@ This manual documents `parce` version |release|.
    treestructure.rst
    building.rst
    doc.rst
+   transforming.rst
 
    langs.rst
    stdactions.rst
