@@ -19,39 +19,40 @@
 
 
 """
-This modules provides StyleSheet, Style, Element and a bunch of utility
-functions that help reading from a tree structure parsed by the
-parce.lang.css module.
+This modules provides StyleSheet, Style, Element and a some utility functions
+that help write css properties.
 
-StyleSheet represents a list of rules and conditions (nested @-rules) from a
-CSS file or string source.
+:class:`StyleSheet` represents a list of rules and conditions (nested @-rules)
+from a CSS file or string source. (The CSS format is parsed by the Css language
+definition in :mod:`parce.lang.css` and transformed to a CSS structure by the
+:class:`~parce.lang.css.CssTransform` transform class.)
 
-Style represents a resulting list of rules, sorted on specificity, so that
-by selecting rules the properties that apply in a certain situation can be
+:class:`Style` represents a resulting list of rules, sorted on specificity, so
+that by selecting rules the properties that apply in a certain situation can be
 determined and read.
 
-Element and AbstractElement describe elements in a HTML or XML document, and
-can be used to select matching rules in a stylesheet. Element provides a
-list-based helper, and AbstractElement can be inherited from to wrap any tree
-structure to use with stylesheet rule selectors.
+:class:`Element` and :class:`AbstractElement` describe elements in a HTML or
+XML document, and can be used to select matching rules in a stylesheet. Element
+provides a list-based helper, and AbstractElement can be inherited from to wrap
+any tree structure to use with stylesheet rule selectors.
 
 This module is used by the :py:mod:`theme <parce.theme>` module to provide
 syntax highlighting themes based on CSS files.
 
 Workflow:
 
-    1. Instantiate a StyleSheet from a file or other source. If needed,
-       combine multiple StyleSheets using the + operator.
+1. Instantiate a StyleSheet from a file or other source. If needed, combine
+   multiple StyleSheets using the + operator.
 
-    2. Filter conditions out using ``filter_conditions()``, like media,
-       supports or document.
+2. Filter conditions out using ``filter_conditions()``, like media,
+   supports or document.
 
-    3. Get a Style object through the ``style`` property of the StyleSheet.
+3. Get a Style object through the ``style`` property of the StyleSheet.
 
-    4. Use a ``select`` method to select rules based on their selectors.
+4. Use a ``select`` method to select rules based on their selectors.
 
-    5. Use ``properties()`` to combine the properties of the selected
-       rules to get a dictionary of the CSS properties that apply.
+5. Use ``properties()`` to combine the properties of the selected rules to get
+   a dictionary of the CSS properties that apply.
 
 Example::
 
