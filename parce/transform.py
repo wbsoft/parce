@@ -18,32 +18,78 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 """
-Transform/evaluate a tree or a stream of events.
-
-XXX This module is in the planning phase!!
+Transform c.q. evaluate a tree or a stream of events.
 
 The basic idea of transformation is simple: for every Context in a tree
 structure, a method of a Transform instance is called. The method has the same
-name as the context's lexicon, and is called with the list of children of that
-context, where sub-contexts already have been replaced with the result of
-that context's lexicon's transformation method.
-So a Transform class can closely mimic a corresponding Language class.
+name as the context's lexicon, and is called with an :class:`Items` instance
+containing the list of children of that context.
 
-If there is no method for a particular lexicon, the contents of the lexicon
-are completely ignored.
+Sub-contexts in that list already have been replaced with the result of that
+context's lexicon's transformation method, wrapped in an :class:`Item`, so the
+Items list consists of instances of either :class:`~parce.tree.Token` or
+:class:Item. To make it easier to distinguish between these, the Item class has
+an :attr:`~Item.is_token` class attribute, set to False.
 
-The actual task of transformation (evaluation) is performed by a Transformer.
-The Transformer has infrastructure to choose the Transform class based on the
-current Language.
+Thus, a Transform class can closely mimic a corresponding Language class. If
+you want to ignore the output of a particular lexicon, don't define a method
+with that name, but set its name to ``None`` in the Transform class definition.
+
+The actual task of transformation (evaluation) is performed by a
+:class:`Transformer`. The Transformer has infrastructure to choose the
+Transform class based on the current Language
 
 Using the :meth:`~Transformer.add_transform` method, you can assign a Transform
 instance to a Language class.
 
+For example::
+
+    from parce import Language, lexicon, default_action
+    from parce.action import Delimiter, Number, String
+    from parce.transform import Transform, transform_text
+
+    class MyLang(Language):
+        @lexicon
+        def root(cls):
+            yield r'\[', Delimiter, cls.list
+            yield r'\d+', Number
+            yield r'"', String, cls.string
+
+        @lexicon
+        def list(cls):
+            yield r'\]', Delimiter, -1
+            yield from cls.root
+
+        @lexicon
+        def string(cls):
+            yield r'"', String, -1
+            yield default_action, String
+
+
+    class MyLangTransform(Transform):
+        def root(self, items):
+            result = []
+            for i in items:
+                if i.is_token:
+                    if i.action is Number:
+                        result.append(int(i.text))  # a Number
+                else:
+                    result.append(i.obj)            # a list or string
+            return result
+
+        def list(self, items):
+            return self.root(items)
+
+        def string(self, items):
+            return items[0].text     # not the closing quote
+
+    >>> transform_text(MyLang.root, '1 2 3 [4 "Q" 6] x 7 8 9')
+    [1, 2, 3, [4, 'Q', 6], 7, 8, 9]
+
+
 TODO: it would be nice to be able to specify the Transform for another Language
 inside a Transform, just like a lexicon can target a lexicon from a different
 language. But I'm not yet sure how it would be specified.
-
-
 
 
 """
@@ -150,11 +196,7 @@ class Transform:
 
     Currently it has no special behaviour, but that might change in the future.
 
-    A Transform class must have a method for every Lexicon the corresponding
-    Language class has.
-
     """
-
 
 
 class Transformer:
@@ -296,8 +338,8 @@ class Transformer:
 
         This is done by looking for a Transform subclass in the language's
         module, with the same name as the language with "Transform" appended.
-        So for a language class named "Css", this method tries to find a Transform
-        in the same module with the name "CssTransform".
+        So for a language class named "Css", this method tries to find a
+        Transform in the same module with the name "CssTransform".
 
         """
         module = sys.modules[language.__module__]
@@ -307,7 +349,17 @@ class Transformer:
 
 
 def transform_tree(tree, transform=None):
-    """TEMP Convenience function that transforms tree using Transform."""
+    """Convenience function that transforms tree using Transform.
+
+    If you don't specify a Transform to use, *parce* tries to find one using
+    the :meth:`Transformer.find_transform` method.
+
+    If you want to specify multiple Transforms for different Language you
+    expect in the tree you want to transform, instantiate a
+    :class:`Transformer`, add the Transforms you want and call its
+    :meth:`Transformer.transform_tree` method directly.
+
+    """
     t = Transformer()
     if transform:
         t.add_transform(tree.lexicon.language, transform)
@@ -315,7 +367,17 @@ def transform_tree(tree, transform=None):
 
 
 def transform_text(root_lexicon, text, transform=None, pos=0):
-    """TEMP Convenience function that transforms text directly using Transform."""
+    """Convenience function that transforms text directly using Transform.
+
+    If you don't specify a Transform to use, *parce* tries to find one using
+    the :meth:`Transformer.find_transform` method.
+
+    If you want to specify multiple Transforms for different Language you
+    expect in the text you want to transform, instantiate a
+    :class:`Transformer`, add the Transforms you want and call its
+    :meth:`Transformer.transform_text` method directly.
+
+    """
     t = Transformer()
     if transform:
         t.add_transform(root_lexicon.language, transform)
