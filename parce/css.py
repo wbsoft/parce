@@ -58,10 +58,10 @@ Example::
 
     >>> from parce.css import Element, StyleSheet
     >>> style = StyleSheet.from_file("parce/themes/default.css").style
-    >>> e = css.Element(class_="comment", parent=css.Element(class_="parce"))
+    >>> e = Element(class_="comment", parent=Element(class_="parce"))
     >>> style.select_element(e).properties()
-    {'color': [<Value text='dimgray'>], 'font-family': [<Value text='serif'>],
-    'font-style': [<Value text='italic'>]}
+    {'color': [<Value text='dimgray', color=Color(r=105, g=105, b=105, a=1.0)>],
+    'font-family': [<Value text='serif'>], 'font-style': [<Value text='italic'>]}
 
 """
 
