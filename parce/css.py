@@ -70,10 +70,9 @@ import functools
 import os
 import re
 
-from . import root
 from . import util
 from .lang.css import Css, Atrule, Rule, Value
-from .transform import transform_tree
+from .transform import transform_text
 
 
 Condition = collections.namedtuple("Condition", "keyword node style")
@@ -139,12 +138,12 @@ class StyleSheet:
 
     @staticmethod
     def load_from_text(text):
-        """Return a Css.root tree from text."""
-        return root(Css.root, text)
+        """Return a CSS structure from text."""
+        return transform_text(Css.root, text)
 
     @classmethod
     def load_from_file(cls, filename):
-        """Return a Css.root tree from filename, handling the encoding."""
+        """Return a CSS structure from filename, handling the encoding."""
         return cls.load_from_data(open(filename, 'rb').read())
 
     @classmethod
@@ -155,8 +154,8 @@ class StyleSheet:
         False, the @import atrule is ignored.
 
         """
-        tree = cls.load_from_file(filename)
-        return cls.from_tree(tree, filename, path, allow_import)
+        css = cls.load_from_file(filename)
+        return cls.from_css(css, filename, path, allow_import)
 
     @classmethod
     def from_text(cls, text, filename='', path=None, allow_import=True):
@@ -167,8 +166,8 @@ class StyleSheet:
         ``allow_import`` is False, the @import atrule is ignored.
 
         """
-        tree = cls.load_from_text(text)
-        return cls.from_tree(tree, filename, path, allow_import)
+        css = cls.load_from_text(text)
+        return cls.from_css(css, filename, path, allow_import)
 
     @classmethod
     def from_data(cls, data, filename='', path=None, allow_import=True):
@@ -179,24 +178,12 @@ class StyleSheet:
         ``allow_import`` is False, the @import atrule is ignored.
 
         """
-        tree = cls.load_from_data(data)
-        return cls.from_tree(tree, filename, path, allow_import)
+        css = cls.load_from_data(data)
+        return cls.from_css(css, filename, path, allow_import)
 
     @classmethod
-    def from_tree(cls, tree, filename='', path=None, allow_import=True):
-        """Return a new StyleSheet adding Rules and Conditions from a parsed tree.
-
-        The ``filename`` argument is used to handle @import rules
-        correctly. The ``path`` argument is currently unused. If
-        ``allow_import`` is False, the @import atrule is ignored.
-
-        """
-        transformed_tree = transform_tree(tree)
-        return cls.from_transformed_tree(transformed_tree, filename, path, allow_import)
-
-    @classmethod
-    def from_transformed_tree(cls, transformed_tree, filename='', path=None, allow_import=True):
-        """Return a new StyleSheet adding Rules and Conditions from a transformed tree.
+    def from_css(cls, css, filename='', path=None, allow_import=True):
+        """Return a new StyleSheet adding Rules and Conditions from a CSS structure.
 
         The ``filename`` argument is used to handle @import rules
         correctly. The ``path`` argument is currently unused. If
@@ -219,19 +206,19 @@ class StyleSheet:
                     # avoid circular @import references
                     if fname not in filenames:
                         filenames.add(fname)
-                        itree = cls.load_from_file(fname)
+                        icss = cls.load_from_file(fname)
                         values = values[n+1:]
                         if values:
                             # there is probably a media query after the filename
-                            s = cls.from_tree(itree, fname, path, allow_import)
+                            s = cls.from_css(icss, fname, path, allow_import)
                             yield Condition("import", values, s)
                         else:
                             self._imported_filenames.append(fname)
-                            yield from get_rules(transform_tree(itree))
+                            yield from get_rules(icss)
                     return
 
-        def get_rules(transformed_tree):
-            """Get all CSS rules from the transformed tree, either as Rule or
+        def get_rules(css):
+            """Get all CSS rules from the CSS structure, either as Rule or
             as Condition.
 
             The latter is used when rules can be selected or not depending
@@ -240,7 +227,7 @@ class StyleSheet:
             """
             rules = []
 
-            for rule in transformed_tree:
+            for rule in css:
                 if isinstance(rule, Atrule):
                     # @-rule
                     if rule.keyword == "import":
@@ -249,11 +236,11 @@ class StyleSheet:
                         continue
                     elif isinstance(rule.block, list):
                         # nested @-rule
-                        rule = Condition(rule.keyword, rule.contents, cls.from_transformed_tree(rule.block))
+                        rule = Condition(rule.keyword, rule.contents, cls.from_css(rule.block))
                 rules.append(rule)
             return rules
 
-        return cls(get_rules(transformed_tree), filename)
+        return cls(get_rules(css), filename)
 
     def __add__(self, other):
         return type(self)(self.rules + other.rules)
