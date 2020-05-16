@@ -149,6 +149,9 @@ class Item:
         """The lexicon's name."""
         return self.lexicon.name
 
+    def __repr__(self):
+        return "<Item '{}' {}>".format(self.name, repr(self.obj))
+
 
 class Items(list):
     """A list of Item and Token instances.
