@@ -112,11 +112,11 @@ class JsonTransform(Transform):
     def object(self, items):
         d = {}
         key = None
-        for i in items.items("key", "value"):
-            if i.name == "key":
-                key = i.obj
+        for name, obj in items.items("key", "value"):
+            if name == "key":
+                key = obj
             elif key is not None:
-                d[key] = i.obj
+                d[key] = obj
                 key = None
         return d
 

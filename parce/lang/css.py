@@ -362,14 +362,14 @@ class CssTransform(Transform):
         """Return a list of Rule or Atrule tuples."""
         result = []
         prelude = None
-        for i in items.items():
-            if i.name == "prelude":
-                prelude = i.obj
-            elif i.name == "rule":
-                result.append(Rule(prelude, i.obj))
+        for name, obj in items.items():
+            if name == "prelude":
+                prelude = obj
+            elif name == "rule":
+                result.append(Rule(prelude, obj))
                 prelude = None
-            elif i.name == "atrule":
-                result.append(i.obj)
+            elif name == "atrule":
+                result.append(obj)
         return result
 
     def prelude(self, items):
@@ -434,8 +434,8 @@ class CssTransform(Transform):
 
         """
         d = collections.defaultdict(list)
-        for i in items.items():
-            d[i.name].append(i.obj)
+        for name, obj in items.items():
+            d[name].append(obj)
         return dict(d)
 
     def selector_list(self, items):

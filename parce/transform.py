@@ -136,6 +136,11 @@ class Item:
     be able to easily distinguish an Item from a Token, a fixed readonly class
     attribute ``is_token`` exists, set to False.
 
+    An Item can be unpacked in two variables, name and object::
+
+        item = Item(Json.root, "abc")
+        name, obj = item    # → 'root', 'abc'
+
     """
     __slots__ = ('lexicon', 'obj')
     is_token = False
@@ -151,6 +156,10 @@ class Item:
 
     def __repr__(self):
         return "<Item '{}' {}>".format(self.name, repr(self.obj))
+
+    def __iter__(self):
+        yield self.name
+        yield self.obj
 
 
 class Items(list):
@@ -194,6 +203,12 @@ class Items(list):
 
         If one or more names are given, only yield items that have one of the
         names.
+
+        Because you know only Item instances and not Tokens will be yielded,
+        you can unpack name and object in one go::
+
+            for name, obj in items.items():
+                ...
 
         """
         if names:
