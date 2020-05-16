@@ -205,21 +205,6 @@ class StyleSheet:
         """
         filenames = {filename}
 
-        def prepare_properties(properties):
-            """Return a dict mapping properties to two-tuples(important, values).
-
-            If the original value contains "!important", it is removed, and important
-            is set to True, otherwise it is False.
-
-            """
-            d = {}
-            for key, values in properties.items():
-                important = '!important' in values
-                if important:
-                    values = tuple(v for v in values if v != '!important')
-                d[key] = (important, values)
-            return d
-
         def get_import_rules(values):
             """Yield rules from an @import at-rule.
 
@@ -261,17 +246,11 @@ class StyleSheet:
                     if rule.keyword == "import":
                         if allow_import:
                             rules.extend(get_import_rules(rule.contents))
+                        continue
                     elif isinstance(rule.block, list):
                         # nested @-rule
-                        rules.append(Condition(rule.keyword, rule.contents, cls.from_transformed_tree(rule.block)))
-                    elif rule.block:
-                        # other @-rule containing a properties block, set apart !important
-                        rules.append(Atrule(rule.keyword, rule.contents, prepare_properties(rule.block)))
-                    else:
-                        rules.append(rule)
-                else:
-                    # set apart the '!important' value
-                    rules.append(Rule(rule.prelude, prepare_properties(rule.properties)))
+                        rule = Condition(rule.keyword, rule.contents, cls.from_transformed_tree(rule.block))
+                rules.append(rule)
             return rules
 
         return cls(get_rules(transformed_tree), filename)
@@ -394,7 +373,11 @@ class Style:
         result = {}
         important_properties = set()
         for rule in self.rules:
-            for key, (important, value) in rule.properties.items():
+            for key, value in rule.properties.items():
+                important = False
+                if value[-1] == '!important':
+                    value = value[:-1]
+                    important = True
                 if key not in result:
                     result[key] = value
                 elif important and key not in important_properties:
