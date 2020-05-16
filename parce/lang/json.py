@@ -29,13 +29,14 @@ Objects (``{ ... }``) become ``object`` contexts with alternating ``key`` and
 
 """
 
-__all__ = ('Json',)
+__all__ = ('Json', 'JsonTransform')
 
 import re
 
 from parce import Language, lexicon, skip, default_action, default_target
 from parce.action import Delimiter, Name, Number, String
 from parce.rule import words
+from parce.transform import Transform
 
 
 JSON_CONSTANTS = {
@@ -88,11 +89,8 @@ class Json(Language):
         yield default_action, String
 
 
-### TEMP XXXXXXXXXXXX, first sketches for a tree transformer/evalutator
-from parce.transform import Transform
-
 class JsonTransform(Transform):
-
+    """Transforms a Json expression tree to the Python equivalent."""
     def root(self, items):
         for value in self.values(items):
             return value
@@ -114,13 +112,12 @@ class JsonTransform(Transform):
     def object(self, items):
         d = {}
         key = None
-        for i in items.items():
-            if i.lexicon.name == "key":
+        for i in items.items("key", "value"):
+            if i.name == "key":
                 key = i.obj
-            elif i.lexicon.name == "value":
-                if key is not None:
-                    d[key] = i.obj
-                    key = None
+            elif key is not None:
+                d[key] = i.obj
+                key = None
         return d
 
     def key(self, items):
