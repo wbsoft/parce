@@ -44,7 +44,7 @@ instance to a Language class.
 
 For example::
 
-    from parce import Language, lexicon, default_action
+    from parce import root, Language, lexicon, default_action
     from parce.action import Delimiter, Number, String
     from parce.transform import Transform, transform_text
 
@@ -86,6 +86,33 @@ For example::
     >>> transform_text(MyLang.root, '1 2 3 [4 "Q" 6] x 7 8 9')
     [1, 2, 3, [4, 'Q', 6], 7, 8, 9]
 
+You can also transform a tree structure::
+
+    >>> from parce.transform import transform_tree
+    >>> tree = root(MyLang.root, '1 2 3 [4 "Q" 6] x 7 8 9')
+    >>> tree.dump()
+    <Context MyLang.root at 0-23 (8 children)>
+     ├╴<Token '1' at 0:1 (Literal.Number)>
+     ├╴<Token '2' at 2:3 (Literal.Number)>
+     ├╴<Token '3' at 4:5 (Literal.Number)>
+     ├╴<Token '[' at 6:7 (Delimiter)>
+     ├╴<Context MyLang.list at 7-15 (5 children)>
+     │  ├╴<Token '4' at 7:8 (Literal.Number)>
+     │  ├╴<Token '"' at 9:10 (Literal.String)>
+     │  ├╴<Context MyLang.string at 10-12 (2 children)>
+     │  │  ├╴<Token 'Q' at 10:11 (Literal.String)>
+     │  │  ╰╴<Token '"' at 11:12 (Literal.String)>
+     │  ├╴<Token '6' at 13:14 (Literal.Number)>
+     │  ╰╴<Token ']' at 14:15 (Delimiter)>
+     ├╴<Token '7' at 18:19 (Literal.Number)>
+     ├╴<Token '8' at 20:21 (Literal.Number)>
+     ╰╴<Token '9' at 22:23 (Literal.Number)>
+    >>> transform_tree(tree)
+    [1, 2, 3, [4, 'Q', 6], 7, 8, 9]
+
+Note that the :func:`transform_tree` gets the root lexicon from the root
+element, and then automatically finds the corresponding Transform class, if you
+didn't specify one yourself.
 
 TODO: it would be nice to be able to specify the Transform for another Language
 inside a Transform, just like a lexicon can target a lexicon from a different
