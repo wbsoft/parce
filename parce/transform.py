@@ -184,7 +184,7 @@ class Transformer:
         transform = self.get_transform(curlang)
 
         items = Items()
-        stack = [(root_lexicon, items)]
+        stack = []
         events = parce.lexer.Lexer([root_lexicon]).events(text, pos)
         lexicon = root_lexicon
 
