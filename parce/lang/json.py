@@ -114,20 +114,18 @@ class JsonTransform(Transform):
     def object(self, items):
         d = {}
         key = None
-        for i in items:
-            if not i.is_token:
-                if i.lexicon.name == "key":
-                    key = i.obj
-                elif i.lexicon.name == "value":
-                    if key is not None:
-                        d[key] = i.obj
-                        key = None
+        for i in items.items():
+            if i.lexicon.name == "key":
+                key = i.obj
+            elif i.lexicon.name == "value":
+                if key is not None:
+                    d[key] = i.obj
+                    key = None
         return d
 
     def key(self, items):
-        for i in items:
-            if not i.is_token and i.lexicon.name == "string":
-                return i.obj
+        for i in items.items("string"):
+            return i.obj
 
     def value(self, items):
         for value in self.values(items):
@@ -138,13 +136,12 @@ class JsonTransform(Transform):
 
     def string(self, items):
         def gen():
-            for i in items[:-1]:
-                if i.is_token:
-                    if i.action == String.Escape:
-                        if i.text[1] == 'u':
-                            yield chr(int(i.text[2:], 16))
-                        else:
-                            yield i.text[1]
+            for i in items[:-1].tokens():
+                if i.action == String.Escape:
+                    if i.text[1] == 'u':
+                        yield chr(int(i.text[2:], 16))
                     else:
-                        yield i.text
+                        yield i.text[1]
+                else:
+                    yield i.text
         return ''.join(gen())

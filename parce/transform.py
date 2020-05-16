@@ -77,6 +77,74 @@ class Item:
         return self.lexicon.name
 
 
+class Items(list):
+    """A list of Item and Token instances.
+
+    The Transform methods are called with an instance of this class. Besides
+    being a Python list, this class also has some methods that filter out items
+    or tokens, etc.
+
+    Slicing from Items returns a new Items instance, so you can slice and
+    the methods still work.
+
+    """
+    __slots__ = ()
+
+    def __getitem__(self, n):
+        """Reimplemented to return an Items instance when slicing."""
+        result = super().__getitem__(n)
+        if isinstance(n, slice):
+            return type(self)(result)
+        return result
+
+    def tokens(self, *texts):
+        """Yield only the tokens.
+
+        If one or more texts are given, only yield tokens with one of the
+        texts.
+
+        """
+        if texts:
+            for i in self:
+                if i.is_token and i.text in texts:
+                    yield i
+        else:
+            for i in self:
+                if i.is_token:
+                    yield i
+
+    def items(self, *names):
+        """Yield only the sub-items.
+
+        If one or more names are given, only yield items that have one of the
+        names.
+
+        """
+        if names:
+            for i in self:
+                if not i.is_token and i.name in names:
+                    yield i
+        else:
+            for i in self:
+                if not i.is_token:
+                    yield i
+
+    def action(self, *actions):
+        """Yield only the tokens with one of the specified actions."""
+        for i in self:
+            if i.is_token and i.action in actions:
+                yield i
+
+    def in_action(self, *actions):
+        """Yield only the tokens with an action that's in one of the specified
+        actions.
+
+        """
+        for i in self:
+            if i.is_token and any(i.action in a for a in actions):
+                yield i
+
+
 class Transform:
     """This is the base class for a transform class.
 
@@ -115,7 +183,7 @@ class Transformer:
         curlang = root_lexicon.language
         transform = self.get_transform(curlang)
 
-        items = []
+        items = Items()
         stack = [(root_lexicon, items)]
         events = parce.lexer.Lexer([root_lexicon]).events(text, pos)
         lexicon = root_lexicon
@@ -145,7 +213,7 @@ class Transformer:
                         items.append(item)
                 for l in e.target.push:
                     stack.append((lexicon, items))
-                    items = []
+                    items = Items()
                     lexicon = l
             items.extend(make_tokens(e))
 
@@ -172,7 +240,7 @@ class Transformer:
         transform = self.get_transform(curlang)
 
         stack = []
-        node, items, i = tree, [], 0
+        node, items, i = tree, Items(), 0
         while True:
             for i in range(i, len(node)):
                 n = node[i]
@@ -191,7 +259,7 @@ class Transformer:
                             items.append(Item(n.lexicon, n.cached))
                         except AttributeError:
                             stack.append((items, i + 1))
-                            node, items, i = n, [], 0
+                            node, items, i = n, Items(), 0
                             break
             else:
                 if curlang is not node.lexicon.language:

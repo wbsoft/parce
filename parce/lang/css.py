@@ -362,15 +362,14 @@ class CssTransform(Transform):
         """Return a list of Rule or Atrule tuples."""
         result = []
         prelude = None
-        for i in items:
-            if not i.is_token:
-                if i.name == "prelude":
-                    prelude = i.obj
-                elif i.name == "rule":
-                    result.append(Rule(prelude, i.obj))
-                    prelude = None
-                elif i.name == "atrule":
-                    result.append(i.obj)
+        for i in items.items():
+            if i.name == "prelude":
+                prelude = i.obj
+            elif i.name == "rule":
+                result.append(Rule(prelude, i.obj))
+                prelude = None
+            elif i.name == "atrule":
+                result.append(i.obj)
         return result
 
     def prelude(self, items):
@@ -435,9 +434,8 @@ class CssTransform(Transform):
 
         """
         d = collections.defaultdict(list)
-        for i in items:
-            if not i.is_token:
-                d[i.name].append(i.obj)
+        for i in items.items():
+            d[i.name].append(i.obj)
         return dict(d)
 
     def selector_list(self, items):
@@ -454,8 +452,8 @@ class CssTransform(Transform):
     def inline(self, items):
         """Return a dictionary of the property values."""
         d = {}
-        for i in items:
-            if not i.is_token and i.name == "declaration" and i.obj:
+        for i in items.items("declaration"):
+            if i.obj:
                 prop, values = i.obj
                 d[prop] = values
         return d
@@ -720,12 +718,11 @@ class CssTransform(Transform):
         Called by :meth:`sqstring` and :meth:`dqstring`.
 
         """
-        for i in items:
-            if i.is_token:
-                if i.action is String:
-                    yield i.text
-                elif i.action is String.Escape:
-                    yield self.get_escape(i.text)
+        for i in items.tokens():
+            if i.action is String:
+                yield i.text
+            elif i.action is String.Escape:
+                yield self.get_escape(i.text)
 
     def get_ident_token(self, items):
         """Return a two-tuple(name, action).
@@ -735,14 +732,13 @@ class CssTransform(Transform):
         """
         actions = [None]
         def gen():
-            for i in items:
-                if i.is_token:
-                    if i.action is Escape:
-                        yield self.get_escape(i.text)
-                    elif i.action not in Delimiter:
-                        if i.action in Name:
-                            actions.append(i.action)
-                        yield i.text
+            for i in items.tokens():
+                if i.action is Escape:
+                    yield self.get_escape(i.text)
+                elif i.action not in Delimiter:
+                    if i.action in Name:
+                        actions.append(i.action)
+                    yield i.text
         name = ''.join(gen())
         return name, actions[-1]
 
