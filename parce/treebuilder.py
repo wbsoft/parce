@@ -546,7 +546,7 @@ class TreeBuilder(Observable):
         with the list of nodes, see :meth:`~parce.util.Observable.connect`.
 
         Use this to actively delete cached info for these nodes. Do not
-        alter the nodes themselfves.
+        alter the nodes themselves.
 
         """
         self.emit("dispose", nodes)
