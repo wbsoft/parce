@@ -70,7 +70,7 @@ DUMP_STYLE_DEFAULT = "round"
 
 class Node:
     """Methods that are shared by Token and Context."""
-    __slots__ = ()
+    __slots__ = ('__weakref__',)
 
     is_token = False
     is_context = False
@@ -400,6 +400,9 @@ class Token(Node):
         text = reprlib.repr(self.text)
         return "<Token {} at {}:{} ({})>".format(text, self.pos, self.end, self.action)
 
+    def __hash__(self):
+        return Node.__hash__(self)
+
     def __eq__(self, other):
         if isinstance(other, str):
             return other == self.text
@@ -492,7 +495,7 @@ class Token(Node):
 
 class _GroupToken(Token):
     """A Token class that allows setting the `group` attribute."""
-    __slots__ = "group"
+    __slots__ = "group",
 
 
 class Context(list, Node):
