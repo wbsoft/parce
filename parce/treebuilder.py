@@ -539,7 +539,7 @@ class TreeBuilder(Observable):
         self.emit("invalidate", context)
 
     def dispose_nodes(self, nodes):
-        """Called with a list all the nodes that have been removed from the
+        """Called with the list of all nodes that have been removed from the
         tree.
 
         The default implementation of this method emits the ``dispose`` event
