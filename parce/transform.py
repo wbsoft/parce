@@ -36,6 +36,7 @@ language. But I'm not yet sure how it would be specified.
 import collections
 import functools
 import sys
+import weakref
 
 import parce.lexer
 
@@ -166,6 +167,8 @@ class Transformer:
     """
     def __init__(self):
         self._transforms = {}
+        self._cache = weakref.WeakKeyDictionary()
+        self._interrupt = weakref.WeakKeyDictionary()
 
     def transform_text(self, root_lexicon, text, pos=0):
         """Directly create an evaluated object from text using root_lexicon.
@@ -230,17 +233,14 @@ class Transformer:
         if not tree.lexicon:
             return  # a root lexicon can be None, but then there are no children
 
-        try:
-            return tree.cached
-        except AttributeError:
-            pass
+        self._interrupt[tree] = False
 
         curlang = tree.lexicon.language
         transform = self.get_transform(curlang)
 
         stack = []
         node, items, i = tree, Items(), 0
-        while True:
+        while not self._interrupt[tree]:
             for i in range(i, len(node)):
                 n = node[i]
                 if n.is_token:
@@ -255,8 +255,8 @@ class Transformer:
                     # don't bother going in this context is there is no method
                     if meth:
                         try:
-                            items.append(Item(n.lexicon, n.cached))
-                        except AttributeError:
+                            items.append(Item(n.lexicon, self._cache[n]))
+                        except KeyError:
                             stack.append((items, i + 1))
                             node, items, i = n, Items(), 0
                             break
@@ -276,7 +276,19 @@ class Transformer:
                     node = node.parent
                 else:
                     break
+        else:
+            return None
+        self._cache[tree] = obj
         return obj
+
+    def invalidate_node(self, node):
+        """Remove the transform results for this node and its ancestors
+        from our cache.
+
+        """
+        while node:
+            del delf._cache[node]
+            node = node.parent
 
     def get_transform(self, language):
         """Return a Transform class instance for the specified language."""
