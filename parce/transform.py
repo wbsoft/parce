@@ -287,7 +287,7 @@ class Transformer:
 
         """
         while node:
-            del delf._cache[node]
+            del self._cache[node]
             node = node.parent
 
     def get_transform(self, language):
