@@ -142,6 +142,11 @@ class TreeBuilder(Observable):
         method, the handler is called with the Context that needs to be
         invalidated
 
+    ``"dispose"``
+        emitted by the default implementation of the :meth:`dispose_nodes`
+        method, the handler is called with the list of nodes that have been
+        removed from the tree.
+
     For example, to get notified when a build process starts::
 
         >>> b = TreeBuilder(MyLang.root)
