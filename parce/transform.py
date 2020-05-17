@@ -39,6 +39,7 @@ import sys
 import weakref
 
 import parce.lexer
+import parce.util
 
 
 class Item:
@@ -157,7 +158,7 @@ class Transform:
     """
 
 
-class Transformer:
+class Transformer(parce.util.Observable):
     """Evaluate a tree.
 
     For every context, the transformer calls the corresponding method of the
@@ -166,6 +167,7 @@ class Transformer:
 
     """
     def __init__(self):
+        super().__init__()
         self._transforms = {}
         self._cache = weakref.WeakKeyDictionary()
         self._interrupt = weakref.WeakKeyDictionary()
@@ -267,26 +269,54 @@ class Transformer:
                 name = node.lexicon.name
                 meth = getattr(transform, name, None)
                 obj = meth(items) if meth else None
-                # caching the obj on the node can be enabled as soon as tree.Node
-                # (or tree.Context) supports it
-                #node.cached = obj
                 if stack:
+                    self._cache[node] = obj
                     items, i = stack.pop()
                     items.append(Item(node.lexicon, obj))
                     node = node.parent
                 else:
                     break
-        else:
-            return None
-        self._cache[tree] = obj
         return obj
+
+    def process(self, tree):
+        """Transform the tree and emit events.
+
+        Updates the cached result if the transformation was not interrupted.
+        This method returns a generator; exhaust it fully to perform the
+        transformation.
+
+        """
+        self.emit("started", tree)
+        yield "build"
+        result = self.transform_tree(tree)
+        yield "replace"
+        if not self._interrupt[tree]:
+            self._cache[tree] = result
+            self.emit("updated", tree, result)
+        del self._interrupt[tree]
+        self.emit("finished", tree)
+        yield "done"
+
+    def interrupt(self, tree):
+        """Tell the Transformer to stop transforming the specified tree."""
+        self._interrupt[tree] = True
+
+    def result(self, tree):
+        """Get the result of the transformed tree.
+
+        Raises KeyError if no result was yet created.
+
+        """
+        return self._cache[tree]
 
     def invalidate_node(self, node):
         """Remove the transform results for this node and its ancestors
         from our cache.
 
+        Does not throw away the result for the root context.
+
         """
-        while node:
+        while node.parent:
             del self._cache[node]
             node = node.parent
 
