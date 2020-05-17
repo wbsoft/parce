@@ -400,11 +400,14 @@ class TreeBuilder(Observable):
         """
         tree, start, end, offset, lexicons = result
 
+        dispose = []
+
         if not tree.lexicon or tree.lexicon != self.root.lexicon:
             # whole tree update
             root = self.root
             for n in tree:
                 n.parent = root
+            dispose.extend(self.root)
             self.replace_nodes(self.root, slice(None), tree)
             self.replace_root_lexicon(tree.lexicon)
             self.invalidate_context(self.root)
@@ -460,22 +463,31 @@ class TreeBuilder(Observable):
                 for i in start_trail[:-1]:
                     for n in t[1:]:
                         n.parent = c
-                    self.replace_nodes(c, slice(i + 1, slice_end), t[1:])
+                    s = slice(i + 1, slice_end)
+                    dispose.extend(c[s])
+                    self.replace_nodes(c, s, t[1:])
                     slice_end = None
                     t = t[0]
                     c = c[i]
                 i = start_trail[-1]
                 for n in t:
                     n.parent = c
-                self.replace_nodes(c, slice(i + 1, slice_end), t)
+                s = slice(i + 1, slice_end)
+                dispose.extend(c[s])
+                self.replace_nodes(c, s, t)
                 self.invalidate_context(c)
             else:
-                self.replace_nodes(context, slice(slice_end), tree)
+                s = slice(slice_end)
+                dispose.extend(context[s])
+                self.replace_nodes(context, s, tree)
                 self.invalidate_context(context)
 
             if offset:
                 for p, i in context.ancestors_with_index():
                     self.replace_pos(p, slice(i + 1, None), offset)
+
+            if dispose:
+                self.dispose_nodes(dispose)
 
         return ReplaceResult(start, end + offset, lexicons)
 
@@ -520,6 +532,19 @@ class TreeBuilder(Observable):
 
         """
         self.emit("invalidate", context)
+
+    def dispose_nodes(self, nodes):
+        """Called with a list all the nodes that have been removed from the
+        tree.
+
+        The default implementation of this method emits the ``dispose`` event
+        with the list of nodes, see :meth:`~parce.util.Observable.connect`.
+
+        Use this to actively delete cached info for these nodes. Do not
+        alter the nodes themselfves.
+
+        """
+        self.emit("dispose", nodes)
 
     def get_root(self, wait=False, callback=None, args=(), kwargs={}):
         """Return the root element of the completed tree.
