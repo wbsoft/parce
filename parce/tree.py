@@ -587,7 +587,7 @@ class Context(list, Node):
     def copy(self, parent=None):
         """Return a copy of the context, but with the specified parent."""
         # a non-recursive implementation due to Python's recursion limits
-        copy = type(self)(self.lexicon, parent)
+        copy = copy_root = type(self)(self.lexicon, parent)
         stack = []
         i = 0
         n = self
@@ -618,7 +618,7 @@ class Context(list, Node):
                     i = stack.pop() + 1
                 else:
                     break
-        return copy
+        return copy_root
 
     @property
     def pos(self):
