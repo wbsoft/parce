@@ -309,8 +309,7 @@ class TreeBuilder(Observable):
                 if result:
                     lexer, events, tokens = result
                     t = tokens[0]
-                    context = new_tree(t)
-                    tree = context.root()
+                    context, tree = new_tree(t)
                     start = tokens[-1].end
                     lowest_start = min(lowest_start, start)
                 else:

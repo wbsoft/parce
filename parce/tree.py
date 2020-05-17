@@ -50,6 +50,7 @@ See also the documentation for Token and Context.
 
 import itertools
 import reprlib
+import weakref
 
 from parce import util
 from parce import query
@@ -74,6 +75,21 @@ class Node:
 
     is_token = False
     is_context = False
+
+    @property
+    def parent(self):
+        """The parent Context (or None; uses a weak reference)."""
+        return self._parent()
+
+    @parent.setter
+    def parent(self, parent):
+        """Set the parent (to a Context or None)."""
+        self._parent = weakref.ref(parent) if parent is not None else lambda: None
+
+    @parent.deleter
+    def parent(self):
+        """Set the parent to None."""
+        self._parent = lambda: None
 
     def dump(self, file=None, style=None, depth=0):
         """Display a graphical representation of the node and its contents.
@@ -358,7 +374,7 @@ class Token(Node):
 
     """
 
-    __slots__ = "parent", "pos", "text", "action"
+    __slots__ = "_parent", "pos", "text", "action"
 
     is_token = True
     group = None
@@ -535,7 +551,7 @@ class Context(list, Node):
     might be in any sub-context of the current context.
 
     """
-    __slots__ = "lexicon", "parent"
+    __slots__ = "lexicon", "_parent"
 
     is_context = True
 

@@ -217,14 +217,14 @@ def get_lexer(token):
 
 
 def new_tree(token):
-    """Return an empty context with the same ancestry as the token's."""
+    """Return an empty context (and its root) with the same ancestry as the token's."""
     c = context = Context(token.parent.lexicon, None)
     for p in token.parent.ancestors():
         n = Context(p.lexicon, None)
         c.parent = n
         n.append(c)
         c = n
-    return context
+    return context, n
 
 
 def find_token_before(node, pos):
