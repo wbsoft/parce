@@ -1,11 +1,11 @@
 Overview
 ========
 
-The `parce` module consists of a lexer that can build a tree structure of
-`tokens` from a text, using regular expression patterns. Lexing happens by a
-`lexicon`, which is a set of rules with patterns to look for. Tokens can be
-given a meaning (`action`) and a rule can, if its pattern matches, also
-move parsing to another lexicon, "opening a new context", so to say.
+The *parce* module consists of a *lexer* that can split text into tokens
+according to a *lexicon*, which is a set of rules with patterns to look for. A
+*tree builder* can put the lexed tokens in a tree structure, which can be
+*queried* in powerful ways. A *transformer* can transform the tree structure in
+any sophisticated, dedicated data structure you can imagine.
 
 Lexicons are grouped together defining a language. Some language definitions
 are already bundled, in the ``lang`` directory. But it is also very easy to
@@ -19,10 +19,12 @@ Features
 * lex text to a stream of `events` or a tree structure of `tokens`, according
   to a language definition
 * examine and query the generated tree structure
-* apply changes to the text, and only update the needed part of a tree
-* provides a Document (mutable string) that can be modified and that keeps
+* transform the tree structure to anything else
+* apply changes to the text, and only update the needed part of a tree, also
+  a transformation can reuse unchanged parts
+* provide a Document (mutable string) that can be modified and that keeps
   its tokenized tree up-to-date automatically
-* parsing and tokenizing can be done in a background thread
+* lex and transform in a background thread
 * map the `action` of a token to CSS classes for highlighting based on CSS
 
 You can lex a text once and examine the generated tree structure of tokens,
@@ -43,25 +45,28 @@ type of the text that is entered/edited.
 There is already a package `parceqt <https://github.com/wbsoft/parceqt>`_
 that does this for applications based on the Qt5 library (using PyQt5).
 
-A difference with a beautiful package like `pygments` is that emphasis in
-`parce` lies on live updating and interactive usage of the token tree, which
-means that parsing is always sequential. For example, it is not supported that
-first a large chunk of text is matched by one, and then tokenized by another
-lexer. But is is very easy to switch language, because lexicons are not tied to
-a particular language; you can switch to them from any other language or
-incorporate its rules in your own lexicon. You can also use lookahead patterns
-to switch lexicon before generating tokens if it is really needed.
+Goal
+^^^^
 
-Using dynamic patterns it is possible to switch to a parsing context giving an
-argument that is determined at parse time, e.g. a specific pattern that causes
-the parser to pop back to the previous context. This can be useful to parse
-things like "here documents", which are well-known in languages like Bash and
-Ruby.
+*parce* was written to replace the LilyPond-parser in the `Frescobaldi
+<https://frescobaldi.org/>`_ editor. Frescobaldi highlights `LilyPond
+<https://lilypond.org/>`_ music text as you type (as many other text editors),
+and I wanted to use that highlighting information for more purposes than only
+the color of the text.
 
-A parser does not keep any state information, and that's why `parce` can so
-easily update only a small part of a large token tree: it can start parsing
-anywhere, the context the current token resides in is all the information that
-is available.
+That's why I created the tree structure; any token knows its parent context, so
+sophisticated context-sensitive autocompletion can be implemented that needs no
+tedious and slow text or token searching to determine what kind of text we're
+in.
+
+And because Frescobaldi needs to provide the user also with a *musical*
+understanding of the LilyPond music, it converts the token structure of a text
+document to a Music structure, which is currently rebuilt on every single
+change of the text.
+
+So I created the transform module, which is capable of transforming only the
+modified parts of a text to anything else, smartly reusing intermediate
+transformed results from contexts that didn't change.
 
 TODO
 ^^^^

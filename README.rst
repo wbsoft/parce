@@ -11,18 +11,18 @@ The parce module
 `Documentation  <https://parce.info>`_                          •
 `License        <https://www.gnu.org/licenses/gpl-3.0>`_
 
-This Python package, `parce`, can be used for lexing text into tokens using
-one of the supplied language definitions in the ``lang`` directory, or
-building your own language definitions and lex text using them.
+This Python package, `parce`, can be used to lex text into a tree structure
+using a language definition. The tree structure can subsequently be queried and
+transformed in various powerful ways.
 
 The `parce` module is designed to be very fast, while being written in pure
-Python, using native data structures as much as possible. Lexing can be done
-in a background thread.
+Python, using native data structures as much as possible. Lexing and
+transforming can be done in a background thread.
 
-A powerful feature of parce is that you can retokenize only modified parts of a
-text if you already have tokenized it. This makes parce suitable for text
-editors etc. that need to keep a tokenized structure of the text up-to-date
-e.g. to support syntax highlighting as you type.
+A key feature of parce is that you can re-lex and re-transform only modified
+parts of a text if you already have lexed it. This makes parce suitable for
+text editors etc. that need to keep a tokenized structure of the text
+up-to-date e.g. to support syntax highlighting as you type.
 
 The module is written and maintained by Wilbert Berendsen. Python 3.5 and
 higher is supported. Besides Python itself there are no other dependencies.
