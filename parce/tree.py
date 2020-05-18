@@ -321,10 +321,10 @@ class Token(Node):
     `action`:
         the action specified by the lexicon rule that created the token
 
-    When a pattern rule in a lexicon matches the text, a Token is created.
-    When that rule would create more than one Token from a single regular
-    expression match, _GroupToken objects are created instead, carrying the
-    tuple of all instances in the `group` attribute. The `group` attribute is
+    When a pattern rule in a lexicon matches the text, a Token is created. When
+    that rule would create more than one Token from a single regular expression
+    match, _GroupToken objects are created instead, carrying the index of the
+    token in the group in the `group` attribute. The `group` attribute is
     readonly None for normal tokens.
 
     GroupTokens are thus always adjacent in the same context. If you want to
@@ -333,7 +333,9 @@ class Token(Node):
 
         t = ctx.find_token(45)
         if t.group:
-            t = t.group[0]
+            for t in t.left_siblings():
+                if not t.group:
+                    break
         pos = t.pos
 
     (A _GroupToken is just a normal Token otherwise, the reason a subclass was
@@ -498,8 +500,14 @@ class Token(Node):
 
         """
         node = self
-        if node.group:
-            node = node.group[-1]
+        if node.group is not None:
+            # go to the last one of this group
+            group = node.group + 1
+            for n in node.right_siblings():
+                if n.is_context or n.group != group:
+                    break
+                node = n
+                group += 1
         while node.parent:
             r = node.right_sibling()
             if r:
@@ -512,6 +520,14 @@ class Token(Node):
 class _GroupToken(Token):
     """A Token class that allows setting the `group` attribute."""
     __slots__ = "group",
+
+    def __init__(self, group, parent, pos, text, action):
+        self.group = group
+        super().__init__(parent, pos, text, action)
+
+    def copy(self, parent=None):
+        """Return a copy of the Token, but with the specified parent."""
+        return type(self)(self.group, parent, self.pos, self.text, self.action)
 
 
 class Context(list, Node):
@@ -602,12 +618,15 @@ class Context(list, Node):
                     i = 0
                     n = m
                     break
-                elif m.group:
-                    group = tuple(node.copy(copy) for node in m.group)
-                    for m in group:
-                        m.group = group
-                    copy.extend(group)
-                    i += len(group)
+                elif m.group is not None:
+                    for g, j in enumerate(range(i + 1, z), m.group + 1):
+                        if n[j].is_context or n[j].group != g:
+                            copy.extend(node.copy(copy) for node in n[i:j])
+                            i = j
+                            break
+                    else:
+                        copy.append(m.copy(copy))
+                        i += 1
                 else:
                     copy.append(m.copy(copy))
                     i += 1
@@ -954,9 +973,8 @@ class Context(list, Node):
 
         """
         for token in self.backward():
-            if token.group:
-                token = token.group[0]
-            return token
+            if not token.group:
+                return token
 
 
 def make_tokens(event, parent=None):
@@ -968,11 +986,20 @@ def make_tokens(event, parent=None):
 
     """
     if len(event.tokens) > 1:
-        tokens = tuple(_GroupToken(parent, *t) for t in event.tokens)
-        for t in tokens:
-            t.group = tokens
-        return tokens
+        return tuple(_GroupToken(n, parent, *t) for n, t in enumerate(event.tokens))
     else:
         return Token(parent, *event.tokens[0]),
 
+
+def get_group(token):
+    """For a token that belongs to a group, return the whole group as a list."""
+    p = token.parent
+    i = j = token.parent_index()
+    while i and p[i].group > 0 and p[i-1].is_token and p[i-1].group is not None and p[i-1].group < p[i].group:
+        i -= 1
+    z = len(p)
+    j += 1
+    while j < z and p[j].is_token and p[j].group and p[j].group > p[j-1].group:
+        j += 1
+    return p[i:j]
 

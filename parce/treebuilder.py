@@ -276,7 +276,7 @@ class TreeBuilder(Observable):
             tail_token = self.root.find_token_after(end)
             if tail_token:
                 tail_gen = ((t, t.pos) for t in tail_token.forward_including()
-                        if not t.group or (t.group and t is t.group[0]))
+                        if not t.group)
                 for tail_token, tail_pos in tail_gen:
                     tail = True
                     break

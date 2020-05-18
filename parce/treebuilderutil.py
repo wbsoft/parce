@@ -28,7 +28,7 @@ import collections
 import itertools
 
 from parce.lexer import Event, Lexer
-from parce.tree import Context
+from parce.tree import Context, get_group
 from parce.target import TargetFactory
 
 
@@ -131,8 +131,11 @@ def get_prepared_lexer(tree, text, start):
     """
     while start:
         last_token = start_token = find_token_before(tree, start)
-        while last_token and last_token.group and last_token.group[-1].end > start:
-            last_token = last_token.group[0].previous_token()
+        while last_token and last_token.group is not None:
+            group = get_group(last_token)
+            if group[-1].end <= start:
+                break
+            last_token = group[0].previous_token()
         if not last_token:
             return
         # go back at most 10 tokens, to the beginning of a group; if we
@@ -191,9 +194,12 @@ def events_with_tokens(start_token, last_token):
                         break
                     else:
                         group = m,
-                        if m.group:
-                            count = len(m.group) - m.group.index(m)
-                            group = n[i:i+count]
+                        if m.group is not None:
+                            # find the last token in this group
+                            for g, j in enumerate(range(i + 1, z), m.group + 1):
+                                if n[j].is_context or n[j].group != g:
+                                    group = n[i:j]
+                                    break
                         tokens = tuple((t.pos, t.text, t.action) for t in group)
                         yield Event(get(), tokens), group
                         i += len(group)
