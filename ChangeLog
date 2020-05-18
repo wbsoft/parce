@@ -2,7 +2,7 @@ ChangeLog
 =========
 
 
-current:
+2020-05-18: parce-0.12.0
 
 - the built-in CSS parser now uses CssTransform to parse a CSS file instead
   of using the query module
