@@ -203,12 +203,8 @@ class Transformer(parce.util.Observable):
                 curlang = lexicon.language
                 transform = self.get_transform(curlang)
             name = lexicon.name
-            try:
-                meth = getattr(transform, name)
-            except AttributeError:
-                return no_object
-            else:
-                return Item(lexicon, meth(items))
+            meth = getattr(transform, name, None)
+            return Item(lexicon, meth(items)) if meth else no_object
 
         for e in events:
             if e.target:

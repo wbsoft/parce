@@ -640,6 +640,7 @@ class CssTransform(Transform):
         return ''.join(self.get_string(items))
 
     ### we don't implement comment, so all comments are ignored
+    comment = None
 
     ### helper methods
     def common(self, items):
