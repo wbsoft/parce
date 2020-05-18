@@ -203,7 +203,7 @@ Dynamic actions and targets
 After the pattern, one action and zero or more target items are expected to be
 in a normal rule. When you put items in a rule that inherit from
 :class:`~parce.ruleitem.RuleItem`, those are evaluated when the rule's pattern
-matches. Dynamic rule items enable to to take decisions based on the match
+matches. Dynamic rule items enable you to take decisions based on the match
 object or the matched text. Most rule items do this by choosing the replacement
 from a list, based on the output of a predicate function.
 
