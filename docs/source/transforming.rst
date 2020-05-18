@@ -160,7 +160,7 @@ The Transformer caches the result of every transform method using a weak
 reference to the Context that yielded that result.
 
 When the TreeBuilder changes the tree, it emits the event ``"invalidate"``
-with the youghest node that has its children changed (i.e. tokens or contexts
+with the youngest node that has its children changed (i.e. tokens or contexts
 were added or removed).
 
 The Transformer then knows that that context and all its ancestors need to be

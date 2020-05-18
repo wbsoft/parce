@@ -394,7 +394,7 @@ class TreeBuilder(Observable):
         the tree-replacing process.
 
         Additionally, this method calls :meth:`invalidate_context` with the
-        youghest Context that had children removed or added.
+        youngest Context that had children removed or added.
 
         """
         tree, start, end, offset, lexicons = result
