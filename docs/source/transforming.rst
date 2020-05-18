@@ -152,11 +152,63 @@ Test it with::
     9
 
 
-Integration with TreeBuilder
-----------------------------
+Integration with TreeBuilder and Document
+-----------------------------------------
 
-Integration with :class:`~parce.treebuilder.TreeBuilder` is still in the works.
-The idea is that every Context can cache the transformed result, and that when
-updating the tree only the contexts that were modified need to update their
-transformation.
+It is very easy to keep a transformed structure up-to-date when a tree changes.
+The Transformer caches the result of every transform method using a weak
+reference to the Context that yielded that result.
 
+When the TreeBuilder changes the tree, it emits the event ``"invalidate"``
+with the youghest node that has its children changed (i.e. tokens or contexts
+were added or removed).
+
+The Transformer then knows that that context and all its ancestors need to be
+recomputed. In the process all newly added contexts are evaluated as well,
+because their transformations can't be found in the cache. Contexts that only
+changed position are not recomputed. If you want your transformed structure to
+know the position in the text, you should store references to the corresponding
+tokens in your structure. The ``pos`` attribute of the Tokens that move is
+adjusted by the tree builder, so they still point to the right position after
+an update of the tree.
+
+Here is an example::
+
+    >>> from parce.lang.json import Json
+    >>> from parce import Document
+    >>> from parce.transform import Transformer
+    >>>
+    >>> d = Document(Json.root)
+    >>> t = Transformer()
+    >>> t.connect_treebuilder(d.builder())
+    >>>
+    >>> d.set_text('{"key": [1, 2, 3, 4, 5]}')
+    >>> t.result(d.get_root())
+    {'key': [1, 2, 3, 4, 5]}
+    >>> d.insert(22, ", 6, 7, 8")
+    >>> t.result(d.get_root())
+    {'key': [1, 2, 3, 4, 5, 6, 7, 8]}
+
+Note that after inserting some text the transformed result automatically gets
+updated, because we called the :meth:`~Transformer.connect_treebuilder`
+method.
+
+When the tree builder is about to inject the modified tree part in the
+Document's tree, it emits the ``"replace"`` event. The transformer reacts by
+interrupting any current job that might be busy computing the transformed
+result. When the tree builder is replacing, it emits the ``"invalidate"``
+event, so the transformer knows which contexts need to be deleted from the
+cache. Finally, when the tree builder emits ``"finished"`` the transformer
+rebuilds our transformed result, using as much as possible the previously
+cached transform results for Contexts that did not change.
+
+A single Transformer can be used for multiple transformation jobs for multiple
+documents or tree builders, even at the same time. It shares the added
+Transform instances between multiple jobs and documents. If your Transform
+classes keep internal state that might not be desirable; in that case you can
+use a Transformer for every document or tree.
+
+If you were using a :class:`~parce.treebuilder.BackgroundTreeBuilder`, the
+transformed result is automatically computed in a background thread as well.
+But you can also inherit from Transformer to add your own implementation
+for running in the background.
