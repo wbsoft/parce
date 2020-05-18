@@ -8,10 +8,12 @@ current:
   of using the query module
 - added Transformer.connect_treebuilder() to keep a transformed result auto-
   matically up-to-date.
+- a BackgroundTransformer was added
 - the parent attribute of a tree Node now uses a weak reference
 - the group attribute of a _GroupToken is not a tuple of _GroupTokens anymore,
   it's just an integer value indicating the index of the token in the group.
   This is done to annihilate circular references.
+
 
 2020-05-13: parce-0.11.0
 

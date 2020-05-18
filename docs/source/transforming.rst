@@ -209,6 +209,8 @@ classes keep internal state that might not be desirable; in that case you can
 use a Transformer for every document or tree.
 
 If you were using a :class:`~parce.treebuilder.BackgroundTreeBuilder`, the
-transformed result is automatically computed in a background thread as well.
-But you can also inherit from Transformer to add your own implementation
-for running in the background.
+transformed result is automatically computed in a background thread as well
+(during the ``self.emit("finished")`` call in the tree builder's method
+:meth:`~parce.treebuilder.TreeBuilder.process_finished`). But you can also use
+a :class:`BackgroundTransformer` or inherit from Transformer to add your own
+implementation for running in the background.
