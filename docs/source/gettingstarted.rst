@@ -1,7 +1,7 @@
 Getting started
 ===============
 
-We describe how `parce` works by creating a language definition and using it.
+We describe how *parce* works by creating a language definition and using it.
 Start with::
 
     import parce
@@ -72,9 +72,9 @@ Now, we use this language definition to parse some text::
     ... ends on a newline.
     ... '''
 
-To parse text, we need to give ``parce`` the lexicon to start with. This is
+To parse text, we need to give *parce* the lexicon to start with. This is
 called the *root lexicon*. To parse the text and get the results, we
-call the ``root()`` function of ``parce``::
+call the ``root()`` function of *parce*::
 
     >>> tree = root(Nonsense.root, text)
 
@@ -120,7 +120,7 @@ Note that anything you do not look for in your lexicons (in this case most
 whitespace for example) is simply ignored. But the special rule with
 ``default_action`` matches everything not captured by another rule.
 
-This tree structure is what ``parce`` provides. You can find tokens on position::
+This tree structure is what *parce* provides. You can find tokens on position::
 
     >>> tree.find_token(27)     # finds token at position 27
     <Token 'and' at 26:29 (Text)>
@@ -148,7 +148,7 @@ See the :mod:`~parce.query` module for more information.
 
 If you want, you can also get a flat stream of events describing the parsing
 process. Events are simply named tuples consisting of a ``target`` and
-``tokens`` tuples. It is what `parce` internally uses to build the tree
+``tokens`` tuples. It is what *parce* internally uses to build the tree
 structure::
 
     >>> for e in events(Nonsense.root, text):

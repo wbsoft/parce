@@ -221,8 +221,8 @@ the tuple of all group members in the ``group`` attribute. That attribute is
 read-only and ``None`` for normal Tokens. Grouped tokens are always adjacent
 and in the same Context.
 
-Normally you don't have to do much with this information, but ``parce`` needs
-to know this, because if you edit a text, ``parce`` can't start reparsing
+Normally you don't have to do much with this information, but *parce* needs
+to know this, because if you edit a text, *parce* can't start reparsing
 at a token that is not the first of its group, because the whole group was
 created from one regular expression match.
 

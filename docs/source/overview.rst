@@ -28,7 +28,7 @@ Features
 * map the `action` of a token to CSS classes for highlighting based on CSS
 
 You can lex a text once and examine the generated tree structure of tokens,
-but, and this is a key point of `parce`, you can also use a Document which
+but, and this is a key point of *parce*, you can also use a Document which
 keeps its text contents tokenized automatically, and if you change part of
 the text, only updates the tokens that need to, leaving the rest in place.
 
@@ -52,7 +52,7 @@ Goal
 <https://frescobaldi.org/>`_ editor. Frescobaldi highlights `LilyPond
 <https://lilypond.org/>`_ music text as you type (as many other text editors),
 and I wanted to use that highlighting information for more purposes than only
-the color of the text.
+to color the text.
 
 That's why I created the tree structure; any token knows its parent context, so
 sophisticated context-sensitive autocompletion can be implemented that needs no

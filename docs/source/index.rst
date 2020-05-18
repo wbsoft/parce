@@ -4,7 +4,7 @@
 
    A screenshot of the debugger included with *parceqt*
 
-This manual documents `parce` version |release|.
+This manual documents *parce* version |release|.
 
 .. toctree::
    :maxdepth: 2

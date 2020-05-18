@@ -7,7 +7,7 @@ Bundled language definitions
 
    lang/*
 
-The `parce` package comes with an amount of bundled language definitions.
+The *parce* package comes with an amount of bundled language definitions.
 You can import them directly, e.g.::
 
     from parce.lang.css import Css

@@ -3,7 +3,7 @@ Anatomy of a Language
 
 In this chapter we'll cover all the details of how a language can be defined.
 
-To ``parce``, a :class:`~parce.language.Language` is simply a grouping
+To *parce*, a :class:`~parce.language.Language` is simply a grouping
 container for lexicons, which group rules, and rules consist of a pattern, an
 action and zero or more targets.
 
@@ -76,10 +76,10 @@ The action
 ----------
 
 The second item in a normal rule is the action. This can be any object, as
-``parce`` does not do anything special with it. You can provide a number,
+*parce* does not do anything special with it. You can provide a number,
 a string, a method, whatever.
 
-There are, however, two action types provided by `parce`:
+There are, however, two action types provided by *parce*:
 
 1. a standard action type. A standard action looks like ``String``, etc. and
    is a singleton object that is either created using the
@@ -91,7 +91,7 @@ There are, however, two action types provided by `parce`:
    A standard action always creates one Token from the pattern's match (if the
    match contained text).
 
-   Language definitions included in `parce` use these standard actions.
+   Language definitions included in *parce* use these standard actions.
    For the list of pre-defined standard actions see :doc:`action`.
 
 2. Dynamic actions. These actions are created dynamically when a rule's

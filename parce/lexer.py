@@ -18,7 +18,7 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 
-"""
+r"""
 The Lexer is responsible for parsing text using Lexicons.
 
 The lexer generates Event objects, which contain a target (or None) and one or
@@ -56,7 +56,7 @@ Example::
     Event(target=Target(pop=-1, push=[]), tokens=((15, ';', Delimiter),))
     Event(target=Target(pop=-1, push=[]), tokens=((17, '}', Delimiter),))
 
-There is a convenience function in the ``parce`` module namespace that calls
+There is a convenience function in the *parce* module namespace that calls
 Lexer for you::
 
     >>> import parce
