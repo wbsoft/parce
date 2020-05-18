@@ -162,8 +162,8 @@ class Transformer(parce.util.Observable):
     """Evaluate a tree.
 
     For every context, the transformer calls the corresponding method of the
-    transformer with the contents of that context, where sub-contexts are
-    already replaced with the transformed result.
+    Transform instance with the contents of that context, where sub-contexts
+    are already replaced with the transformed result.
 
     """
     def __init__(self):
