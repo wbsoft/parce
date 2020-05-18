@@ -143,7 +143,7 @@ def get_prepared_lexer(tree, text, start):
         for start_token in itertools.islice(last_token.backward(), 10):
             pass
         if start_token.group:
-            start_token = start_token.group[0]
+            start_token = get_group(start_token)[0]
         start = start_token.pos if start_token.previous_token() else 0
         lexer = get_lexer(start_token) if start else Lexer([tree.lexicon])
         events = lexer.events(text, start)
