@@ -166,6 +166,21 @@ class Transformer(parce.util.Observable):
     Transform instance with the contents of that context, where sub-contexts
     are already replaced with the transformed result.
 
+    When a tree is transformed, Transformer emits the following events you
+    can connect to:
+
+    ``"started"``:
+        emitted when transforming has started, with the tree as argument
+
+    ``"updated"``:
+        emitted when the transformation has fully completed, with the tree
+        and the resulting transformation
+
+    ``"finished"``:
+        always emitted when transformation has quit, also when it was
+        inrerrupted due to tree modification while transforming was busy;
+        with the tree as argument
+
     """
     def __init__(self):
         super().__init__()
