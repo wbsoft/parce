@@ -313,12 +313,12 @@ class Transformer(parce.util.Observable):
     def result(self, tree):
         """Get the result of the transformed tree.
 
-        Raises KeyError if no result was yet created. Although this method
-        is intended to returns the transformed result for the root node,
+        Returns None if no result was yet created. Although this method
+        is intended to return the transformed result for the root node,
         it can be used to get the intermediate result for any Context node.
 
         """
-        return self._cache[tree]
+        return self._cache.get(tree)
 
     def invalidate_node(self, node):
         """Remove the transform results for this node and its ancestors
