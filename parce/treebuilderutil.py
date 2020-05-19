@@ -28,7 +28,7 @@ import collections
 import itertools
 
 from parce.lexer import Event, Lexer
-from parce.tree import Context, get_group
+from parce.tree import Context, get_group, get_group_start
 from parce.target import TargetFactory
 
 
@@ -143,7 +143,7 @@ def get_prepared_lexer(tree, text, start):
         for start_token in itertools.islice(last_token.backward(), 10):
             pass
         if start_token.group:
-            start_token = get_group(start_token)[0]
+            start_token = get_group_start(start_token)
         start = start_token.pos if start_token.previous_token() else 0
         lexer = get_lexer(start_token) if start else Lexer([tree.lexicon])
         events = lexer.events(text, start)

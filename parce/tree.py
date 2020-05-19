@@ -501,13 +501,7 @@ class Token(Node):
         """
         node = self
         if node.group is not None:
-            # go to the last one of this group
-            group = node.group + 1
-            for n in node.right_siblings():
-                if n.is_context or n.group != group:
-                    break
-                node = n
-                group += 1
+            node = get_group_end(node)
         while node.parent:
             r = node.right_sibling()
             if r:
@@ -620,7 +614,7 @@ class Context(list, Node):
                     break
                 elif m.group is not None:
                     for g, j in enumerate(range(i + 1, z), m.group + 1):
-                        if n[j].is_context or n[j].group != g:
+                        if n[j].is_context or n[j].group is None or n[j].group < g:
                             copy.extend(node.copy(copy) for node in n[i:j])
                             i = j
                             break
@@ -684,9 +678,6 @@ class Context(list, Node):
                     i = stack.pop() + 1
                 else:
                     return height + 1
-
-        # originally, but that led to recursion errors...
-        #return max(n.height() + 1 if n.is_context else 1 for n in self) if self else 0
 
     def tokens(self):
         """Yield all Tokens, descending into nested Contexts."""
@@ -972,9 +963,13 @@ class Context(list, Node):
         is returned.
 
         """
+        prev = None
         for token in self.backward():
             if not token.group:
                 return token
+            if prev and token.group >= prev.group:
+                return prev
+            prev = token
 
 
 def make_tokens(event, parent=None):
@@ -1002,4 +997,24 @@ def get_group(token):
     while j < z and p[j].is_token and p[j].group and p[j].group > p[j-1].group:
         j += 1
     return p[i:j]
+
+
+def get_group_start(token):
+    """For a token that belongs to a group, return the first token of the group."""
+    p = token.parent
+    i = token.parent_index()
+    while i and p[i].group > 0 and p[i-1].is_token and p[i-1].group is not None and p[i-1].group < p[i].group:
+        i -= 1
+    return p[i]
+
+
+def get_group_end(token):
+    """For a token that belongs to a group, return the last token of the group."""
+    p = token.parent
+    j = token.parent_index() + 1
+    z = len(p)
+    while j < z and p[j].is_token and p[j].group and p[j].group > p[j-1].group:
+        j += 1
+    return p[j-1]
+
 
