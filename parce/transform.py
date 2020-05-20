@@ -150,6 +150,46 @@ class Items(list):
             if i.is_token and any(i.action in a for a in actions):
                 yield i
 
+    def grouped(self):
+        """Yield two-tuples(tokens, item).
+
+        The ``tokens`` value is a tuple itself of zero or more tokens; grouped
+        tokens (that originated from one match) are yielded together; otherwise
+        there is just one token.
+
+        If the token(s) are followed by an ``item``, it is yielded as well; if
+        not, ``item`` is None. If there are no tokens after an item but there
+        is another item; tokens is an empty tuple then.
+
+        """
+        i = 0
+        z = len(self)
+        get_item = super().__getitem__
+        while i < z:
+            n = self[i]
+            if n.is_token:
+                if n.group is not None:
+                    j = i
+                    for g, j in enumerate(range(i + 1, z), n.group + 1):
+                        m = get_item(j)
+                        if not m.is_token or not m.group or m.group < g:
+                            break
+                    else:
+                        j += 1  # the group was the last
+                    tokens = get_item(slice(i, j))
+                    i = j
+                else:
+                    tokens = n,
+                    i += 1
+                if i < z and not get_item(i).is_token:
+                    yield tokens, get_item(i)
+                    i += 1
+                else:
+                    yield tokens, None
+            else:
+                yield (), n
+                i += 1
+
 
 class Transform:
     """This is the base class for a transform class.

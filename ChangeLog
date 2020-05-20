@@ -3,6 +3,7 @@ ChangeLog
 
 
 current: parce-0.13.0
+- added transform.Items.grouped()
 
 
 2020-05-18: parce-0.12.0
