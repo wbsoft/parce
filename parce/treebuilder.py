@@ -450,7 +450,7 @@ class TreeBuilder(Observable):
                     c = c[i]
 
             if offset and slice_end is not None and slice_end < len(context):
-                self.replace_pos(context, slice(slice_end, None), offset)
+                self.replace_pos(context, slice_end, offset)
 
             if start_trail:
                 # replace stuff after start_trail with tree
@@ -474,7 +474,7 @@ class TreeBuilder(Observable):
 
             if offset:
                 for p, i in context.ancestors_with_index():
-                    self.replace_pos(p, slice(i + 1, None), offset)
+                    self.replace_pos(p, i + 1, offset)
 
         return ReplaceResult(start, end + offset, lexicons)
 
@@ -496,14 +496,14 @@ class TreeBuilder(Observable):
         """
         self.root.lexicon = lexicon
 
-    def replace_pos(self, context, slice_, offset):
-        """Adjust the pos attribute of all tokens in the context's slice.
+    def replace_pos(self, context, index, offset):
+        """Adjust the pos attribute of all tokens in ``context[index:]``.
 
         This method is called by :meth:`replace_tree`.
         You can reimplement this method to notify others of the change.
 
         """
-        for t in tokens(context[slice_]):
+        for t in tokens(context[index:]):
             t.pos += offset
 
     def invalidate_context(self, context):

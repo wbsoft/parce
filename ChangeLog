@@ -4,6 +4,7 @@ ChangeLog
 
 current: parce-0.13.0
 - added transform.Items.grouped()
+- TreeBuilder.replace_pos() now gets the index as second arg, not the slice
 
 
 2020-05-18: parce-0.12.0
