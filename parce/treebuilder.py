@@ -449,8 +449,13 @@ class TreeBuilder(Observable):
                         t = t[l]    # t can be empty if len(end_trail) == 1, is last iteration anyway
                     c = c[i]
 
-            if offset and slice_end is not None and slice_end < len(context):
-                self.replace_pos(context, slice_end, offset)
+            if offset:
+                # if there remain nodes in the current context after tree
+                # insertion, store the index now, later we'll adjust the pos
+                if slice_end is not None:
+                    replace_pos_index = slice_end - len(context)
+                else:
+                    replace_pos_index = 0
 
             if start_trail:
                 # replace stuff after start_trail with tree
@@ -473,6 +478,8 @@ class TreeBuilder(Observable):
                 self.invalidate_context(context)
 
             if offset:
+                if replace_pos_index < 0:
+                    self.replace_pos(context, len(context) + replace_pos_index, offset)
                 for p, i in context.ancestors_with_index():
                     self.replace_pos(p, i + 1, offset)
 
