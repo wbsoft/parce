@@ -439,8 +439,12 @@ def lexicon(rules_func=None, **kwargs):
 
     The following keyword arguments are supported:
 
-    ``re_flags``:
+    ``re_flags`` (0):
         The flags that are passed to the regular expression compiler
+
+    ``consume`` (False):
+        When set to True, tokens originating from a rule that pushed this
+        lexicon are added to the target Context instead of the current.
 
     The code body of the function should return (yield) the rules of the
     lexicon, and is run with the Language class as first argument, as soon as
