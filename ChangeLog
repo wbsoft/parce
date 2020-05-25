@@ -3,6 +3,9 @@ ChangeLog
 
 
 current: parce-0.13.0
+
+- added the @lexicon consume argument, which puts a switching token in the
+  target context
 - added transform.Items.grouped()
 - TreeBuilder.replace_pos() now gets the index as second arg, not the slice
 

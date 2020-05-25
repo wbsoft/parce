@@ -142,8 +142,17 @@ def get_prepared_lexer(tree, text, start):
         # are at the first token just return 0.
         for start_token in itertools.islice(last_token.backward(), 10):
             pass
-        if start_token.group:
-            start_token = get_group_start(start_token)
+        while True:
+            if start_token.group:
+                start_token = get_group_start(start_token)
+            # go back further if this is the first token in a context whose
+            # lexicon has consume == True
+            if start_token.is_first() and start_token.parent.lexicon.consume:
+                start_token = start_token.previous_token()
+                if not start_token:
+                    return
+                continue
+            break
         start = start_token.pos if start_token.previous_token() else 0
         lexer = get_lexer(start_token) if start else Lexer([tree.lexicon])
         events = lexer.events(text, start)

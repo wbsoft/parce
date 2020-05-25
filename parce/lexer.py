@@ -118,24 +118,37 @@ class Lexer:
         get_target = target_factory.get # access methods directly (faster)
         add_target = target_factory.add
         circular = set()
+
+        def event():
+            # yield Event, all vars are nonlocal :-)
+            if isinstance(action, ActionItem):
+                tokens = tuple(action.replace(self, pos, txt, match))
+                if tokens:
+                    yield Event(get_target(), tokens)
+            else:
+                yield Event(get_target(), ((pos, txt, action),))
+
         while True:
             for pos, txt, match, action, target in lexicons[-1].parse(text, pos):
+                if target:
+                    # never pop off root
+                    if target.pop and -target.pop >= len(lexicons):
+                        target = Target(1 - len(lexicons), target.push)
                 if txt:
-                    if isinstance(action, ActionItem):
-                        tokens = tuple(action.replace(self, pos, txt, match))
-                        if tokens:
-                            yield Event(get_target(), tokens)
-                    else:
-                        yield Event(get_target(), ((pos, txt, action),))
+                    if target and target.push and target.push[-1].consume:
+                        # lexicon wants the starting tokens; handle target now
+                        if target.pop:
+                            del lexicons[target.pop:]
+                        lexicons.extend(target.push)
+                        add_target(target)
+                        circular.clear()
+                        yield from event()
+                        pos += len(txt)
+                        break   # continue with new lexicon
+                    yield from event()
                 if target:
                     if target.pop:
-                        # never pop off root
-                        if -target.pop < len(lexicons):
-                            del lexicons[target.pop:]
-                        else:
-                            target = Target(1 - len(lexicons), target.push)
-                            if target.pop:
-                                del lexicons[target.pop:]
+                        del lexicons[target.pop:]
                     if target.push:
                         if not txt:
                             state = (pos, len(lexicons), len(target.push))

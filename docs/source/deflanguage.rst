@@ -276,11 +276,47 @@ Lexicon parameters
 ------------------
 
 The :attr:`@lexicon <parce.lexicon.lexicon>` decorator optionally accepts
-arguments. Currently one argument is supported:
+arguments. Currently two arguments are supported:
 
-``re_flags``:
+``re_flags`` (0):
     to set the regular expression flags for the pattern the lexicon will
     create.
+
+``consume`` (False):
+    if set to True, tokens generated from the rule that pushed this
+    lexicon are added to the newly created Context instead of the current.
+    For example::
+
+        class MyLang(Language):
+            @lexicon
+            def root(cls):
+                yield '"', String, cls.string
+
+            @lexicon(consume=True)
+            def string(cls):
+                yield '"', String, -1
+                yield default_action, String
+
+    This language definition generates this tree structure::
+
+        >>> root(MyLang.root, '  "a string"  ').dump()
+        <Context MyLang.root at 2-12 (1 child)>
+         ╰╴<Context MyLang.string at 2-12 (3 children)>
+            ├╴<Token '"' at 2:3 (Literal.String)>
+            ├╴<Token 'a string' at 3:11 (Literal.String)>
+            ╰╴<Token '"' at 11:12 (Literal.String)>
+
+    Without the ``consume`` argument, the tree would have looked like this::
+
+        <Context MyLang.root at 2-12 (2 children)>
+         ├╴<Token '"' at 2:3 (Literal.String)>
+         ╰╴<Context MyLang.string at 3-12 (2 children)>
+            ├╴<Token 'a string' at 3:11 (Literal.String)>
+            ╰╴<Token '"' at 11:12 (Literal.String)>
+
+    Adding the tokens that switched context to the target context of a lexicon
+    that has ``consume`` set to True only happens when that lexicon is pushed,
+    not when the context is reached via "pop".
 
 See for more information the documentation of the :mod:`~parce.lexicon`
 module.

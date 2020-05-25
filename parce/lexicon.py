@@ -76,10 +76,10 @@ from .ruleitem import (
 
 class LexiconDescriptor:
     """The LexiconDescriptor creates a Lexicon when called via a class."""
-    __slots__ = ('rules_func', '_lexicons', '_lock', '_re_flags')
 
     def __init__(self, rules_func,
                        re_flags=0,
+                       consume=False,
         ):
         """Initializes with the rules function.
 
@@ -89,6 +89,7 @@ class LexiconDescriptor:
         """
         self.rules_func = rules_func    #: the function yielding the rules
         self._re_flags = re_flags
+        self._consume = consume
         self._lexicons = {}
         self._lock = threading.Lock()
 
@@ -133,6 +134,8 @@ class Lexicon:
         self.language = language
         #: The re_flags that were set on instantiation.
         self.re_flags = descriptor._re_flags
+        #: Whether this lexicon wants the token(s) that switched to it
+        self.consume = descriptor._consume
         #: The argument the lexicon was called with (creating a derived
         #: Lexicon). None for a normal lexicon.
         self.arg = arg
