@@ -131,6 +131,8 @@ class Lexicon:
         self.descriptor = descriptor
         #: The Language class the lexicon belongs to.
         self.language = language
+        #: The re_flags that were set on instantiation.
+        self.re_flags = descriptor._re_flags
         #: The argument the lexicon was called with (creating a derived
         #: Lexicon). None for a normal lexicon.
         self.arg = arg
@@ -239,11 +241,6 @@ class Lexicon:
                 except AttributeError:
                     self.parse = self._get_instance_attributes()
         return object.__getattribute__(self, name)
-
-    @property
-    def re_flags(self):
-        """The re_flags that were set on instantiation."""
-        return self.descriptor._re_flags
 
     def _get_instance_attributes(self):
         """Compile the pattern rules and return instance attributes.
