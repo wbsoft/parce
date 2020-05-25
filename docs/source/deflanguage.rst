@@ -318,8 +318,7 @@ arguments. Currently two arguments are supported:
     that has ``consume`` set to True only happens when that lexicon is pushed,
     not when the context is reached via "pop".
 
-See for more information the documentation of the :mod:`~parce.lexicon`
-module.
+See for more information :doc:`lexicon`.
 
 
 Lexicon arguments, derived Lexicon
