@@ -506,7 +506,7 @@ class LilyPond(Language):
         yield from cls.root()
 
     # -------------- String ---------------------
-    @lexicon(consume=True)
+    @lexicon
     def string(cls):
         yield r'"', String, -1
         yield from cls.string_common()
