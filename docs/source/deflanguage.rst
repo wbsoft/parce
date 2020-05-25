@@ -280,7 +280,8 @@ arguments. Currently two arguments are supported:
 
 ``re_flags`` (0):
     to set the regular expression flags for the pattern the lexicon will
-    create.
+    create. See for all possible regular expression flags the documentation of
+    the Python :mod:`re` module.
 
 ``consume`` (False):
     if set to True, tokens generated from the rule that pushed this
