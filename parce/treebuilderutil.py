@@ -207,8 +207,10 @@ def events_with_tokens(start_token, last_token):
                             # find the last token in this group
                             for g, j in enumerate(range(i + 1, z), m.group + 1):
                                 if n[j].is_context or n[j].group != g:
-                                    group = n[i:j]
                                     break
+                            else:
+                                j = z
+                            group = n[i:j]
                         tokens = tuple((t.pos, t.text, t.action) for t in group)
                         yield Event(get(), tokens), group
                         i += len(group)
