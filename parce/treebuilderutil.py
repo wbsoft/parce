@@ -38,9 +38,6 @@ BuildResult = collections.namedtuple("BuildResult", "tree start end offset lexic
 #: encapsulates the return values of :meth:`TreeBuilder.replace_tree`
 ReplaceResult = collections.namedtuple("ReplaceResult", "start end lexicons")
 
-#: encapsulates the return values of :func:`get_prepared_lexer`
-PreparedLexer = collections.namedtuple("PreparedLexer", "lexer events start")
-
 
 class Changes:
     """Store changes that have to be made to a tree.
