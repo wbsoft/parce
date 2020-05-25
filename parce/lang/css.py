@@ -37,7 +37,7 @@ from parce import Language, lexicon, skip, default_action, default_target
 from parce.action import (
     Bracket, Comment, Delimiter, Escape, Invalid, Keyword, Literal, Name,
     Number, Operator, String)
-from parce.rule import TEXT, bygroup, ifmember, ifeq
+from parce.rule import TEXT, bygroup, ifmember, ifeq, anyof
 from parce.transform import Transform
 
 
@@ -88,7 +88,7 @@ class Css(Language):
         yield r"::", Keyword, cls.pseudo_element
         yield r":", Keyword, cls.pseudo_class
         yield r"\[", Delimiter, cls.attribute_selector, cls.attribute
-        yield from cls.find_identifier(Name.Tag, cls.element_selector)
+        yield from anyof(cls.element_selector)
         yield default_target, -1
 
     @lexicon
@@ -106,7 +106,7 @@ class Css(Language):
     @lexicon
     def inline(cls):
         """CSS that would be in a rule block, but also in a HTML style attribute."""
-        yield from cls.find_identifier(cls.property_action(), cls.declaration, cls.property)
+        yield from anyof(cls.property, cls.declaration, cls.property)
         yield from cls.common()
 
     @lexicon
@@ -129,7 +129,7 @@ class Css(Language):
         yield RE_CSS_NUMBER, Number, cls.unit
         yield RE_HEX_COLOR, Literal.Color
         yield r"(url)(\()", bygroup(Name, Delimiter), cls.url_function
-        yield from cls.find_identifier(cls.identifier_action(), cls.identifier)
+        yield from anyof(cls.identifier)
         yield r"[:,;@%!]", Delimiter
 
     @lexicon
@@ -139,12 +139,6 @@ class Css(Language):
         yield from cls.identifier_common(Name.Unit)
 
     # ------------ selectors for identifiers in different roles --------------
-    @classmethod
-    def find_identifier(cls, action, *target):
-        """Find an ident-token or escape and collect it in target."""
-        yield (RE_CSS_ESCAPE, Escape, *target)
-        yield (r'[\w-]+', action, *target)
-
     @classmethod
     def identifier_common(cls, action):
         """Yield an ident-token and give it the specified action."""
@@ -160,13 +154,9 @@ class Css(Language):
     @lexicon(consume=True)
     def property(cls):
         """A CSS property."""
-        yield from cls.identifier_common(cls.property_action())
-
-    @classmethod
-    def property_action(cls):
-        """Return the dynamic action used for properties."""
         from .css_words import CSS3_ALL_PROPERTIES
-        return ifmember(TEXT, CSS3_ALL_PROPERTIES, Name.Property.Definition, Name.Property)
+        action = ifmember(TEXT, CSS3_ALL_PROPERTIES, Name.Property.Definition, Name.Property)
+        yield from cls.identifier_common(action)
 
     @lexicon
     def attribute(cls):
@@ -190,7 +180,7 @@ class Css(Language):
         yield r"[~|^$*]?=", Operator
         yield r'"', String, cls.dqstring
         yield r"'", String, cls.sqstring
-        yield from cls.find_identifier(Name.Symbol, cls.ident_token)
+        yield from anyof(cls.ident_token)
         yield r'\s+', skip
         yield default_action, Invalid
 
@@ -252,15 +242,11 @@ class Css(Language):
     @lexicon(consume=True)
     def identifier(cls):
         """An ident-token that could be a color or a function()."""
-        yield r"\(", Delimiter, cls.function
-        yield from cls.identifier_common(cls.identifier_action())
-
-    @classmethod
-    def identifier_action(cls):
-        """Return the dynamic action for an identifier (can be color)."""
         from .css_words import CSS3_NAMED_COLORS
-        return ifeq(TEXT, "transparent", Literal.Color,
+        action = ifeq(TEXT, "transparent", Literal.Color,
             ifmember(TEXT, CSS3_NAMED_COLORS, Literal.Color, Name.Symbol))
+        yield r"\(", Delimiter, cls.function
+        yield from cls.identifier_common(action)
 
     @lexicon
     def function(cls):
