@@ -46,11 +46,6 @@ RE_CSS_NUMBER = (
     r"[+-]?"               # sign
     r"(?:\d*\.)?\d+"       # mantisse
     r"(?:[Ee][+-]\d+)?")   # exponent
-RE_CSS_IDENTIFIER_LA = r"(?=-?(?:[^\W\d]|\\[0-9A-Fa-f])|--)" # lookahead
-RE_CSS_IDENTIFIER = (
-    r"(?:-?(?:[^\W\d]+|" + RE_CSS_ESCAPE + r")|--)"
-    r"(?:[\w-]+|" + RE_CSS_ESCAPE + r")*")
-RE_CSS_AT_KEYWORD = r"@" + RE_CSS_IDENTIFIER
 # match either 8, 6, 4 or 3 hex digits
 RE_HEX_COLOR = r"#[0-9a-fA-F]{3}(?:[0-9a-fA-F]{5}|[0-9a-fA-F]{3}|[0-9a-fA-F]?)"
 
@@ -93,7 +88,7 @@ class Css(Language):
         yield r"::", Keyword, cls.pseudo_element
         yield r":", Keyword, cls.pseudo_class
         yield r"\[", Delimiter, cls.attribute_selector, cls.attribute
-        yield RE_CSS_IDENTIFIER_LA, None, cls.element_selector
+        yield from cls.find_identifier(Name.Tag, cls.element_selector)
         yield default_target, -1
 
     @lexicon
@@ -111,7 +106,7 @@ class Css(Language):
     @lexicon
     def inline(cls):
         """CSS that would be in a rule block, but also in a HTML style attribute."""
-        yield RE_CSS_IDENTIFIER_LA, None, cls.declaration, cls.property
+        yield from cls.find_identifier(cls.property_action(), cls.declaration, cls.property)
         yield from cls.common()
 
     @lexicon
@@ -134,9 +129,7 @@ class Css(Language):
         yield RE_CSS_NUMBER, Number, cls.unit
         yield RE_HEX_COLOR, Literal.Color
         yield r"(url)(\()", bygroup(Name, Delimiter), cls.url_function
-        # an ident-token is found using a lookahead pattern, the whole ident-
-        # token is in the identifier context
-        yield RE_CSS_IDENTIFIER_LA, None, cls.identifier
+        yield from cls.find_identifier(cls.identifier_action(), cls.identifier)
         yield r"[:,;@%!]", Delimiter
 
     @lexicon
@@ -147,23 +140,33 @@ class Css(Language):
 
     # ------------ selectors for identifiers in different roles --------------
     @classmethod
+    def find_identifier(cls, action, *target):
+        """Find an ident-token or escape and collect it in target."""
+        yield (RE_CSS_ESCAPE, Escape, *target)
+        yield (r'[\w-]+', action, *target)
+
+    @classmethod
     def identifier_common(cls, action):
         """Yield an ident-token and give it the specified action."""
         yield RE_CSS_ESCAPE, Escape
         yield r"[\w-]+", action
         yield default_target, -1
 
-    @lexicon
+    @lexicon(consume=True)
     def element_selector(cls):
         """A tag name used as selector."""
         yield from cls.identifier_common(Name.Tag)
 
-    @lexicon
+    @lexicon(consume=True)
     def property(cls):
         """A CSS property."""
+        yield from cls.identifier_common(cls.property_action())
+
+    @classmethod
+    def property_action(cls):
+        """Return the dynamic action used for properties."""
         from .css_words import CSS3_ALL_PROPERTIES
-        yield from cls.identifier_common(
-            ifmember(TEXT, CSS3_ALL_PROPERTIES, Name.Property.Definition, Name.Property))
+        return ifmember(TEXT, CSS3_ALL_PROPERTIES, Name.Property.Definition, Name.Property)
 
     @lexicon
     def attribute(cls):
@@ -187,7 +190,7 @@ class Css(Language):
         yield r"[~|^$*]?=", Operator
         yield r'"', String, cls.dqstring
         yield r"'", String, cls.sqstring
-        yield RE_CSS_IDENTIFIER_LA, None, cls.ident_token
+        yield from cls.find_identifier(Name.Symbol, cls.ident_token)
         yield r'\s+', skip
         yield default_action, Invalid
 
@@ -241,18 +244,23 @@ class Css(Language):
         yield from cls.common()
         yield r'(?=</)', None, -1   # leave atrule when </style tag follows
 
-    @lexicon
+    @lexicon(consume=True)
     def ident_token(cls):
         """An ident-token where quoted or unquoted text is allowed."""
         yield from cls.identifier_common(Name.Symbol)
 
-    @lexicon
+    @lexicon(consume=True)
     def identifier(cls):
         """An ident-token that could be a color or a function()."""
-        from .css_words import CSS3_NAMED_COLORS
         yield r"\(", Delimiter, cls.function
-        yield from cls.identifier_common(ifeq(TEXT, "transparent", Literal.Color,
-            ifmember(TEXT, CSS3_NAMED_COLORS, Literal.Color, Name.Symbol)))
+        yield from cls.identifier_common(cls.identifier_action())
+
+    @classmethod
+    def identifier_action(cls):
+        """Return the dynamic action for an identifier (can be color)."""
+        from .css_words import CSS3_NAMED_COLORS
+        return ifeq(TEXT, "transparent", Literal.Color,
+            ifmember(TEXT, CSS3_NAMED_COLORS, Literal.Color, Name.Symbol))
 
     @lexicon
     def function(cls):
