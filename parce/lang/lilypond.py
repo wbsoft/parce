@@ -506,7 +506,7 @@ class LilyPond(Language):
         yield from cls.root()
 
     # -------------- String ---------------------
-    @lexicon
+    @lexicon(consume=True)
     def string(cls):
         yield r'"', String, -1
         yield from cls.string_common()
@@ -522,12 +522,12 @@ class LilyPond(Language):
         yield r'%\{', Comment, cls.multiline_comment
         yield r'%', Comment, cls.singleline_comment
 
-    @lexicon
+    @lexicon(consume=True)
     def multiline_comment(cls):
         yield r'%}', Comment, -1
         yield from cls.comment_common()
 
-    @lexicon(re_flags=re.MULTILINE)
+    @lexicon(re_flags=re.MULTILINE, consume=True)
     def singleline_comment(cls):
         yield from cls.comment_common()
         yield r'$', Comment, -1
