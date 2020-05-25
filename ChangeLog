@@ -4,6 +4,7 @@ ChangeLog
 
 current: parce-0.13.0
 
+- added rule.anyof()
 - added the @lexicon consume argument, which puts a switching token in the
   target context
 - added transform.Items.grouped()

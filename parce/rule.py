@@ -395,3 +395,42 @@ def using(lexicon):
     return ruleitem.DelegateAction(lexicon)
 
 
+### Helper to yield modified rules
+
+
+def anyof(lexicon, *target):
+    """Yield certain rules from the specified ``lexicon``, adding a ``target``.
+
+    Rules that specify a target themselves, and rules starting with
+    ``default_action`` or ``default_target``, are skipped. If no ``target`` is
+    specified, the ``lexicon`` becomes the target itself (specify ``0`` to
+    suppress that).
+
+    So when you use this function in a lexicon ``mylexicon`` like this::
+
+        @lexicon
+        def mylexicon(cls):
+            yield from anyof(cls.other_lexicon)
+
+        @lexicon
+        def other_lexicon(cls):
+            yield "patt1", Name.Symbol
+            yield "patt2", Delimiter, cls.yet_another_lexicon
+
+    the first rule of ``other_lexicon`` is yielded as::
+
+        ("patt1", Name.Symbol, cls.other_lexicon)
+
+    but the second rule ``"patt2"`` is not yielded, because it has a target
+    itself.
+
+    """
+    import parce.target
+    if not target:
+        target = lexicon,
+    for pattern, action, *t in lexicon:
+        if pattern not in (parce.default_action, parce.default_target) and \
+                not parce.target.TargetFactory.make(lexicon, t):
+            yield (pattern, action, *target)
+
+
