@@ -276,7 +276,7 @@ class TreeBuilder(Observable):
             tail_token = self.root.find_token_after(end)
             if tail_token:
                 tail_gen = ((t, t.pos) for t in tail_token.forward_including()
-                        if not t.group)
+                        if not t.group and not (t.is_first() and t.parent.lexicon.consume))
                 for tail_token, tail_pos in tail_gen:
                     tail = True
                     break
@@ -331,7 +331,8 @@ class TreeBuilder(Observable):
                                 break
                         else:
                             tail = False
-                    if pos == tail_pos and tokens[0].equals(tail_token):
+                    if pos == tail_pos and tokens[0].equals(tail_token) and \
+                            (context or not context.lexicon.consume) :
                         # we can reuse the tail from tail_pos
                         return BuildResult(tree, lowest_start, tail_pos, offset, None)
                 context.extend(tokens)
