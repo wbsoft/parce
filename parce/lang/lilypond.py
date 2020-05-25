@@ -31,8 +31,8 @@ from parce.action import (
     Bracket, Character, Comment, Delimiter, Direction, Keyword, Name, Number,
     Operator, Separator, String, Text)
 from parce.rule import (
-    MATCH, TEXT, bygroup, call, dselect, findmember, ifeq, ifgroup, ifmember,
-    select, words)
+    MATCH, TEXT, arg, bygroup, call, dselect, findmember, ifeq, ifgroup,
+    ifmember, select, words)
 
 from . import lilypond_words
 
@@ -203,9 +203,9 @@ class LilyPond(Language):
     def music(cls):
         """Musical items."""
         yield from cls.common()
-        yield r"<<", Bracket.Start, cls.simultaneous
+        yield r"\{", Bracket.Start, cls.musiclist('}')
+        yield r"<<", Bracket.Start, cls.musiclist('>>')
         yield r"<", Delimiter.Chord.Start, cls.chord
-        yield r"\{", Bracket.Start, cls.sequential
         yield r"\\\\", Separator.VoiceSeparator
         yield r"\|", Separator.PipeSymbol
         yield r"\\[\[\]]", Spanner.Ligature
@@ -226,26 +226,20 @@ class LilyPond(Language):
         yield r"\d+", Number
         yield from cls.commands()
 
-    @lexicon
-    def sequential(cls):
-        """A { } construct."""
-        yield r"\}", Bracket.End, -1
+    @lexicon(consume=True)
+    def musiclist(cls):
+        """A { } or << >> construct; derive with the end arg (} or >>)."""
+        yield arg(), Bracket.End, -1
         yield from cls.music()
 
-    @lexicon
-    def simultaneous(cls):
-        """A << >> construct."""
-        yield r">>", Bracket.End, -1
-        yield from cls.music()
-
-    @lexicon
+    @lexicon(consume=True)
     def chord(cls):
         """A < chord > construct."""
         yield r">", Delimiter.Chord.End, -1
         yield from cls.music()
 
     # ------------------ special commands ---------------
-    @lexicon
+    @lexicon(consume=True)
     def tempo(cls):
         """Find content after a tempo command."""
         yield SKIP_WHITESPACE
@@ -256,7 +250,7 @@ class LilyPond(Language):
             Operator.Assignment, Number, Operator, Number), -1
         yield default_target, -1
 
-    @lexicon
+    @lexicon(consume=True)
     def context(cls):
         """\\new, \\change, \\context Context [="name"] stuff."""
         yield SKIP_WHITESPACE
@@ -267,7 +261,7 @@ class LilyPond(Language):
         yield from cls.common()
         yield default_target, -1
 
-    @lexicon
+    @lexicon(consume=True)
     def set_unset(cls):
         """\\set, \\unset."""
         yield SKIP_WHITESPACE
@@ -277,7 +271,7 @@ class LilyPond(Language):
         yield RE_LILYPOND_SYMBOL + r"(?=\s*([,.=])?)", Name.Variable.Definition, ifeq(MATCH(1), None, -1)
         yield default_target, -1
 
-    @lexicon
+    @lexicon(consume=True)
     def override(cls):
         """\\override, \\revert."""
         yield SKIP_WHITESPACE
@@ -333,12 +327,20 @@ class LilyPond(Language):
 
 
     # --------------------- lyrics -----------------------
-    @lexicon
+    @classmethod
+    def lyricmode_rules(cls):
+        yield r"(\\(?:lyric(?:mode|s)|addlyrics))\b\s*(\\s(?:equential|imultaneous)\b)?\s*(\{|<<)?", \
+            bygroup(Keyword.Lyric, Keyword, Bracket.Start), \
+            dselect(MATCH(3), {'{': cls.lyricmode('}'), '<<': cls.lyricmode('>>')})
+        yield r"\\lyricsto\b", Keyword.Lyric, cls.lyricsto
+
+    @lexicon(consume=True)
     def lyricmode(cls):
         """Yield contents in lyric mode."""
+        yield arg(), Bracket.End, -1
         yield from cls.common()
-        yield r">>|\}", Bracket.End, -1
-        yield r"<<|\{", Bracket.Start, 1
+        yield r"<<", Bracket.Start, cls.lyricmode('>>')
+        yield r"\{", Bracket.Start, cls.lyricmode('}')
         yield RE_LILYPOND_LYRIC_TEXT, dselect(TEXT, {
                 "--": LyricHyphen,
                 "__": LyricExtender,
@@ -348,73 +350,54 @@ class LilyPond(Language):
         yield RE_LILYPOND_DURATION, Duration, cls.duration_dots
         yield from cls.commands()
 
-    @lexicon
+    @lexicon(consume=True)
     def lyricsto(cls):
         """Find the argument of a \\lyricsto command."""
         yield from cls.base()
         yield RE_LILYPOND_SYMBOL, Name.Symbol
         yield r"\\s(sequential|imultaneous)\b", Keyword
-        yield r"\{|<<", Bracket.Start, -1, cls.lyricmode
+        yield r"<<", Bracket.Start, -1, cls.lyricmode('>>')
+        yield r"\{", Bracket.Start, -1, cls.lyricmode('}')
         yield SKIP_WHITESPACE
         yield default_target, -1
 
-    @classmethod
-    def lyricmode_rules(cls):
-        yield r"(\\(?:lyric(?:mode|s)|addlyrics))\b\s*(\\s(?:equential|imultaneous)\b)?\s*(\{|<<)?", \
-            bygroup(Keyword.Lyric, Keyword, Bracket.Start), \
-            ifgroup(3, cls.lyricmode)
-        yield r"\\lyricsto\b", Keyword.Lyric, cls.lyricsto
-
     # ---------------------- notemode ---------------------
-    @lexicon
-    def notemode(cls):
-        """\\notemode and \\notes."""
-        yield default_target, -1
-
     @classmethod
     def notemode_rule(cls):
         """Yield the rule for \\notemode / \\notes."""
         yield r"(\\note(?:s|mode))\b\s*(\{|<<)?", bygroup(Keyword, Bracket.Start), \
             dselect(MATCH(2), {
-                "{": (cls.notemode, cls.sequential),
-                "<<": (cls.notemode, cls.simultaneous),
+                "{": (cls.notemode, cls.musiclist('}')),
+                "<<": (cls.notemode, cls.musiclist('>>')),
             })
 
-    # ---------------------- drummode ---------------------
     @lexicon
-    def drummode(cls):
-        """\\drummode and \\drums."""
+    def notemode(cls):
+        """\\notemode and \\notes."""
         yield default_target, -1
 
-    @classmethod
-    def drummode_items(cls):
-        """What can be found in drummode."""
-        yield r"\{", Bracket.Start, cls.drummode_sequential
-        yield r"<<", Bracket.Start, cls.drummode_simultaneous
-        yield r"\}|>>", Bracket.End, -1
-        yield RE_LILYPOND_REST, Rest
-        yield RE_LILYPOND_PITCHWORD, ifmember(TEXT, lilypond_words.drum_pitch_names_set, Pitch.Drum, Name.Symbol)
-        yield from cls.music()
-
-    @lexicon
-    def drummode_sequential(cls):
-        yield from cls.drummode_items()
-
-    @lexicon
-    def drummode_simultaneous(cls):
-        yield from cls.drummode_items()
-
+    # ---------------------- drummode ---------------------
     @classmethod
     def drummode_rule(cls):
         """Yield the rule for \\drummode / \\drums."""
         yield r"(\\drum(?:s|mode))\b\s*(\{|<<)?", bygroup(Keyword.Drum, Bracket.Start), \
             dselect(MATCH(2), {
-                "{": (cls.drummode, cls.drummode_sequential),
-                "<<": (cls.drummode, cls.drummode_simultaneous),
+                "{": (cls.drummode('}')),
+                "<<": (cls.drummode('>>')),
             })
 
+    @lexicon(consume=True)
+    def drummode(cls):
+        """\\drummode and \\drums."""
+        yield r"\{", Bracket.Start, cls.drummode('}')
+        yield r"<<", Bracket.Start, cls.drummode('>>')
+        yield arg(), Bracket.End, -1
+        yield RE_LILYPOND_REST, Rest
+        yield RE_LILYPOND_PITCHWORD, ifmember(TEXT, lilypond_words.drum_pitch_names_set, Pitch.Drum, Name.Symbol)
+        yield from cls.music()
+
     # ---------------------- chordmode ---------------------
-    @lexicon
+    @lexicon(consume=True)
     def chordmode(cls):
         """\\chordmode and \\chords."""
         yield r":|/\+?", Separator.Chord, cls.chord_modifier
@@ -451,14 +434,14 @@ class LilyPond(Language):
         """Find scheme."""
         yield r'[#$]', Delimiter.ModeChange.SchemeStart, pop, cls.get_scheme_target()
 
-    @lexicon
+    @lexicon(consume=True)
     def varname(cls):
         """bla.bla.bla syntax."""
         yield r'\s*(\.)\s*(' + RE_LILYPOND_SYMBOL + ')', bygroup(Separator.Dot, Name.Variable)
         yield default_target, -1
 
     # -------------------- markup --------------------
-    @lexicon
+    @lexicon(consume=True)
     def markup(cls):
         """Markup without environment. Try to guess the n of arguments."""
         yield r'\{', Bracket.Markup.Start, -1, cls.markuplist
@@ -478,7 +461,7 @@ class LilyPond(Language):
                 return i
         return 1    # assume a user command has no arguments
 
-    @lexicon
+    @lexicon(consume=True)
     def markuplist(cls):
         """Markup until } ."""
         yield r'\}', Bracket.Markup.End, -1
@@ -499,7 +482,7 @@ class LilyPond(Language):
         from .scheme import SchemeLily
         return SchemeLily.one_arg
 
-    @lexicon
+    @lexicon(consume=True)
     def schemelily(cls):
         """LilyPond from scheme.SchemeLily #{ #}."""
         yield r"#}", Bracket.LilyPond.End, -1

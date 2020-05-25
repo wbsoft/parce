@@ -83,7 +83,7 @@ class Scheme(Language):
         return ifmember(TEXT, scheme_words.keywords, Keyword, Name)
 
     # -------------- String ---------------------
-    @lexicon
+    @lexicon(consume=True)
     def string(cls):
         yield r'"', String, -1
         yield from cls.string_common()
@@ -94,12 +94,12 @@ class Scheme(Language):
         yield default_action, String
 
     # -------------- Comment ---------------------
-    @lexicon
+    @lexicon(consume=True)
     def multiline_comment(cls):
         yield r'!#', Comment, -1
         yield from cls.comment_common()
 
-    @lexicon(re_flags=re.MULTILINE)
+    @lexicon(re_flags=re.MULTILINE, consume=True)
     def singleline_comment(cls):
         yield from cls.comment_common()
         yield r'$', Comment, -1
@@ -107,7 +107,7 @@ class Scheme(Language):
 
 class SchemeLily(Scheme):
     """Scheme used with LilyPond."""
-    @lexicon
+    @lexicon(consume=True)
     def one_arg(cls):
         """Pick one thing and pop back."""
         yield r'\s+', skip
