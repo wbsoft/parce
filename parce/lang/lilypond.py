@@ -112,7 +112,7 @@ class LilyPond(Language):
         yield r"(\\layout)\s*(\{)", bygroup(Keyword, Bracket.Start), cls.layout
         yield r"(\\midi)\s*(\{)", bygroup(Keyword, Bracket.Start), cls.midi
 
-    @lexicon
+    @lexicon(consume=True)
     def book(cls):
         """Book or bookpart."""
         yield r'\}', Bracket.End, -1
@@ -120,13 +120,13 @@ class LilyPond(Language):
         yield from cls.blocks()
         yield from cls.music()
 
-    @lexicon
+    @lexicon(consume=True)
     def score(cls):
         yield r'\}', Bracket.End, -1
         yield from cls.blocks()
         yield from cls.music()
 
-    @lexicon
+    @lexicon(consume=True)
     def header(cls):
         yield r'\}', Bracket.End, -1
         yield RE_LILYPOND_SYMBOL, Name.Variable
@@ -134,7 +134,7 @@ class LilyPond(Language):
         yield "=", Operator.Assignment
         yield from cls.common()
 
-    @lexicon
+    @lexicon(consume=True)
     def paper(cls):
         yield r'\}', Bracket.End, -1
         yield RE_LILYPOND_SYMBOL, Name.Variable
@@ -144,7 +144,7 @@ class LilyPond(Language):
         yield from cls.common()
         yield from cls.commands()
 
-    @lexicon
+    @lexicon(consume=True)
     def layout(cls):
         yield r'\}', Bracket.End, -1
         yield RE_LILYPOND_SYMBOL, Name.Variable
@@ -153,11 +153,11 @@ class LilyPond(Language):
         yield r"(\\context)\s*(\{)", bygroup(Keyword, Bracket.Start), cls.layout_context
         yield from cls.music()
 
-    @lexicon
+    @lexicon(consume=True)
     def midi(cls):
         yield from cls.layout
 
-    @lexicon
+    @lexicon(consume=True)
     def layout_context(cls):
         r"""Contents of \layout or \midi { \context { } } or \with. { }."""
         yield r'\}', Bracket.End, -1
@@ -459,7 +459,7 @@ class LilyPond(Language):
         for i in range(5):
             if command in lilypond_words.markup_commands_nargs[i]:
                 return i
-        return 1    # assume a user command has no arguments
+        return 1    # assume a user command has one argument
 
     @lexicon(consume=True)
     def markuplist(cls):
