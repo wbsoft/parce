@@ -135,6 +135,21 @@ class Items(list):
                 if not i.is_token:
                     yield i
 
+    def objects(self, *classes):
+        """Yield only the objects from sub-items.
+
+        If one or mode classes are specified, only yields objects that are
+        an instance of that class/classes.
+
+        """
+        if classes:
+            for i in self.items():
+                if isinstance(i.obj, classes):
+                    yield i.obj
+        else:
+            for i in self.items():
+                yield i.obj
+
     def action(self, *actions):
         """Yield only the tokens with one of the specified actions."""
         for i in self:
