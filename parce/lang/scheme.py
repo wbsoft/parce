@@ -64,7 +64,7 @@ class Scheme(Language):
                 Number.Infinity, Number.NaN)), pop
         if pop == 0:
             yield r"\.(?!\S)", Delimiter.Dot
-        yield r"#[tf]\b", Number.Boolean, pop
+        yield r"#[tTfF]\b", Number.Boolean, pop
         yield r"#\\([a-z]+|.)", Character, pop
         yield r'[^()"{}\s]+', cls.get_word_action(), pop
 
