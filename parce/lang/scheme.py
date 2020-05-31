@@ -28,8 +28,7 @@ import re
 
 from parce import Language, lexicon, skip, default_action, default_target
 from parce.action import (
-    Boolean, Bracket, Character, Comment, Delimiter, Keyword, Name, Number,
-    String)
+    Bracket, Character, Comment, Delimiter, Keyword, Name, Number, String)
 from parce.rule import TEXT, ifmember
 
 RE_SCHEME_RIGHT_BOUND = r"(?=$|[)\s])"
@@ -62,7 +61,7 @@ class Scheme(Language):
         yield RE_SCHEME_NUMBER, Number, pop
         if pop == 0:
             yield r"\.(?!\S)", Delimiter.Dot
-        yield r"#[tf]\b", Boolean, pop
+        yield r"#[tf]\b", Number.Boolean, pop
         yield r"#\\([a-z]+|.)", Character, pop
         yield r'[^()"{}\s]+', cls.get_word_action(), pop
 

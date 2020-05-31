@@ -110,8 +110,6 @@ Verbatim        = Literal.Verbatim
 String          = Literal.String        # a quoted string
 Character       = Literal.Character     # a single character
 Number          = Literal.Number        # a numeric value
-Fraction        = Number.Fraction       # a fraction/rational value
-Boolean         = Number.Boolean        # a boolean value
 Literal.Color
 Literal.Email
 Literal.Url
@@ -126,6 +124,18 @@ Literal.Prompt
 
 String.Double
 String.Single
+
+
+# Actions that derive of Number:
+
+Number.Decimal
+Number.Int
+Number.Float
+Number.Binary
+Number.Hexadecimal
+Number.Octal
+Number.Fraction
+Number.Boolean
 
 
 # Actions that derive of Delimiter:
