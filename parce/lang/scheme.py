@@ -29,16 +29,18 @@ import re
 from parce import Language, lexicon, skip, default_action, default_target
 from parce.action import (
     Bracket, Character, Comment, Delimiter, Keyword, Name, Number, String)
-from parce.rule import TEXT, ifmember, gselect
+from parce.rule import TEXT, bygroup, ifmember, gselect
 
 RE_SCHEME_RIGHT_BOUND = r"(?=$|[)\s])"
-RE_SCHEME_FRACTION = r"-?\d+/\d+" + RE_SCHEME_RIGHT_BOUND
-RE_SCHEME_FLOAT = r"-?((\d+(\.\d*)|\.\d+)(E\d+)?)" + RE_SCHEME_RIGHT_BOUND
-RE_SCHEME_NUMBER = (
-    r"(?:"
-    r"(-?\d+)|"
-    r"#(?:(b[0-1]+)|(o[0-7]+)|(x[0-9a-fA-F]+))|"
-    r"([-+]inf.0)|([-+]?nan.0)"
+RE_SCHEME_NUMBER = (r"(#[eEiI])?(#d)?("
+    r"([-+]?(?:(?:\d+(?:\.\d*)|\.\d+)(?:[eE]\d+)?))"
+    r"|([-+]?\d+/\d+)"
+    r"|([-+]?\d+)"
+    r"|(?:#(?:([bB][-+]?[0-1]+)"
+        r"|([oO][-+]?[0-7]+)"
+        r"|([xX][-+]?[0-9a-fA-F]+)))"
+    r"|([-+][iI][nN][fF]\.0)"
+    r"|([-+][nN][aA][nN]\.0)"
     r")" + RE_SCHEME_RIGHT_BOUND
 )
 
@@ -56,11 +58,12 @@ class Scheme(Language):
         yield r'"', String, pop, cls.string
         yield r';', Comment, pop, cls.singleline_comment
         yield r'#!', Comment, pop, cls.multiline_comment
-        yield RE_SCHEME_FRACTION, Number.Fraction, pop
-        yield RE_SCHEME_FLOAT, Number.Float, pop
-        yield RE_SCHEME_NUMBER, gselect(
-            Number.Int, Number.Binary, Number.Octal, Number.Hexadecimal,
-            Number.Infinity, Number.NaN), pop
+        yield RE_SCHEME_NUMBER, bygroup(
+            Number.Prefix, Number.Prefix,
+            gselect(None, None, None,
+                Number.Float, Number.Fraction, Number.Int,
+                Number.Binary, Number.Octal, Number.Hexadecimal,
+                Number.Infinity, Number.NaN)), pop
         if pop == 0:
             yield r"\.(?!\S)", Delimiter.Dot
         yield r"#[tf]\b", Number.Boolean, pop
