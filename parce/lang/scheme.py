@@ -66,12 +66,12 @@ class Scheme(Language):
         yield r"#\\([a-z]+|.)", Character, pop
         yield r'[^()"{}\s]+', cls.get_word_action(), pop
 
-    @lexicon
+    @lexicon(consume=True)
     def list(cls):
         yield r"\)", Delimiter.CloseParen, -1
         yield from cls.common()
 
-    @lexicon
+    @lexicon(consume=True)
     def vector(cls):
         yield r"\)", Delimiter.CloseVector, -1
         yield from cls.common()
