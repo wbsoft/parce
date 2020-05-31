@@ -32,15 +32,13 @@ from parce.action import (
 from parce.rule import TEXT, bygroup, ifmember, gselect
 
 RE_SCHEME_RIGHT_BOUND = r"(?=$|[)\s])"
-RE_SCHEME_NUMBER = (r"(#[eEiI])?(#d)?("
-    r"([-+]?(?:(?:\d+(?:\.\d*)|\.\d+)(?:[eE]\d+)?))"
-    r"|([-+]?\d+/\d+)"
-    r"|([-+]?\d+)"
-    r"|(?:#(?:([bB][-+]?[0-1]+)"
-        r"|([oO][-+]?[0-7]+)"
-        r"|([xX][-+]?[0-9a-fA-F]+)))"
-    r"|([-+][iI][nN][fF]\.0)"
-    r"|([-+][nN][aA][nN]\.0)"
+RE_SCHEME_NUMBER = (r"(#[eEiI])?(#d)?("             # #e, #i and/or #d prefix
+    r"([-+]?(?:(?:\d+(?:\.\d*)|\.\d+)(?:[eE]\d+)?))"# float
+    r"|[-+]?\d+(?:(/\d+)|())"                       # fraction, int
+    r"|#(?:([bB][-+]?[0-1]+)"                       # binary
+        r"|([oO][-+]?[0-7]+)"                       # octal
+        r"|([xX][-+]?[0-9a-fA-F]+))"                # hexadecimal
+    r"|[-+](?:([iI][nN][fF])|([nN][aA][nN]))\.0"    # inf, NaN
     r")" + RE_SCHEME_RIGHT_BOUND
 )
 
