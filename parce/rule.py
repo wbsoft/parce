@@ -214,16 +214,24 @@ def gselect(*results, default=()):
 
     For example::
 
-        gselect(arg1, arg2, arg3, arg4, default)
+        gselect(arg1, arg2, arg3, arg4, default=default)
 
     is equivalent to::
 
         ifgroup(1, arg1,
-          ifgroup(2, arg2,
-            ifgroup(3, arg3,
-              ifgroup(4, arg4, default))))
+            ifgroup(2, arg2,
+                ifgroup(3, arg3,
+                    ifgroup(4, arg4, default))))
 
-    A small difference is that when an ``arg`` is None, that group is skipped.
+    When an ``arg`` is None, that group is skipped, so::
+
+        gselect(arg1, None, arg2, arg3)
+
+    is equivalent to::
+
+        ifgroup(1, arg1,
+            ifgroup(3, arg2,
+                ifgroup(4, arg3)))
 
     """
     results = list(results)
