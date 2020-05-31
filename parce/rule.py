@@ -236,9 +236,9 @@ def gselect(*results, default=()):
     """
     indices, results = zip(*((i, r) for i, r in enumerate(results, 1) if r is not None))
     def predicate(m):
-        for n in indices:
+        for i, n in enumerate(indices):
             if m.group(m.lastindex + n) is not None:
-                return n
+                return i
         return len(results)
     return select(call(predicate, MATCH), *results, default)
 
