@@ -136,6 +136,8 @@ Number.Hexadecimal
 Number.Octal
 Number.Fraction
 Number.Boolean
+Number.Infinity
+Number.NaN
 
 
 # Actions that derive of Delimiter:
