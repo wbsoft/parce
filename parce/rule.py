@@ -234,10 +234,10 @@ def gselect(*results, default=()):
                 ifgroup(4, arg3)))
 
     """
-    results = list(results)
+    indices, results = zip(*((i, r) for i, r in enumerate(results, 1) if r is not None))
     def predicate(m):
-        for n, r in enumerate(results):
-            if r is not None and m.group(m.lastindex + n + 1) is not None:
+        for n in indices:
+            if m.group(m.lastindex + n) is not None:
                 return n
         return len(results)
     return select(call(predicate, MATCH), *results, default)
