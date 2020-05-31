@@ -209,6 +209,32 @@ def ifgroup(n, result, else_result=()):
     return select(call(operator.ne, MATCH(n), None), else_result, result)
 
 
+def gselect(*results, default=()):
+    """Yield one of the results if that group contributes to the match.
+
+    For example::
+
+        gselect(arg1, arg2, arg3, arg4, default)
+
+    is equivalent to::
+
+        ifgroup(1, arg1,
+          ifgroup(2, arg2,
+            ifgroup(3, arg3,
+              ifgroup(4, arg4, default))))
+
+    A small difference is that when an ``arg`` is None, that group is skipped.
+
+    """
+    results = list(results)
+    def predicate(m):
+        for n, r in enumerate(results):
+            if r is not None and m.group(m.lastindex + n + 1) is not None:
+                return n
+        return len(results)
+    return select(call(predicate, MATCH), *results, default)
+
+
 def dselect(item, mapping, default=()):
     r"""Yield the ``item`` from the specified ``mapping`` (dictionary).
 
