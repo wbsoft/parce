@@ -134,36 +134,37 @@ class Lexer:
                     # never pop off root
                     if target.pop and -target.pop >= len(lexicons):
                         target = Target(1 - len(lexicons), target.push)
-                if txt:
-                    if target and target.push and target.push[-1].consume:
-                        # lexicon wants the starting tokens; handle target now
+                    if txt:
+                        if target.push and target.push[-1].consume:
+                            # lexicon wants the starting tokens; handle target now
+                            if target.pop:
+                                del lexicons[target.pop:]
+                            lexicons.extend(target.push)
+                            add_target(target)
+                            yield from event()
+                        else:
+                            yield from event()
+                            if target.pop:
+                                del lexicons[target.pop:]
+                            lexicons.extend(target.push)
+                            add_target(target)
+                        circular.clear()
+                        pos += len(txt)
+                    else:
                         if target.pop:
                             del lexicons[target.pop:]
+                        state = (pos, len(lexicons), len(target.push))
+                        if state in circular:
+                            if pos < len(text):
+                                pos += 1
+                            circular.clear()
+                        else:
+                            circular.add(state)
                         lexicons.extend(target.push)
                         add_target(target)
-                        circular.clear()
-                        yield from event()
-                        pos += len(txt)
-                        break   # continue with new lexicon
-                    yield from event()
-                if target:
-                    if target.pop:
-                        del lexicons[target.pop:]
-                    if target.push:
-                        if not txt:
-                            state = (pos, len(lexicons), len(target.push))
-                            if state in circular:
-                                if pos < len(text):
-                                    pos += 1
-                                circular.clear()
-                            else:
-                                circular.add(state)
-                        else:
-                            circular.clear()
-                        lexicons.extend(target.push)
-                    add_target(target)
-                    pos += len(txt)
                     break   # continue with new lexicon
+                elif txt:
+                    yield from event()
             else:
                 break   # done
 
