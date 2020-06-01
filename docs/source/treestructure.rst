@@ -217,7 +217,7 @@ Grouped Tokens
 
 When a dynamic action is used in a rule, and it generates more than one Token
 from the same regular expression match, these Tokens form a group, each having
-the tuple of all group members in the ``group`` attribute. That attribute is
+their index in the group in the ``group`` attribute. That attribute is
 read-only and ``None`` for normal Tokens. Grouped tokens are always adjacent
 and in the same Context.
 
@@ -230,7 +230,10 @@ But just in case, if you want to be sure you have the first member of a Token
 group::
 
     if token.group:
-        token = token.group[0]
+        # group is not None or 0
+        for token in token.left_siblings():
+            if not token.group:
+                break
 
 
 Querying the tree structure

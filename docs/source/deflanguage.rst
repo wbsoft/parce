@@ -121,21 +121,28 @@ processed as follows:
   to a Context that already exists. The root context is never popped of the
   stack.
 
+* an integer target ``0`` is allowed and is essentially a no-op, it does
+  nothing.
+
 Actions and targets share a mechanism to choose them dynamically based on the
 matched text. See for more information below under `Dynamic actions and
 targets`_.
 
-A target is always executed after adding the token(s) that were generated to
-the current context. The newly created context can be seen as the "target" of
-the token that switched to it. If the match object did not contain actual
-text, no token is generated, but the target *is* handled of course.
+A target is normally executed after adding the token(s) that were generated to
+the current context. Only if the target lexicon has the ``consume`` attribute
+set to True, the generated tokens are added to the newly generated context, see
+`Lexicon parameters`_.
+
+The newly created context can be seen as the "target" of the token that
+switched to it. If the match object did not contain actual text, no token is
+generated, but the target *is* handled of course.
 
 
 Special rules
 -------------
 
-There are currently two special rules, i.e. that do not provide a pattern
-to match, but induce other behaviour:
+There are two special rules, i.e. that do not provide a pattern to match, but
+induce other behaviour:
 
 1.  The ``default_action`` rule, which causes a token to be generated using
     the specified action for text that would otherwise not be matched by
