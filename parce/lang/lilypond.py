@@ -481,7 +481,7 @@ class LilyPond(Language):
     def get_scheme_target(cls):
         """Return the ``one_arg`` lexicon for one Scheme expression."""
         from .scheme import SchemeLily
-        return SchemeLily.one_arg
+        return SchemeLily.scheme
 
     @lexicon(consume=True)
     def schemelily(cls):

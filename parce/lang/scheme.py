@@ -110,11 +110,16 @@ class Scheme(Language):
 class SchemeLily(Scheme):
     """Scheme used with LilyPond."""
     @lexicon(consume=True)
-    def one_arg(cls):
+    def scheme(cls):
         """Pick one thing and pop back."""
         yield r'\s+', skip
-        yield from cls.common(-1)
+        yield from cls.common(cls.argument)
         yield default_target, -1
+
+    @lexicon(consume=True)
+    def argument(cls):
+        """One Scheme expression."""
+        yield default_target, -2
 
     @classmethod
     def common(cls, pop=0):
