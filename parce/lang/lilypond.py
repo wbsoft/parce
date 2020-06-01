@@ -429,11 +429,6 @@ class LilyPond(Language):
         yield from cls.scheme()
         yield from cls.comments()
 
-    @classmethod
-    def scheme(cls, pop=0):
-        """Find scheme."""
-        yield r'[#$]', Delimiter.ModeChange.SchemeStart, pop, cls.get_scheme_target()
-
     @lexicon(consume=True)
     def varname(cls):
         """bla.bla.bla syntax."""
@@ -478,7 +473,13 @@ class LilyPond(Language):
 
     # -------------- Scheme ---------------------
     @classmethod
+    def scheme(cls, pop=0):
+        """Find scheme."""
+        yield r'[#$]', Delimiter.ModeChange.SchemeStart, pop, cls.get_scheme_target()
+
+    @classmethod
     def get_scheme_target(cls):
+        """Return the ``one_arg`` lexicon for one Scheme expression."""
         from .scheme import SchemeLily
         return SchemeLily.one_arg
 
