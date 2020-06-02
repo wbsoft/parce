@@ -152,6 +152,7 @@ class LilyPond(Language):
         yield RE_LILYPOND_SYMBOL, Name.Variable, cls.varname
         yield "[,.]", Delimiter
         yield "=", Operator.Assignment
+        yield r'\d+', Number, cls.unit
         yield r"(\\context)\s*(\{)", bygroup(Keyword, Bracket.Start), cls.layout_context
         yield from cls.music()
 
