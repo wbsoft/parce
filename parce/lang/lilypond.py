@@ -141,7 +141,8 @@ class LilyPond(Language):
         yield RE_LILYPOND_SYMBOL, Name.Variable, cls.varname
         yield "[,.]", Delimiter
         yield "=", Operator.Assignment
-        yield RE_FRACTION + r"|\d+", Number
+        yield r'\d+', Number, cls.unit
+        yield RE_FRACTION, Number
         yield from cls.common()
         yield from cls.commands()
 
@@ -445,6 +446,12 @@ class LilyPond(Language):
         this context is never created."""
         yield from cls.find_string(-1)
         yield from cls.find_scheme(-1)
+        yield default_target, -1
+
+    @lexicon(consume=True)
+    def unit(cls):
+        """A unit that might occur after a numeric value in a paper block."""
+        yield r'\\(mm|in|pt|cm)' + RE_LILYPOND_ID_RIGHT_BOUND, Name.Builtin, -1
         yield default_target, -1
 
     # -------------------- markup --------------------
