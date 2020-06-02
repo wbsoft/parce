@@ -136,9 +136,9 @@ things:
 * just hang on waiting...: ``get_root(True)`` awaits the process if needed and
   returns the finished tree.
 
-You can also add callbacks that get called with the modified range using::
+You can also connect to emitted events, for example using::
 
-    builder.add_build_updated_callback(func)
+    builder.connect("updated", func)
 
 The supplied ``func`` will then be called with two arguments ``start`` and
 ``end`` that denote the range that was re-tokenized.
