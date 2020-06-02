@@ -123,12 +123,14 @@ class LilyPond(Language):
 
     @lexicon(consume=True)
     def score(cls):
+        """A score block, can also occur inside markup."""
         yield r'\}', Bracket.End, -1
         yield from cls.blocks()
         yield from cls.music()
 
     @lexicon(consume=True)
     def header(cls):
+        """A header block."""
         yield r'\}', Bracket.End, -1
         yield RE_LILYPOND_SYMBOL, Name.Variable, cls.varname
         yield "[,.]", Delimiter
@@ -137,6 +139,7 @@ class LilyPond(Language):
 
     @lexicon(consume=True)
     def paper(cls):
+        """A paper block."""
         yield r'\}', Bracket.End, -1
         yield RE_LILYPOND_SYMBOL, Name.Variable, cls.varname
         yield "[,.]", Delimiter
@@ -148,6 +151,7 @@ class LilyPond(Language):
 
     @lexicon(consume=True)
     def layout(cls):
+        """A layout block."""
         yield r'\}', Bracket.End, -1
         yield RE_LILYPOND_SYMBOL, Name.Variable, cls.varname
         yield "[,.]", Delimiter
@@ -158,6 +162,7 @@ class LilyPond(Language):
 
     @lexicon(consume=True)
     def midi(cls):
+        """A midi block."""
         yield from cls.layout
 
     @lexicon(consume=True)
@@ -290,6 +295,7 @@ class LilyPond(Language):
     # ------------------ script -------------------------
     @lexicon
     def script(cls):
+        """A script abbreviation or fingering digit."""
         yield r"[+|!>._^-]", Script, -1
         yield r"\d+", Fingering, -1
         yield default_target, -1
@@ -306,6 +312,7 @@ class LilyPond(Language):
 
     @lexicon
     def pitch(cls):
+        """A note name, find octave/accidental etc after it."""
         yield r",+|'+", Octave
         yield r"[?!]", Accidental
         yield r"=(,+|'+)?", OctaveCheck, -1
@@ -315,7 +322,7 @@ class LilyPond(Language):
     # ------------------ duration ------------------------
     @lexicon
     def duration_dots(cls):
-        """ zero or more dots after a duration. """
+        """Zero or more dots after a duration. """
         yield SKIP_WHITESPACE
         yield r'\.', Duration.Dot
         #yield from cls.find_comment()
@@ -333,6 +340,7 @@ class LilyPond(Language):
     # --------------------- lyrics -----------------------
     @classmethod
     def lyricmode_rules(cls):
+        """Find lyric mode music."""
         yield r"(\\(?:lyric(?:mode|s)|addlyrics))\b\s*(\\s(?:equential|imultaneous)\b)?\s*(\{|<<)?", \
             bygroup(Keyword.Lyric, Keyword, Bracket.Start), \
             dselect(MATCH(3), {'{': cls.lyricmode('}'), '<<': cls.lyricmode('>>')})
@@ -519,27 +527,32 @@ class LilyPond(Language):
 
     @lexicon(consume=True)
     def string(cls):
+        """A double-quoted string."""
         yield r'"', String, -1
         yield from cls.string_common()
 
     @classmethod
     def string_common(cls):
+        """Find stuff that can be found in a double-quoted string."""
         yield r'\\[\\"]', String.Escape
         yield default_action, String
 
     # -------------- Comment ---------------------
     @classmethod
     def find_comment(cls):
+        """Find single-line or block comments."""
         yield r'%\{', Comment, cls.multiline_comment
         yield r'%', Comment, cls.singleline_comment
 
     @lexicon(consume=True)
     def multiline_comment(cls):
+        """A multiple line (block) comment."""
         yield r'%}', Comment, -1
         yield from cls.comment_common()
 
     @lexicon(re_flags=re.MULTILINE, consume=True)
     def singleline_comment(cls):
+        """A comment till the end of the line."""
         yield from cls.comment_common()
         yield r'$', Comment, -1
 
