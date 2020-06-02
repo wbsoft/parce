@@ -97,7 +97,8 @@ class LilyPond(Language):
     def root(cls):
         """Toplevel LilyPond document."""
         yield from cls.blocks()
-        yield RE_LILYPOND_SYMBOL, Name.Variable.Definition
+        yield RE_LILYPOND_SYMBOL, Name.Variable.Definition, cls.varname
+        yield '"', String, cls.varname, cls.string
         yield "[,.]", Delimiter
         yield "=", Operator.Assignment
         yield r"\\version\b", Keyword
@@ -129,7 +130,7 @@ class LilyPond(Language):
     @lexicon(consume=True)
     def header(cls):
         yield r'\}', Bracket.End, -1
-        yield RE_LILYPOND_SYMBOL, Name.Variable
+        yield RE_LILYPOND_SYMBOL, Name.Variable, cls.varname
         yield "[,.]", Delimiter
         yield "=", Operator.Assignment
         yield from cls.common()
@@ -137,7 +138,7 @@ class LilyPond(Language):
     @lexicon(consume=True)
     def paper(cls):
         yield r'\}', Bracket.End, -1
-        yield RE_LILYPOND_SYMBOL, Name.Variable
+        yield RE_LILYPOND_SYMBOL, Name.Variable, cls.varname
         yield "[,.]", Delimiter
         yield "=", Operator.Assignment
         yield RE_FRACTION + r"|\d+", Number
@@ -147,7 +148,7 @@ class LilyPond(Language):
     @lexicon(consume=True)
     def layout(cls):
         yield r'\}', Bracket.End, -1
-        yield RE_LILYPOND_SYMBOL, Name.Variable
+        yield RE_LILYPOND_SYMBOL, Name.Variable, cls.varname
         yield "[,.]", Delimiter
         yield "=", Operator.Assignment
         yield r"(\\context)\s*(\{)", bygroup(Keyword, Bracket.Start), cls.layout_context
@@ -280,7 +281,7 @@ class LilyPond(Language):
         yield r'[.,]', Delimiter
         yield r"=", Operator.Assignment, -1
         yield RE_LILYPOND_SYMBOL + r"(?=\s*([,.=])?)", Name.Variable, ifeq(MATCH(1), None, -1)
-        yield from cls.scheme()
+        yield from cls.find_scheme()
         yield default_target, -1
 
     # ------------------ script -------------------------
@@ -314,14 +315,14 @@ class LilyPond(Language):
         """ zero or more dots after a duration. """
         yield SKIP_WHITESPACE
         yield r'\.', Duration.Dot
-        #yield from cls.comments()
+        #yield from cls.find_comment()
         yield default_target, cls.duration_scaling
 
     @lexicon
     def duration_scaling(cls):
         """ * n / m after a duration. """
         yield SKIP_WHITESPACE
-        #yield from cls.comments()
+        #yield from cls.find_comment()
         yield r"(\*)\s*(\d+(?:/\d+)?)", bygroup(Duration, Duration.Scaling)
         yield default_target, -2
 
@@ -420,19 +421,30 @@ class LilyPond(Language):
     def common(cls):
         """Find comment, string, scheme and markup."""
         yield from cls.base()
-        yield r"\\markup(lines|list)?" + RE_LILYPOND_ID_RIGHT_BOUND, Keyword.Markup, cls.markup
+        yield r"\\markup(?:lines|list)?" + RE_LILYPOND_ID_RIGHT_BOUND, Keyword.Markup, cls.markup
 
     @classmethod
     def base(cls):
         """Find comment, string and scheme."""
         yield r'"', String, cls.string
-        yield from cls.scheme()
-        yield from cls.comments()
+        yield from cls.find_scheme()
+        yield from cls.find_comment()
 
     @lexicon(consume=True)
     def varname(cls):
         """bla.bla.bla syntax."""
-        yield r'\s*(\.)\s*(' + RE_LILYPOND_SYMBOL + ')', bygroup(Separator.Dot, Name.Variable)
+        yield SKIP_WHITESPACE
+        yield r'([.,])\s*(\d+)' + RE_LILYPOND_ID_RIGHT_BOUND, bygroup(Separator, Number)
+        yield r'([.,])\s*(' + RE_LILYPOND_ID + r')' + RE_LILYPOND_ID_RIGHT_BOUND, bygroup(Separator, Name.Variable)
+        yield r'([.,])\s*(?=[#$"])', Separator, cls.varname_scheme_or_string
+        yield default_target, -1
+
+    @lexicon
+    def varname_scheme_or_string(cls):
+        """Picks a scheme expression or string, immediately pops back, so
+        this context is never created."""
+        yield from cls.find_string(-1)
+        yield from cls.find_scheme(-1)
         yield default_target, -1
 
     # -------------------- markup --------------------
@@ -443,9 +455,9 @@ class LilyPond(Language):
         yield r"(\\score)\s*(\{)", bygroup(Name.Function.Markup, Bracket.Start), -1, cls.score
         yield RE_LILYPOND_COMMAND, cls.get_markup_action(), \
             select(call(cls.get_markup_argument_count, MATCH(1)), -1, 0, 1, 2, 3)
-        yield r'"', String, -1, cls.string
-        yield from cls.scheme(-1)
-        yield from cls.comments()
+        yield from cls.find_string(-1)
+        yield from cls.find_scheme(-1)
+        yield from cls.find_comment()
         yield RE_LILYPOND_MARKUP_TEXT, Text, -1
 
     @classmethod
@@ -473,7 +485,7 @@ class LilyPond(Language):
 
     # -------------- Scheme ---------------------
     @classmethod
-    def scheme(cls, pop=0):
+    def find_scheme(cls, pop=0):
         """Find scheme."""
         yield r'[#$]', Delimiter.ModeChange.SchemeStart, pop, cls.get_scheme_target()
 
@@ -490,6 +502,11 @@ class LilyPond(Language):
         yield from cls.root()
 
     # -------------- String ---------------------
+    @classmethod
+    def find_string(cls, pop=0):
+        """Find a string."""
+        yield '"', String, pop, cls.string
+
     @lexicon(consume=True)
     def string(cls):
         yield r'"', String, -1
@@ -502,7 +519,7 @@ class LilyPond(Language):
 
     # -------------- Comment ---------------------
     @classmethod
-    def comments(cls):
+    def find_comment(cls):
         yield r'%\{', Comment, cls.multiline_comment
         yield r'%', Comment, cls.singleline_comment
 
