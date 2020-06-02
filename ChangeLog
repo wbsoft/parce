@@ -2,8 +2,9 @@ ChangeLog
 =========
 
 
-current: parce-0.13.0
+2020-06-02: parce-0.13.0
 
+- documentation updates and improvements
 - added rule.anyof() and rule.gselect()
 - added the @lexicon consume argument, which puts a switching token in the
   target context
