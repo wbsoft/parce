@@ -168,7 +168,8 @@ class LilyPond(Language):
         yield words(lilypond_words.grobs), Grob
         yield words(lilypond_words.keywords, prefix=r"\\", suffix=r"(?![^\W\d])"), Keyword
         yield RE_LILYPOND_SYMBOL, Name.Variable, cls.varname
-        yield r"(=)(?:\s*(" + RE_FRACTION + r"|\d+))?", bygroup(Operator.Assignment, Number)
+        yield "=", Operator.Assignment
+        yield r'\d+', Number, cls.unit
         yield from cls.common()
         yield from cls.commands()
 
@@ -452,6 +453,7 @@ class LilyPond(Language):
     @lexicon(consume=True)
     def unit(cls):
         """A unit that might occur after a numeric value in a paper block."""
+        yield SKIP_WHITESPACE
         yield r'\\(mm|in|pt|cm)' + RE_LILYPOND_ID_RIGHT_BOUND, Name.Builtin, -1
         yield default_target, -1
 
