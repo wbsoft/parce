@@ -50,7 +50,7 @@ class Scheme(Language):
     @classmethod
     def common(cls, pop=0):
         """Yield common stuff. ``pop`` can be set to -1 for one-arg mode."""
-        yield r"['`,]", Delimiter.Scheme.Quote
+        yield r"['`]|,@?", Delimiter.Scheme.Quote
         yield r"\(", Delimiter.OpenParen, pop, cls.list
         yield r"#\(", Delimiter.OpenVector, pop, cls.vector
         yield r'"', String, pop, cls.string
