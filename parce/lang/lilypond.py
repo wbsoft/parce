@@ -97,11 +97,9 @@ class LilyPond(Language):
     def root(cls):
         """Toplevel LilyPond document."""
         yield from cls.blocks()
-        yield RE_LILYPOND_SYMBOL, Name.Variable.Definition, cls.varname
-        yield '"', String, cls.varname, cls.string
-        yield "[,.]", Delimiter
+        yield RE_LILYPOND_SYMBOL, Name.Variable.Definition, cls.identifier
+        yield from cls.find_string(cls.identifier)
         yield "=", Operator.Assignment
-        yield r"\\version\b", Keyword
         yield from cls.music()
 
     @classmethod
@@ -132,8 +130,7 @@ class LilyPond(Language):
     def header(cls):
         """A header block."""
         yield r'\}', Bracket.End, -1
-        yield RE_LILYPOND_SYMBOL, Name.Variable, cls.varname
-        yield "[,.]", Delimiter
+        yield RE_LILYPOND_SYMBOL, Name.Variable, cls.identifier
         yield "=", Operator.Assignment
         yield from cls.common()
 
@@ -141,8 +138,7 @@ class LilyPond(Language):
     def paper(cls):
         """A paper block."""
         yield r'\}', Bracket.End, -1
-        yield RE_LILYPOND_SYMBOL, Name.Variable, cls.varname
-        yield "[,.]", Delimiter
+        yield RE_LILYPOND_SYMBOL, Name.Variable, cls.identifier
         yield "=", Operator.Assignment
         yield r'\d+', Number, cls.unit
         yield RE_FRACTION, Number
@@ -153,8 +149,7 @@ class LilyPond(Language):
     def layout(cls):
         """A layout block."""
         yield r'\}', Bracket.End, -1
-        yield RE_LILYPOND_SYMBOL, Name.Variable, cls.varname
-        yield "[,.]", Delimiter
+        yield RE_LILYPOND_SYMBOL, Name.Variable, cls.identifier
         yield "=", Operator.Assignment
         yield r'\d+', Number, cls.unit
         yield r"(\\context)\s*(\{)", bygroup(Keyword, Bracket.Start), cls.layout_context
@@ -172,7 +167,7 @@ class LilyPond(Language):
         yield words(lilypond_words.contexts, prefix=r"\\", suffix=r"\b"), Context
         yield words(lilypond_words.grobs), Grob
         yield words(lilypond_words.keywords, prefix=r"\\", suffix=r"(?![^\W\d])"), Keyword
-        yield RE_LILYPOND_SYMBOL, Name.Variable, cls.varname
+        yield RE_LILYPOND_SYMBOL, Name.Variable, cls.identifier
         yield "=", Operator.Assignment
         yield r'\d+', Number, cls.unit
         yield from cls.common()
@@ -442,18 +437,21 @@ class LilyPond(Language):
         yield from cls.find_comment()
 
     @lexicon(consume=True)
-    def varname(cls):
+    def identifier(cls):
         """bla.bla.bla syntax."""
         yield SKIP_WHITESPACE
         yield r'([.,])\s*(\d+)' + RE_LILYPOND_ID_RIGHT_BOUND, bygroup(Separator, Number)
         yield r'([.,])\s*(' + RE_LILYPOND_ID + r')' + RE_LILYPOND_ID_RIGHT_BOUND, bygroup(Separator, Name.Variable)
-        yield r'([.,])\s*(?=[#$"])', Separator, cls.varname_scheme_or_string
+        yield r'([.,])\s*(?=[#$"])', Separator, cls.identifier_scheme_or_string
         yield default_target, -1
 
     @lexicon
-    def varname_scheme_or_string(cls):
-        """Picks a scheme expression or string, immediately pops back, so
-        this context is never created."""
+    def identifier_scheme_or_string(cls):
+        """Pick a scheme expression or a string.
+
+        Immediately pops back, so this context is never actually created.
+
+        """
         yield from cls.find_string(-1)
         yield from cls.find_scheme(-1)
         yield default_target, -1
@@ -503,9 +501,9 @@ class LilyPond(Language):
 
     # -------------- Scheme ---------------------
     @classmethod
-    def find_scheme(cls, pop=0):
+    def find_scheme(cls, extra_target=0):
         """Find scheme."""
-        yield r'[#$]', Delimiter.ModeChange.SchemeStart, pop, cls.get_scheme_target()
+        yield r'[#$]', Delimiter.ModeChange.SchemeStart, extra_target, cls.get_scheme_target()
 
     @classmethod
     def get_scheme_target(cls):
@@ -521,19 +519,14 @@ class LilyPond(Language):
 
     # -------------- String ---------------------
     @classmethod
-    def find_string(cls, pop=0):
+    def find_string(cls, extra_target=0):
         """Find a string."""
-        yield '"', String, pop, cls.string
+        yield '"', String, extra_target, cls.string
 
     @lexicon(consume=True)
     def string(cls):
         """A double-quoted string."""
         yield r'"', String, -1
-        yield from cls.string_common()
-
-    @classmethod
-    def string_common(cls):
-        """Find stuff that can be found in a double-quoted string."""
         yield r'\\[\\"]', String.Escape
         yield default_action, String
 
