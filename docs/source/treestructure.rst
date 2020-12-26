@@ -153,9 +153,6 @@ Token has the following additional methods and attributes for node traversal:
    .. automethod:: Token.common_ancestor_with_trail
       :noindex:
 
-   .. automethod:: Token.target
-      :noindex:
-
 
 Members of Context
 ^^^^^^^^^^^^^^^^^^
@@ -188,9 +185,6 @@ for node traversal:
       :noindex:
 
    .. automethod:: Context.find_token_before
-      :noindex:
-
-   .. automethod:: Context.source
       :noindex:
 
    .. automethod:: Context.tokens
@@ -350,9 +344,7 @@ Here is a list of all the queries that navigate:
     :attr:`[n] <Query.__getitem__>`,
     :attr:`[n:m] <Query.__getitem__>`,
     :attr:`~Query.first`,
-    :attr:`~Query.last`,
-    :attr:`~Query.target`,
-    :attr:`~Query.source`, and
+    :attr:`~Query.last`, and
     :meth:`~Query.map`,
 
 And this is a list of the queries that narrow down the result set:

@@ -486,29 +486,6 @@ class Token(Node):
                 return n, s_indices[s_i::-1], o_indices[::-1]
         return None, None, None
 
-    def target(self):
-        """Return the first context directly to the right of this Token.
-
-        The context should be the right sibling of the token, or of any of its
-        ancestors. If the token is part of a group, the context is found
-        immediately next to the last member of the group. The found context may
-        also be a child of the grand-parents of this token, in case the target
-        popped contexts first.
-
-        In all cases, the returned context is the one started by the target
-        in the lexicon rule that created this token.
-
-        """
-        node = self
-        if node.group is not None:
-            node = get_group_end(node)
-        while node.parent:
-            r = node.right_sibling()
-            if r:
-                if r.is_context:
-                    return r
-                return
-            node = node.parent
 
 
 class _GroupToken(Token):
@@ -954,22 +931,6 @@ class Context(list, Node):
                 yield n, slice(end_trail[-1] + 1)   # include end token
         else:
             yield self, slice(start, None)
-
-    def source(self):
-        """Return the first Token, if any, when going to the left from this context.
-
-        The returned token is the one that created us, that this context the
-        target is for. If the token is member of a group, the first group member
-        is returned.
-
-        """
-        prev = None
-        for token in self.backward():
-            if not token.group:
-                return token
-            if prev and token.group >= prev.group:
-                return prev
-            prev = token
 
 
 def make_tokens(event, parent=None):

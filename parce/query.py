@@ -136,9 +136,7 @@ methods are implemented as properties, so you don't have to write parentheses.
     :attr:`[n] <Query.__getitem__>`,
     :attr:`[n:m] <Query.__getitem__>`,
     :attr:`~Query.first`,
-    :attr:`~Query.last`,
-    :attr:`~Query.target`,
-    :attr:`~Query.source`, and
+    :attr:`~Query.last`, and
     :meth:`~Query.map`,
 
 
@@ -505,32 +503,6 @@ class Query:
         """Yield the left siblings, if any."""
         for n in self:
             yield from n.left_siblings()
-
-    @pquery
-    def target(self):
-        """Yield the target Context for every token, if available.
-
-        See :meth:`Token.target() <parce.tree.Token.target>`.
-
-        """
-        for t in self:
-            if t.is_token:
-                target = t.target()
-                if target:
-                    yield target
-
-    @pquery
-    def source(self):
-        """Yield the source Token for every context, if available.
-
-        See :meth:`Context.source() <parce.tree.Context.source>`.
-
-        """
-        for n in self:
-            if n.is_context:
-                source = n.source()
-                if source:
-                    yield source
 
     @query
     def map(self, function):
