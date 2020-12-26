@@ -415,7 +415,7 @@ class DelegateAction(ActionItem):
         """Use our lexicon to parse the matched text."""
         sublexer = type(lexer)([self._lexicon])
         for e in sublexer.events(text):
-            for p, txt, action in e.tokens:
+            for p, txt, action in e.lexemes:
                 yield pos + p, txt, action
 
     def evaluate_items(self):

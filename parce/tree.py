@@ -976,13 +976,13 @@ def make_tokens(event, parent=None):
     """Factory returning a tuple of one or more Token instances for the event.
 
     The event is an Event namedtuple defined in the mod:`~parce.lexer` module.
-    If the event contains more than one token, GroupToken instances are
+    If the event contains more than one lexeme, GroupToken instances are
     created.
 
     """
-    if len(event.tokens) > 1:
-        return tuple(GroupToken(n, parent, *t) for n, t in enumerate(event.tokens))
+    if len(event.lexemes) > 1:
+        return tuple(GroupToken(n, parent, *t) for n, t in enumerate(event.lexemes))
     else:
-        return Token(parent, *event.tokens[0]),
+        return Token(parent, *event.lexemes[0]),
 
 

@@ -22,15 +22,15 @@ r"""
 The Lexer is responsible for parsing text using Lexicons.
 
 The lexer generates Event objects, which contain a target (or None) and one or
-more tokens. The target, if not None, specifies a state change (i.e. leave the
-current lexicon(s) or descend into specified lexicons. (See the
+more lexemes. The `target`, if not None, specifies a state change (i.e. leave
+the current lexicon(s) or descend into specified lexicons. (See the
 :mod:`~parce.target` module.)
 
-The tokens is a tuple of one or more token tuples. A token is a ``(pos, text,
-action)`` tuple. Note that an Event always contains at least one token tuple,
-and that a tokens's text is always non-empty. (A rule's pattern might match the
-empty string, but no token is generated in that case, although the target is
-followed.)
+The `lexemes` is a tuple of one or more lexeme tuples. A lexeme is a ``(pos,
+text, action)`` tuple. Note that an Event always contains at least one lexeme
+tuple, and that a lexeme's text is always non-empty. (A rule's pattern might
+match the empty string, but no lexeme is generated in that case, although the
+target is followed.)
 
 The Lexer is capable of handling circular default targets: if a target is
 pushed again in the same context at the same text position (and another
@@ -48,13 +48,13 @@ Example::
     >>> for e in parce.lexer.Lexer([parce.lang.css.Css.root]).events("h1 { color: red; }"):
     ...     print(e)
     ...
-    Event(target=Target(pop=0, push=[Css.prelude, Css.selector, Css.element_selector]), tokens=((0, 'h1', Name.Tag),))
-    Event(target=Target(pop=-2, push=[]), tokens=((3, '{', Delimiter),))
-    Event(target=Target(pop=-1, push=[Css.rule, Css.declaration, Css.property]), tokens=((5, 'color', Name.Property),))
-    Event(target=Target(pop=-1, push=[]), tokens=((10, ':', Delimiter),))
-    Event(target=Target(pop=0, push=[Css.identifier]), tokens=((12, 'red', Literal.Color),))
-    Event(target=Target(pop=-1, push=[]), tokens=((15, ';', Delimiter),))
-    Event(target=Target(pop=-1, push=[]), tokens=((17, '}', Delimiter),))
+    Event(target=Target(pop=0, push=[Css.prelude, Css.selector, Css.element_selector]), lexemes=((0, 'h1', Name.Tag),))
+    Event(target=Target(pop=-2, push=[]), lexemes=((3, '{', Delimiter),))
+    Event(target=Target(pop=-1, push=[Css.rule, Css.declaration, Css.property]), lexemes=((5, 'color', Name.Property),))
+    Event(target=Target(pop=-1, push=[]), lexemes=((10, ':', Delimiter),))
+    Event(target=Target(pop=0, push=[Css.identifier]), lexemes=((12, 'red', Literal.Color),))
+    Event(target=Target(pop=-1, push=[]), lexemes=((15, ';', Delimiter),))
+    Event(target=Target(pop=-1, push=[]), lexemes=((17, '}', Delimiter),))
 
 There is a convenience function in the *parce* module namespace that calls
 Lexer for you::
@@ -93,7 +93,7 @@ from .ruleitem import ActionItem, Item, unroll
 from .target import TargetFactory, Target
 
 
-Event = collections.namedtuple("Event", "target tokens")
+Event = collections.namedtuple("Event", "target lexemes")
 
 
 class Lexer:
@@ -122,9 +122,9 @@ class Lexer:
         def event():
             # yield Event, all vars are nonlocal :-)
             if isinstance(action, ActionItem):
-                tokens = tuple(action.replace(self, pos, txt, match))
-                if tokens:
-                    yield Event(get_target(), tokens)
+                lexemes = tuple(action.replace(self, pos, txt, match))
+                if lexemes:
+                    yield Event(get_target(), lexemes)
             else:
                 yield Event(get_target(), ((pos, txt, action),))
 

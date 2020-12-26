@@ -208,8 +208,8 @@ def events_with_tokens(start_token, last_token):
                             else:
                                 j = z
                             group = n[i:j]
-                        tokens = tuple((t.pos, t.text, t.action) for t in group)
-                        yield Event(get(), tokens), group
+                        lexemes = tuple((t.pos, t.text, t.action) for t in group)
+                        yield Event(get(), lexemes), group
                         i += len(group)
                 else:
                     if stack:
