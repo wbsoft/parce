@@ -323,7 +323,7 @@ class Token(Node):
 
     When a pattern rule in a lexicon matches the text, a Token is created. When
     that rule would create more than one Token from a single regular expression
-    match, _GroupToken objects are created instead, carrying the index of the
+    match, GroupToken objects are created instead, carrying the index of the
     token in the group in the `group` attribute. The `group` attribute is
     readonly None for normal tokens.
 
@@ -338,9 +338,11 @@ class Token(Node):
                     break
         pos = t.pos
 
-    (A _GroupToken is just a normal Token otherwise, the reason a subclass was
+    Alternatively, you can use the `GroupToken.get_group_*` methods.
+
+    (A GroupToken is just a normal Token otherwise, the reason a subclass was
     created is that the group attribute is unused in by far the most tokens, so
-    it does not use any memory. You never need to reference the _GroupToken
+    it does not use any memory. You never need to reference the GroupToken
     class; just test the group attribute if you want to know if a token belongs
     to a group that originated from a single match.)
 
@@ -488,8 +490,15 @@ class Token(Node):
 
 
 
-class _GroupToken(Token):
-    """A Token class that allows setting the `group` attribute."""
+class GroupToken(Token):
+    """A Token class that allows setting the `group` attribute.
+
+    For normal Token instances, `group` is a class attribute that is always
+    None. For Tokens that belong to a group, i.e. originated from a single
+    regular expression match, the `group` attribute is the index of the token
+    in the group of tokens that were created together.
+
+    """
     __slots__ = "group",
 
     def __init__(self, group, parent, pos, text, action):
@@ -499,6 +508,36 @@ class _GroupToken(Token):
     def copy(self, parent=None):
         """Return a copy of the Token, but with the specified parent."""
         return type(self)(self.group, parent, self.pos, self.text, self.action)
+
+    def get_group(self):
+        """Return the whole group this token belongs to as a list."""
+        p = self.parent
+        i = j = self.parent_index()
+        while i and p[i].group > 0 and p[i-1].is_token and p[i-1].group is not None and p[i-1].group < p[i].group:
+            i -= 1
+        z = len(p)
+        j += 1
+        while j < z and p[j].is_token and p[j].group and p[j].group > p[j-1].group:
+            j += 1
+        return p[i:j]
+
+    def get_group_start(self):
+        """Return the first token of the group this token belongs to."""
+        p = self.parent
+        i = self.parent_index()
+        while i and p[i].group > 0 and p[i-1].is_token and p[i-1].group is not None and p[i-1].group < p[i].group:
+            i -= 1
+        return p[i]
+
+    def get_group_end(self):
+        """Return the last token of the group this token belongs to."""
+        p = self.parent
+        j = self.parent_index() + 1
+        z = len(p)
+        while j < z and p[j].is_token and p[j].group and p[j].group > p[j-1].group:
+            j += 1
+        return p[j-1]
+
 
 
 class Context(list, Node):
@@ -937,45 +976,13 @@ def make_tokens(event, parent=None):
     """Factory returning a tuple of one or more Token instances for the event.
 
     The event is an Event namedtuple defined in the mod:`~parce.lexer` module.
-    If the event contains more than one token, _GroupToken instances are
+    If the event contains more than one token, GroupToken instances are
     created.
 
     """
     if len(event.tokens) > 1:
-        return tuple(_GroupToken(n, parent, *t) for n, t in enumerate(event.tokens))
+        return tuple(GroupToken(n, parent, *t) for n, t in enumerate(event.tokens))
     else:
         return Token(parent, *event.tokens[0]),
-
-
-def get_group(token):
-    """For a token that belongs to a group, return the whole group as a list."""
-    p = token.parent
-    i = j = token.parent_index()
-    while i and p[i].group > 0 and p[i-1].is_token and p[i-1].group is not None and p[i-1].group < p[i].group:
-        i -= 1
-    z = len(p)
-    j += 1
-    while j < z and p[j].is_token and p[j].group and p[j].group > p[j-1].group:
-        j += 1
-    return p[i:j]
-
-
-def get_group_start(token):
-    """For a token that belongs to a group, return the first token of the group."""
-    p = token.parent
-    i = token.parent_index()
-    while i and p[i].group > 0 and p[i-1].is_token and p[i-1].group is not None and p[i-1].group < p[i].group:
-        i -= 1
-    return p[i]
-
-
-def get_group_end(token):
-    """For a token that belongs to a group, return the last token of the group."""
-    p = token.parent
-    j = token.parent_index() + 1
-    z = len(p)
-    while j < z and p[j].is_token and p[j].group and p[j].group > p[j-1].group:
-        j += 1
-    return p[j-1]
 
 
