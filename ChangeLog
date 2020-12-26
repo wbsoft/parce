@@ -1,6 +1,12 @@
 ChangeLog
 =========
 
+current:
+
+- removed Context.source and Token.target (and their Query counterparts)
+- removed get_group_* functions from tree.py, added them as methods to
+  GroupToken
+
 
 2020-06-02: parce-0.13.0
 
