@@ -160,18 +160,18 @@ class Items(list):
         For missing objects, None is yielded.
 
         """
-        items = self.items(*names)
-        while True:
-            result = [None] * len(names)
-            for index, name in enumerate(names):
-                for i in items:
-                    if i.name == name:
-                        result[index] = i.obj
-                        break
-                else:
-                    if index:
-                        yield result
-                    return
+        # a mapping from name to position in the names list
+        index = dict((name, i) for i, name in enumerate(names))
+
+        result = [None] * len(names)
+        lastindex = -1
+        for item in self.items(*names):
+            if index[item.name] <= lastindex:
+                yield result
+                result = [None] * len(names)
+            lastindex = index[item.name]
+            result[lastindex] = item.obj
+        if lastindex > -1:
             yield result
 
     def action(self, *actions):
