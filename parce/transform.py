@@ -34,7 +34,6 @@ language. But I'm not yet sure how it would be specified.
 """
 
 import collections
-import functools
 import sys
 import threading
 import weakref
@@ -43,17 +42,24 @@ import parce.lexer
 import parce.util
 
 
-#: Item wraps an object returned by a Tranform method. The `name` attribute is
-#: the name of the Lexicon and transform method that created the object `obj`.
-#: To make it easier to distinguish an Item from a Token, Item has as class
-#: attribute `is_token` set to False.
 class Item(collections.namedtuple("Item", "name obj")):
+    """A named tuple(name, obj) wrapping the return value of a Tranform method.
+
+    The `name` attribute is the name of the Lexicon and transform method that
+    created the object `obj`. To make it easier to distinguish an Item from a
+    Token, Item has as class attribute `is_token` set to False.
+
+    """
     __slots__ = ()
     is_token = False
 
 
 class Items(list):
     """A list of Item and Token instances.
+
+    The Transformer populates this list with all the Tokens from a Context,
+    replacing nested Contexts with an Item that wraps the return value of the
+    Transform method for that Context's lexicon.
 
     The Transform methods are called with an instance of this class. Besides
     being a Python list, this class also has some methods that filter out items
@@ -118,7 +124,7 @@ class Items(list):
         and `value` Item objects, calling `grouped_objects('key', 'value')`
         yields the objects in (key, value) pairs.
 
-        For missing objects, None is yielded.
+        For missing objects, None is yielded. Tokens are ignored.
 
         """
         # a mapping from name to position in the names list
