@@ -43,38 +43,13 @@ import parce.lexer
 import parce.util
 
 
-class Item:
-    """An Item wraps any object returned by a transform method.
-
-    It has two readonly attributes, ``lexicon`` and ``obj``. The ``lexicon``
-    is the lexicon that created the items a transform method is called with. To
-    be able to easily distinguish an Item from a Token, a fixed readonly class
-    attribute ``is_token`` exists, set to False.
-
-    An Item can be unpacked in two variables, name and object::
-
-        item = Item(Json.root, "abc")
-        name, obj = item    # → 'root', 'abc'
-
-    """
-    __slots__ = ('lexicon', 'obj')
+#: Item wraps an object returned by a Tranform method. The `name` attribute is
+#: the name of the Lexicon and transform method that created the object `obj`.
+#: To make it easier to distinguish an Item from a Token, Item has as class
+#: attribute `is_token` set to False.
+class Item(collections.namedtuple("Item", "name obj")):
+    __slots__ = ()
     is_token = False
-
-    def __init__(self, lexicon, obj):
-        self.lexicon = lexicon
-        self.obj = obj
-
-    @property
-    def name(self):
-        """The lexicon's name."""
-        return self.lexicon.name
-
-    def __repr__(self):
-        return "<Item '{}' {}>".format(self.name, repr(self.obj))
-
-    def __iter__(self):
-        yield self.name
-        yield self.obj
 
 
 class Items(list):
@@ -165,12 +140,12 @@ class Items(list):
 
         result = [None] * len(names)
         lastindex = -1
-        for item in self.items(*names):
-            if index[item.name] <= lastindex:
+        for name, obj in self.items(*names):
+            if index[name] <= lastindex:
                 yield result
                 result = [None] * len(names)
-            lastindex = index[item.name]
-            result[lastindex] = item.obj
+            lastindex = index[name]
+            result[lastindex] = obj
         if lastindex > -1:
             yield result
 
@@ -298,7 +273,7 @@ class Transformer(parce.util.Observable):
                 transform = self.get_transform(curlang)
             name = lexicon.name
             meth = getattr(transform, name, None)
-            return Item(lexicon, meth(items)) if meth else no_object
+            return Item(name, meth(items)) if meth else no_object
 
         for e in events:
             if e.target:
@@ -349,7 +324,7 @@ class Transformer(parce.util.Observable):
                     # don't bother going in this context is there is no method
                     if meth:
                         try:
-                            items.append(Item(n.lexicon, self._cache[n]))
+                            items.append(Item(name, self._cache[n]))
                         except KeyError:
                             stack.append((items, i + 1))
                             node, items, i = n, Items(), 0
@@ -364,7 +339,7 @@ class Transformer(parce.util.Observable):
                 if stack:
                     self._cache[node] = obj
                     items, i = stack.pop()
-                    items.append(Item(node.lexicon, obj))
+                    items.append(Item(name, obj))
                     node = node.parent
                 else:
                     break
