@@ -110,15 +110,7 @@ class JsonTransform(Transform):
                 yield i.obj
 
     def object(self, items):
-        d = {}
-        key = None
-        for name, obj in items.items("key", "value"):
-            if name == "key":
-                key = obj
-            elif key is not None:
-                d[key] = obj
-                key = None
-        return d
+        return dict(items.grouped_objects("key", "value"))
 
     def key(self, items):
         for i in items.items("string"):

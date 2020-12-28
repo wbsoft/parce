@@ -150,6 +150,30 @@ class Items(list):
             for i in self.items():
                 yield i.obj
 
+    def grouped_objects(self, *names):
+        """Yield objects in groups, specified by the names.
+
+        The order remains the same. For example, when you have a stream of `key`
+        and `value` Item objects, calling `grouped_objects('key', 'value')`
+        yields the objects in (key, value) pairs.
+
+        For missing objects, None is yielded.
+
+        """
+        items = self.items(*names)
+        while True:
+            result = [None] * len(names)
+            for index, name in enumerate(names):
+                for i in items:
+                    if i.name == name:
+                        result[index] = i.obj
+                        break
+                else:
+                    if index:
+                        yield result
+                    return
+            yield result
+
     def action(self, *actions):
         """Yield only the tokens with one of the specified actions."""
         for i in self:
