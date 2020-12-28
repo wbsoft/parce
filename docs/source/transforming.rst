@@ -84,7 +84,8 @@ Now let's test our Transform!
     >>> transform_text(MyLang.root, '1 2 3 [4 "Q" 6] x 7 8 9')
     [1, 2, 3, [4, 'Q', 6], 7, 8, 9]
 
-It works! The above function call is equivalent to::
+It works! Note that the stray `x` is ignored, because it is not matched by any
+rule. The above function call is equivalent to::
 
     >>> from parce.transform import Transformer
     >>> t = Transformer()
