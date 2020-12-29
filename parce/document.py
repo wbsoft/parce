@@ -492,10 +492,8 @@ class Cursor:
         if self.start != self.end:
             key.append(self.end or "")
         key = ":".join(map(format, key))
-        text = self.text()
-        if len(text) > 30:
-            text = text[:28] + "..."
-        return "<{} [{}] {}>".format(type(self).__name__, key, repr(text))
+        text = reprlib.repr(self.text())
+        return "<{} [{}] {}>".format(type(self).__name__, key, text)
 
     def document(self):
         return self._document
