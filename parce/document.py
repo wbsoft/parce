@@ -223,12 +223,12 @@ class AbstractDocument:
         if text:
             self[pos:pos] = text
 
-    def find_start_of_line(self, position):
-        """Find the start of the line position is in."""
+    def find_start_of_block(self, position):
+        """Find the start of the block the position is in."""
         return self[:position].rfind("\n") + 1
 
-    def find_end_of_line(self, position):
-        """Find the end of the line position is in."""
+    def find_end_of_block(self, position):
+        """Find the end of the block the position is in."""
         pos = self[position:].find("\n")
         if pos == -1:
             return len(self)
@@ -523,14 +523,14 @@ class Cursor:
         end = len(self._document) if self.end is None else self.end
         return self.start < end
 
-    def select_start_of_line(self):
+    def select_start_of_block(self):
         """Moves the selection start to the beginning of the current line."""
-        self.start = self.document().find_start_of_line(self.start)
+        self.start = self.document().find_start_of_block(self.start)
 
-    def select_end_of_line(self):
+    def select_end_of_block(self):
         """Moves the selection end (if not None) to the end of its line."""
         if self.end is not None:
-            self.end = self.document().find_end_of_line(self.end)
+            self.end = self.document().find_end_of_block(self.end)
 
     def lstrip(self, chars=None):
         """Move start to the right, if specified characters can be skipped.
