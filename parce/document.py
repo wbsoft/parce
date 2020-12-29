@@ -234,6 +234,30 @@ class AbstractDocument:
             return len(self)
         return position + pos
 
+    def find_block(self, position):
+        """Return a Block representing the text line (block) at position."""
+        pos = self.find_start_of_block(position)
+        end = self.find_end_of_block(position)
+        return Block(self, pos, end)
+
+    def blocks(self, start=0, end=None):
+        """Yield Blocks, starting at position start, ending at end.
+
+        Start defaults to 0, end to None, which means iterate to the last block.
+
+        """
+        block = self.find_block(start)
+        if end is None:
+            while block:
+                yield block
+                block = block.next_block()
+        else:
+            while block:
+                yield block
+                block = block.next_block()
+                if block.pos >= end:
+                    break
+
     def replace(self, old, new, start=0, end=None, count=0):
         """Replace occurrences of old with new in region start->end.
 
@@ -502,6 +526,14 @@ class Cursor:
         """Return the selected text, if any."""
         return self._document[self]
 
+    def block(self):
+        """Return the Block start is in."""
+        return self._document.find_block(self.start)
+
+    def blocks(self):
+        """Yield the Blocks from start to end."""
+        yield from self._document.blocks(self.start, self.end)
+
     def select(self, start, end=-1):
         """Change start and end in one go. End defaults to start."""
         self.start = start
@@ -559,5 +591,73 @@ class Cursor:
         """Adjust start and end, like Python's strip() method."""
         self.rstrip(chars)
         self.lstrip(chars)
+
+
+class Block:
+    r"""Represents a single line (block) of text in the Document.
+
+    Block objects are separated by newlines in the Document, and are created
+    by Document.find_block() or Cursor.block().
+
+    Unlike Cursor, Block objects do not update their position when the document
+    is changed. You should use Blocks while iterating but throw them away after
+    applying changes to a Document.
+
+    """
+    __slots__ = "_document", "pos", "end"
+
+    def __init__(self, document, pos, end):
+        self._document = document
+        self.pos = pos
+        self.end = end
+
+    def __repr__(self):
+        name = type(self).__name__
+        text = reprlib.repr(self.text())
+        return "<{} [{}:{}] {}>".format(name, self.pos, self.end, text)
+
+    def __bool__(self):
+        return True
+
+    def __len__(self):
+        return self.end - self.pos
+
+    def __eq__(self, other):
+        return other._document is self._document and other.pos == self.pos
+
+    def __ne__(self, other):
+        return other._document is not self._document or other.pos != self.pos
+
+    @property
+    def is_first(self):
+        """True if this is the first block."""
+        return self.pos == 0
+
+    @property
+    def is_last(self):
+        """True if this is the last block."""
+        return self.end >= len(self._document)
+
+    def text(self):
+        """The text in this block, without a trialing newline."""
+        return self._document[self.pos:self.end]
+
+    def document(self):
+        """The Document we were created from."""
+        return self._document
+
+    def next_block(self):
+        """The next block if available."""
+        if not self.is_last:
+            pos = self.end + 1
+            end = self._document.find_end_of_block(pos)
+            return type(self)(self._document, pos, end)
+
+    def previous_block(self):
+        """The previous block if available."""
+        if not self.is_first:
+            end = self.pos - 1
+            pos = self._document.find_start_of_block(end)
+            return type(self)(self._document, pos, end)
 
 
