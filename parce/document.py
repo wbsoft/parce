@@ -82,6 +82,9 @@ class AbstractDocument:
      *  ``_get_contents()`` (called by ``__getitem__``)
 
     """
+
+    block_separator = '\n'  #: separator to use for block boundaries (newline)
+
     def __init__(self):
         super().__init__()
         self._cursors = weakref.WeakSet()
@@ -225,11 +228,12 @@ class AbstractDocument:
 
     def find_start_of_block(self, position):
         """Find the start of the block the position is in."""
-        return self[:position].rfind("\n") + 1
+        sep = self.block_separator
+        return self[:position].rfind(sep) + len(sep)
 
     def find_end_of_block(self, position):
         """Find the end of the block the position is in."""
-        pos = self[position:].find("\n")
+        pos = self[position:].find(self.block_separator)
         if pos == -1:
             return len(self)
         return position + pos
@@ -462,7 +466,7 @@ class Document(AbstractDocument, util.Observable):
         return bool(self._redo_stack)
 
     def contents_changed(self, position, removed, added):
-        """Called by _apply().
+        """Called by ``_apply_changes()``.
 
         This implementation emit ``"contents_change"`` and
         ``"contents_changed"`` events.
@@ -597,7 +601,8 @@ class Block:
     r"""Represents a single line (block) of text in the Document.
 
     Block objects are separated by newlines in the Document, and are created
-    by Document.find_block() or Cursor.block().
+    by Document.find_block() or Cursor.block(), and the blocks() iterator of
+    both Cursor and Document.
 
     Unlike Cursor, Block objects do not update their position when the document
     is changed. You should use Blocks while iterating but throw them away after
@@ -628,12 +633,10 @@ class Block:
     def __ne__(self, other):
         return other._document is not self._document or other.pos != self.pos
 
-    @property
     def is_first(self):
         """True if this is the first block."""
         return self.pos == 0
 
-    @property
     def is_last(self):
         """True if this is the last block."""
         return self.end >= len(self._document)
@@ -648,15 +651,15 @@ class Block:
 
     def next_block(self):
         """The next block if available."""
-        if not self.is_last:
-            pos = self.end + 1
+        if not self.is_last():
+            pos = self.end + len(self._document.block_separator)
             end = self._document.find_end_of_block(pos)
             return type(self)(self._document, pos, end)
 
     def previous_block(self):
         """The previous block if available."""
-        if not self.is_first:
-            end = self.pos - 1
+        if self.pos > 0:
+            end = self.pos - len(self._document.block_separator)
             pos = self._document.find_start_of_block(end)
             return type(self)(self._document, pos, end)
 
