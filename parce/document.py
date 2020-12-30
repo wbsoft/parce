@@ -612,6 +612,10 @@ class Block:
     is changed. You should use Blocks while iterating but throw them away after
     applying changes to a Document.
 
+    Blocks can be compared: blocks originating from the same document compare
+    equal when they point to the same position. You can also use the ``<``,
+    ``<=``, ``>`` and ``>=`` operators.
+
     """
     __slots__ = "_document", "pos", "end"
 
@@ -636,6 +640,18 @@ class Block:
 
     def __ne__(self, other):
         return other._document is not self._document or other.pos != self.pos
+
+    def __gt__(self, other):
+        return self.pos > other.pos
+
+    def __lt__(self, other):
+        return self.pos < other.pos
+
+    def __ge__(self, other):
+        return self.pos >= other.pos
+
+    def __le__(self, other):
+        return self.pos <= other.pos
 
     def is_first(self):
         """True if this is the first block."""
