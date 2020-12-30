@@ -123,8 +123,51 @@ class AbstractIndenter:
     """Indents (part of) a Document.
 
     """
-    def __init__(self):
-        pass
+
+    indent_string = "  "
+
+    def indent(self, cursor):
+        """Indent all the lines in the cursor's range."""
+        prev_line_info = None
+        indents = ['']
+
+        with cursor.document() as d:
+            for block in d.blocks():
+                line_info = self.indent_info(block, indents)
+
+                # handle indents in previous line
+                if prev_line_info and prev_line_info.indenters:
+                    current_indent = indents[-1]
+                    for indent in prev_line_info.indenters:
+                        indents.append(current_indent + (indent or self.indent_string))
+
+                # dedents at start of current line
+                del indents[max(1, len(indents) - line_info.dedenters.start):]
+
+                # if we may not change the indent just remember the current
+                if line_info.allow_indent and not line_info.is_blank:
+                    if block.pos < cursor.start:
+                        # we're outside the cursor's range
+                        # obey the existing indent if not a special case
+                        if line_info.prefer_indent is None:
+                            indents[-1] = line_info.indent
+                    else:
+                        # we may replace the indent
+                        if line_info.prefer_indent is not None:
+                            new_indent = line_info.prefer_indent
+                        else:
+                            new_indent = indents[-1]
+                        if new_indent != line_info.indent:
+                            d[block.pos:block.pos + len(line_info.indent)] = new_indent
+
+                # dedents at end of current line
+                del indents[max(1, len(indents) - line_info.dedenters.end):]
+
+                # quit?
+                if cursor.end is not None and block.end >= cursor.end:
+                    break
+
+                prev_line_info = line_info
 
     def indent_info(self, block, prev_indents=()):
         """Return an IndentInfo object for the specified block."""
