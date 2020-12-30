@@ -28,11 +28,15 @@ If you make modifications while inside a context (using the Python context
 manager protocol), the modifications are only applied when the context
 exits for the last time.
 
+For tokenized documents (see :class:`parce.Document`), parce inherits from this
+base class (see the :mod:`~parce.treedocument` module).
+
 You can use a Cursor to keep track of positions in a document. The position
 (and selection) of a Cursor is adjusted when the text in the document is
 changed.
 
-For tokenized documents, parce inherits from this base class.
+You can use the various ``find_block()`` and ``blocks()`` methods to iterate
+over a Document on a line-by-line basis.
 
 """
 
