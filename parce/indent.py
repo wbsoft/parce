@@ -56,12 +56,6 @@ The following events can be yielded (simply module constants):
 
 """
 
-### NOTE!  In docs/source/indent.rst all classes should be added, because
-###        we do not use the :members: directive to improve documentation
-###        for the IndentInfo named tuple.
-### See: https://stackoverflow.com/questions/61572220/python-sphinx-namedtuple-documentation
-
-
 import collections
 
 
@@ -82,40 +76,8 @@ IndentInfo = collections.namedtuple("IndentInfo",
     "block is_blank indent allow_indent indenters dedenters prefer_indent")
 """Contains information about how to indent a block.
 
-Created by :meth:`AbstractIndenter.indent_info`.
-
-.. py:attribute:: block
-
-    The text block (line)
-
-.. py:attribute:: is_blank
-
-    True if this is a blank line.
-
-.. py:attribute:: indent
-
-    The current indent string (probably consisting of spaces and tabs).
-
-.. py:attribute:: allow_indent
-
-    True if the indent of this block may be changed.
-
-.. py:attribute:: indenters
-
-    A list of string or None items. Every item means an indent level, if the
-    item is not None, it is the string to use, otherwise a default indent
-    string is used according to the indenter preferences.
-
-.. py:attribute:: dedenters
-
-    A named tuple Dedenters(start, end) of the levels that should be decreased
-    at the beginning of this block, and after the end of this block.
-
-.. py:attribute:: prefer_indent
-
-    The indent to be used for this line, as a special case. The current indent
-    level is not changed.
-
+Created by :meth:`AbstractIndenter.indent_info` and used within
+:meth:`AbstractIndenter.indent`.
 
 """
 
