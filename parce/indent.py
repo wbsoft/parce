@@ -209,7 +209,9 @@ class AbstractIndenter:
 
     def indent_events(self, block, prev_indents=()):
         """Implement this method to yield indenting events for the block."""
-        yield CURRENT_INDENT, ""
+        #TEMP
+        indent_pos = len(block) - len(block.text().lstrip())
+        yield CURRENT_INDENT, block.text()[:indent_pos]
 
 
 
