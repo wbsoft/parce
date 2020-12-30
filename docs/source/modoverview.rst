@@ -9,6 +9,7 @@ Overview of all modules
    css.rst
    document.rst
    formatter.rst
+   indent.rst
    introspect.rst
    language.rst
    lexer.rst
