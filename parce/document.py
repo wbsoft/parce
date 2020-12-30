@@ -260,10 +260,10 @@ class AbstractDocument:
                 yield block
                 block = block.next_block()
         else:
-            while block:
+            while True:
                 yield block
                 block = block.next_block()
-                if block.pos >= end:
+                if not block or block.pos >= end:
                     break
 
     def replace(self, old, new, start=0, end=None, count=0):
