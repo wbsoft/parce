@@ -28,7 +28,7 @@ highlighting formats in css files.
 
 """
 
-__all__ = ('Css', 'CssTransform', 'Rule', 'Atrule', 'Color', 'Value')
+__all__ = ('Css', 'CssTransform', 'CssIndent', 'Rule', 'Atrule', 'Color', 'Value')
 
 import collections
 import re
