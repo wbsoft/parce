@@ -57,6 +57,8 @@ The following events can be yielded (simply module constants):
 """
 
 import collections
+import sys
+import threading
 
 
 BLANK           = 1
@@ -114,7 +116,7 @@ class AbstractIndenter:
                         if line_info.prefer_indent is None:
                             indents[-1] = line_info.indent
                     else:
-                        # we may replace the indent
+                        # we're inside the cursor's range; may replace the indent
                         if line_info.prefer_indent is not None:
                             new_indent = line_info.prefer_indent
                         else:
@@ -125,7 +127,7 @@ class AbstractIndenter:
                 # dedents at end of current line
                 del indents[max(1, len(indents) - line_info.dedenters.end):]
 
-                # quit?
+                # done?
                 if cursor.end is not None and block.end >= cursor.end:
                     break
 
@@ -134,13 +136,13 @@ class AbstractIndenter:
     def indent_info(self, block, prev_indents=()):
         """Return an IndentInfo object for the specified block."""
 
-        blank = False
-        allow_indent = True
-        indent = ""
-        indenters = []
-        dedenters_start = 0
-        dedenters_end = 0
-        prefer_indent = None
+        blank = False           # False or True
+        allow_indent = True     # False or True
+        indent = None           # string (is set later)
+        indenters = []          # list of string/None elements
+        dedenters_start = 0     # # of dedenters at the beginning of the line
+        dedenters_end = 0       # # of dedenters later in the line
+        prefer_indent = None    # prefer a special case indent (None or string)
 
         find_dedenters = True
 
@@ -166,15 +168,98 @@ class AbstractIndenter:
             elif event is PREFER_INDENT:
                 prefer_indent = args.pop()
 
+        # if no CURRENT_INDENT was yielded, just pick the first whitespace if allowed
+        if indent is None:
+            text = block.text()
+            indent = text[:-len(text.lstrip())] if allow_indent else ""
+
         dedenters = Dedenters(dedenters_start, dedenters_end)
         return IndentInfo(block, blank, indent, allow_indent, indenters, dedenters, prefer_indent)
 
     def indent_events(self, block, prev_indents=()):
         """Implement this method to yield indenting events for the block."""
-        #TEMP
-        indent_pos = len(block) - len(block.text().lstrip())
-        yield CURRENT_INDENT, block.text()[:indent_pos]
+        return
+        yield
 
 
+class Indenter(AbstractIndenter):
+    """Indenter that uses Language-specific indenters if available.
+
+    This can only be used on documents that have TreeDocument mixed in, i.e.
+    have a tree available.
+
+    """
+    def __init__(self):
+        self._lock = threading.Lock()   # for instantiating Transforms
+        self._indents = {}
+
+    def indent_events(self, block, prev_indents=()):
+        """Reimplemented to use Indent subclasses for the specified language."""
+        # get the tokens in this block.
+        root = block.document().get_root(True)
+        if root:
+            tokens = tuple(root.tokens_range(block.pos, block.end))
+            if tokens:
+                curlang = tokens[0].parent.lexicon.language
+                i = 0
+                for j in range(1, len(tokens)):
+                    newlang = tokens[j].parent.lexicon.language
+                    if newlang is not curlang:
+                        indenter = self.get_indent(curlang)
+                        if indenter:
+                            yield from indenter.indent_events(
+                                block, tokens[i:j], i == 0, prev_indents)
+                        i = j
+                        curlang = newlang
+                indenter = self.get_indent(curlang)
+                if indenter:
+                    yield from indenter.indent_events(
+                        block, tokens[i:], i == 0, prev_indents)
+
+    def get_indent(self, language):
+        """Return a Indent class instance for the specified language."""
+        try:
+            return self._indents[language]
+        except KeyError:
+            with self._lock:
+                try:
+                    i = self._indents[language]
+                except KeyError:
+                    i = self._indents[language] = self.find_indent(language)
+                return i
+
+    def add_indent(self, language, transform):
+        """Add a Indent instance for the specified language."""
+        self._indents[language] = indent
+
+    def find_indent(self, language):
+        """If no Indent was added, try to find a predefined one.
+
+        This is done by looking for a Indent subclass in the language's
+        module, with the same name as the language with "Indent" appended.
+        So for a language class named "Css", this method tries to find a
+        Indent in the same module with the name "CssIndent".
+
+        If no Indent is found, for the language, the language's base classes
+        are also tried.
+
+        """
+        for lang in language.mro():
+            module = sys.modules[lang.__module__]
+            name = lang.__name__ + "Indent"
+            indent = getattr(module, name, None)
+            if isinstance(indent, type) and issubclass(indent, Indent):
+                return indent()
+
+
+class Indent:
+    """The base class for language-specific indenters."""
+    def indent_events(self, block, tokens, is_first, prev_indents):
+        """Implement this to yield indent events for the tokens.
+
+
+        """
+        return
+        yield
 
 
