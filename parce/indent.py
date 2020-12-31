@@ -21,8 +21,29 @@
 """
 This module provides Indenter to indent a Document.
 
-To adapt the indenting behaviour, you only need to implement the
-:meth:`AbstractIndenter.indent_events` method.
+To use the :class:`Indenter`: instantiate one and call its
+:meth:`~AbstractIndenter.indent` method with a :class:`~parce.Cursor`
+describing the text range to indent. For example::
+
+    >>> from parce import Document, Cursor
+    >>> from parce.indent import Indenter
+    >>> from parce.lang.css import Css
+    >>> i = Indenter()
+    >>> i.indent_string = "    " # use four spaces by default
+    >>> d = Document(Css.root, "h1 {\ncolor: red;\n     }\n")
+    >>> c = Cursor(d, 0, None)  # select all
+    >>> i.indent(c)
+    >>> d.text()
+    'h1 {\n    color: red;\n}\n'
+
+Indenter uses per-language Indent classes which define the indenting behaviour.
+You can add them manually to Indenter, but it can also find Indent classes
+automatically by looking in the language's module and finding there an Indent
+subclass with the same name, with "Indent" appended.
+
+To further adapt the indenting behaviour, you can implement the
+:meth:`~AbstractIndenter.indent_events` method of the Indenter. Or the
+:meth:`Indent.indent_events` method of the language-specific indenter.
 
 The following events can be yielded (simply module constants):
 
