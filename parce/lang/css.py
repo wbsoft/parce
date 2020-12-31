@@ -39,7 +39,7 @@ from parce.action import (
     Number, Operator, String)
 from parce.rule import TEXT, bygroup, ifmember, ifeq, anyof
 from parce.transform import Transform
-import parce.indent
+from parce.indent import Indent, INDENT, DEDENT
 
 
 RE_CSS_ESCAPE = r"\\(?:[0-9A-Fa-f]{1,6} ?|.)"
@@ -887,12 +887,12 @@ class Value:
         return '<{} {}>'.format(self.__class__.__name__, ', '.join(gen()))
 
 
-class CssIndent(parce.indent.Indent):
+class CssIndent(Indent):
     """Indenter for Css."""
     def indent_events(self, block, tokens, is_first, prev_indents):
         for t in tokens:
             if t.action is Bracket:
                 if t == "{":
-                    yield parce.indent.INDENT,
+                    yield INDENT,
                 elif t == "}":
-                    yield parce.indent.DEDENT,
+                    yield DEDENT,
