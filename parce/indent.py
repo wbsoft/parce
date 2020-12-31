@@ -18,7 +18,7 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 
-"""
+r"""
 This module provides Indenter to indent a Document.
 
 To use the :class:`Indenter`: instantiate one and call its
