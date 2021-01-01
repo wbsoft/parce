@@ -98,7 +98,7 @@ class TreeDocumentMixin:
     def token(self, pos):
         """Returns the token at the specified position, in an intuitive way.
 
-        If a token starts at position, it is returned, otherwise, if a token
+        If a token starts at position, it is returned. Otherwise, if a token
         ends at position, it is returned. Will not return a token that is in a
         different block. Returns None if there are no tokens in the block.
 
