@@ -95,3 +95,23 @@ class TreeDocumentMixin:
         self.builder().rebuild(self.text(), False, start, removed, added)
         super().contents_changed(start, removed, added)
 
+    def token(self, pos):
+        """Returns the token at the specified position, in an intuitive way.
+
+        If a token starts at position, it is returned, otherwise, if a token
+        ends at position, it is returned. Will not return a token that is in a
+        different block. Returns None if there are no tokens in the block.
+
+        """
+        token = self.get_root(True).find_token(pos)
+        if token:
+            if token.pos <= pos:
+                return token
+            # token is to the right, see if left token touches pos
+            left_token = token.previous_token()
+            if left_token and left_token.end == pos:
+                return left_token
+            # see if token (to the right) is on the same line
+            if self.block_separator not in self[pos:token.pos]:
+                return token
+
