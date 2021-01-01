@@ -220,13 +220,6 @@ class Indenter(AbstractIndenter):
         root = block.document().get_root(True)
         if root:
             tokens = tuple(root.tokens_range(block.pos, block.end))
-            # TEMP: when there is no single token in the range, an earlier
-            # token might show up in tokens_range. Should be fixed in tree.py.
-            if tokens and tokens[0].end <= block.pos:
-                tokens = tokens[1:]
-            if tokens and tokens[-1].pos >= block.end:
-                tokens = tokens[:-1]
-            # end TEMP
             if tokens:
                 curlang = tokens[0].parent.lexicon.language
                 i = 0
