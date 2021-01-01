@@ -216,26 +216,23 @@ class Indenter(AbstractIndenter):
 
     def indent_events(self, block, prev_indents=()):
         """Reimplemented to use Indent subclasses for the specified language."""
-        # get the tokens in this block.
-        root = block.document().get_root(True)
-        if root:
-            tokens = tuple(root.tokens_range(block.pos, block.end))
-            if tokens:
-                curlang = tokens[0].parent.lexicon.language
-                i = 0
-                for j in range(1, len(tokens)):
-                    newlang = tokens[j].parent.lexicon.language
-                    if newlang is not curlang:
-                        indenter = self.get_indent(curlang)
-                        if indenter:
-                            yield from indenter.indent_events(
-                                block, tokens[i:j], i == 0, prev_indents)
-                        i = j
-                        curlang = newlang
-                indenter = self.get_indent(curlang)
-                if indenter:
-                    yield from indenter.indent_events(
-                        block, tokens[i:], i == 0, prev_indents)
+        tokens = block.tokens()
+        if tokens:
+            curlang = tokens[0].parent.lexicon.language
+            i = 0
+            for j in range(1, len(tokens)):
+                newlang = tokens[j].parent.lexicon.language
+                if newlang is not curlang:
+                    indenter = self.get_indent(curlang)
+                    if indenter:
+                        yield from indenter.indent_events(
+                            block, tokens[i:j], i == 0, prev_indents)
+                    i = j
+                    curlang = newlang
+            indenter = self.get_indent(curlang)
+            if indenter:
+                yield from indenter.indent_events(
+                    block, tokens[i:], i == 0, prev_indents)
 
     def get_indent(self, language):
         """Return a Indent class instance for the specified language."""

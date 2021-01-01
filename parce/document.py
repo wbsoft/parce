@@ -683,4 +683,14 @@ class Block:
             pos = self._document.find_start_of_block(end)
             return type(self)(self._document, pos, end)
 
+    def tokens(self):
+        """Convenience method returning a tuple with all Tokens that are in
+        or overlap this block.
+
+        The Document must have the :class:`~parce.treedocument.TreeDocument`
+        class mixed in (i.e. have the ``get_root()`` method.
+
+        """
+        root = self._document.get_root(True)
+        return tuple(root.tokens_range(self.pos, self.end))
 
