@@ -760,40 +760,58 @@ class Context(list, Node):
             pass
 
     def find(self, pos):
-        """Return the index of our child at pos."""
+        """Return the index of our child at (or to the right of) pos.
+
+        Returns -1 if there is no such child.
+
+        """
         i = 0
-        hi = len(self)
+        hi = l = len(self)
         while i < hi:
             mid = (i + hi) // 2
             n = self[mid]
-            if n.pos >= pos:
-                hi = mid
-            elif n.end <= pos:
+            if n.end <= pos:
                 i = mid + 1
             else:
                 hi = mid
-        return min(i, len(self) - 1)
+        return -1 if i == l else i
 
     def find_token(self, pos):
-        """Return the Token at or to the right of position."""
-        n = self[self.find(pos)]
-        while n.is_context:
-            n = n[n.find(pos)]
-        return n
+        """Return the Token at or to the right of position.
+
+        Returns None if there is no such token.
+
+        """
+        i = self.find(pos)
+        if i != -1:
+            n = self[i]
+            while n.is_context:
+                n = n[n.find(pos)]
+            return n
 
     def find_token_with_trail(self, pos):
-        """Return the Token at or to the right of position, and the trail of indices."""
+        """Return the Token at or to the right of position, and the trail of indices.
+
+        Returns (None, None) if there is no such token.
+
+        """
         i = self.find(pos)
-        n = self[i]
-        trail = [i]
-        while n.is_context:
-            i = n.find(pos)
-            n = n[i]
-            trail.append(i)
-        return n, trail
+        if i != -1:
+            n = self[i]
+            trail = [i]
+            while n.is_context:
+                i = n.find(pos)
+                n = n[i]
+                trail.append(i)
+            return n, trail
+        return None, None
 
     def find_left(self, pos):
-        """Return the index of our child at or to the left of pos."""
+        """Return the index of our child at or to the left of pos.
+
+        Returns -1 if there is no such child.
+
+        """
         i = 0
         hi = len(self)
         while i < hi:
@@ -803,25 +821,37 @@ class Context(list, Node):
                 i = mid + 1
             else:
                 hi = mid
-        return max(0, i - 1)
+        return i - 1
 
     def find_token_left(self, pos):
-        """Return the Token at or to the left of position."""
-        n = self[self.find_left(pos)]
-        while n.is_context:
-            n = n[n.find_left(pos)]
-        return n
+        """Return the Token at or to the left of position.
+
+        Returns None if there is no such token.
+
+        """
+        i = self.find_left(pos)
+        if i != -1:
+            n = self[i]
+            while n.is_context:
+                n = n[n.find_left(pos)]
+            return n
 
     def find_token_left_with_trail(self, pos):
-        """Return the Token at or to the left of position, and the trail of indices."""
+        """Return the Token at or to the left of position, and the trail of indices.
+
+        Returns (None, None) if there is no such token.
+
+        """
         i = self.find_left(pos)
-        n = self[i]
-        trail = [i]
-        while n.is_context:
-            i = n.find_left(pos)
-            n = n[i]
-            trail.append(i)
-        return n, trail
+        if i != -1:
+            n = self[i]
+            trail = [i]
+            while n.is_context:
+                i = n.find_left(pos)
+                n = n[i]
+                trail.append(i)
+            return n, trail
+        return None, None
 
     def find_token_after(self, pos):
         """Return the first token completely right from pos.
@@ -911,10 +941,14 @@ class Context(list, Node):
             if end <= start:
                 return None, None, None
             end_trail = self.find_token_left_with_trail(end)[1]
+            if not end_trail:
+                return None, None, None
         else:
             end_trail = []
         if start > 0:
             start_trail = self.find_token_with_trail(start)[1]
+            if not start_trail:
+                return None, None, None
             if end_trail:
                 # find the youngest common ancestor
                 for n, (i, j) in enumerate(zip(start_trail, end_trail)):
