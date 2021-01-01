@@ -27,12 +27,6 @@ sys.path.insert(0, '.')
 import parce.transform
 
 
-def transform_file(filename, root_lexicon=None, transform=None):
-    s = open(filename).read()
-    if root_lexicon is None:
-        root_lexicon = parce.find(filename=filename, contents=s)
-    return parce.transform.transform_text(root_lexicon, s, transform)
-
 JSON_RESULT = \
 {'background': 'background.png',
  'comment': 'JSON example',
@@ -47,6 +41,12 @@ JSON_RESULT = \
  'icon-size': 80,
  'title': 'Frescobaldi'}
 
+
+def transform_file(filename, root_lexicon=None, transform=None):
+    s = open(filename).read()
+    if root_lexicon is None:
+        root_lexicon = parce.find(filename=filename, contents=s)
+    return parce.transform.transform_text(root_lexicon, s, transform)
 
 
 def test_main():
