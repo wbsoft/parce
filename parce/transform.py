@@ -401,6 +401,37 @@ class Transformer(parce.util.Observable):
         return tf() if issubclass(tf, Transform) else None
 
 
+class BackgroundTransformer(Transformer):
+    """A Transformer that does its job in a background thread."""
+    def __init__(self):
+        super().__init__()
+        self._jobs = {}
+
+    def build(self, tree):
+        """Reimplemented to build the transformation in a background thread.
+
+        This method starts a background thread performing the transformation
+        and returns immediately.
+
+        """
+        def job():
+            for stage in self.process(tree):
+                pass
+            del self._jobs[tree]
+        job = self._jobs[tree] = threading.Thread(target=job)
+        job.start()
+
+    def wait(self, tree):
+        """Wait for completion of the transformation of the tree if busy."""
+        job = self._jobs.get(tree)
+        if job:
+            job.wait()
+
+    def busy(self, tree):
+        """Return True if a job transforming the tree is busy."""
+        return tree in self._jobs
+
+
 def transform_tree(tree, transform=None):
     """Convenience function that transforms tree using Transform.
 
@@ -447,35 +478,4 @@ def validate_transform(transform, language):
     for lexicon in introspect.lexicons(language):
         if not getattr(transform, lexicon.name, None):
             print("Missing transform method for lexicon:", lexicon.name)
-
-
-class BackgroundTransformer(Transformer):
-    """A Transformer that does its job in a background thread."""
-    def __init__(self):
-        super().__init__()
-        self._jobs = {}
-
-    def build(self, tree):
-        """Reimplemented to build the transformation in a background thread.
-
-        This method starts a background thread performing the transformation
-        and returns immediately.
-
-        """
-        def job():
-            for stage in self.process(tree):
-                pass
-            del self._jobs[tree]
-        job = self._jobs[tree] = threading.Thread(target=job)
-        job.start()
-
-    def wait(self, tree):
-        """Wait for completion of the transformation of the tree if busy."""
-        job = self._jobs.get(tree)
-        if job:
-            job.wait()
-
-    def busy(self, tree):
-        """Return True if a job transforming the tree is busy."""
-        return tree in self._jobs
 
