@@ -776,6 +776,17 @@ class Context(list, Node):
                 hi = mid
         return -1 if i == l else i
 
+    def find_context(self, pos):
+        """Return the younghest Context at position (or self)."""
+        node = self
+        i = self.find(pos)
+        if i != -1:
+            n = node[i]
+            while n.is_context and n.pos <= pos:
+                node = n
+                n = n[n.find(pos)]
+        return node
+
     def find_token(self, pos):
         """Return the Token at or to the right of position.
 
