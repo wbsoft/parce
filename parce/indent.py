@@ -211,7 +211,7 @@ class Indenter(AbstractIndenter):
 
     """
     def __init__(self):
-        self._lock = threading.Lock()   # for instantiating Transforms
+        self._lock = threading.Lock()   # for instantiating Indents
         self._indents = {}
 
     def indent_events(self, block, prev_indents=()):
