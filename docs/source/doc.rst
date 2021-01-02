@@ -109,8 +109,9 @@ during these edits, so all ranges remain valid during the process.
 Only when the ``with`` block is exited, the changes are applied and the tree
 of tokens is updated::
 
+    >>> from parce.action import Name
     >>> with d:
-    ...     for token in d.get_root().query.all.action(parce.Name.Tag):
+    ...     for token in d.get_root().query.all.action(Name.Tag):
     ...         d[token.pos:token.end] = "yo:" + token.text.upper()
     ...
     >>> d.text()
