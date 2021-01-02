@@ -83,8 +83,9 @@ TreeBuilder found to be left open by the document::
     >>> d.open_lexicons()
     [Xml.tag]
 
-In this case, because the xml tag was not closed, an ``Xml.tag`` context was left
-open. We can change that. Using ``Document.insert()`` we add one character::
+In this case, because the xml tag was not closed, an ``Xml.tag`` context was
+left open. We can change that. Using ``Document.insert()`` we add one
+character::
 
     >>> d.insert(39, '/')
     >>> d.open_lexicons()
@@ -119,12 +120,60 @@ This incantation replaces all XML tag names with the same name in upper case
 and with ``"yo:"`` prepended.
 
 
+Cursor and Block
+----------------
+
+Related to Document are :class:`~parce.document.Cursor` and
+:class:`~parce.document.Block`.
+
+A Cursor simply describes a position (``pos``) in the document, or a selected
+range (from ``pos`` to ``end``). If you write routines that inspect the tokens
+and then change the text in some way, you can write them so that they expect
+the cursor as argument, so they get the cursor's Document, the selected range
+and the tokenized tree in one go.
+
+A cursor keeps its position updated as the Document changes, as long as you
+keep a reference to it.
+
+A Block describes a line of text and is instantiated using
+:meth:`Document.find_block() <parce.document.AbstractDocument.find_block>`,
+:meth:`Document.blocks() <parce.document.AbstractDocument.blocks>`,
+:meth:`Cursor.block() <parce.document.Cursor.block>` or
+:meth:`Cursor.blocks() <parce.document.Cursor.blocks>`,
+and then knows its ``pos`` and ``end`` in the Document. You can easily iterate
+over lines of text using the ``blocks()`` methods.
+
+
+Getting at the tokens
+---------------------
+
+Of course, you can get to the tokens by examining the tree, but there are a few
+convenience methods. :meth:`Document.token(pos)
+<parce.treedocument.TreeDocumentMixin.token>` returns the token closest at the
+specified position (and on the same line), and :meth:`Cursor.token()
+<parce.document.Cursor.token>` does the same. :meth:`Cursor.tokens()
+<parce.document.Cursor.tokens>` yields the tokens in the selected range, if
+any.
+
+:meth:`Block.tokens() <parce.document.Block.tokens>` returns a tuple of the
+tokens at the specified line::
+
+    >>> from parce import Document
+    >>> from parce.lang.css import Css
+    >>> d = Document(Css.root, open('parce/themes/default.css').read())
+    >>> b = d.find_block(200)
+    >>> b.tokens()
+    (<Token 'background' at 203:213 (Name.Property.Definition)>, <Token ':' at 213:214 (Delimiter)>,
+    <Token 'ivory' at 215:220 (Literal.Color)>, <Token ';' at 220:221 (Delimiter)>)
+
+
 More goodies
 ------------
 
 The ``parce.Document`` class is in fact built from two base classes:
-``AbstractDocument``/``Document`` from the :py:mod:`document <parce.document>` module and
-``TreeDocumentMixin`` from the :py:mod:`treedocument <parce.treedocument>` module.
+``AbstractDocument``/``Document`` from the :py:mod:`document <parce.document>`
+module and ``TreeDocumentMixin`` from the :py:mod:`treedocument
+<parce.treedocument>` module.
 
 Using both base classes, it is not difficult to design a class that wraps an
 object representing a text document in a GUI editor. You need only to provide
