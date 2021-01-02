@@ -156,7 +156,7 @@ specified position (and on the same line), and :meth:`Cursor.token()
 any.
 
 :meth:`Block.tokens() <parce.document.Block.tokens>` returns a tuple of the
-tokens at the specified line::
+tokens at that line::
 
     >>> from parce import Document
     >>> from parce.lang.css import Css
