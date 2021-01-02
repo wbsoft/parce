@@ -600,6 +600,16 @@ class Cursor:
         self.rstrip(chars)
         self.lstrip(chars)
 
+    def token(self):
+        """Convenience method returning the Token the cursor points at."""
+        return self.document().token(self.start)
+
+    def tokens(self):
+        """Convenience method yielding the tokens in the selection."""
+        if self.has_selection():
+            root = self.document().get_root(True)
+            yield from root.tokens_range(self.start, self.end)
+
 
 class Block:
     r"""Represents a single line (block) of text in the Document.
