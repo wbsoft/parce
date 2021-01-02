@@ -6,6 +6,12 @@ current:
 - removed Context.source and Token.target (and their Query counterparts)
 - removed get_group_* functions from tree.py, added them as methods to
   GroupToken
+- Cursor.start is now Cursor.pos (in line with Token and Block etc.)
+- added document block api
+- added Document.token, Cursor.token and Cursor.tokens, etc.
+- Context.find_* and Context.tokens_range() are more robust now
+- added indent module
+- Event.tokens is now Event.lexemes to avoid confusion
 
 
 2020-06-02: parce-0.13.0
