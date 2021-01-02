@@ -164,7 +164,7 @@ class AbstractDocument:
         if isinstance(key, slice):
             start, end, _ = key.indices(total)
         elif isinstance(key, Cursor):
-            start, end, _ = slice(key.start, key.end).indices(total)
+            start, end, _ = slice(key.pos, key.end).indices(total)
         else:
             # single integer
             if key < 0:
@@ -204,15 +204,15 @@ class AbstractDocument:
     def _update_cursors(self):
         """Update the positions of the cursors."""
         i = 0
-        cursors = sorted(self._cursors, key = lambda c: c.start)
+        cursors = sorted(self._cursors, key = lambda c: c.pos)
         for start, end, text in self._changes:
             for c in cursors[i:]:
-                ahead = c.start > start
+                ahead = c.pos > start
                 if ahead:
-                    if end >= c.start:
-                        c.start = start
+                    if end >= c.pos:
+                        c.pos = start
                     else:
-                        c.start += start + len(text) - end
+                        c.pos += start + len(text) - end
                 if c.end is not None and c.end >= start:
                     if end >= c.end:
                         c.end = start + len(text)
@@ -483,13 +483,13 @@ class Document(AbstractDocument, util.Observable):
 class Cursor:
     """Describes a certain range (selection) in a Document.
 
-    You may change the start and end attributes yourself. Both must be an
+    You may change the ``pos`` and ``end`` attributes yourself. Both must be an
     integer, end may also be None, denoting the end of the document.
 
     As long as you keep a reference to the Cursor, its positions are updated
-    when the document changes. When text is inserted at the start position, the
-    position remains the same. But when text is inserted at the end of a
-    cursor, the end position moves along with the new text. E.g.:
+    when the document changes. When text is inserted at ``pos``, the position
+    remains the same. But when text is inserted at the end of a cursor, the
+    ``end`` position (if not None) moves along with the new text. E.g.:
 
     .. code-block:: python
 
@@ -497,7 +497,7 @@ class Cursor:
         c = Cursor(d, 8, 8)
         with d:
             d[8:8] = 'new text'
-        c.start, c.end --> (8, 16)
+        c.pos, c.end --> (8, 16)
 
     You can also use a Cursor as key while editing a document:
 
@@ -510,18 +510,18 @@ class Cursor:
     You cannot alter the document via the Cursor.
 
     """
-    __slots__ = "_document", "end", "start", "__weakref__"
+    __slots__ = "_document", "end", "pos", "__weakref__"
 
-    def __init__(self, document, start=0, end=-1):
-        """Init with document. Start default to 0 and end defaults to start."""
+    def __init__(self, document, pos=0, end=-1):
+        """Init with document. ``pos`` defaults to 0 and ``end`` defaults to pos."""
         self._document = document
-        self.start = start
-        self.end = end if end != -1 else start
+        self.pos = pos
+        self.end = end if end != -1 else pos
         document._cursors.add(self)
 
     def __repr__(self):
-        key = [self.start]
-        if self.start != self.end:
+        key = [self.pos]
+        if self.pos != self.end:
             key.append(self.end or "")
         key = ":".join(map(format, key))
         text = reprlib.repr(self.text())
@@ -535,35 +535,35 @@ class Cursor:
         return self._document[self]
 
     def block(self):
-        """Return the Block start is in."""
-        return self._document.find_block(self.start)
+        """Return the Block our ``pos`` is in."""
+        return self._document.find_block(self.pos)
 
     def blocks(self):
-        """Yield the Blocks from start to end."""
-        yield from self._document.blocks(self.start, self.end)
+        """Yield the Blocks from pos to end."""
+        yield from self._document.blocks(self.pos, self.end)
 
-    def select(self, start, end=-1):
-        """Change start and end in one go. End defaults to start."""
-        self.start = start
-        self.end = start if end == -1 else end
+    def select(self, pos, end=-1):
+        """Change pos and end in one go. End defaults to pos."""
+        self.pos = pos
+        self.end = pos if end == -1 else end
 
     def select_all(self):
-        """Set start to 0 and end to None; selecting all text."""
-        self.start = 0
+        """Set pos to 0 and end to None; selecting all text."""
+        self.pos = 0
         self.end = None
 
     def select_none(self):
-        """Set end to start."""
-        self.end = self.start
+        """Set end to pos."""
+        self.end = self.pos
 
     def has_selection(self):
         """Return True if text is selected."""
         end = len(self._document) if self.end is None else self.end
-        return self.start < end
+        return self.pos < end
 
     def select_start_of_block(self):
-        """Moves the selection start to the beginning of the current line."""
-        self.start = self.document().find_start_of_block(self.start)
+        """Moves the selection pos to the beginning of the current line."""
+        self.pos = self.document().find_start_of_block(self.pos)
 
     def select_end_of_block(self):
         """Moves the selection end (if not None) to the end of its line."""
@@ -571,7 +571,7 @@ class Cursor:
             self.end = self.document().find_end_of_block(self.end)
 
     def lstrip(self, chars=None):
-        """Move start to the right, if specified characters can be skipped.
+        """Move pos to the right, if specified characters can be skipped.
 
         By default whitespace is skipped, like Python's lstrip() string method.
 
@@ -579,7 +579,7 @@ class Cursor:
         text = self.text()
         if text:
             offset = len(text) - len(text.lstrip(chars))
-            self.start += offset
+            self.pos += offset
 
     def rstrip(self, chars=None):
         """Move end to the left, if specified characters can be skipped.
@@ -596,19 +596,19 @@ class Cursor:
                 self.end -= offset
 
     def strip(self, chars=None):
-        """Adjust start and end, like Python's strip() method."""
+        """Adjust pos and end, like Python's strip() method."""
         self.rstrip(chars)
         self.lstrip(chars)
 
     def token(self):
         """Convenience method returning the Token the cursor points at."""
-        return self.document().token(self.start)
+        return self.document().token(self.pos)
 
     def tokens(self):
         """Convenience method yielding the tokens in the selection."""
         if self.has_selection():
             root = self.document().get_root(True)
-            yield from root.tokens_range(self.start, self.end)
+            yield from root.tokens_range(self.pos, self.end)
 
 
 class Block:

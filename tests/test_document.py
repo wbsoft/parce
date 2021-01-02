@@ -58,7 +58,7 @@ def test_main():
     while d.can_undo():
         d.undo()
     assert d.text() == text
-    assert c.text() == "" and c.start == 0
+    assert c.text() == "" and c.pos == 0
 
     d.redo()
     assert d.find_block(0).text() == "RANDOM"

@@ -131,7 +131,7 @@ class AbstractIndenter:
 
                 # if we may not change the indent just remember the current
                 if line_info.allow_indent and not line_info.is_blank:
-                    if block.pos < cursor.start:
+                    if block.pos < cursor.pos:
                         # we're outside the cursor's range
                         # obey the existing indent if not a special case
                         if line_info.prefer_indent is None:
