@@ -163,7 +163,7 @@ class AbstractDocument:
         total = len(self)
         if isinstance(key, slice):
             start, end, _ = key.indices(total)
-        elif isinstance(key, Cursor):
+        elif isinstance(key, AbstractTextRange):
             start, end, _ = slice(key.pos, key.end).indices(total)
         else:
             # single integer
@@ -480,7 +480,74 @@ class Document(AbstractDocument, util.Observable):
         self.emit("contents_changed")
 
 
-class Cursor:
+class AbstractTextRange:
+    """Base class for Cursor and Block."""
+    __slots__ = ("_document", "pos", "end")
+    __hash__ = object.__hash__
+
+    def __init__(self, document, pos, end):
+        self._document = document
+        self.pos = pos
+        self.end = end
+
+    def __repr__(self):
+        key = [self.pos]
+        if self.pos != self.end:
+            key.append(self.end or "")
+        key = ":".join(map(format, key))
+        text = reprlib.repr(self.text())
+        return "<{} [{}] {}>".format(type(self).__name__, key, text)
+
+    def document(self):
+        """Return our document."""
+        return self._document
+
+    def text(self):
+        """Return the selected text, if any."""
+        return self.document()[self]
+
+    def __bool__(self):
+        return True
+
+    def __eq__(self, other):
+        return other.document() is self.document() \
+            and other.pos == self.pos \
+            and other.end == self.end
+
+    def __ne__(self, other):
+        return other.document() is not self.document() \
+            or other.pos != self.pos \
+            or other.end != self.end
+
+    def __gt__(self, other):
+        return self.pos > other.pos
+
+    def __lt__(self, other):
+        return self.pos < other.pos
+
+    def __ge__(self, other):
+        return self.pos >= other.pos
+
+    def __le__(self, other):
+        return self.pos <= other.pos
+
+    def token(self):
+        """Convenience method returning the Token at our pos."""
+        return self.document().token(self.pos)
+
+    def tokens(self):
+        """Convenience method returning a tuple with all Tokens that are in
+        or overlap this text range.
+
+        The Document must have the :class:`~parce.treedocument.TreeDocument`
+        class mixed in (i.e. have the ``get_root()`` method.
+
+        """
+        root = self.document().get_root(True)
+        return tuple(root.tokens_range(self.pos, self.end))
+
+
+class Cursor(AbstractTextRange):
     """Describes a certain range (selection) in a Document.
 
     You may change the ``pos`` and ``end`` attributes yourself. Both must be an
@@ -510,37 +577,20 @@ class Cursor:
     You cannot alter the document via the Cursor.
 
     """
-    __slots__ = "_document", "end", "pos", "__weakref__"
+    __slots__ = ("__weakref__",)
 
     def __init__(self, document, pos=0, end=-1):
         """Init with document. ``pos`` defaults to 0 and ``end`` defaults to pos."""
-        self._document = document
-        self.pos = pos
-        self.end = end if end != -1 else pos
+        super().__init__(document, pos, end if end != -1 else pos)
         document._cursors.add(self)
-
-    def __repr__(self):
-        key = [self.pos]
-        if self.pos != self.end:
-            key.append(self.end or "")
-        key = ":".join(map(format, key))
-        text = reprlib.repr(self.text())
-        return "<{} [{}] {}>".format(type(self).__name__, key, text)
-
-    def document(self):
-        return self._document
-
-    def text(self):
-        """Return the selected text, if any."""
-        return self._document[self]
 
     def block(self):
         """Return the Block our ``pos`` is in."""
-        return self._document.find_block(self.pos)
+        return self.document().find_block(self.pos)
 
     def blocks(self):
         """Yield the Blocks from pos to end."""
-        yield from self._document.blocks(self.pos, self.end)
+        yield from self.document().blocks(self.pos, self.end)
 
     def select(self, pos, end=-1):
         """Change pos and end in one go. End defaults to pos."""
@@ -558,7 +608,7 @@ class Cursor:
 
     def has_selection(self):
         """Return True if text is selected."""
-        end = len(self._document) if self.end is None else self.end
+        end = len(self.document()) if self.end is None else self.end
         return self.pos < end
 
     def select_start_of_block(self):
@@ -591,8 +641,9 @@ class Cursor:
         if text:
             offset = len(text) - len(text.rstrip(chars))
             if offset:
-                if self.end is None or self.end > len(self._document):
-                    self.end = len(self._document)
+                doc_length = len(self.document())
+                if self.end is None or self.end > doc_length:
+                    self.end = doc_length
                 self.end -= offset
 
     def strip(self, chars=None):
@@ -600,18 +651,9 @@ class Cursor:
         self.rstrip(chars)
         self.lstrip(chars)
 
-    def token(self):
-        """Convenience method returning the Token the cursor points at."""
-        return self.document().token(self.pos)
-
-    def tokens(self):
-        """Convenience method yielding the tokens in the selection."""
-        if self.has_selection():
-            root = self.document().get_root(True)
-            yield from root.tokens_range(self.pos, self.end)
 
 
-class Block:
+class Block(AbstractTextRange):
     r"""Represents a single line (block) of text in the Document.
 
     Block objects are separated by newlines in the Document, and are created
@@ -627,41 +669,10 @@ class Block:
     ``<=``, ``>`` and ``>=`` operators.
 
     """
-    __slots__ = "_document", "pos", "end"
-
-    def __init__(self, document, pos, end):
-        self._document = document
-        self.pos = pos
-        self.end = end
-
-    def __repr__(self):
-        name = type(self).__name__
-        text = reprlib.repr(self.text())
-        return "<{} [{}:{}] {}>".format(name, self.pos, self.end, text)
-
-    def __bool__(self):
-        return True
+    __slots__ = ()
 
     def __len__(self):
         return self.end - self.pos
-
-    def __eq__(self, other):
-        return other._document is self._document and other.pos == self.pos
-
-    def __ne__(self, other):
-        return other._document is not self._document or other.pos != self.pos
-
-    def __gt__(self, other):
-        return self.pos > other.pos
-
-    def __lt__(self, other):
-        return self.pos < other.pos
-
-    def __ge__(self, other):
-        return self.pos >= other.pos
-
-    def __le__(self, other):
-        return self.pos <= other.pos
 
     def is_first(self):
         """True if this is the first block."""
@@ -669,38 +680,19 @@ class Block:
 
     def is_last(self):
         """True if this is the last block."""
-        return self.end >= len(self._document)
-
-    def text(self):
-        """The text in this block, without a trialing newline."""
-        return self._document[self.pos:self.end]
-
-    def document(self):
-        """The Document we were created from."""
-        return self._document
+        return self.end >= len(self.document())
 
     def next_block(self):
         """The next block if available."""
         if not self.is_last():
-            pos = self.end + len(self._document.block_separator)
-            end = self._document.find_end_of_block(pos)
-            return type(self)(self._document, pos, end)
+            pos = self.end + len(self.document().block_separator)
+            end = self.document().find_end_of_block(pos)
+            return type(self)(self.document(), pos, end)
 
     def previous_block(self):
         """The previous block if available."""
         if self.pos > 0:
-            end = self.pos - len(self._document.block_separator)
-            pos = self._document.find_start_of_block(end)
-            return type(self)(self._document, pos, end)
-
-    def tokens(self):
-        """Convenience method returning a tuple with all Tokens that are in
-        or overlap this block.
-
-        The Document must have the :class:`~parce.treedocument.TreeDocument`
-        class mixed in (i.e. have the ``get_root()`` method.
-
-        """
-        root = self._document.get_root(True)
-        return tuple(root.tokens_range(self.pos, self.end))
+            end = self.pos - len(self.document().block_separator)
+            pos = self.document().find_start_of_block(end)
+            return type(self)(self.document(), pos, end)
 
