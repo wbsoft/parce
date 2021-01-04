@@ -466,17 +466,17 @@ class Document(AbstractDocument, util.Observable):
             self._redo_stack.clear()
 
     def can_undo(self):
-        """Return True whether undo is possible."""
+        """Return True if undo is possible."""
         return bool(self._undo_stack)
 
     def can_redo(self):
-        """Return True whether redo is possible."""
+        """Return True if redo is possible."""
         return bool(self._redo_stack)
 
     def contents_changed(self, position, removed, added):
         """Called by ``_apply_changes()``.
 
-        This implementation emit ``"contents_change"`` and
+        The default implementation emits the ``"contents_change"`` and
         ``"contents_changed"`` events.
 
         """
@@ -486,6 +486,8 @@ class Document(AbstractDocument, util.Observable):
 
 class AbstractTextRange:
     """Base class for Cursor and Block.
+
+    The text range is denoted by the ``pos`` and ``end`` attributes.
 
     Provides the comparison operators ``==``, ``!=``, ``>``, ``<``, ``>=``,
     ``<=``, based on the ``pos`` attribute. The ranges must refer to the same
@@ -572,9 +574,7 @@ class Cursor(AbstractTextRange):
     As long as you keep a reference to the Cursor, its positions are updated
     when the document changes. When text is inserted at ``pos``, the position
     remains the same. But when text is inserted at the end of a cursor, the
-    ``end`` position (if not None) moves along with the new text. E.g.:
-
-    .. code-block:: python
+    ``end`` position (if not None) moves along with the new text. E.g.::
 
         d = Document('hi there, folks!')
         c = Cursor(d, 8, 8)
@@ -582,9 +582,7 @@ class Cursor(AbstractTextRange):
             d[8:8] = 'new text'
         c.pos, c.end --> (8, 16)
 
-    You can also use a Cursor as key while editing a document:
-
-    .. code-block:: python
+    You can also use a Cursor as key while editing a document::
 
         c = Cursor(d, 8, 8)
         with d:
