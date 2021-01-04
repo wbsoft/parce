@@ -225,6 +225,10 @@ class AbstractDocument:
         """Should apply the changes (in self._changes) to the text."""
         raise NotImplementedError
 
+    def append(self, text):
+        """Append text at the end of the document."""
+        self.insert(len(self), text)
+
     def insert(self, pos, text):
         """Insert text at pos."""
         if text:
