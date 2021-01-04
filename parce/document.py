@@ -138,6 +138,7 @@ class AbstractDocument:
             self._apply_changes()
 
     def __setitem__(self, key, text):
+        """Replace the position or slice with text."""
         start, end = self._parse_key(key)
         if ((text or start != end) and
             (end - start != len(text) or self[start:end] != text)):
@@ -146,7 +147,7 @@ class AbstractDocument:
                 self._apply_changes()
 
     def __delitem__(self, key):
-        """Delete the slice of text."""
+        """Delete the chracter or slice of text."""
         self[key] = ""
 
     def __getitem__(self, key):
