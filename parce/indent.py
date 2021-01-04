@@ -111,8 +111,11 @@ class AbstractIndenter:
 
     """
 
-    indent_string = "  "        #: the string to indent each level with
-    indent_blank_lines = True   #: whether to also indent blank lines
+    #: the string to indent each level with, defaulting to two spaces.
+    indent_string = "  "
+
+    #: whether to also indent blank lines
+    indent_blank_lines = True
 
 
     def indent(self, cursor):
@@ -221,7 +224,7 @@ class AbstractIndenter:
         """Strip trialing blanks off the selected lines.
 
         Lines that don't allow changing the indent are skipped. The ``chars``
-        argument is passed on to the Python :func:`strip` function.
+        argument is passed on to the Python :py:meth:`~str.strip` method.
 
         """
         with cursor.document() as d:
