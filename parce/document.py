@@ -481,14 +481,20 @@ class Document(AbstractDocument, util.Observable):
 
 
 class AbstractTextRange:
-    """Base class for Cursor and Block."""
+    """Base class for Cursor and Block.
+
+    Provides the comparison operators ``==``, ``!=``, ``>``, ``<``, ``>=``,
+    ``<=``, based on the ``pos`` attribute. The ranges must refer to the same
+    Document.
+
+    """
     __slots__ = ("_document", "pos", "end")
     __hash__ = object.__hash__
 
     def __init__(self, document, pos, end):
         self._document = document
-        self.pos = pos
-        self.end = end
+        self.pos = pos  #: the (start) position.
+        self.end = end  #: the end position (for Cursor, this may be None).
 
     def __repr__(self):
         key = [self.pos]
@@ -503,32 +509,38 @@ class AbstractTextRange:
         return self._document
 
     def text(self):
-        """Return the selected text, if any."""
+        """Return text in this range."""
         return self.document()[self]
 
     def __bool__(self):
         return True
 
     def __eq__(self, other):
+        """Return ``self.pos == other.pos and self.end == other.end``."""
         return other.document() is self.document() \
             and other.pos == self.pos \
             and other.end == self.end
 
     def __ne__(self, other):
+        """Return ``self.pos != other.pos or self.end != other.end``."""
         return other.document() is not self.document() \
             or other.pos != self.pos \
             or other.end != self.end
 
     def __gt__(self, other):
+        """Return ``self.pos > other.pos``."""
         return self.pos > other.pos
 
     def __lt__(self, other):
+        """Return ``self.pos < other.pos``."""
         return self.pos < other.pos
 
     def __ge__(self, other):
+        """Return ``self.pos >= other.pos``."""
         return self.pos >= other.pos
 
     def __le__(self, other):
+        """Return ``self.pos <= other.pos``."""
         return self.pos <= other.pos
 
     def token(self):
