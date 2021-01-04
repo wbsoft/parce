@@ -192,6 +192,27 @@ class AbstractIndenter:
                 with cursor.document() as d:
                     d[block.pos:block.pos + len(current_indent)] = new_indent
 
+    def increase_indent(self, cursor):
+        """Increase the indent in the Cursor's lines."""
+        with cursor.document() as d:
+            for b in cursor.blocks():
+                info = self.indent_info(b)
+                if info.allow_indent:
+                    d.insert(b.pos, self.indent_string)
+
+    def decrease_indent(self, cursor):
+        """Decrease the indent in the Cursor's lines."""
+        # TODO: 'd be nice to make it smarter and search backwards for indents.
+        with cursor.document() as d:
+            for b in cursor.blocks():
+                info = self.indent_info(b)
+                if info.allow_indent and info.indent:
+                    if info.indent.startswith(self.indent_string):
+                        remove = self.indent_string
+                    else:
+                        remove = info.indent
+                    del d[b.pos:b.pos + len(remove)]
+
     def indent_info(self, block, prev_indents=()):
         """Return an IndentInfo object for the specified block."""
 
