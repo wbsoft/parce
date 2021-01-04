@@ -217,6 +217,21 @@ class AbstractIndenter:
                         remove = info.indent
                     del d[b.pos:b.pos + len(remove)]
 
+    def strip_trialing_blanks(self, cursor, chars=None):
+        """Strip trialing blanks off the selected lines.
+
+        Lines that don't allow changing the indent are skipped. The ``chars``
+        argument is passed on to the Python :func:`strip` function.
+
+        """
+        with cursor.document() as d:
+            for b in cursor.blocks():
+                info = self.indent_info(b)
+                if info.allow_indent:
+                    new_text = b.text().rstrip(chars)
+                    if len(new_text) != len(b):
+                        del d[b.pos+len(new_text):b.end]
+
     def indent_info(self, block, prev_indents=()):
         """Return an IndentInfo object for the specified block."""
 
