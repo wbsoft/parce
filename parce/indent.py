@@ -112,7 +112,14 @@ class AbstractIndenter:
     indent_string = "  "
 
     def indent(self, cursor):
-        """Indent all the lines in the cursor's range."""
+        """Indent all the lines in the cursor's range.
+
+        This method scans the document always from the beginning, although it
+        doesn't change lines before the start of the cursor's range. To
+        re-indent a full document, select all text in the cursor (i.e. ``pos``
+        is 0, ``end`` is None).
+
+        """
         prev_line_info = None
         indents = ['']
 
