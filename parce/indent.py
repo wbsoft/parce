@@ -161,6 +161,37 @@ class AbstractIndenter:
 
                 prev_line_info = line_info
 
+    def auto_indent(self, cursor):
+        """Adjust the indent of the single block at the Cursor's pos."""
+        block = b = cursor.block()
+        info = self.indent_info(block)
+        if info.allow_indent:
+            new_indent = current_indent = info.indent
+            if info.prefer_indent is not None:
+                new_indent = info.prefer_indent
+            else:
+                # search backwards
+                depth = info.dedenters.start
+                while not b.is_first():
+                    b = b.previous_block()
+                    info = self.indent_info(b)
+                    if info.allow_indent:
+                        if 0 <= depth < len(info.indenters):
+                            # we found the indent to use
+                            index = len(info.indenters) - depth - 1
+                            new_indent = info.indent + (info.indenters[index] or self.indent_string)
+                            break
+                        depth -= len(info.indenters)
+                        depth += info.dedenters.end
+                        if depth == 0:
+                            # same indent as this line
+                            new_indent = info.indent
+                            break
+                        depth += info.dedenters.start
+            if new_indent != current_indent:
+                with cursor.document() as d:
+                    d[block.pos:block.pos + len(current_indent)] = new_indent
+
     def indent_info(self, block, prev_indents=()):
         """Return an IndentInfo object for the specified block."""
 
