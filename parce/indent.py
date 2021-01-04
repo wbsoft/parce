@@ -48,15 +48,13 @@ To further adapt the indenting behaviour, you can implement the
 The following events can be yielded (simply module constants):
 
     ``BLANK``:
-        this is a blank line, the current indent level is not changed
+        this is a blank line, the current indent level is not changed.
 
     ``CURRENT_INDENT, string``:
         the current indent string this line has.
 
-    ``INDENT`` [``, string``]:
-        next line should be indented a level. If string is given, that indent
-        is used instead of the default indent (relatively to the start of the
-        text in the current line excluding the current indent).
+    ``INDENT``
+        next line should be indented a level.
 
     ``NO_INDENT``:
         the indent of this line may not be changed at all, e.g. because it is
@@ -74,6 +72,13 @@ The following events can be yielded (simply module constants):
         use this indent for the current line, but do not change the indent
         level or the current indent for the next line.
 
+    ``NO_STRIP``:
+        trailing whitespace should not be stripped off this line.
+
+    ``ALIGN``, ``string``:
+        The last ``INDENT`` event should use the specified string for alignment
+        instead of the default indent (relatively to the start of the text in
+        the current line excluding the current indent).
 
 """
 
@@ -89,14 +94,24 @@ NO_INDENT       = 4
 DEDENT          = 5
 NO_DEDENT       = 6
 PREFER_INDENT   = 7
+NO_STRIP        = 8
+ALIGN           = 9
 
 
 Dedenters = collections.namedtuple("Dedenters", "start end")
 """Dedenters at the ``start`` and the ``end`` of the line."""
 
 
-IndentInfo = collections.namedtuple("IndentInfo",
-    "block is_blank indent allow_indent indenters dedenters prefer_indent")
+IndentInfo = collections.namedtuple("IndentInfo", (
+    "block",
+    "is_blank",
+    "indent",
+    "allow_indent",
+    "indenters",
+    "dedenters",
+    "prefer_indent",
+    "allow_strip",
+))
 """Contains information about how to indent a block.
 
 Created by :meth:`AbstractIndenter.indent_info` and used within
@@ -245,6 +260,7 @@ class AbstractIndenter:
         dedenters_start = 0     # # of dedenters at the beginning of the line
         dedenters_end = 0       # # of dedenters later in the line
         prefer_indent = None    # prefer a special case indent (None or string)
+        allow_strip = True      # False or True
 
         find_dedenters = True
 
@@ -252,9 +268,9 @@ class AbstractIndenter:
             if event is BLANK:
                 blank = True
             elif event is CURRENT_INDENT:
-                indent = args.pop()
+                indent = args[0]
             elif event is INDENT:
-                indenters.append(args.pop() if args else None)
+                indenters.append(None)
                 find_dedenters = False
             elif event is NO_INDENT:
                 allow_indent = False
@@ -268,7 +284,11 @@ class AbstractIndenter:
             elif event is NO_DEDENT:
                 find_dedenters = False
             elif event is PREFER_INDENT:
-                prefer_indent = args.pop()
+                prefer_indent = args[0]
+            elif event is ALIGN and indenters and args:
+                indenters[-1] = args[0]
+            elif event is NO_STRIP:
+                allow_strip= False
 
         # if no CURRENT_INDENT was yielded, just pick the first whitespace if allowed
         if indent is None:
@@ -276,7 +296,7 @@ class AbstractIndenter:
             indent = text[:-len(text.lstrip())] if allow_indent else ""
 
         dedenters = Dedenters(dedenters_start, dedenters_end)
-        return IndentInfo(block, blank, indent, allow_indent, indenters, dedenters, prefer_indent)
+        return IndentInfo(block, blank, indent, allow_indent, indenters, dedenters, prefer_indent, allow_strip)
 
     def indent_events(self, block, prev_indents=()):
         """Implement this method to yield indenting events for the block."""
