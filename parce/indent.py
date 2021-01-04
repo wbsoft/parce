@@ -107,9 +107,13 @@ Created by :meth:`AbstractIndenter.indent_info` and used within
 class AbstractIndenter:
     """Indents (part of) a Document.
 
+    The indenting preferences can be set using some instance attributes.
+
     """
 
-    indent_string = "  "
+    indent_string = "  "        #: the string to indent each level with
+    indent_blank_lines = True   #: whether to also indent blank lines
+
 
     def indent(self, cursor):
         """Indent all the lines in the cursor's range.
@@ -137,7 +141,7 @@ class AbstractIndenter:
                 del indents[max(1, len(indents) - line_info.dedenters.start):]
 
                 # if we may not change the indent just remember the current
-                if line_info.allow_indent and not line_info.is_blank:
+                if line_info.allow_indent and (self.indent_blank_lines or not line_info.is_blank):
                     if block.pos < cursor.pos:
                         # we're outside the cursor's range
                         # obey the existing indent if not a special case
