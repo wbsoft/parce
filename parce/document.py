@@ -368,7 +368,8 @@ class Document(AbstractDocument, util.Observable):
         self._modified = False
         self._undo_stack = []
         self._redo_stack = []
-        self._in_undo = None
+        self._in_undo = util.Switch()
+        self._in_redo = util.Switch()
 
     def modified(self):
         """Return whether the text was modified."""
@@ -378,7 +379,7 @@ class Document(AbstractDocument, util.Observable):
         """Sets whether the text is modified, happens automatically normally."""
         changed = modified != self._modified
         self._modified = modified
-        if not modified and not self._in_undo:
+        if not modified and not (self._in_undo or self._in_redo):
             self._set_all_undo_redo_modified()
         if changed:
             self.emit("modification_changed", modified)
@@ -408,11 +409,11 @@ class Document(AbstractDocument, util.Observable):
 
     def _handle_undo(self, start, end, text):
         """Store start, end, and text needed to reconstruct the previous state."""
-        if self._in_undo == "undo":
+        if self._in_undo:
             self._redo_stack.append([start, end, text, self.modified()])
         else:
             self._undo_stack.append([start, end, text, self.modified()])
-            if self._in_undo != "redo":
+            if not self._in_redo:
                 self._redo_stack.clear()
 
     @contextlib.contextmanager
@@ -443,21 +444,19 @@ class Document(AbstractDocument, util.Observable):
         """Undo the last modification."""
         assert self._edit_context == 0, "can't undo while in edit context"
         if self._undo_stack:
-            self._in_undo = "undo"
-            start, end, text, modified = self._undo_stack.pop()
-            self[start:end] = text
-            self.set_modified(modified)
-            self._in_undo = None
+            with self._in_undo:
+                start, end, text, modified = self._undo_stack.pop()
+                self[start:end] = text
+                self.set_modified(modified)
 
     def redo(self):
         """Redo the last undone modification."""
         assert self._edit_context == 0, "can't redo while in edit context"
         if self._redo_stack:
-            self._in_undo = "redo"
-            start, end, text, modified = self._redo_stack.pop()
-            self[start:end] = text
-            self.set_modified(modified)
-            self._in_undo = None
+            with self._in_redo:
+                start, end, text, modified = self._redo_stack.pop()
+                self[start:end] = text
+                self.set_modified(modified)
 
     def clear_undo_redo(self):
         """Clear the undo/redo stack."""
