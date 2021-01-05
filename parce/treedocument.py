@@ -115,23 +115,3 @@ class TreeDocumentMixin:
             if self.block_separator not in self[pos:token.pos]:
                 return token
 
-    def set_transformer(self, transformer):
-        """Convenience method to connect our treebuilder with the specified
-        Transformer.
-
-        Simply calls TreeBuilder.set_transformer().
-
-        """
-        self.builder().set_transformer(transformer)
-
-    def transformer(self):
-        """Return our treebuilder's previously set Transformer, if any."""
-        return self.builder().transformer()
-
-    def transform_result(self):
-        """Convenience method to return the result of the most recent
-        transformation performed by our treebuilder's transformer, if set.
-
-        """
-        return self.builder().transform_result()
-
