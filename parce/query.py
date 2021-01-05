@@ -78,12 +78,26 @@ Which could also be written as::
         lambda t: any(t.query.next.target.children.containing('2')))
 
 
-A query is a generator, you can iterate over the results. For debugging
-purposes, there are also the list(), pick(), count() and dump() methods.::
+A query is a generator, you can iterate over the results::
 
     for attrs in q.all.action(Name.Tag)('origin').right:
         for atr in attrs.query.action(Name.Attribute):
             print(atr)
+
+
+For debugging purposes, there are also the ``list()``, ``pick()``, ``count()``
+and ``dump()`` methods::
+
+    root.query.all.action(Name.Tag)("img").count() # number of "img" tags
+    root.query.all.action(Name.Tag)("img").list()  # list of all "img" tag name tokens
+
+
+Note that a (partial) query can be reused, it simply restarts the iteration
+over the results. The above could also be written as::
+
+    q = root.query.all.action(Name.Tag)("img")
+    q.count()   # number of "img" tags
+    q.list()    # list of all "img" tag name tokens
 
 
 A query resolves to False if there is no single result::
