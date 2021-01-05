@@ -361,6 +361,9 @@ class Document(AbstractDocument, util.Observable):
         emitted when the availability of :meth:`redo` changes
 
     """
+    _in_undo = util.Switch()
+    _in_redo = util.Switch()
+
     undo_redo_enabled = True
 
     def __init__(self, text=""):
@@ -369,8 +372,6 @@ class Document(AbstractDocument, util.Observable):
         self._modified = False
         self._undo_stack = []
         self._redo_stack = []
-        self._in_undo = util.Switch()
-        self._in_redo = util.Switch()
 
     def modified(self):
         """Return whether the text was modified."""

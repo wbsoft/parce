@@ -366,6 +366,10 @@ class Switch:
         # when blablabl() is called from myfunc, clicking evaluates to True,
         # so do_something() is not called then.
 
+    A Switch can also be used in a class definition; via the descriptor
+    protocol it will then create per-instance Switch objects which will be
+    stored using a weak reference to the instance.
+
     """
     __slots__ = ('_value',)
 
@@ -380,6 +384,17 @@ class Switch:
 
     def __bool__(self):
         return bool(self._value)
+
+    def __get__(self, instance, owner):
+        try:
+            return self._value[instance]
+        except TypeError:
+            # value still was 0, replace it with a weakref dict
+            self._value = weakref.WeakKeyDictionary()
+        except KeyError:
+            pass
+        s = self._value[instance] = type(self)()
+        return s
 
 
 class Symbol:
