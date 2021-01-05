@@ -24,6 +24,7 @@ and some functions to query and manipulate rules that are used by the Lexicon.
 
 """
 
+import operator
 
 from . import util
 
@@ -56,7 +57,7 @@ class Item:
 
     def __getitem__(self, n):
         """Return a new Item that performs item[n]. n is evaluated as well."""
-        return call(_get_item, self, n)
+        return call(operator.getitem, self, n)
 
     def evaluate(self, ns):
         """Evaluate item in namespace dict ``ns``."""
@@ -104,11 +105,6 @@ class Item:
 
     def _repr_args(self):
         return ()
-
-
-# helper function used for Item.__getitem__
-def _get_item(text, n):
-    return text[n]
 
 
 class RuleItem(Item):
