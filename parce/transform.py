@@ -398,7 +398,8 @@ class Transformer(parce.util.Observable):
         module = sys.modules[language.__module__]
         tfname = language.__name__ + "Transform"
         tf = getattr(module, tfname, None)
-        return tf() if issubclass(tf, Transform) else None
+        if isinstance(tf, type) and issubclass(tf, Transform):
+            return tf()
 
 
 class BackgroundTransformer(Transformer):
