@@ -345,7 +345,7 @@ class Transformer(parce.util.Observable):
 
         """
         builder.connect("replace", self.slot_replace, prepend_self=True)
-        builder.connect("finished", self.slot_update, prepend_self=True)
+        builder.connect("finished", self.slot_update, prepend_self=True, priority=-1000)
         builder.connect("invalidate", self.invalidate_node)
 
     def disconnect_treebuilder(self, builder):
