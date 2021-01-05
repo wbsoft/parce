@@ -154,6 +154,8 @@ class TreeBuilder(Observable):
         >>>
 
     """
+    _transformer = None
+
     start = 0
     end = 0
     lexicons = ()
@@ -694,6 +696,38 @@ class TreeBuilder(Observable):
         """
         self.emit("updated", self.start, self.end)
         self.emit("finished")
+
+    def set_transformer(self, transformer):
+        """Convenience method to connect ourselves with the specified
+        Transformer.
+
+        This Transformer then automatically keeps the transformed object for
+        this tree up-to-date. Use None to unset a previously set Transformer.
+
+        """
+        old = self._transformer
+        if old != transformer:
+            self._transformer = transformer
+            if old:
+                old.disconnect_treebuilder(self)
+            if transformer:
+                transformer.connect_treebuilder(self)
+                transformer.build(self.root)
+
+    def transformer(self):
+        """Return a previously set Transformer, if any."""
+        return self._transformer
+
+    def transform_result(self):
+        """Convenience method to return the result of the most recent
+        transformation.
+
+        Returns None if no Transformer was set, or if the Transformer is still
+        busy.
+
+        """
+        if self._transformer:
+            return self._transformer.result(self.root)
 
 
 class BackgroundTreeBuilder(TreeBuilder):
