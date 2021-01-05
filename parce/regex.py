@@ -103,8 +103,8 @@ def to_string(expr):
     If the regular expression is unambiguous and can be converted to a plain
     string, return it. Otherwise, None is returned.
 
-    The returned string can be used with :code:`"".find()`, which would be
-    faster than using :code:`re.search()`. Examples::
+    The returned string can be used with :meth:`str.find`, which would be
+    faster than using :py:func:`re.search`. Examples::
 
         >>> parce.regex.to_string(r"a.e")
         >>> parce.regex.to_string(r"a\.e")
@@ -153,8 +153,37 @@ def to_string(expr):
 def make_trie(words, reverse=False):
     """Return a dict-based radix trie structure from a list of words.
 
-    If reverse is set to True, the trie is made in backward direction,
-    from the end of the words.
+    End-points are denoted by a None key, set to True. If reverse is set to
+    True, the trie is made in backward direction, from the end of the words.
+
+    Example::
+
+        >>> from parce.regex import make_trie
+        >>> r = make_trie(["aaaa", "aaab", "aabb", "abbb", "abbbb"])
+        >>> r   # output formatted nicely :-)
+        {
+            "a": {
+                "a": {
+                    "a": {
+                        "a": {
+                            None: True
+                        },
+                        "b": {
+                            None: True
+                        }
+                    },
+                    "bb": {
+                        None: True
+                    }
+                },
+                "bbb": {
+                    None: True,
+                    "b": {
+                        None: True
+                    }
+                }
+            }
+        }
 
     """
     if reverse:
@@ -196,6 +225,62 @@ def trie_to_regexp_tuple(node, reverse=False):
     A frozenset instance denotes a group of alternative expressions, and
     consists of plain string expressions or other tuples. If None is also
     present in the frozenset, the expression is optional.
+
+    Example::
+
+        >>> from parce.regex import *
+        >>> r = make_trie(["aaaa", "aaab", "aabb", "abbb", "abbbb"])
+        >>> trie_to_regexp_tuple(r)
+        (
+            'a',
+            frozenset({
+                (
+                    'a',
+                    frozenset({
+                        'bb',
+                        (
+                            'a',
+                            frozenset({
+                                'a',
+                                'b'
+                            })
+                        )
+                    })
+                ),
+                (
+                    'bbb',
+                    frozenset({
+                        None,
+                        'b'
+                    })
+                )
+            })
+        )
+
+    This function also recognizes common suffixes within alternative
+    expressions::
+
+        >>> r = make_trie("aaaa aaba aaca abca".split())
+        >>> r
+        {'a':
+            {'a':
+                {'aa': {None: True},
+                 'ba': {None: True},
+                 'ca': {None: True}},
+             'bca': {None: True}}}
+        >>> t = trie_to_regexp_tuple(r)
+        >>> t
+        ('a',
+         frozenset({'bca',
+                    ('a',
+                     frozenset({'c',
+                                'a',
+                                'b'}),
+                     'a')}))
+
+    (Note that the toplevel common suffix is handled by the
+    :func:`common_suffix` function, which is called from :func:`words2regexp`.)
+
 
     """
     if reverse:
@@ -252,7 +337,19 @@ def trie_to_regexp_tuple(node, reverse=False):
 def build_regexp(r):
     """Convert a tuple to a full regular expression pattern string.
 
-    The tuple is described in the trie_to_regexp_tuple() function doc string.
+    The tuple is described in the :func:`trie_to_regexp_tuple` function doc
+    string.
+
+    Example::
+
+        >>> from parce.regex import *
+        >>> r = make_trie(["aaaa", "aaab", "aabb", "abbb", "abbbb"])
+        >>> t = trie_to_regexp_tuple(r)
+        >>> build_regexp(t)
+        'a(?:a(?:bb|a[ab])|bbbb?)'
+
+    The main function :func:`words2regexp` uses this function internally,
+    adding an extra optimization to look for a common suffix.
 
     """
     def get_items(r):
