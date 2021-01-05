@@ -354,7 +354,7 @@ class Indenter(AbstractIndenter):
                     i = self._indents[language] = self.find_indent(language)
                 return i
 
-    def add_indent(self, language, transform):
+    def add_indent(self, language, indent):
         """Add a Indent instance for the specified language."""
         self._indents[language] = indent
 
