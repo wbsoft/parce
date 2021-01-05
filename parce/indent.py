@@ -86,38 +86,56 @@ import collections
 import sys
 import threading
 
+# events w/o args
+INDENT          = 1
+DEDENT          = 2
+NO_DEDENT       = 3
 
-BLANK           = 1
-CURRENT_INDENT  = 2
-INDENT          = 3
-NO_INDENT       = 4
-DEDENT          = 5
-NO_DEDENT       = 6
-PREFER_INDENT   = 7
-NO_STRIP        = 8
-ALIGN           = 9
+# with string args
+PREFER_INDENT   = 4
+CURRENT_INDENT  = 5
+ALIGN           = 6
+
+# state for whole line
+BLANK           = 64
+NO_STRIP        = 128
+NO_INDENT       = 256
 
 
-Dedenters = collections.namedtuple("Dedenters", "start end")
-"""Dedenters at the ``start`` and the ``end`` of the line."""
 
+class IndentInfo:
+    """Contains information about how to indent a block.
 
-IndentInfo = collections.namedtuple("IndentInfo", (
-    "block",
-    "is_blank",
-    "indent",
-    "allow_indent",
-    "indenters",
-    "dedenters",
-    "prefer_indent",
-    "allow_strip",
-))
-"""Contains information about how to indent a block.
+    Created by :meth:`AbstractIndenter.indent_info` and used within
+    :meth:`AbstractIndenter.indent`.
 
-Created by :meth:`AbstractIndenter.indent_info` and used within
-:meth:`AbstractIndenter.indent`.
+    """
+    __slots__ = ("block", "indents", "dedents_start", "dedents_end", "indent",
+                 "prefer_indent", "_state")
 
-"""
+    def __init__(self, block):
+        self.block = block          #: the Block
+        self.indents = []           #: the indent events (None or string)
+        self.dedents_start = 0      #: the number of dedents at the start of the line
+        self.dedents_end = 0        #: the number of dedents later in the line
+        self.indent = None          #: the current indent
+        self.prefer_indent = None   #: a preferred, special case indent
+        self._state = 0             #: mask of BLANK, NO_STRIP, NO_INDENT
+
+    @property
+    def allow_indent(self):
+        """Whether the indent of this line may be changed."""
+        return self._state & NO_INDENT == 0
+
+    @property
+    def allow_strip(self):
+        """Whether trailing whitespace may be stripped of this line."""
+        return self._state & NO_STRIP == 0
+
+    @property
+    def is_blank(self):
+        return self._state & BLANK == BLANK
+
 
 class AbstractIndenter:
     """Indents (part of) a Document.
@@ -132,7 +150,6 @@ class AbstractIndenter:
     #: whether to also indent blank lines
     indent_blank_lines = True
 
-
     def indent(self, cursor):
         """Indent all the lines in the cursor's range.
 
@@ -142,46 +159,46 @@ class AbstractIndenter:
         is 0, ``end`` is None).
 
         """
-        prev_line_info = None
+        prev_info = None
         indents = ['']
 
         with cursor.document() as d:
             for block in d.blocks():
-                line_info = self.indent_info(block, indents)
+                info = self.indent_info(block, indents)
 
                 # handle indents in previous line
-                if prev_line_info and prev_line_info.indenters:
+                if prev_info and prev_info.indents:
                     current_indent = indents[-1]
-                    for indent in prev_line_info.indenters:
+                    for indent in prev_info.indents:
                         indents.append(current_indent + (indent or self.indent_string))
 
                 # dedents at start of current line
-                del indents[max(1, len(indents) - line_info.dedenters.start):]
+                del indents[max(1, len(indents) - info.dedents_start):]
 
                 # if we may not change the indent just remember the current
-                if line_info.allow_indent and (self.indent_blank_lines or not line_info.is_blank):
+                if info.allow_indent and (self.indent_blank_lines or not info.is_blank):
                     if block.pos < cursor.pos:
                         # we're outside the cursor's range
                         # obey the existing indent if not a special case
-                        if line_info.prefer_indent is None:
-                            indents[-1] = line_info.indent
+                        if info.prefer_indent is None:
+                            indents[-1] = info.indent
                     else:
                         # we're inside the cursor's range; may replace the indent
-                        if line_info.prefer_indent is not None:
-                            new_indent = line_info.prefer_indent
+                        if info.prefer_indent is not None:
+                            new_indent = info.prefer_indent
                         else:
                             new_indent = indents[-1]
-                        if new_indent != line_info.indent:
-                            d[block.pos:block.pos + len(line_info.indent)] = new_indent
+                        if new_indent != info.indent:
+                            d[block.pos:block.pos + len(info.indent)] = new_indent
 
                 # dedents at end of current line
-                del indents[max(1, len(indents) - line_info.dedenters.end):]
+                del indents[max(1, len(indents) - info.dedents_end):]
 
                 # done?
                 if cursor.end is not None and block.end >= cursor.end:
                     break
 
-                prev_line_info = line_info
+                prev_info = info
 
     def auto_indent(self, cursor):
         """Adjust the indent of the single block at the Cursor's pos."""
@@ -193,23 +210,23 @@ class AbstractIndenter:
                 new_indent = info.prefer_indent
             else:
                 # search backwards
-                depth = info.dedenters.start
+                depth = info.dedents_start
                 while not b.is_first():
                     b = b.previous_block()
                     info = self.indent_info(b)
                     if info.allow_indent:
-                        if 0 <= depth < len(info.indenters):
+                        if 0 <= depth < len(info.indents):
                             # we found the indent to use
-                            index = len(info.indenters) - depth - 1
-                            new_indent = info.indent + (info.indenters[index] or self.indent_string)
+                            index = len(info.indents) - depth - 1
+                            new_indent = info.indent + (info.indents[index] or self.indent_string)
                             break
-                        depth -= len(info.indenters)
-                        depth += info.dedenters.end
+                        depth -= len(info.indents)
+                        depth += info.dedents_end
                         if depth == 0:
                             # same indent as this line
                             new_indent = info.indent
                             break
-                        depth += info.dedenters.start
+                        depth += info.dedents_start
             if new_indent != current_indent:
                 with cursor.document() as d:
                     d[block.pos:block.pos + len(current_indent)] = new_indent
@@ -235,8 +252,8 @@ class AbstractIndenter:
                         remove = info.indent
                     del d[b.pos:b.pos + len(remove)]
 
-    def strip_trialing_blanks(self, cursor, chars=None):
-        """Strip trialing blanks off the selected lines.
+    def strip_trailing_blanks(self, cursor, chars=None):
+        """Strip trailing blanks off the selected lines.
 
         Lines that don't allow changing the indent are skipped. The ``chars``
         argument is passed on to the Python :py:meth:`~str.strip` method.
@@ -245,7 +262,7 @@ class AbstractIndenter:
         with cursor.document() as d:
             for b in cursor.blocks():
                 info = self.indent_info(b)
-                if info.allow_indent:
+                if info.allow_strip:
                     new_text = b.text().rstrip(chars)
                     if len(new_text) != len(b):
                         del d[b.pos+len(new_text):b.end]
@@ -253,50 +270,40 @@ class AbstractIndenter:
     def indent_info(self, block, prev_indents=()):
         """Return an IndentInfo object for the specified block."""
 
-        blank = False           # False or True
-        allow_indent = True     # False or True
-        indent = None           # string (is set later)
-        indenters = []          # list of string/None elements
-        dedenters_start = 0     # # of dedenters at the beginning of the line
-        dedenters_end = 0       # # of dedenters later in the line
-        prefer_indent = None    # prefer a special case indent (None or string)
-        allow_strip = True      # False or True
+        info = IndentInfo(block)
 
-        find_dedenters = True
+        find_dedents = True
 
         for event, *args in self.indent_events(block, prev_indents):
-            if event is BLANK:
-                blank = True
-            elif event is CURRENT_INDENT:
-                indent = args[0]
-            elif event is INDENT:
-                indenters.append(None)
+            if event is INDENT:
+                info.indents.append(None)
                 find_dedenters = False
-            elif event is NO_INDENT:
-                allow_indent = False
             elif event is DEDENT:
-                if find_dedenters:
-                    dedenters_start += 1
+                if find_dedents:
+                    info.dedents_start += 1
                 elif indenters:
-                    indenters.pop()
+                    info.indents.pop()
                 else:
-                    dedenters_end += 1
+                    info.dedents_end += 1
             elif event is NO_DEDENT:
-                find_dedenters = False
+                find_dedents = False
+            elif event is CURRENT_INDENT:
+                info.indent = args[0]
+            elif event is ALIGN and info.indents and args:
+                info.indents[-1] = args[0]
             elif event is PREFER_INDENT:
-                prefer_indent = args[0]
-            elif event is ALIGN and indenters and args:
-                indenters[-1] = args[0]
-            elif event is NO_STRIP:
-                allow_strip= False
+                info.prefer_indent = args[0]
+            else: # event in (BLANK, NO_INDENT, NO_STRIP):
+                info._state |= event
 
         # if no CURRENT_INDENT was yielded, just pick the first whitespace if allowed
-        if indent is None:
-            text = block.text()
-            indent = text[:-len(text.lstrip())] if allow_indent else ""
-
-        dedenters = Dedenters(dedenters_start, dedenters_end)
-        return IndentInfo(block, blank, indent, allow_indent, indenters, dedenters, prefer_indent, allow_strip)
+        if info.indent is None:
+            if info.allow_indent:
+                text = block.text()
+                info.indent = text[:-len(text.lstrip())]
+            else:
+                info.indent == ""
+        return info
 
     def indent_events(self, block, prev_indents=()):
         """Implement this method to yield indenting events for the block."""
