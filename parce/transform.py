@@ -236,10 +236,10 @@ class Transformer(parce.util.Observable):
 
     def transform_tree(self, tree):
         """Evaluate a tree structure."""
+        self._interrupt[tree] = False
+
         if not tree.lexicon:
             return  # a root lexicon can be None, but then there are no children
-
-        self._interrupt[tree] = False
 
         curlang = tree.lexicon.language
         transform = self.get_transform(curlang)
