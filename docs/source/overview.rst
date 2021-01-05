@@ -2,10 +2,11 @@ Overview
 ========
 
 The *parce* module consists of a *lexer* that can split text into tokens
-according to a *lexicon*, which is a set of rules with patterns to look for. A
-*tree builder* can put the lexed tokens in a tree structure, which can be
-*queried* in powerful ways. A *transformer* can transform the tree structure in
-any sophisticated, dedicated data structure you can imagine.
+according to one or more *lexicons*, which are sets of rules with regular
+expression patterns to look for. A *tree builder* can put the lexed tokens in a
+tree structure, which can be *queried* in powerful ways. A *transformer* can
+transform the tree structure in any sophisticated, dedicated data structure you
+can imagine.
 
 Lexicons are grouped together defining a language. Some language definitions
 are already bundled, in the ``lang`` directory. But it is also very easy to
@@ -20,27 +21,25 @@ Features
   to a language definition
 * examine and query the generated tree structure
 * transform the tree structure to anything else
-* apply changes to the text, and only update the needed part of a tree, also
-  a transformation can reuse unchanged parts
-* provide a Document (mutable string) that can be modified and that keeps
-  its tokenized tree up-to-date automatically
+* apply changes to the text, and only update the needed part of a tree (also
+  a transformation can reuse unchanged parts)
+* provides a Document (mutable string) that automatically keeps its tokenized
+  tree structure up-to-date.
+* changes to be applied to a document can be collected and applied at once
 * lex and transform in a background thread
-* map the `action` of a token to CSS classes for highlighting based on CSS
+* map the `action` of a token to CSS classes for syntax highlighting based on
+  CSS
 
-You can lex a text once and examine the generated tree structure of tokens,
-but, and this is a key point of *parce*, you can also use a Document which
-keeps its text contents tokenized automatically, and if you change part of
-the text, only updates the tokens that need to, leaving the rest in place.
+A key feature of *parce* is that you can re-lex and re-transform only modified
+parts of a text if you already have lexed it. This makes *parce* suitable for
+text editors etc. that need to keep a tokenized structure of the text
+up-to-date e.g. to support syntax highlighting or very context-sensitive
+autocompletion as you type.
 
-The Document exactly tells the region that needs to be updated, and an
-application could use the type of the tokens (action) to determine the text
-format to highlight every type of text in a special way.
-
-Using some programming you can integrate Document with a structure that
-represents a text document in a GUI editor, and implement syntax highlighting
-as you type. And because the token tree stucture has very powerful search and
-query features, you can quickly provide the user with much feedback about the
-type of the text that is entered/edited.
+Using some programming you can integrate the Document class with a structure
+that represents a text document in a GUI editor. The tokenized tree structure
+can be traversed and queried in many ways, enabling you to quickly provide the
+user with feedback about the type of the text that is entered/edited.
 
 There is already a package `parceqt <https://github.com/wbsoft/parceqt>`_
 that does this for applications based on the Qt5 library (using PyQt5).
@@ -59,14 +58,17 @@ sophisticated context-sensitive autocompletion can be implemented that needs no
 tedious and slow text or token searching to determine what kind of text we're
 in.
 
-And because Frescobaldi needs to provide the user also with a *musical*
-understanding of the LilyPond music, it converts the token structure of a text
-document to a Music structure, which is currently rebuilt on every single
-change of the text.
+I created the transform module because Frescobaldi needs to provide the user
+also with a *musical* understanding of the LilyPond music text: it should
+convert the text document to a musical structure. Currently, this whole
+structure is invalidated on every single change of the text, and then rebuilt
+when requested. Using *parce*'s transform module, I can arrange it so that only
+the modified part of the text and the tokenized tree structure need to be
+re-transformed, smartly reusing intermediate transformed results from contexts
+that didn't change.
 
-So I created the transform module, which is capable of transforming only the
-modified parts of a text to anything else, smartly reusing intermediate
-transformed results from contexts that didn't change.
+Because this realtime, incrementally tokenizing and transforming is such a
+generic process, I decided to make *parce* a separate, generic Python package.
 
 TODO
 ^^^^
