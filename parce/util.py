@@ -182,25 +182,6 @@ class _Observer:
         return super().__gt__(other)
 
 
-class _EmitResult(list):
-    """Encapsulates the results of an Observer.emit() call.
-
-    When is it used as a context manager, it enters all results
-    that are a context manager as well.
-
-    """
-    __slots__ = ('exitstack')
-    def __enter__(self):
-        self.exitstack = s = contextlib.ExitStack()
-        for m in self:
-            if hasattr(m, '__enter__') and hasattr(m, '__exit__'):
-                s.enter_context(m)
-        return s.__enter__()
-
-    def __exit__(self, *exc):
-        return self.exitstack.__exit__(*exc)
-
-
 class Observable:
     """Simple base class for objects that need to announce events.
 
@@ -322,21 +303,24 @@ class Observable:
     def emit(self, event, *args, **kwargs):
         """Call all callbacks for the event.
 
-        Returns a list of the return values of all callbacks. When using this
-        list in a ``with`` context, all return values that are context
-        managers, are entered. (The list is an :class:`_EmitResult` object that
-        extends Python's :class:`list` builtin, so that it can be used as a
-        context manager.)
+        Returns a :py:class:`contextlib.ExitStack` instance. When any of the
+        connected callbacks returns a context manager, that context is entered,
+        and added to the exit stack, so it is exited when the exit stack is
+        exited.
 
         """
-        results = _EmitResult()
+        s = contextlib.ExitStack()
         try:
             slots = self._callbacks[event]
         except KeyError:
-            return results
+            return s
         disconnect = []
         for i, observer in enumerate(slots):
-            results.append(observer.call(self, *args, **kwargs))
+            result = observer.call(self, *args, **kwargs)
+            try:
+                s.enter_context(result)
+            except Exception:
+                pass
             if observer.once:
                 disconnect.append(i)
         if disconnect:
@@ -344,7 +328,7 @@ class Observable:
                 del slots[i]
             if not slots:
                 del self._callbacks[event]
-        return results
+        return s
 
 
 class Switch:
