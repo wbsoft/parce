@@ -5,5 +5,5 @@ The lexicon module
     :members:
     :undoc-members:
     :show-inheritance:
-    :special-members: __iter__
+    :special-members: __iter__, __call__
 
