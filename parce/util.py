@@ -352,7 +352,22 @@ class Switch:
 
     A Switch can also be used in a class definition; via the descriptor
     protocol it will then create per-instance Switch objects which will be
-    stored using a weak reference to the instance.
+    stored using a weak reference to the instance. For example::
+
+        class MyClass:
+            clicking = Switch()
+
+            def click_event(self, event):
+                with self.clicking:
+                    self.blablabla()
+
+            def blablabla(self):
+                do_something()
+                if not self.clicking:
+                    # this only runs when blablabla() was not called
+                    # from click_event()
+                    update_something()
+
 
     """
     __slots__ = ('_value',)
