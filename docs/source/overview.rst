@@ -25,7 +25,7 @@ Features
   a transformation can reuse unchanged parts)
 * provides a Document (mutable string) that automatically keeps its tokenized
   tree structure up-to-date.
-* changes to be applied to a document can be collected and applied at once
+* changes to be made to a document can be collected and applied at once
 * lex and transform in a background thread
 * map the `action` of a token to CSS classes for syntax highlighting based on
   CSS
