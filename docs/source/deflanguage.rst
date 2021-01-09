@@ -36,13 +36,15 @@ Let's look closer again at the example from the :doc:`gettingstarted` section::
 
 
 The :attr:`@lexicon <parce.lexicon.lexicon>` decorated methods behave like
-classmethods, i.e. when you call the method through the class definition, it
-yields the rules, and the code yielding the rules knows the current Language
-class via the ``cls`` argument. So the rules are able to in their target point
-to other lexicons of the same class. This makes inheriting and re-implementing
-just one or a few lexicons very easy. Of course a target may also point to a
-lexicon from a *different* language class, in case you need to switch
-languages.
+classmethods, i.e. when the lexicon is accessed for the first time, it calls
+the method with the current Language class as the ``cls`` argument. So the
+rules are able to in their target point to other lexicons of the same class.
+This makes inheriting and re-implementing just one or a few lexicons very easy.
+Of course a target may also point to a lexicon from a *different* language
+class, in case you need to switch languages.
+
+It is a convention that the lexicon method returns a generator yielding the
+rules, but you can return any iterable containing the rules.
 
 
 The pattern
