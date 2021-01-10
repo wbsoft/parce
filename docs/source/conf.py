@@ -68,7 +68,7 @@ extensions = [
 ]
 
 # autodoc
-#autodoc_member_order = 'bysource'
+autodoc_member_order = 'bysource'
 autodoc_default_options = {
     'member-order': 'bysource',
 }

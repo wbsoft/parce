@@ -396,8 +396,11 @@ would obfuscate the possibility to access all rule items, actions and targets
 etcetera beforehand, before parsing, which would break all language validation
 possibilities and future logic to replace items in rules before parsing.)
 
-There are two helper functions that create the Pattern based on the contents
+There are three helper functions that create the Pattern based on the contents
 of the lexicon argument:
+
+.. autofunction:: parce.rule.pattern
+    :noindex:
 
 .. autofunction:: parce.rule.arg
     :noindex:
@@ -405,7 +408,7 @@ of the lexicon argument:
 .. autofunction:: parce.rule.ifarg
     :noindex:
 
-There are is one helper function that creates a target lexicon using an
+There is one helper function that creates a target lexicon using an
 argument:
 
 .. autofunction:: parce.rule.derive
