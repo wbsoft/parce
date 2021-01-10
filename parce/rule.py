@@ -85,31 +85,28 @@ def select(index, *items):
     which returns an integer value (or True or False, which evaluate to 1 and 0,
     repectively).
 
-    The following example yields Keyword when the matched text could be found
-    in the keywords_list, and otherwise Name.Command::
+    The following example rule yield tokens for any word, giving it the Keyword
+    action when the matched text could be found in the keywords_list, and
+    otherwise Name.Command::
 
         keywords_list = ['def', 'class', 'for', 'if', 'else', 'return']
+
         def predicate(text):
             return text in keywords_list
-        select(call(predicate, TEXT), Name.Command, Keyword)
+
+        class MyLang(Language):
+            @lexicon
+            def root(cls):
+                yield r'\w+', select(call(predicate, TEXT), Name.Command, Keyword)
 
     If the selected item is a list or tuple, it is unrolled when injected
     into the rule.
 
+    (For this kind of membership testing, you could also use the
+    :func:`ifmember` helper function.)
+
     """
     return ruleitem.select(index, *items)
-
-
-def pattern(value):
-    """Yield the value (string or None), usable as regular expression.
-
-    If None, the whole rule is skipped. This rule item may only be used as
-    the first item in a rule, and of course, it may not depend on the TEXT
-    or MATCH variables, but it may depend on the ARG variable (which enables
-    you to create patterns that depend on the lexicon argument).
-
-    """
-    return ruleitem.pattern(value)
 
 
 def target(value, *lexicons):
@@ -185,6 +182,9 @@ def ifmember(item, sequence, result, else_result=()):
     This example matches any command that starts with a backslash, e.g.
     ``\begin``, but checks membership in a list without the backslash
     prepended.
+
+    Membership testing is optimized for speed by turning the sequence into a
+    frozen set.
 
     """
     return select(call(operator.contains, frozenset(sequence), item),
@@ -334,6 +334,13 @@ def words(words, prefix="", suffix=""):
     expression. Using the word boundary character ``\b`` as suffix is
     recommended to be sure the match ends at a word end.
 
+    Here is an example::
+
+        >>> from parce.rule import words
+        >>> CONSTANTS = ('true', 'false', 'null')
+        >>> words(CONSTANTS, r'\b', r'\b')
+        '\\b(?:null|(?:fals|tru)e)\\b'
+
     """
     expr = regex.words2regexp(words)
     if prefix or suffix:
@@ -343,10 +350,16 @@ def words(words, prefix="", suffix=""):
 
 def chars(chars, positive=True):
     """Return a regular expression pattern matching one of the characters in
-    the specified string.
+    the specified string or iterable.
 
     If `positive` is False, the set of characters is complemented, i.e. the
     pattern matches any single character that is not in the specified string.
+
+    An example::
+
+        >>> from parce.rule import chars
+        >>> chars('zbdkeghjlmfnotpqaruscvx')
+        '[a-hj-vxz]'
 
     """
     negate = "" if positive else "^"
@@ -354,6 +367,18 @@ def chars(chars, positive=True):
 
 
 ### Dynamic patterns (depending on ARG)
+
+
+def pattern(value):
+    """Yield the value (string or None), usable as regular expression.
+
+    If None, the whole rule is skipped. This rule item may only be used as
+    the first item in a rule, and of course, it may not depend on the TEXT
+    or MATCH variables, but it may depend on the ARG variable (which enables
+    you to create patterns that depend on the lexicon argument).
+
+    """
+    return ruleitem.pattern(value)
 
 
 def arg(escape=True, prefix="", suffix="", default=None):
