@@ -341,7 +341,7 @@ def words(words, prefix="", suffix=""):
     return expr
 
 
-def char(chars, positive=True):
+def chars(chars, positive=True):
     """Return a regular expression pattern matching one of the characters in
     the specified string.
 

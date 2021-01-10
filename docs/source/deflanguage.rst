@@ -199,7 +199,7 @@ expressions:
 .. autofunction:: parce.rule.words
     :noindex:
 
-.. autofunction:: parce.rule.char
+.. autofunction:: parce.rule.chars
     :noindex:
 
 It is also possible to use dynamic rule items to create a regular expression

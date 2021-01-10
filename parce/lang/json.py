@@ -35,7 +35,7 @@ import re
 
 from parce import Language, lexicon, skip, default_action, default_target
 from parce.action import Delimiter, Name, Number, String
-from parce.rule import char, words
+from parce.rule import chars, words
 from parce.transform import Transform
 
 
@@ -95,7 +95,7 @@ class Json(Language):
     @lexicon
     def string(cls):
         yield '"', String, -1
-        yield r'\\(?:'+ char(JSON_ESCAPE_CHARS) + '|u[0-9a-fA-F]{4})', String.Escape
+        yield r'\\(?:'+ chars(JSON_ESCAPE_CHARS) + '|u[0-9a-fA-F]{4})', String.Escape
         yield default_action, String
 
 
