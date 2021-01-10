@@ -143,7 +143,6 @@ html_theme_options = {
     'github_user': 'wbsoft',
     'github_repo': 'parce',
 #    'show_related': 'true',
-    'show_relbar_bottom': 'true',
     'description': parce.pkginfo.description,
     'extra_nav_links': {
         'parce@Github': 'https://github.com/wbsoft/parce',
