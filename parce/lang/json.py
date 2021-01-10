@@ -134,8 +134,10 @@ class JsonTransform(Transform):
         return list(self.values(items))
 
     def string(self, items):
+        if items and items[-1] == '"':
+            del items[-1]   # strip closing quote
         def gen():
-            for t in items[:-1].tokens():
+            for t in items.tokens():
                 if t.action is String.Escape:
                     if t.text[1] == 'u':
                         yield chr(int(t.text[2:], 16))
