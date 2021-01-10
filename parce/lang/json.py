@@ -135,12 +135,12 @@ class JsonTransform(Transform):
 
     def string(self, items):
         def gen():
-            for i in items[:-1].tokens():
-                if i.action == String.Escape:
-                    if i.text[1] == 'u':
-                        yield chr(int(i.text[2:], 16))
+            for t in items[:-1].tokens():
+                if t.action is String.Escape:
+                    if t.text[1] == 'u':
+                        yield chr(int(t.text[2:], 16))
                     else:
-                        yield JSON_ESCAPE_CHARS[i.text[1]]
+                        yield JSON_ESCAPE_CHARS[t.text[1]]
                 else:
-                    yield i.text
+                    yield t.text
         return ''.join(gen())
