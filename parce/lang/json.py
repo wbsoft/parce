@@ -35,7 +35,7 @@ import re
 
 from parce import Language, lexicon, skip, default_action, default_target
 from parce.action import Delimiter, Name, Number, String
-from parce.rule import words
+from parce.rule import char, words
 from parce.transform import Transform
 
 
@@ -45,6 +45,16 @@ JSON_CONSTANTS = {
     'null': None,
 }
 
+JSON_ESCAPE_CHARS = {
+    'b': '\b',  # 0x08 Backspace
+    'f': '\f',  # 0x0c Form feed
+    'n': '\n',  # 0x0a New line
+    'r': '\r',  # 0x0d Carriage return
+    't': '\t',  # 0x09 Tab
+    '"': '"',   # 0x22 Double quote
+    '/': '/',   # 0x2f Slash
+    '\\': '\\', # 0x5c Backslash character
+}
 
 class Json(Language):
     @lexicon
@@ -85,7 +95,7 @@ class Json(Language):
     @lexicon
     def string(cls):
         yield '"', String, -1
-        yield r'\\(?:["\\/bfnrt]|u[0-9a-fA-F]{4})', String.Escape
+        yield r'\\(?:'+ char(JSON_ESCAPE_CHARS) + '|u[0-9a-fA-F]{4})', String.Escape
         yield default_action, String
 
 
@@ -130,7 +140,7 @@ class JsonTransform(Transform):
                     if i.text[1] == 'u':
                         yield chr(int(i.text[2:], 16))
                     else:
-                        yield i.text[1]
+                        yield JSON_ESCAPE_CHARS[i.text[1]]
                 else:
                     yield i.text
         return ''.join(gen())
