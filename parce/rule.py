@@ -69,7 +69,7 @@ in group ``n``.
 TEXT = ruleitem.VariableItem('text')
 """The matched text.
 
-You can use :obj:`TEXT[n]` to get a slice of the matched text.
+You can use :obj:`TEXT[s]` to get a slice of the matched text.
 
 """
 
@@ -360,13 +360,13 @@ def arg(escape=True, prefix="", suffix="", default=None):
     r"""Create a pattern that contains the argument the current Lexicon was
     called with.
 
-    If there is no argument in the current lexicon, this
-    :class:`~parce.ruleitem.pattern` yields the default value, which is by
-    default None, resulting in the rule being skipped.
+    If there is no argument in the current lexicon, or the argument is not a
+    string, this :class:`~parce.ruleitem.pattern` yields the ``default`` value
+    (by default None, resulting in the rule being skipped).
 
-    When there is an argument, it is escaped using :func:`re.escape` (when
-    ``escape`` was set to True), and if given, ``prefix`` is prepended and
-    ``suffix`` is appended. When the default value is used, ``prefix`` and
+    When there is a string argument, it is escaped using :func:`re.escape`
+    (when ``escape`` was set to True), and if given, ``prefix`` is prepended
+    and ``suffix`` is appended. When the default value is used, ``prefix`` and
     ``suffix`` are not used.
 
     """

@@ -22,6 +22,9 @@
 This module contains the implementation of the replacable rule item objects,
 and some functions to query and manipulate rules that are used by the Lexicon.
 
+Normally, you don't need this module directly; use the :mod:`~parce.rule` module for
+your language definitions.
+
 """
 
 import operator

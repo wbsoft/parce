@@ -205,6 +205,9 @@ expressions:
 It is also possible to use dynamic rule items to create a regular expression
 pattern, see below.
 
+.. note::
+    When a dynamic pattern evaluates to None, the rule is ignored.
+
 
 Dynamic actions and targets
 ---------------------------
@@ -278,7 +281,7 @@ Finally, there exists a special :class:`~parce.ruleitem.ActionItem` in the
 :class:`~parce.ruleitem.SkipAction` and it yields no actions, so in effect
 creating no tokens. Use it if you want to match text, but do not need the
 tokens. See for more information the documentation of the
-:mod:`~parce.ruleitem` module.
+:mod:`~parce.rule` module.
 
 
 Lexicon parameters
