@@ -98,14 +98,14 @@ Members shared by Token and Context
 
 These are the attributes Token and Context both provide:
 
-    :attr:`parent`
-        The parent Context, the root context has ``parent`` ``None``.
-    :attr:`pos`, :attr:`end`
-        The starting resp. ending position of this node in the source text.
-    :attr:`is_token`
-        False for Context, True for Token
-    :attr:`is_context`
-        True for Context, False for Token
+:attr:`parent`
+    The parent Context, the root context has ``parent`` ``None``.
+:attr:`pos`, :attr:`end`
+    The starting resp. ending position of this node in the source text.
+:attr:`is_token`
+    False for Context, True for Token
+:attr:`is_context`
+    True for Context, False for Token
 
 These are the methods Token and Context both provide:
 
@@ -127,13 +127,13 @@ Token has the following additional methods and attributes for node traversal:
    .. py:attribute:: action
       :noindex:
 
-        The action the Token was instantiated with
+      The action the Token was instantiated with
 
    .. py:attribute:: group
       :noindex:
 
-        The group the token belongs to. Normally None, but in some cases this
-        attribute is a tuple of Tokens that form a group together. See below.
+      The group the token belongs to. Normally None, but in some cases this
+      attribute is a tuple of Tokens that form a group together. See below.
 
    .. automethod:: Token.equals
       :noindex:
@@ -329,33 +329,33 @@ token::
 
 Here is a list of all the queries that navigate:
 
-    :attr:`~Query.all`,
-    :attr:`~Query.children`,
-    :attr:`~Query.parent`,
-    :attr:`~Query.ancestors`,
-    :attr:`~Query.next`,
-    :attr:`~Query.previous`,
-    :attr:`~Query.forward`,
-    :attr:`~Query.backward`,
-    :attr:`~Query.right`,
-    :attr:`~Query.left`,
-    :attr:`~Query.right_siblings`,
-    :attr:`~Query.left_siblings`,
-    :attr:`[n] <Query.__getitem__>`,
-    :attr:`[n:m] <Query.__getitem__>`,
-    :attr:`~Query.first`,
-    :attr:`~Query.last`, and
-    :meth:`~Query.map`,
+:attr:`~Query.all`,
+:attr:`~Query.children`,
+:attr:`~Query.parent`,
+:attr:`~Query.ancestors`,
+:attr:`~Query.next`,
+:attr:`~Query.previous`,
+:attr:`~Query.forward`,
+:attr:`~Query.backward`,
+:attr:`~Query.right`,
+:attr:`~Query.left`,
+:attr:`~Query.right_siblings`,
+:attr:`~Query.left_siblings`,
+:attr:`[n] <Query.__getitem__>`,
+:attr:`[n:m] <Query.__getitem__>`,
+:attr:`~Query.first`,
+:attr:`~Query.last`, and
+:meth:`~Query.map`,
 
 And this is a list of the queries that narrow down the result set:
 
-    :attr:`~Query.tokens`,
-    :attr:`~Query.contexts`,
-    :attr:`~Query.uniq`,
-    :attr:`~Query.remove_ancestors`,
-    :attr:`~Query.remove_descendants`,
-    :meth:`~Query.slice` and
-    :meth:`~Query.filter`.
+:attr:`~Query.tokens`,
+:attr:`~Query.contexts`,
+:attr:`~Query.uniq`,
+:attr:`~Query.remove_ancestors`,
+:attr:`~Query.remove_descendants`,
+:meth:`~Query.slice` and
+:meth:`~Query.filter`.
 
 The special :attr:`~Query.is_not` operator inverts the meaning of the
 next query, e.g.::
@@ -364,43 +364,43 @@ next query, e.g.::
 
 The following query methods can be inverted by prepending `is_not`:
 
-    :meth:`~Query.len`,
-    :meth:`~Query.in_range`,
-    :meth:`(lexicon) <Query.__call__>`,
-    :meth:`(lexicon, lexicon2, ...) <Query.__call__>`,
-    :meth:`("text") <Query.__call__>`,
-    :meth:`("text", "text2", ...) <Query.__call__>`,
-    :meth:`~Query.startingwith`,
-    :meth:`~Query.endingwith`,
-    :meth:`~Query.containing`,
-    :meth:`~Query.matching`,
-    :meth:`~Query.action` and
-    :meth:`~Query.in_action`.
+:meth:`~Query.len`,
+:meth:`~Query.in_range`,
+:meth:`(lexicon) <Query.__call__>`,
+:meth:`(lexicon, lexicon2, ...) <Query.__call__>`,
+:meth:`("text") <Query.__call__>`,
+:meth:`("text", "text2", ...) <Query.__call__>`,
+:meth:`~Query.startingwith`,
+:meth:`~Query.endingwith`,
+:meth:`~Query.containing`,
+:meth:`~Query.matching`,
+:meth:`~Query.action` and
+:meth:`~Query.in_action`.
 
 For convenience, there are some "endpoint" methods for a query that make
 it easier in some cases to process the results:
 
-    :meth:`~Query.dump`
-        for debugging, dumps all resulting nodes to standard output
-    :meth:`~Query.list`
-        aggregates the result set in a list.
-    :meth:`~Query.count`
-        returns the number of nodes in the result set.
-    :meth:`~Query.pick`
-        picks the first result, or returns the default if the result set was
-        empty.
-    :meth:`~Query.pick_last`
-        exhausts the query generator and returns the last result, or the
-        default if there are no results.
-    :meth:`~Query.range`
-        returns the text range as a tuple (pos, end) the result set
-        encompasses
+:meth:`~Query.dump`
+    for debugging, dumps all resulting nodes to standard output
+:meth:`~Query.list`
+    aggregates the result set in a list.
+:meth:`~Query.count`
+    returns the number of nodes in the result set.
+:meth:`~Query.pick`
+    picks the first result, or returns the default if the result set was
+    empty.
+:meth:`~Query.pick_last`
+    exhausts the query generator and returns the last result, or the
+    default if there are no results.
+:meth:`~Query.range`
+    returns the text range as a tuple (pos, end) the result set
+    encompasses
 
 Finally, there is one method that actually changes the tree:
 
-    :meth:`~Query.delete`
-        deletes all selected nodes from their parents. If a context would
-        become empty, it is deleted as well, instead of its children.
+:meth:`~Query.delete`
+    deletes all selected nodes from their parents. If a context would
+    become empty, it is deleted as well, instead of its children.
 
 Additional information can be found in the :mod:`~parce.query` module's
 documentation.

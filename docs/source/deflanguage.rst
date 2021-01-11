@@ -55,11 +55,11 @@ regular expression, or a function call or dynamic rule item that creates a
 regular expression. Some simple regular expressions can be seen in the ``root``
 lexicon of the above example:
 
-    :regexp:`\d+`
-        matches one or more decimal digits (0 - 9)
-    :regexp:`\w+`
-        matches one or more "word" characters (i.e. non-whitespace,
-        non-puctuation)
+:regexp:`\d+`
+    matches one or more decimal digits (0 - 9)
+:regexp:`\w+`
+    matches one or more "word" characters (i.e. non-whitespace,
+    non-puctuation)
 
 It is a good convention to wrap a regular expressions in a raw (``r`` prefixed)
 string. See for more information about regular expressions the documentation of

@@ -69,8 +69,8 @@ class AbstractDocument:
     last exits.
     To make a Document work, you should at least implement:
 
-     *   ``text()``
-     *   ``_update_contents()``
+    * ``text()``
+    * ``_update_contents()``
 
     The method text() should simply return the entire text string.
 
@@ -81,9 +81,9 @@ class AbstractDocument:
 
     For efficiency reasons, you might want to reimplement:
 
-     *  ``set_text()``
-     *  ``__len__()``
-     *  ``_get_contents()`` (called by ``__getitem__``)
+    * ``set_text()``
+    * ``__len__()``
+    * ``_get_contents()`` (called by ``__getitem__``)
 
     """
 

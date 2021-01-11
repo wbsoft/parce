@@ -392,16 +392,16 @@ class AbstractElement:
     You may reimplement this to wrap any tree structure you want to use with
     the css module. You should then implement:
 
-     * ``__init__()``
-     * ``get_name()``
-     * ``get_parent()``
-     * ``get_attributes()``
-     * ``get_pseudo_classes()`` (if needed)
-     * ``get_pseudo_elements()`` (if needed)
-     * ``children()``
-     * ``get_child_count()``
-     * ``previous_siblings()``
-     * ``next_siblings()``
+    * ``__init__()``
+    * ``get_name()``
+    * ``get_parent()``
+    * ``get_attributes()``
+    * ``get_pseudo_classes()`` (if needed)
+    * ``get_pseudo_elements()`` (if needed)
+    * ``children()``
+    * ``get_child_count()``
+    * ``previous_siblings()``
+    * ``next_siblings()``
 
     If you wrap other objects, be sure to reimplement __eq__ and __ne__, to
     compare those objects and not the wrappers, which may be recreated each

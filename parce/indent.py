@@ -47,38 +47,38 @@ To further adapt the indenting behaviour, you can implement the
 
 The following events can be yielded (simply module constants):
 
-    ``BLANK``:
-        this is a blank line, the current indent level is not changed.
+``BLANK``:
+    this is a blank line, the current indent level is not changed.
 
-    ``CURRENT_INDENT, string``:
-        the current indent string this line has.
+``CURRENT_INDENT, string``:
+    the current indent string this line has.
 
-    ``INDENT``
-        next line should be indented a level.
+``INDENT``
+    next line should be indented a level.
 
-    ``NO_INDENT``:
-        the indent of this line may not be changed at all, e.g. because it is
-        part of a multiline string.
+``NO_INDENT``:
+    the indent of this line may not be changed at all, e.g. because it is part
+    of a multiline string.
 
-    ``DEDENT``:
-        next line should be dedented a level. (If this event occurs before
-        ``INDENT`` or ``NO_DEDENT``, the current line can be dedented.)
+``DEDENT``:
+    next line should be dedented a level. (If this event occurs before
+    ``INDENT`` or ``NO_DEDENT``, the current line can be dedented.)
 
-    ``NO_DEDENT``:
-        further ``DEDENT`` events will not dedent the current line anymore, but
-        rather affect the indentation of the next line.
+``NO_DEDENT``:
+    further ``DEDENT`` events will not dedent the current line anymore, but
+    rather affect the indentation of the next line.
 
-    ``PREFER_INDENT``, ``string``:
-        use this indent for the current line, but do not change the indent
-        level or the current indent for the next line.
+``PREFER_INDENT``, ``string``:
+    use this indent for the current line, but do not change the indent level or
+    the current indent for the next line.
 
-    ``NO_STRIP``:
-        trailing whitespace should not be stripped off this line.
+``NO_STRIP``:
+    trailing whitespace should not be stripped off this line.
 
-    ``ALIGN``, ``string``:
-        The last ``INDENT`` event should use the specified string for alignment
-        instead of the default indent (relatively to the start of the text in
-        the current line excluding the current indent).
+``ALIGN``, ``string``:
+    The last ``INDENT`` event should use the specified string for alignment
+    instead of the default indent (relatively to the start of the text in the
+    current line excluding the current indent).
 
 """
 
