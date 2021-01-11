@@ -32,7 +32,7 @@ def decision_tree(lexicon, build=False):
 
     Every rule is a tuple. Items are members of the tuple. A variation (choice)
     is indicated by a frozenset, which again contains tuples. See also
-    :func:`parce.rule.variations_tree`.
+    :func:`parce.ruleitem.variations_tree`.
 
     If ``build`` is set to True, Pattern objects are built and ArgItem
     instances are replaced.
