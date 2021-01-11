@@ -118,13 +118,13 @@ Summary of the query methods:
 
 Endpoint methods (some are mainly for debugging):
 
-    :meth:`~Query.count`,
-    :meth:`~Query.dump`,
-    :meth:`~Query.list`,
-    :meth:`~Query.pick`,
-    :meth:`~Query.pick_last`,
-    :meth:`~Query.range` and
-    :meth:`~Query.delete`.
+:meth:`~Query.count`,
+:meth:`~Query.dump`,
+:meth:`~Query.list`,
+:meth:`~Query.pick`,
+:meth:`~Query.pick_last`,
+:meth:`~Query.range` and
+:meth:`~Query.delete`.
 
 
 Navigating nodes:
@@ -135,23 +135,23 @@ following methods you can find your way through a tree structure. Every method
 returns a new Query object, having the previous one as source of nodes. Most
 methods are implemented as properties, so you don't have to write parentheses.
 
-    :attr:`~Query.all`,
-    :attr:`~Query.children`,
-    :attr:`~Query.parent`,
-    :attr:`~Query.ancestors`,
-    :attr:`~Query.next`,
-    :attr:`~Query.previous`,
-    :attr:`~Query.forward`,
-    :attr:`~Query.backward`,
-    :attr:`~Query.right`,
-    :attr:`~Query.left`,
-    :attr:`~Query.right_siblings`,
-    :attr:`~Query.left_siblings`,
-    :attr:`[n] <Query.__getitem__>`,
-    :attr:`[n:m] <Query.__getitem__>`,
-    :attr:`~Query.first`,
-    :attr:`~Query.last`, and
-    :meth:`~Query.map`,
+:attr:`~Query.all`,
+:attr:`~Query.children`,
+:attr:`~Query.parent`,
+:attr:`~Query.ancestors`,
+:attr:`~Query.next`,
+:attr:`~Query.previous`,
+:attr:`~Query.forward`,
+:attr:`~Query.backward`,
+:attr:`~Query.right`,
+:attr:`~Query.left`,
+:attr:`~Query.right_siblings`,
+:attr:`~Query.left_siblings`,
+:attr:`[n] <Query.__getitem__>`,
+:attr:`[n:m] <Query.__getitem__>`,
+:attr:`~Query.first`,
+:attr:`~Query.last`, and
+:meth:`~Query.map`,
 
 
 Selecting (filtering) nodes:
@@ -160,13 +160,13 @@ Selecting (filtering) nodes:
 These methods filter out current nodes without adding new nodes
 to the selection:
 
-    :attr:`~Query.tokens`,
-    :attr:`~Query.contexts`,
-    :attr:`~Query.uniq`,
-    :attr:`~Query.remove_ancestors`,
-    :attr:`~Query.remove_descendants`,
-    :meth:`~Query.slice` and
-    :meth:`~Query.filter`.
+:attr:`~Query.tokens`,
+:attr:`~Query.contexts`,
+:attr:`~Query.uniq`,
+:attr:`~Query.remove_ancestors`,
+:attr:`~Query.remove_descendants`,
+:meth:`~Query.slice` and
+:meth:`~Query.filter`.
 
 The special :attr:`~Query.is_not` operator inverts the meaning of the
 next query, e.g.::
@@ -175,18 +175,18 @@ next query, e.g.::
 
 The following query methods can be inverted by prepending `is_not`:
 
-    :meth:`~Query.len`,
-    :meth:`~Query.in_range`,
-    :meth:`(lexicon) <Query.__call__>`,
-    :meth:`(lexicon, lexicon2, ...) <Query.__call__>`,
-    :meth:`("text") <Query.__call__>`,
-    :meth:`("text", "text2", ...) <Query.__call__>`,
-    :meth:`~Query.startingwith`,
-    :meth:`~Query.endingwith`,
-    :meth:`~Query.containing`,
-    :meth:`~Query.matching`,
-    :meth:`~Query.action` and
-    :meth:`~Query.in_action`.
+:meth:`~Query.len`,
+:meth:`~Query.in_range`,
+:meth:`(lexicon) <Query.__call__>`,
+:meth:`(lexicon, lexicon2, ...) <Query.__call__>`,
+:meth:`("text") <Query.__call__>`,
+:meth:`("text", "text2", ...) <Query.__call__>`,
+:meth:`~Query.startingwith`,
+:meth:`~Query.endingwith`,
+:meth:`~Query.containing`,
+:meth:`~Query.matching`,
+:meth:`~Query.action` and
+:meth:`~Query.in_action`.
 
 There is a subtle difference between `action` and `in_action`: with the
 first, the action should exactly match, with the latter the tokens are
