@@ -131,23 +131,18 @@ todo_include_todos = False
 # a list of builtin themes.
 #
 #html_theme = 'alabaster'
-html_theme = 'alabaster'
+html_theme = 'furo'
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
 # documentation.
 #
 html_theme_options = {
-    'logo': 'parce-logo.png',
-    'fixed_sidebar': 'true',
-    'github_user': 'wbsoft',
-    'github_repo': 'parce',
-#    'show_related': 'true',
-    'description': parce.pkginfo.description,
-    'extra_nav_links': {
-        'parce@Github': 'https://github.com/wbsoft/parce',
-        'parce@PyPi': 'https://pypi.org/project/parce',
-        'parce for Qt': 'https://parce.info/parceqt',
+    'light_logo': 'parce-logo.png',
+    'dark_logo': 'parce-logo.png',
+    "sidebar_hide_name": True,
+    "light_css_variables": {
+        "font-stack": "Lato, sans-serif",
     },
 }
 
@@ -155,6 +150,10 @@ html_theme_options = {
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
+
+html_css_files = [
+    'custom.css',
+]
 
 html_favicon = "_static/parce.ico"
 
@@ -165,11 +164,13 @@ html_favicon = "_static/parce.ico"
 # refs: http://alabaster.readthedocs.io/en/latest/installation.html#sidebars
 html_sidebars = {
     '**': [
-        'about.html',
-        'navigation.html',
-        'relations.html',  # needs 'show_related': True theme option to display
-        'searchbox.html',
-    ]
+        "sidebar/scroll-start.html",
+        "sidebar/brand.html",
+        "sidebar/search.html",
+        "sidebar/navigation.html",
+        "sidebar/ethical-ads.html",
+        "sidebar/scroll-end.html",
+    ]   ,
 }
 
 

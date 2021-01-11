@@ -22,6 +22,15 @@ This manual documents *parce* version |release|.
    stdactions.rst
    modoverview.rst
 
+.. toctree::
+   :hidden:
+   :maxdepth: 1
+   :caption: Extra links:
+
+   parce@Github <https://github.com/wbsoft/parce>
+   parce@PyPi <https://pypi.org/project/parce/>
+   parce for Qt <https://parce.info/parceqt>
+
 
 Indices and tables
 ==================
