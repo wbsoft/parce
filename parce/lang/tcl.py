@@ -26,9 +26,9 @@ __all__ = ('Tcl',)
 
 import re
 
-from parce import Language, lexicon, skip, default_action, default_target
-from parce.action import Comment, Delimiter, Escape, Name, String, Text
-from parce.rule import bygroup, ifgroup
+from parce import Language, lexicon, default_action
+from parce.action import Comment, Delimiter, Escape, Keyword, Name, String, Text
+from parce.rule import TEXT, bygroup, ifgroup, findmember
 
 
 class Tcl(Language):
@@ -48,7 +48,9 @@ class Tcl(Language):
     @lexicon(re_flags=re.MULTILINE)
     def root(cls):
         yield from cls.values()
-        yield r'[^\s\\\{\[\$\']\S*', Text.Word
+        yield r"[^\s\\{}[\]$'()]+", \
+            findmember(TEXT, ((tcl_commands, Keyword),
+                              (tk_commands, Name.Command)), Text.Word)
 
     @lexicon(re_flags=re.MULTILINE)
     def command(cls):
@@ -78,3 +80,56 @@ class Tcl(Language):
         yield r'$', None, -1
         yield from cls.comment_common()
 
+
+# from https://www.tcl.tk/man/tcl/TclCmd/contents.htm
+tcl_commands = [
+    "after", "errorInfo", "load", "re_syntax", "tcl_startOfNextWord", "append",
+    "eval", "lrange", "read", "tcl_startOfPreviousWord", "apply", "exec",
+    "lrepeat", "refchan", "tcl_traceCompile", "argc", "exit", "lreplace",
+    "regexp", "tcl_traceExec", "argv", "expr", "lreverse", "registry",
+    "tcl_version", "argv0", "fblocked", "lsearch", "regsub",
+    "tcl_wordBreakAfter", "array", "fconfigure", "lset", "rename",
+    "tcl_wordBreakBefore", "auto_execok", "fcopy", "lsort", "return",
+    "tcl_wordchars", "auto_import", "file", "mathfunc", "safe", "tcltest",
+    "auto_load", "fileevent", "mathop", "scan", "tell", "auto_mkindex",
+    "filename", "memory", "seek", "throw", "auto_path", "flush", "msgcat",
+    "self", "time", "auto_qualify", "for", "my", "set", "timerate",
+    "auto_reset", "foreach", "namespace", "socket", "tm", "bgerror", "format",
+    "next", "source", "trace", "binary", "gets", "nextto", "split",
+    "transchan", "break", "glob", "oo::class", "string", "try", "catch",
+    "global", "oo::copy", "subst", "unknown", "cd", "history", "oo::define",
+    "switch", "unload", "chan", "http", "oo::objdefine", "tailcall", "unset",
+    "clock", "if", "oo::object", "Tcl", "update", "close", "incr", "open",
+    "tcl::prefix", "uplevel", "concat", "info", "package", "tcl_endOfWord",
+    "upvar", "continue", "interp", "parray", "tcl_findLibrary", "variable",
+    "coroutine", "join", "pid", "tcl_interactive", "vwait", "dde", "lappend",
+    "pkg::create", "tcl_library", "while", "dict", "lassign", "pkg_mkIndex",
+    "tcl_nonwordchars", "yield", "encoding", "lindex", "platform",
+    "tcl_patchLevel", "yieldto", "env", "linsert", "platform::shell",
+    "tcl_pkgPath", "zlib", "eof", "list", "proc", "tcl_platform", "error",
+    "llength", "puts", "tcl_precision", "errorCode", "lmap", "pwd",
+    "tcl_rcFileName",
+]
+
+# from https://www.tcl.tk/man/tcl/TkCmd/contents.htm
+tk_commands = [
+    "bell", "grab", "scale", "tk_optionMenu", "ttk::menubutton", "bind",
+    "grid", "scrollbar", "tk_patchLevel", "ttk::notebook", "bindtags", "image",
+    "selection", "tk_popup", "ttk::panedwindow", "bitmap", "keysyms", "send",
+    "tk_setPalette", "ttk::progressbar", "busy", "label", "spinbox",
+    "tk_strictMotif", "ttk::radiobutton", "button", "labelframe", "text",
+    "tk_textCopy", "ttk::scale", "canvas", "listbox", "tk", "tk_textCut",
+    "ttk::scrollbar", "checkbutton", "lower", "tk::mac", "tk_textPaste",
+    "ttk::separator", "clipboard", "menu", "tk_bisque", "tk_version",
+    "ttk::sizegrip", "colors", "menubutton", "tk_chooseColor", "tkerror",
+    "ttk::spinbox", "console", "message", "tk_chooseDirectory", "tkwait",
+    "ttk::style", "cursors", "option", "tk_dialog", "toplevel",
+    "ttk::treeview", "destroy", "options", "tk_focusFollowsMouse",
+    "ttk::button", "ttk::widget", "entry", "pack", "tk_focusNext",
+    "ttk::checkbutton", "ttk_image", "event", "panedwindow", "tk_focusPrev",
+    "ttk::combobox", "ttk_vsapi", "focus", "photo", "tk_getOpenFile",
+    "ttk::entry", "winfo", "font", "place", "tk_getSaveFile", "ttk::frame",
+    "wm", "fontchooser", "radiobutton", "tk_library", "ttk::intro", "frame",
+    "raise", "tk_menuSetFocus", "ttk::label", "geometry", "safe::loadTk",
+    "tk_messageBox", "ttk::labelframe",
+]
