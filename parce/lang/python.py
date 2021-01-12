@@ -76,9 +76,9 @@ class Python(Language):
         yield from cls.find_bytes_literals()
 
         ## numerical values
-        yield '0[oO](?:_?[0-7])+', Number
-        yield '0[bB](?:_?[01])+', Number
-        yield '0[xX](?:_?[0-9a-fA-F])+', Number
+        yield '0[oO](?:_?[0-7])+', Number.Octal
+        yield '0[bB](?:_?[01])+', Number.Binary
+        yield '0[xX](?:_?[0-9a-fA-F])+', Number.Hexadecimal
         yield r'(?:\.\d(?:_?\d)*|\d(?:_?\d)*(?:\.(?:\d(?:_?\d)*)?)?)(?:[eE][-+]\d(?:_?\d)*)?[jJ]?', Number
 
         ## keywords, variables, functions
