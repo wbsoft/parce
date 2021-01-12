@@ -111,6 +111,14 @@ register("parce.lang.python.Python.root",
     guesses = [(r'^#!.{,20}python', .8), (r'\bimport\s+[a-z]+\b', .3)],
 )
 
+register("parce.lang.tcl.Tcl.root",
+    name = "Tcl",
+    desc = "Tool command language",
+    filenames = [("*.tcl", 1)],
+    mimetypes = [("text/tcl", .8), ("text/x-tcl", .8), ("text/x-script.tcl", .8)],
+    guesses = [(r'^#!.*?(wi|tcl)sh', .8), (r'^namespace eval', .1)],
+)
+
 register("parce.lang.texinfo.Texinfo.root",
     name = "Texinfo",
     desc = "GNU Texinfo",
