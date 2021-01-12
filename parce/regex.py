@@ -437,6 +437,10 @@ def build_regexp(r):
         if isinstance(item, str):
             rx = re.escape(item)
             enclose = len(item) > 1 and qualifier
+            # replace x{1,2} with xx?, looks better and is 3 chars shorter
+            if len(rx) == 1 and mincount == 1 and maxcount == 2:
+                rx += rx
+                qualifier = "?"
         else:
             exprs, tuples = item
             # separate single characters from longer strings
