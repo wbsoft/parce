@@ -27,9 +27,18 @@ __all__ = ('Tcl',)
 import re
 
 from parce import Language, lexicon, default_action
-from parce.action import Comment, Delimiter, Escape, Keyword, Name, Operator, String, Text
+from parce.action import (
+    Comment, Delimiter, Escape, Keyword, Name, Number, Operator, String, Text
+)
 from parce.rule import MATCH, bygroup, ifgroup, findmember
 
+RE_NUMBER = (r'[-+]?(?:'
+    r'0o?[0-7]+'
+    r'|(\d+(\.\d+)?|\.\d+)([eE][-+]?\d+)?'
+    r'|0b[01]+'
+    r'|0x[0-9a-fA-F]+'
+    r')(?!\w)'
+)
 
 class Tcl(Language):
     """Tool command language."""
@@ -44,6 +53,7 @@ class Tcl(Language):
         yield r'\${.*?\}', Name.Variable
         yield r'\\(?:[0-7]{1,3}|x[0-9a-fA-F]{2}|u[0-9a-fA-F]{4}|U[0-9a-fA-F]{8}|\n|.)', Escape
         yield r'^\s*(#)', bygroup(Comment), cls.comment
+        yield RE_NUMBER, Number
         yield r'(;)(?:[ \t]*(#))?', bygroup(Delimiter.Separator, Comment), \
             ifgroup(2, cls.comment)
 
