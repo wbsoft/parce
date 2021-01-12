@@ -33,10 +33,10 @@ from parce.action import (
 from parce.rule import MATCH, bygroup, ifgroup, findmember
 
 RE_NUMBER = (r'[-+]?(?:'
-    r'0o?[0-7]+'
+    r'0[oO]?[0-7]+'
     r'|(\d+(\.\d+)?|\.\d+)([eE][-+]?\d+)?'
-    r'|0b[01]+'
-    r'|0x[0-9a-fA-F]+'
+    r'|0[bB][01]+'
+    r'|0[xX][0-9a-fA-F]+'
     r')(?!\w)'
 )
 
