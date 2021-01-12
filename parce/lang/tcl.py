@@ -27,8 +27,8 @@ __all__ = ('Tcl',)
 import re
 
 from parce import Language, lexicon, default_action
-from parce.action import Comment, Delimiter, Escape, Keyword, Name, String, Text
-from parce.rule import TEXT, bygroup, ifgroup, findmember
+from parce.action import Comment, Delimiter, Escape, Keyword, Name, Operator, String, Text
+from parce.rule import MATCH, bygroup, ifgroup, findmember
 
 
 class Tcl(Language):
@@ -42,15 +42,20 @@ class Tcl(Language):
         yield r'(\$(?:[0-9a-zA-Z_]|::+)+)(\()?', \
             bygroup(Name.Variable, Delimiter), ifgroup(2, cls.index)
         yield r'\${.*?\}', Name.Variable
-        yield r'\\(?:[0-7]{1,3}|x[0-9a-fA-F]{2}|u[0-9a-fA-F]{4}|U[0-9a-fA-F]{8}|.)', Escape
+        yield r'\\(?:[0-7]{1,3}|x[0-9a-fA-F]{2}|u[0-9a-fA-F]{4}|U[0-9a-fA-F]{8}|\n|.)', Escape
         yield r'^\s*(#)', bygroup(Comment), cls.comment
+        yield r'(;)(?:[ \t]*(#))?', bygroup(Delimiter.Separator, Comment), \
+            ifgroup(2, cls.comment)
 
     @lexicon(re_flags=re.MULTILINE)
     def root(cls):
         yield from cls.values()
-        yield r"[^\s\\{}[\]$'()]+", \
-            findmember(TEXT, ((tcl_commands, Keyword),
-                              (tk_commands, Name.Command)), Text.Word)
+        yield r"([^\s\\{}[\]$'();]+)(\()?", bygroup(
+            findmember(MATCH[1], ((operators, Operator),
+                                  (tcl_commands, Keyword),
+                                  (tk_commands, Name.Command)), Text.Word),
+            Delimiter), ifgroup(2, cls.index)
+        yield r'\(\)', Delimiter
 
     @lexicon(re_flags=re.MULTILINE)
     def command(cls):
@@ -82,7 +87,7 @@ class Tcl(Language):
 
 
 # from https://www.tcl.tk/man/tcl/TclCmd/contents.htm
-tcl_commands = [
+tcl_commands = (
     "after", "errorInfo", "load", "re_syntax", "tcl_startOfNextWord", "append",
     "eval", "lrange", "read", "tcl_startOfPreviousWord", "apply", "exec",
     "lrepeat", "refchan", "tcl_traceCompile", "argc", "exit", "lreplace",
@@ -109,10 +114,10 @@ tcl_commands = [
     "tcl_pkgPath", "zlib", "eof", "list", "proc", "tcl_platform", "error",
     "llength", "puts", "tcl_precision", "errorCode", "lmap", "pwd",
     "tcl_rcFileName",
-]
+)
 
 # from https://www.tcl.tk/man/tcl/TkCmd/contents.htm
-tk_commands = [
+tk_commands = (
     "bell", "grab", "scale", "tk_optionMenu", "ttk::menubutton", "bind",
     "grid", "scrollbar", "tk_patchLevel", "ttk::notebook", "bindtags", "image",
     "selection", "tk_popup", "ttk::panedwindow", "bitmap", "keysyms", "send",
@@ -132,4 +137,23 @@ tk_commands = [
     "wm", "fontchooser", "radiobutton", "tk_library", "ttk::intro", "frame",
     "raise", "tk_menuSetFocus", "ttk::label", "geometry", "safe::loadTk",
     "tk_messageBox", "ttk::labelframe",
-]
+)
+
+operators = (
+    "-",  "+",  "~",  "!",
+    "**",
+    "*",  "/",  "%",
+    "+",  "-",
+    "<<",  ">>",
+    "<",  ">",  "<=",  ">=",
+    "==",  "!=",
+    "eq",  "ne",
+    "in",  "ni",
+    "&",
+    "^",
+    "|",
+    "&&",
+    "||",
+    "?",  ":",
+)
+
