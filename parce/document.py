@@ -93,6 +93,7 @@ class AbstractDocument:
         super().__init__()
         self._cursors = weakref.WeakSet()
         self._edit_context = 0
+        self._revision = 0
         self._changes = []
 
     def text(self):
@@ -200,6 +201,7 @@ class AbstractDocument:
             self._update_cursors()
             self._update_contents()
             self._changes.clear()
+            self._revision += 1
             self.contents_changed(head, end - head, added)
 
     def _update_cursors(self):
@@ -225,6 +227,14 @@ class AbstractDocument:
     def _update_contents(self):
         """Should apply the changes (in self._changes) to the text."""
         raise NotImplementedError
+
+    def revision(self):
+        """Return the revision number.
+
+        This number is incremented by one on every document change.
+
+        """
+        return self._revision
 
     def append(self, text):
         """Append text at the end of the document."""
