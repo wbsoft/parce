@@ -27,12 +27,17 @@ creates a LexiconDescriptor. When a LexiconDescriptor is accessed for the first
 time via a Language subclass, a Lexicon for that class is created and cached,
 and returned each time that attribute is accessed.)
 
+This makes it possible to inherit from a Language class and only re-implement
+some lexicons, the others keep working as in the base class.
+
 The Lexicon can parse text according to the rules. When its :func:`parse`
 function is called for the first time, the rules-function is run with the
 language class as argument, and the rules it yields are cached.
 
-This makes it possible to inherit from a Language class and only re-implement
-some lexicons, the others keep working as in the base class.
+The Lexicon then combines the patterns of the rules into one regular expression
+that is used to parse the text, using some smart optimizations. (For example,
+when a lexicon has only one pattern rule which turns out to be an unambigious
+string, :meth:`str.find` is used rather than using :py:func:`re.search`.)
 
 Example:
 

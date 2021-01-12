@@ -61,7 +61,7 @@ lexicon of the above example:
     matches one or more "word" characters (i.e. non-whitespace,
     non-puctuation)
 
-It is a good convention to wrap a regular expressions in a raw (``r`` prefixed)
+It is a good convention to wrap regular expressions in a raw (``r`` prefixed)
 string. See for more information about regular expressions the documentation of
 the Python :mod:`re` module.
 
