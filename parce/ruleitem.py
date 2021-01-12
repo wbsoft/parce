@@ -57,10 +57,11 @@ class Item:
 
     """
     __slots__ = ()
+    _getitem_func = operator.getitem
 
     def __getitem__(self, n):
         """Return a new Item that performs item[n]. n is evaluated as well."""
-        return call(operator.getitem, self, n)
+        return call(self._getitem_func, self, n)
 
     def evaluate(self, ns):
         """Evaluate item in namespace dict ``ns``."""
@@ -118,17 +119,15 @@ class RuleItem(Item):
 class VariableItem(Item):
     """A named variable that's accessed in the namespace.
 
-    If a predicate is given, it is called when this item is called, with this
-    item as first argument, and then the other arguments that were specified.
+    If a getitem_func is given, it is called when this item is accessed using
+    the item syntax ``[n]``, with this item as first argument, and then the
+    specified index.
 
     """
-    __slots__ = ('_name', '_predicate')
-    def __init__(self, name, predicate=None):
+    __slots__ = ('_name', '_getitem_func')
+    def __init__(self, name, getitem_func=operator.getitem):
         self._name = name
-        self._predicate = predicate
-
-    def __call__(self, *args):
-        return call(self._predicate, self, *args)
+        self._getitem_func = getitem_func
 
     def evaluate(self, ns):
         """Get the variable from the namespace dict."""

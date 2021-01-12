@@ -94,7 +94,7 @@ class Xml(_XmlBase):
             cls.processing_instruction
         yield fr'(<\s*?/)\s*({_N_})\s*(>)', bygroup(Delimiter, Name.Tag, Delimiter), -1
         yield fr'(<)\s*({_N_})(?:\s*((?:/\s*)?>))?', \
-            bygroup(Delimiter, Name.Tag, Delimiter), dselect(MATCH(3), {
+            bygroup(Delimiter, Name.Tag, Delimiter), dselect(MATCH[3], {
                 None: cls.attrs,        # no ">" or "/>": go to attrs
                 ">": cls.tag,           # a ">": go to tag
             })                          # by default ("/>"): stay in context
@@ -151,7 +151,7 @@ class Dtd(_XmlBase):
             bygroup(Delimiter, Keyword, Keyword, Name.Entity.Definition), cls.entity
         yield fr'(<!)(ELEMENT|ATTLIST|NOTATION)\b(?:\s*({_N_}))?', \
             bygroup(Delimiter, Keyword, Name.Element.Definition), \
-            dselect(MATCH(2), {"ELEMENT": cls.element, "ATTLIST": cls.attlist}, cls.notation)
+            dselect(MATCH[2], {"ELEMENT": cls.element, "ATTLIST": cls.attlist}, cls.notation)
         yield fr'%{_N_};', Name.Entity.Escape
         yield default_action, select(call(str.isspace, TEXT), Text, skip)
 

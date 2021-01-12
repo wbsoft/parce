@@ -111,7 +111,7 @@ class Latex(Language):
     @classmethod
     def get_environment_target(cls):
         """Return environment target, can be overridden to support special environments."""
-        return ifmember(MATCH(3), MATH_ENVIRONMENTS, cls.environment_math, cls.environment)
+        return ifmember(MATCH[3], MATH_ENVIRONMENTS, cls.environment_math, cls.environment)
 
     # ----------------------------- comments ---------------------------------
     @lexicon(re_flags=re.MULTILINE)

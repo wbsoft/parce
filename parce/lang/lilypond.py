@@ -196,7 +196,7 @@ class LilyPond(Language):
         yield from cls.notemode_rule()
         yield from cls.lyricmode_rules()
         yield from cls.drummode_rule()
-        yield RE_LILYPOND_COMMAND, findmember(MATCH(1), (
+        yield RE_LILYPOND_COMMAND, findmember(MATCH[1], (
             (lilypond_words.keywords, Keyword),
             (lilypond_words.music_commands, Name.Builtin),
             (lilypond_words.all_articulations, Articulation),
@@ -272,7 +272,7 @@ class LilyPond(Language):
         yield words(lilypond_words.contexts), Context
         yield r'[.,]', Delimiter
         yield r"(=)(?:\s*(" + RE_FRACTION + r"|\d+))?", bygroup(Operator.Assignment, Number)
-        yield RE_LILYPOND_SYMBOL + r"(?=\s*([,.=])?)", Name.Variable.Definition, ifeq(MATCH(1), None, -1)
+        yield RE_LILYPOND_SYMBOL + r"(?=\s*([,.=])?)", Name.Variable.Definition, ifeq(MATCH[1], None, -1)
         yield default_target, -1
 
     @lexicon(consume=True)
@@ -283,7 +283,7 @@ class LilyPond(Language):
         yield words(lilypond_words.grobs), Grob
         yield r'[.,]', Delimiter
         yield r"=", Operator.Assignment, -1
-        yield RE_LILYPOND_SYMBOL + r"(?=\s*([,.=])?)", Name.Variable, ifeq(MATCH(1), None, -1)
+        yield RE_LILYPOND_SYMBOL + r"(?=\s*([,.=])?)", Name.Variable, ifeq(MATCH[1], None, -1)
         yield from cls.find_scheme()
         yield default_target, -1
 
@@ -338,7 +338,7 @@ class LilyPond(Language):
         """Find lyric mode music."""
         yield r"(\\(?:lyric(?:mode|s)|addlyrics))\b\s*(\\s(?:equential|imultaneous)\b)?\s*(\{|<<)?", \
             bygroup(Keyword.Lyric, Keyword, Bracket.Start), \
-            dselect(MATCH(3), {'{': cls.lyricmode('}'), '<<': cls.lyricmode('>>')})
+            dselect(MATCH[3], {'{': cls.lyricmode('}'), '<<': cls.lyricmode('>>')})
         yield r"\\lyricsto\b", Keyword.Lyric, cls.lyricsto
 
     @lexicon(consume=True)
@@ -373,7 +373,7 @@ class LilyPond(Language):
     def notemode_rule(cls):
         """Yield the rule for \\notemode / \\notes."""
         yield r"(\\note(?:s|mode))\b\s*(\{|<<)?", bygroup(Keyword, Bracket.Start), \
-            dselect(MATCH(2), {
+            dselect(MATCH[2], {
                 "{": (cls.notemode, cls.musiclist('}')),
                 "<<": (cls.notemode, cls.musiclist('>>')),
             })
@@ -388,7 +388,7 @@ class LilyPond(Language):
     def drummode_rule(cls):
         """Yield the rule for \\drummode / \\drums."""
         yield r"(\\drum(?:s|mode))\b\s*(\{|<<)?", bygroup(Keyword.Drum, Bracket.Start), \
-            dselect(MATCH(2), {
+            dselect(MATCH[2], {
                 "{": (cls.drummode('}')),
                 "<<": (cls.drummode('>>')),
             })
@@ -470,7 +470,7 @@ class LilyPond(Language):
         yield r'\{', Bracket.Markup.Start, -1, cls.markuplist
         yield r"(\\score)\s*(\{)", bygroup(Name.Function.Markup, Bracket.Start), -1, cls.score
         yield RE_LILYPOND_COMMAND, cls.get_markup_action(), \
-            select(call(cls.get_markup_argument_count, MATCH(1)), -1, 0, 1, 2, 3)
+            select(call(cls.get_markup_argument_count, MATCH[1]), -1, 0, 1, 2, 3)
         yield from cls.find_string(-1)
         yield from cls.find_scheme(-1)
         yield from cls.find_comment()
@@ -497,7 +497,7 @@ class LilyPond(Language):
     @classmethod
     def get_markup_action(cls):
         r"""Get the action for a command in \markup { }."""
-        return ifmember(MATCH(1), lilypond_words.markup_commands, Name.Function.Markup, Name.Function)
+        return ifmember(MATCH[1], lilypond_words.markup_commands, Name.Function.Markup, Name.Function)
 
     # -------------- Scheme ---------------------
     @classmethod

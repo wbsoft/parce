@@ -60,8 +60,8 @@ ARG = ruleitem.VariableItem('arg')
 MATCH = ruleitem.VariableItem('match', (lambda m, n: m.group(m.lastindex + n)))
 """The regular expression match object.
 
-You can access a specific group using :obj:`MATCH(n)`; groups start with 1.
-Even :obj:`MATCH(n)[s]` is possible, which yields a slice of the matched text
+You can access a specific group using :obj:`MATCH[n]`; groups start with 1.
+Even :obj:`MATCH[n][s]` is possible, which yields a slice of the matched text
 in group ``n``.
 
 """
@@ -79,7 +79,7 @@ def call(predicate, *arguments):
 
 
 def select(index, *items):
-    """Yield the item pointed to by the index.
+    r"""Yield the item pointed to by the index.
 
     In most use cases the index will be the result of a predicate function,
     which returns an integer value (or True or False, which evaluate to 1 and 0,
@@ -158,7 +158,7 @@ def ifeq(a, b, result, else_result=()):
     second subgroup in the match object::
 
         yield r'([^\W\d]\w*)\s*([\(\]])', \
-            ifeq(MATCH(2), '(',
+            ifeq(MATCH[2], '(',
                  (bygroup(Name.Function, Delimiter), cls.func_call),
                  (bygroup(Name.Variable, Delimiter), cls.subscript))
 
@@ -203,10 +203,10 @@ def ifgroup(n, result, else_result=()):
 
     Shortcut for::
 
-        select(call(operator.ne, MATCH(n), None), else_result, result)
+        select(call(operator.ne, MATCH[n], None), else_result, result)
 
     """
-    return select(call(operator.ne, MATCH(n), None), else_result, result)
+    return select(call(operator.ne, MATCH[n], None), else_result, result)
 
 
 def gselect(*results, default=()):

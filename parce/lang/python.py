@@ -52,9 +52,9 @@ class Python(Language):
         yield fr'^{_S_}+($|(?=#))?', ifgroup(1, Whitespace, Whitespace.Indent)
         yield r'@', Name.Decorator, cls.decorator
         yield fr'(class\b){_S_}*({_I_})', bygroup(Keyword,
-            ifmember(MATCH(2), python_words.keywords, Invalid, Name.Class.Definition)), cls.classdef
+            ifmember(MATCH[2], python_words.keywords, Invalid, Name.Class.Definition)), cls.classdef
         yield fr'(def\b){_S_}*({_I_})', bygroup(Keyword,
-            ifmember(MATCH(2), python_words.keywords, Invalid, Name.Function.Definition)), cls.funcdef
+            ifmember(MATCH[2], python_words.keywords, Invalid, Name.Function.Definition)), cls.funcdef
         yield fr':(?={_S_}*(?:$|#))', Delimiter.Indent
         yield fr'({_I_})\s*(=)', bygroup(
             select(call(str.isupper, TEXT),
@@ -85,32 +85,32 @@ class Python(Language):
         yield words(python_words.keywords, prefix=r'\b', suffix=r'\b'), Keyword
         yield words(python_words.constants, prefix=r'\b', suffix=r'\b'), Name.Constant
         yield fr'\b(self|cls)\b(?:{_SN_}*([\[\(]))?', Name.Variable.Special, \
-            dselect(MATCH(2), {'(': cls.call, '[': cls.item})
+            dselect(MATCH[2], {'(': cls.call, '[': cls.item})
         # method, class or attribute (keywords after a . are also caught)
         yield fr'(\.){_SN_}*\b({_I_})\b(?:{_SN_}*([\[\(]))?', \
             bygroup(
                 Delimiter,
-                ifmember(MATCH(2), python_words.keywords,
+                ifmember(MATCH[2], python_words.keywords,
                     Keyword,
-                    dselect(MATCH(3), {'(': select(call(isclassname, TEXT), Name.Method, Name.Class)},
+                    dselect(MATCH[3], {'(': select(call(isclassname, TEXT), Name.Method, Name.Class)},
                          select(call(str.isupper, TEXT),
                              select(call(isclassname, TEXT), Name.Attribute, Name.Class),
                              Name.Constant))),
                 Delimiter), \
-            dselect(MATCH(3), {'(': cls.call, '[': cls.item})
+            dselect(MATCH[3], {'(': cls.call, '[': cls.item})
         # function, class or variable
         yield fr'\b({_I_})\b(?:{_SN_}*([\[\(]))?', \
             bygroup(
-                findmember(MATCH(1),
+                findmember(MATCH[1],
                     ((python_words.builtins, Name.Builtin),
                      (python_words.exceptions, Name.Exception)),
                     select(call(str.isupper, TEXT),
                         select(call(isclassname, TEXT),
-                            dselect(MATCH(2), {'(': Name.Function}, Name.Variable),
+                            dselect(MATCH[2], {'(': Name.Function}, Name.Variable),
                             Name.Class),
                         Name.Constant)),
                 Delimiter), \
-            dselect(MATCH(2), {'(': cls.call, '[': cls.item})
+            dselect(MATCH[2], {'(': cls.call, '[': cls.item})
 
         ## delimiters, operators
         yield r'\.\.\.', Delimiter.Special.Ellipsis
@@ -204,30 +204,30 @@ class Python(Language):
         # long strings
         yield r'(\b[rR])("""|'r"''')", \
             bygroup(String.Prefix, String.Start), \
-            target, derive(cls.long_string_raw, MATCH(2))
+            target, derive(cls.long_string_raw, MATCH[2])
         yield r'(\b(?:[fF][rR])|(?:[rR][fF]))("""|'r"''')", \
             bygroup(String.Prefix, String.Start), \
-            target, derive(cls.long_string_raw_format, MATCH(2))
+            target, derive(cls.long_string_raw_format, MATCH[2])
         yield r'(\b[uU])?("""|'r"''')", \
             bygroup(String.Prefix, String.Start), \
-            target, derive(cls.long_string, MATCH(2))
+            target, derive(cls.long_string, MATCH[2])
         yield r'(\b[fF])("""|'r"''')", \
             bygroup(String.Prefix, String.Start), \
-            target, derive(cls.long_string_format, MATCH(2))
+            target, derive(cls.long_string_format, MATCH[2])
 
         # short strings
         yield r'''(\b[rR])(['"])''', \
             bygroup(String.Prefix, String.Start), \
-            target, derive(cls.short_string_raw, MATCH(2))
+            target, derive(cls.short_string_raw, MATCH[2])
         yield r'''(\b(?:[fF][rR])|(?:[rR][fF]))(['"])''', \
             bygroup(String.Prefix, String.Start), \
-            target, derive(cls.short_string_raw_format, MATCH(2))
+            target, derive(cls.short_string_raw_format, MATCH[2])
         yield r'''(\b[uU])?(['"])''', \
             bygroup(String.Prefix, String.Start), \
-            target, derive(cls.short_string, MATCH(2))
+            target, derive(cls.short_string, MATCH[2])
         yield r'''(\b[fF])(['"])''', \
             bygroup(String.Prefix, String.Start), \
-            target, derive(cls.short_string_format, MATCH(2))
+            target, derive(cls.short_string_format, MATCH[2])
 
     @lexicon
     def string(cls):
@@ -343,18 +343,18 @@ class Python(Language):
         # long bytes
         yield r'(\b(?:[bB][rR])|(?:[rR][bB]))("""|'r"''')", \
             bygroup(Bytes.Prefix, Bytes.Start), \
-            target, derive(cls.long_bytes_raw, MATCH(2))
+            target, derive(cls.long_bytes_raw, MATCH[2])
         yield r'(\b[bB])("""|'r"''')", \
             bygroup(Bytes.Prefix, Bytes.Start), \
-            target, derive(cls.long_bytes, MATCH(2))
+            target, derive(cls.long_bytes, MATCH[2])
 
         # short bytes
         yield r'''(\b(?:[bB][rR])|(?:[rR][bB]))(['"])''', \
             bygroup(Bytes.Prefix, Bytes.Start), \
-            target, derive(cls.short_bytes_raw, MATCH(2))
+            target, derive(cls.short_bytes_raw, MATCH[2])
         yield r'''(\b[bB])(['"])''', \
             bygroup(Bytes.Prefix, Bytes.Start), \
-            target, derive(cls.short_bytes, MATCH(2))
+            target, derive(cls.short_bytes, MATCH[2])
 
     @lexicon
     def bytes(cls):

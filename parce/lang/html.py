@@ -49,9 +49,9 @@ class XHtml(Xml):
     @lexicon(re_flags=re.IGNORECASE)
     def root(cls):
         yield r'(<)(style|script)\b(>|/\s*>)?', bygroup(Delimiter, Name.Tag, Delimiter), \
-            dselect(MATCH(2), {
-                "style": dselect(MATCH(3), {'>': cls.css_style_tag, None: cls.attrs("css")}),
-                "script": dselect(MATCH(3), {'>': cls.script_tag, None: cls.attrs("js")}),
+            dselect(MATCH[2], {
+                "style": dselect(MATCH[3], {'>': cls.css_style_tag, None: cls.attrs("css")}),
+                "script": dselect(MATCH[3], {'>': cls.script_tag, None: cls.attrs("js")}),
             })  # by default a close tag, stay in the context.
         yield from super().root
 
@@ -92,7 +92,7 @@ class Html(XHtml):
         yield words(HTML_VOID_ELEMENTS, prefix=r'(<\s*?/)\s*((?:\w+:)?', suffix=r')\s*(>)'), \
             bygroup(Delimiter, Name.Tag, Delimiter) # don't leave no-closing tags
         yield words(HTML_VOID_ELEMENTS, prefix=r'(<)\s*(', suffix=r')(?:\s*((?:/\s*)?>))?'), \
-            bygroup(Delimiter, Name.Tag, Delimiter), dselect(MATCH(3), {
+            bygroup(Delimiter, Name.Tag, Delimiter), dselect(MATCH[3], {
                 None: cls.attrs("noclose"), # no ">" or "/>": go to attrs/noclose
             })                          # by default ("/>"): stay in context
         yield from super().root

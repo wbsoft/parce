@@ -64,11 +64,11 @@ class JavaScript(Language):
         yield words(js.JAVASCRIPT_BUILTINS, prefix=r'\b', suffix=r'\b'), Name.Builtin
         yield words(js.JAVASCRIPT_PROTOTYPES, prefix=r'\b', suffix=r'\b'), Name.Builtin
         yield fr'(\.)\s*({_I_})\b(?:\s*([\(\[]))?', bygroup(Delimiter,
-                dselect(MATCH(3), {'(': Name.Method}, Name.Attribute), Delimiter), \
-            dselect(MATCH(3), {'(': cls.call, '[': cls.index})
+                dselect(MATCH[3], {'(': Name.Method}, Name.Attribute), Delimiter), \
+            dselect(MATCH[3], {'(': cls.call, '[': cls.index})
         yield fr'({_I_})\b(?:\s*([\(\[]))?', bygroup(
-                dselect(MATCH(2), {'(': Name.Function}, Name.Variable), Delimiter), \
-            dselect(MATCH(2), {'(': cls.call, '[': cls.index})
+                dselect(MATCH[2], {'(': Name.Function}, Name.Variable), Delimiter), \
+            dselect(MATCH[2], {'(': cls.call, '[': cls.index})
         yield fr'{_I_}\b', select(call(str.isupper, TEXT), Name.Variable, Name.Class)
         ## numerical values (recently, underscore support inside numbers was added)
         yield '0[oO](?:_?[0-7])+n?', Number
