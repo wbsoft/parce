@@ -1,6 +1,19 @@
 ChangeLog
 =========
 
+2021-01-12: parce-0.15.0
+
+- many documentation updates and improvements
+- documentation switched to Furo theme, looks better on small devices
+- the rule item MATCH(n) has changed to MATCH[n], which is more uniform
+- the rule item char() has been renamed to chars()
+- regex.to_string() now supports named Unicode literals
+- fixed transformation of escaped text in Json
+- util.Switch can now be used as class instance, as descriptor
+- added methods to indent.Indenter to auto_indent, increase or decrease indent
+- added Document.append() to append text at the end
+
+
 2021-01-02: parce-0.14.0
 
 - documentation updates and improvements
