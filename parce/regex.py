@@ -24,6 +24,7 @@ Utility module with functions to construct or manipulate regular expressions.
 
 
 import re
+import unicodedata
 
 
 def words2regexp(words):
@@ -115,36 +116,35 @@ def to_string(expr):
     The first returns None, because the dot can match multiple characters.
 
     """
-    if set(re.sub(r'\\.', '', expr)) & set("^$|.()[]{}+*?"):
+    if set(re.sub(r'\\(?:N\{.*?\}|.)', '', expr)) & set("^$|.()[]{}+*?"):
         return  # there are unescaped special characters like (, [, ? etc.
     # handle all escapes, there may be fails, in that case we can't use the expr as string
     pat = (r'\\(?:'
-        r'x([0-9a-fA-F]{2})'    # 1 hex
-        r'|([afnrtv])'          # 2 normal escaped character like \n
-        r'|(\d{1,3})'           # 3 octal , or fail if back ref
-        r'|u([0-9a-fA-F]{4})'   # 4 \uxxxx
-        r'|U([0-9a-fA-F]{8})'   # 5 \Uxxxxxxxx
-        r'|([\^\$\|\.\(\)\[\]\{\}\+\*\?\\])'  # special re char that was escaped
-        r'|)')
+        r'x([0-9a-fA-F]{2})'        # 1 hex
+        r'|([afnrtv])'              # 2 normal escaped character like \n
+        r'|(0[0-7]{0,2}|[0-7]{3})'  # 3 octal
+        r'|([1-9][0-9]{0,2})'       # 4 back ref, fail
+        r'|u([0-9a-fA-F]{4})'       # 5 \uxxxx
+        r'|U([0-9a-fA-F]{8})'       # 6 \Uxxxxxxxx
+        r'|([\^\$\|\.\(\)\[\]\{\}\+\*\?\\])'  # 7 special re char that was escaped
+        r'|N\{(.*?)\}'          # 8 named unicode character (since python 3.8)
+        r'|)')                  # fail if stray '\' is encountered
+    repl = (
+        lambda s: chr(int(s, 16)),          # hex
+        lambda s: chr({'a':7, 'f':12, 'n':10, 'r':13, 't':9, 'v':11}[s]),   # normal escape
+        lambda s: chr(int(s, 8)),           # octal
+        lambda s: None,                     # backref, fail on that
+        lambda s: chr(int(s, 16)),          # \uxxxx
+        lambda s: chr(int(s, 16)),          # \Uxxxxxxxx
+        lambda s: s,                        # escaped re char
+        lambda s: unicodedata.lookup(s),    # named unicode, can raise KeyError
+    )
     def replace_escapes(m):
-        if m.group(1):
-            return chr(int(m.group(1), 16))
-        elif m.group(2):
-            return chr({'a':7, 'f':12, 'n':10, 'r':13, 't':9, 'v':11}[m.group(2)])
-        elif m.group(3):
-            if 0 < int(m.group(3)) <= 99 and not m.group(3).startswith("0"):
-                raise ValueError
-            return chr(int(m.group(3), 8))  # can also raise ValueError
-        elif m.group(4):
-            return chr(int(m.group(4), 16))
-        elif m.group(5):
-            return chr(int(m.group(5), 16))
-        elif m.group(6):
-            return m.group(6)
-        raise ValueError
+        i = m.lastindex
+        return repl[i-1](m.group(i))
     try:
         s = re.sub(pat, replace_escapes, expr)
-    except ValueError:
+    except (TypeError, KeyError, ValueError):
         return
     assert re.fullmatch(expr, s)
     return s

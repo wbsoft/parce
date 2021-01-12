@@ -39,6 +39,11 @@ to_string_tests = (
     ('test$', False),
     ('[cd]fg', False),
     (r'\[cd\]fg', True),
+    (r'a{2,3}', False),
+    (r'abc\N{SPACE}', True),
+    (r'(1)23456\1', False),
+    (r'a\023b', True),
+    (r'a\028b', True),
 )
 
 def check_word_list(words):
