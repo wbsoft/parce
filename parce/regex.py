@@ -140,11 +140,11 @@ def to_string(expr):
         lambda s: unicodedata.lookup(s),    # named unicode, can raise KeyError
     )
     def replace_escapes(m):
-        i = m.lastindex
+        i = m.lastindex     # TypeError is raised if None, or if repl returns None
         return repl[i-1](m.group(i))
     try:
         s = re.sub(pat, replace_escapes, expr)
-    except (TypeError, KeyError, ValueError):
+    except (TypeError, KeyError):
         return
     assert re.fullmatch(expr, s)
     return s
