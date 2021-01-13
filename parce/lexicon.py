@@ -132,6 +132,8 @@ class Lexicon:
         :class:`~parce.target.Target` object.
 
     """
+    __hash__ = object.__hash__
+
     def __init__(self, descriptor, language, arg=None):
         #: The LexiconDescriptor this Lexicon was created by.
         self.descriptor = descriptor
@@ -167,9 +169,9 @@ class Lexicon:
         parse time, which is useful for things like here documents, where you
         only get to know the end token after the start token has been found.
 
-        When comparing Lexicons with ``equals()``, a derived lexicon compares
-        equal with the Lexicon that created them, although they co-exist as
-        separate objects.
+        When comparing Lexicons with ``==``, a derived lexicon compares equal
+        with the Lexicon that created it, although they co-exist as separate
+        objects. Use ``is`` to compare on identity.
 
         When yielding the rules from a derived lexicon, the dynamic rule items
         that depend on the Lexicon argument are already evaluated. When
@@ -195,9 +197,17 @@ class Lexicon:
                     lexicon = self._derived[arg] = Lexicon(self.descriptor, self.language, arg)
             return lexicon
 
-    def equals(self, other):
+    def __eq__(self, other):
         """Return True if we are the same lexicon or a derivate from the same."""
-        return self.descriptor is other.descriptor and self.language is other.language
+        return type(other) is type(self) \
+            and self.descriptor is other.descriptor \
+            and self.language is other.language
+
+    def __ne__(self, other):
+        """Return True if we are the not the same lexicon or a derivate from the same."""
+        return type(other) is not type(self) \
+            or self.descriptor is not other.descriptor \
+            or self.language is not other.language
 
     @util.cached_property
     def _rules(self):
