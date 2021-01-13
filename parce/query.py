@@ -672,8 +672,9 @@ class Query:
         unless you use ^ or $ characters).
 
         """
+        search = re.compile(pattern, flags).search
         for t in self:
-            if t.is_token and self._inv ^ bool(re.search(pattern, t.text, flags)):
+            if t.is_token and self._inv ^ bool(search(t.text)):
                 yield t
 
     @query
