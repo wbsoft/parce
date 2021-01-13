@@ -111,6 +111,12 @@ register("parce.lang.python.Python.root",
     guesses = [(r'^#!.{,20}python', .8), (r'\bimport\s+[a-z]+\b', .3)],
 )
 
+register("parce.lang.python.PythonConsole.root",
+    name = "Python Console",
+    desc = "Python console session",
+    guesses = [(r'^>>> ', .3)],
+)
+
 register("parce.lang.tcl.Tcl.root",
     name = "Tcl",
     desc = "Tool command language",
