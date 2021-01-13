@@ -226,11 +226,11 @@ class Lexicon:
         argument are already evaluated.
 
         """
-        yield from self.rules if self.arg else self._rules
+        yield from self.rules if self.arg is not None else self._rules
 
     def __repr__(self):
         s = self.fullname
-        if self.arg:
+        if self.arg is not None:
             s += '*'
         return s
 
