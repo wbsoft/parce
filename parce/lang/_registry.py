@@ -44,6 +44,14 @@ register("parce.lang.css.Css.root",
     guesses = [(r'\b@media\b', 0.5), (r'\bdiv\b', 0.1), (r'\bbody\s*\{', 0.4)],
 )
 
+register("parce.lang.docbook.DocBook.root",
+    name = "DocBook",
+    desc = "DocBook XMl/SGML computer documentation schema",
+    filenames = [("*.docbook", 1), ("*.dbk", 1), ("*.xml", .1)],
+    mimetypes = [("text/docbook", 1), ("application/sgml", .1)],
+    guesses = [(r'^\s*<\?xml ', .2), (r'OASIS.*?DocBook', 1), (r'<book\b', .8)],
+)
+
 register("parce.lang.xml.Dtd.root",
     name = "DTD",
     desc = "Document Type Definition",
