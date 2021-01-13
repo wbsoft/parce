@@ -72,10 +72,10 @@ class Registry(dict):
     def register(self, lexicon_name, *,
         name,
         desc,
-        aliases = [],
-        filenames = [],
-        mimetypes = [],
-        guesses = [],
+        aliases = (),
+        filenames = (),
+        mimetypes = (),
+        guesses = (),
     ):
         """Register or update a Language's root lexicon for a particular filename
         (patterns), particular mime types or based on contents of the file.
