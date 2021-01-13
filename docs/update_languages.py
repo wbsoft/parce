@@ -56,7 +56,7 @@ REGISTRY_STUB_HEADER = r"""
       :widths: 10, 10, 40, 20, 20
 
       * - Language
-        - Name
+        - Name (Aliases)
         - Description
         - Filename(s)
         - Mime Type(s)
@@ -104,15 +104,15 @@ def indent(text, indent=3):
     return '\n'.join(' ' * indent + line for line in text.splitlines())
 
 
-def make_stub(name, examples):
-    with open("source/lang/{0}.rst".format(name), "w") as f:
+def make_stub(module, examples):
+    with open("source/lang/{0}.rst".format(module), "w") as f:
 
         # header
-        text = STUB.format(name, '=' * len(name))
+        text = STUB.format(module, '=' * len(module))
         f.write(text)
 
         # registry listing, if any
-        langs = list(l for l in get_languages(name))
+        langs = list(l for l in get_languages(module))
         if langs:
             f.write(REGISTRY_STUB_HEADER)
             langs.sort(key=lambda l: l.__name__)
@@ -120,13 +120,17 @@ def make_stub(name, examples):
                 rootname = parce.registry.find(l.__name__)
                 if rootname:
                     r = parce.registry.registry[rootname]
-                    f.write(REGISTRY_STUB.format(
-                        l.__module__, l.__name__, r.name, r.desc,
-                            ', '.join('``{}``'.format(fname) for fname, weight in r.filenames),
-                            ', '.join('``{}``'.format(mtype) for mtype, weight in r.mimetypes)))
+                    name = r.name
+                    if r.aliases:
+                        name += ' ({})'.format(', '.join(r.aliases))
+                    desc = r.desc
+                    fnames = ', '.join('``{}``'.format(fname) for fname, weight in r.filenames)
+                    mtypes = ', '.join('``{}``'.format(mtype) for mtype, weight in r.mimetypes)
                 else:
-                    f.write(REGISTRY_STUB.format(
-                        l.__module__, l.__name__, '', '(not registered)', '', ''))
+                    name, desc, fnames, mtypes = '', '(not registered)', '', ''
+                f.write(REGISTRY_STUB.format(
+                    l.__module__, l.__name__, name, desc, fnames, mtypes))
+
         # examples, if any
         if examples:
             if len(examples) > 1:
@@ -138,7 +142,7 @@ def make_stub(name, examples):
                 tree = parce.root(root_lexicon, text)
                 buf = io.StringIO()
                 tree.dump(buf)
-                f.write(EXAMPLE_STUB.format(root_lexicon, name, indent(text),
+                f.write(EXAMPLE_STUB.format(root_lexicon, module, indent(text),
                                             indent(buf.getvalue())))
 
 
