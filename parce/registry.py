@@ -59,6 +59,10 @@ Item = collections.namedtuple("Item", (
     "mimetypes",
     "guesses",
 ))
+"""
+Used to store entries in the Registry dict, using the qualified name of the
+root lexicon as the key.
+"""
 
 
 class Registry(dict):
