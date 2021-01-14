@@ -522,13 +522,15 @@ def split_list(l, separator):
     Yields result lists that may be empty.
 
     """
-    try:
-        i = l.index(separator)
-    except ValueError:
-        yield l
-    else:
-        yield l[:i]
-        yield from split_list(l[i+1:], separator)
+    i = 0
+    while True:
+        try:
+            j = l.index(separator, i)
+        except ValueError:
+            yield l[i:]
+            return
+        yield l[i:j]
+        i = j + 1
 
 
 def quote(s):
