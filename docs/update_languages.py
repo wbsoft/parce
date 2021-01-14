@@ -42,14 +42,15 @@ STUB = r"""
 
 {title}
 
-In this module:
-
-{registry}
-
 .. automodule:: parce.lang.{module}
    :members:
    :undoc-members:
    :show-inheritance:
+
+   In this module:
+   ---------------
+
+{registry}
 
 {examples}
 
@@ -99,6 +100,12 @@ LANGS_INC_HEADER = r"""
 
 """
 
+
+def title(text, char='-'):
+    """Return text with a line of hyphens of the same length below it."""
+    return text + '\n' + char * len(text)
+
+
 def indent(text, indent=3):
     """Indent text."""
     return '\n'.join(' ' * indent + line for line in text.splitlines())
@@ -130,7 +137,7 @@ def make_stub(module, examples):
     # examples, if any
     example = []
     if examples:
-        example.append("Examples:\n---------"if len(examples) > 1 else "Example:\n--------")
+        example.append(title("Examples:" if len(examples) > 1 else "Example:"))
 
         for root_lexicon, text in examples:
             tree = parce.root(root_lexicon, text)
@@ -142,7 +149,7 @@ def make_stub(module, examples):
     text = STUB.format(
         title=module + '\n' + '=' * len(module),
         module=module,
-        registry=''.join(registered),
+        registry=indent(''.join(registered)),
         examples=''.join(example))
 
     with open("source/lang/{0}.rst".format(module), "w") as f:
