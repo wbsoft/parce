@@ -42,6 +42,9 @@ class LexiconDocumenter(ClassLevelDocumenter):
                            self.env.config.autodoc_inherit_docstrings)
         return [prepare_docstring(docstring, ignore)] if docstring else []
 
+    def document_members(self, all_members = False):
+        pass
+
 def setup(app):
     app.add_autodocumenter(LexiconDocumenter)
 ### end custom Lexicon documenter
