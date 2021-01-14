@@ -100,6 +100,9 @@ LANGS_INC_HEADER = r"""
 
 """
 
+# mapping from the example files to their Language
+all_examples = collections.defaultdict(list)
+
 
 def title(text, char='-'):
     """Return text with a line of hyphens of the same length below it."""
@@ -111,11 +114,11 @@ def indent(text, indent=3):
     return '\n'.join(' ' * indent + line for line in text.splitlines())
 
 
-def make_stub(module, examples):
+def make_stub(module):
     """Writes a documentation page for a language module."""
     # registry listing, if any
     registered = []
-    langs = list(l for l in get_languages(module))
+    langs = list(get_languages(module))
     if langs:
         registered.append(REGISTRY_STUB_HEADER)
         langs.sort(key=lambda l: l.__name__)
@@ -135,6 +138,7 @@ def make_stub(module, examples):
                 name=name, desc=desc, fnames=fnames, mtypes=mtypes))
 
     # examples, if any
+    examples = sum((all_examples.get(lang, []) for lang in langs), [])
     example = []
     if examples:
         example.append(title("Examples:" if len(examples) > 1 else "Example:"))
@@ -162,16 +166,20 @@ def get_examples():
     return glob.glob(pattern)
 
 
-def main():
-
+def load_examples():
+    """Load the examples in the global ``all_examples`` variable."""
     # make a mapping from the example files to their Language
-    all_examples = collections.defaultdict(list)
     for filename in get_examples():
         text = open(filename).read()    # TODO encoding?
         root_lexicon = parce.find(filename=filename, contents=text)
         all_examples[root_lexicon.language].append((root_lexicon, text))
 
 
+def main():
+    """Main function."""
+    load_examples()
+
+    # write the source/langs.inc file and all the module doc files
     with open("source/langs.inc", "w") as f:
         f.write(LANGS_INC_HEADER)
         for name in get_all_modules():
@@ -179,8 +187,7 @@ def main():
             if langs:
                 clss = ", ".join(":class:`~parce.lang.{0}.{1}`".format(name, lang.__name__)
                     for lang in langs)
-                examples = sum((all_examples.get(lang, []) for lang in langs), [])
-                make_stub(name, examples)
+                make_stub(name)
                 f.write("   * - :mod:`~parce.lang.{0}`\n".format(name))
                 f.write("     - {0}\n\n".format(clss))
 
