@@ -243,7 +243,7 @@ class Observable:
         the event. The ``priority`` determines the order the functions are
         called. Lower numbers are called first. If ``once`` is set to True, the
         function is called once and then removed from the list of callbacks. If
-        ``prepend_self`` is True, the callback is called with the treebuilder
+        ``prepend_self`` is True, the callback is called with the observable
         itself as first argument.
 
         """
