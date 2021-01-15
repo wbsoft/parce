@@ -153,10 +153,10 @@ class Formatter(AbstractFormatter):
                     for i in range(i, len(n)):
                         m = n[i]
                         if m.is_token:
-                            if fc.base is not None and m.pos > prev_end:
-                                yield prev_end, m.pos, fc.base
                             f = fc.format(m.action)
                             if f is not None:
+                                if fc.base is not None and m.pos > prev_end:
+                                    yield prev_end, m.pos, fc.base
                                 yield m.pos, m.end, f
                                 prev_end = m.end
                         else:
