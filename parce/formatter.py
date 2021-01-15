@@ -61,9 +61,9 @@ class Formatter(AbstractFormatter):
     Supply the theme, and an optional factory that converts a TextFormat to
     something else.
 
-    In addition to the default theme, other themes can be added coupled to a
-    specific language. This allows the formatter to switch theme based on the
-    language of the text.
+    In addition to the default theme (which is required), other themes can be
+    added coupled to a specific language. This allows the formatter to switch
+    theme based on the language of the text.
 
     """
     def __init__(self, theme=None, factory=None):
@@ -124,7 +124,7 @@ class Formatter(AbstractFormatter):
         """Return our textformat for the current line."""
         return self._themes[None].baseformat(role, state)
 
-    def format_ranges(self, tree, start=0, end=None, formatcontext=None):
+    def format_ranges(self, tree, start=0, end=None, format_context=None):
         """Yield FormatRange(pos, end, format) three-tuples.
 
         The ``format`` is the value returned by Theme.textformat() for the
@@ -135,8 +135,8 @@ class Formatter(AbstractFormatter):
         """
         def stream():
             cache = self._themes.get
-            default_cache = c = cache(None)
-            formatcontext and formatcontext.start(c.theme)
+            default_fcache = fc = cache(None)
+            format_context and format_context.start(fc)
             curlang = None
 
             prev_end = start
@@ -144,8 +144,8 @@ class Formatter(AbstractFormatter):
                 lang = context.lexicon.language
                 if lang is not curlang:
                     curlang = lang
-                    c = cache(lang, default_cache)
-                    formatcontext and formatcontext.switch(c.theme)
+                    fc = cache(lang, default_fcache)
+                    format_context and format_context.switch(fc)
                 n = context[slice_]
                 stack = []
                 i = 0
@@ -153,12 +153,12 @@ class Formatter(AbstractFormatter):
                     for i in range(i, len(n)):
                         m = n[i]
                         if m.is_token:
-                            if c.base is not None and m.pos > prev_end:
-                                yield prev_end, m.pos, c.base
-                            f = c.format(m.action)
+                            if fc.base is not None and m.pos > prev_end:
+                                yield prev_end, m.pos, fc.base
+                            f = fc.format(m.action)
                             if f is not None:
                                 yield m.pos, m.end, f
-                            prev_end = m.end
+                                prev_end = m.end
                         else:
                             stack.append(i)
                             i = 0
@@ -166,8 +166,8 @@ class Formatter(AbstractFormatter):
                             lang = n.lexicon.language
                             if lang is not curlang:
                                 curlang = lang
-                                c = cache(lang, default_cache)
-                                formatcontext and formatcontext.switch(c.theme)
+                                fc = cache(lang, default_fcache)
+                                format_context and format_context.switch(fc)
                             break
                     else:
                         if stack:
@@ -175,15 +175,14 @@ class Formatter(AbstractFormatter):
                             lang = n.lexicon.language
                             if lang is not curlang:
                                 curlang = lang
-                                c = cache(lang, default_cache)
-                                formatcontext and formatcontext.switch(c.theme)
-
+                                fc = cache(lang, default_fcache)
+                                format_context and format_context.switch(fc)
                             i = stack.pop() + 1
                         else:
                             break
-            if c.base is not None and end is not None and prev_end < end:
-                yield prev_end, end, c.base
-            formatcontext and formatcontext.done()
+            if fc.base is not None and end is not None and prev_end < end:
+                yield prev_end, end, fc.base
+            format_context and format_context.done()
 
         ranges = util.merge_adjacent(stream(), FormatRange)
         # make sure first and last range don't stick out
