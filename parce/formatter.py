@@ -36,7 +36,6 @@ FormatContext.
 """
 
 
-import sys
 import collections
 import contextlib
 import threading
@@ -174,7 +173,7 @@ class Formatter:
         """
         c = FormatContext(self)
         def stream():
-            prev_end = sys.maxsize
+            prev_end = start
             for t in self._theme.tokens(c, tree, start, end):
                 if t.pos > prev_end and c.window is not None:
                     # if a sub-language is active, draw its background
@@ -183,6 +182,20 @@ class Formatter:
                 if f is not None:
                     yield t.pos, t.end, f
                 prev_end = t.end
-        yield from util.merge_adjacent(stream(), FormatRange)
-
+            if end is not None and prev_end < end and c.window is not None:
+                yield prev_end, end, c.window
+        ranges = util.merge_adjacent(stream(), FormatRange)
+        # make sure first and last range don't stick out
+        if start > 0 or end is not None:
+            for r in ranges:
+                if r.pos < start:
+                    r = FormatRange(start, r.end, r.textformat)
+                for r1 in ranges:
+                    yield r
+                    r = r1
+                if end is not None and r.end > end:
+                    r = FormatRange(r.pos, end, r.textformat)
+                yield r
+        else:
+            yield from ranges
 
