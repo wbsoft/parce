@@ -66,19 +66,19 @@ Get a TextFormat for an action, use e.g.::
 Mapping actions to CSS classes
 ------------------------------
 
-Standard actions are mapped to a tuple of CSS class names: the action itself
-and the actions it descends from. All CSS rules are combined, the one with the
-most matches comes first.
+Standard actions are mapped to one or more CSS class names using
+:func:`css_class`; it uses the action itself and the actions it descends from.
+All CSS rules are combined, the one with the most matches comes first.
 
-For example, Comment maps to the "comment" CSS class, and Number maps
-to ("literal", "number") because Number is a descendant action of Literal.
+For example, ``Comment`` maps to the ``"comment"`` CSS class, and ``Number``
+maps to ``"literal number"`` because Number is a descendant action of Literal.
 
-Some actions might have the same name, e.g. Escape and String.Escape.
-Both match CSS rules with the ``.escape`` class selector, but a rule
-with ``.string.escape`` will have higher precedence.
+Some actions might have the same name, e.g. ``Escape`` and ``String.Escape``.
+Both match CSS rules with the ``.escape`` class selector, but a rule with
+``.string.escape`` will have a higher precedence.
 
-The order of the action names does not matter. E.g. an action Text.Comment
-will match exactly the same CSS rules as an action Comment.Text. So you
+The order of the action names does not matter. E.g. an action ``Text.Comment``
+will match exactly the same CSS rules as an action ``Comment.Text``. So you
 should take some care when designing you action hierachy and not add too much
 base action types.
 
@@ -178,7 +178,7 @@ class Theme:
     @util.cached_method
     def textformat(self, action):
         """Return the TextFormat for the specified action."""
-        class_ = repr(action).lower().replace('.', ' ')
+        class_ = css_class(action)
         e = css.Element(class_=class_, parent=css.Element(class_="parce"))
         return self.TextFormat(self.style.select_element(e).properties())
 
@@ -340,7 +340,7 @@ class TextFormat:
     font_variant_position = None    #: normal, sub or super
     font_weight = None              #: 100 - 900 or keyword like ``bold``
 
-    dispatch = util.Dispatcher()
+    _dispatch = util.Dispatcher()
 
     def __repr__(self):
         return "<{} {}>".format(self.__class__.__name__,
@@ -349,7 +349,7 @@ class TextFormat:
 
     def __init__(self, properties):
         for prop, values in properties.items():
-            self.dispatch(prop, values)
+            self._dispatch(prop, values)
 
     def __bool__(self):
         """Return True if at least one property is set."""
@@ -445,32 +445,32 @@ class TextFormat:
         if self.font_weight:
             yield "font-weight", format(self.font_weight)
 
-    @dispatch("color")
+    @_dispatch("color")
     def read_color(self, values):
         for v in values:
             if v.color:
                 self.color = v.color
                 return
 
-    @dispatch("background-color")
+    @_dispatch("background-color")
     def read_background_color(self, values):
         for v in values:
             if v.color:
                 self.background_color = v.color
                 return
 
-    @dispatch("background")
+    @_dispatch("background")
     def read_background(self, values):
         self.read_background_color(values)
 
-    @dispatch("text-decoration-color")
+    @_dispatch("text-decoration-color")
     def read_text_decoration_color(self, values):
         for v in values:
             if v.color:
                 self.text_decoration_color = v.color
                 return
 
-    @dispatch("text-decoration-line")
+    @_dispatch("text-decoration-line")
     def read_text_decoration_line(self, values):
         decos = []
         for v in values:
@@ -480,20 +480,20 @@ class TextFormat:
                 decos.clear()
         self.text_decoration_line = decos
 
-    @dispatch("text-decoration-style")
+    @_dispatch("text-decoration-style")
     def read_text_decoration_style(self, values):
         for v in values:
             if v.text in ("solid", "double", "dotted", "dashed", "wavy"):
                 self.text_decoration_style = v.text
                 return
 
-    @dispatch("text-decoration")
+    @_dispatch("text-decoration")
     def read_text_decoration(self, values):
         self.read_text_decoration_color(values)
         self.read_text_decoration_line(values)
         self.read_text_decoration_style(values)
 
-    @dispatch("font-family")
+    @_dispatch("font-family")
     def read_font_family(self, values):
         families = []
         for v in values:
@@ -511,14 +511,14 @@ class TextFormat:
                 families.append(v.text)
         self.font_family = families
 
-    @dispatch("font-kerning")
+    @_dispatch("font-kerning")
     def read_font_kerning(self, values):
         for v in values:
             if v.text in ("auto", "normal", "none"):
                 self.font_kerning = v.text
                 return
 
-    @dispatch("font-size")
+    @_dispatch("font-size")
     def read_font_size(self, values):
         for v in values:
             if v.text in ("xx-small", "x-small", "small", "medium",
@@ -531,7 +531,7 @@ class TextFormat:
                 self.font_size_unit = v.unit
                 return
 
-    @dispatch("font-stretch")
+    @_dispatch("font-stretch")
     def read_font_stretch(self, values):
         for v in values:
             if v.text in ("ultra-condensed", "extra-condensed", "condensed",
@@ -541,7 +541,7 @@ class TextFormat:
             elif v.number is not None and v.unit == "%":
                 self.font_stretch = v.number
 
-    @dispatch("font-style")
+    @_dispatch("font-style")
     def read_font_style(self, values):
         v = values[0]
         for n in values[1:] + [None]:
@@ -556,7 +556,7 @@ class TextFormat:
                     return
             v = n
 
-    @dispatch("font-variant-caps")
+    @_dispatch("font-variant-caps")
     def read_font_variant_caps(self, values):
         for v in values:
             if v.text in ("normal", "small-caps", "all-small-caps", "petite-caps",
@@ -564,14 +564,14 @@ class TextFormat:
                 self.font_variant_caps = v.text
                 return
 
-    @dispatch("font-variant-position")
+    @_dispatch("font-variant-position")
     def read_font_variant_position(self, values):
         for v in values:
             if v.text in ("normal", "sub", "super"):
                 self.font_variant_position = v.text
                 return
 
-    @dispatch("font-weight")
+    @_dispatch("font-weight")
     def read_font_weight(self, values):
         for v in values:
             if v.text in ("normal", "bold", "lighter", "bolder"):
@@ -581,7 +581,7 @@ class TextFormat:
                 self.font_weight = v.number
                 return
 
-    @dispatch("font")
+    @_dispatch("font")
     def read_font(self, values):
         self.read_font_style(values)
         numvalues = []
@@ -608,5 +608,21 @@ class TextFormat:
             if self.font_weight is None:
                 self.font_weight = numvalues[0][0]
             self.font_size, self.font_size_unit = numvalues[1]
+
+
+def css_class(action):
+    """Return a CSS class string for the specified standard action.
+
+    The class names are simply the name of the action and all its ancestor
+    actions. Class names are lowercase and space-separated. For example::
+
+        >>> from parce.action import Number
+        >>> Number
+        Literal.Number
+        >>> css_class(Number)
+        'literal number'
+
+    """
+    return repr(action).lower().replace('.', ' ')
 
 
