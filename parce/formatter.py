@@ -139,13 +139,20 @@ class Formatter(AbstractFormatter):
             format_context and format_context.start(fc)
             curlang = None
 
-            prev_end = start
-            for context, slice_ in tree.context_slices(start, end):
-                lang = context.lexicon.language
+            # Modifies curlang and current format cache fc if lang changes
+            def check_lang(lang):
+                nonlocal curlang, fc
                 if lang is not curlang:
                     curlang = lang
-                    fc = cache(lang, default_fcache)
-                    format_context and format_context.switch(fc)
+                    nfc = cache(lang, default_fcache)
+                    if nfc is not fc:
+                        fc = nfc
+                        if format_context:
+                            format_context.switch(fc)
+
+            prev_end = start
+            for context, slice_ in tree.context_slices(start, end):
+                check_lang(context.lexicon.language)
                 n = context[slice_]
                 stack = []
                 i = 0
@@ -163,20 +170,12 @@ class Formatter(AbstractFormatter):
                             stack.append(i)
                             i = 0
                             n = m
-                            lang = n.lexicon.language
-                            if lang is not curlang:
-                                curlang = lang
-                                fc = cache(lang, default_fcache)
-                                format_context and format_context.switch(fc)
+                            check_lang(n.lexicon.language)
                             break
                     else:
                         if stack:
                             n = n.parent
-                            lang = n.lexicon.language
-                            if lang is not curlang:
-                                curlang = lang
-                                fc = cache(lang, default_fcache)
-                                format_context and format_context.switch(fc)
+                            check_lang(n.lexicon.language)
                             i = stack.pop() + 1
                         else:
                             break
