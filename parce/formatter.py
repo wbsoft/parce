@@ -127,9 +127,11 @@ class Formatter:
 
     """
     def __init__(self, theme, factory=None):
+        if factory is None:
+            factory = lambda f: f
         self._lock = threading.Lock()   # lock for FormatCaches
         self._theme = theme
-        self._factory = factory or (lambda f: f)
+        self._factory = factory
         self._caches = weakref.WeakKeyDictionary()
         self._caches[theme] = c = FormatCache(theme, factory, False)
 
