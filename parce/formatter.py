@@ -201,3 +201,29 @@ class Formatter:
         else:
             yield from ranges
 
+    def format_text(self, text, tree, start=0, end=None):
+        """Yield tuples(text, format).
+
+        All text in the range (start, end) is yielded; if ``end`` is None, all
+        text from ``start`` to the end of the text is yielded. If a piece of
+        text has no format, None is yielded for that format.
+
+        """
+        ranges = self.format_ranges(tree, start, end)
+        prev_end = start
+        for r in ranges:
+            if r.pos > prev_end:
+                yield text[prev_end:r.pos], None
+            yield text[r.pos:r.end], r.textformat
+            prev_end = r.end
+        if end is None:
+            end = len(text)
+        if prev_end < end:
+            yield text[prev_end:end], None
+
+    def format_document(self, cursor):
+        """Yield tuples(text, format) for the selected range of the Cursor."""
+        doc = cursor.document()
+        return self.format_text(doc.text(), doc.get_root(True), cursor.pos, cursor.end)
+
+
