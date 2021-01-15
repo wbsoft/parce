@@ -38,6 +38,7 @@ FormatContext.
 
 import collections
 import contextlib
+import functools
 import threading
 import weakref
 
@@ -45,126 +46,85 @@ import weakref
 from . import util
 
 
+FormatCache = collections.namedtuple("FormatCache", "theme base format baseformat")
 FormatRange = collections.namedtuple("FormatRange", "pos end textformat")
 
 
-class FormatCache:
-    """A FormatCache caches conversions from TextFormat to something else.
-
-    It can keep a window() TextFormat into account for sub-themes (themes
-    that are invoked on a per-language basis), and it can adjust the formats
-    for the sub-themed tokens with the window() format for that theme.
-
-    The factory that was given to the Formatter is used by the FormatCache to
-    convert the TextFormat of the theme to something used by the formatter.
-
-    A Formatter keeps a FormatCache for its theme, and in the case of a
-    MetaTheme, a FormatCache is used for every sub-theme. The FormatContext
-    is used to switch theme, and in its default implementation it switches
-    the FormatCache it uses.
-
-    """
-    def __init__(self, theme, factory, add_window=True):
-        """Caches conversions from TextFormat to something else."""
-        if add_window:
-            window = theme.baseformat()
-            self.window = factory(window)
-            self._format = lambda action: factory(window + theme.textformat(action))
-        else:
-            self.window = None
-            self._format = lambda action: factory(theme.textformat(action))
-
-    @util.cached_method
-    def format(self, action):
-        """Return our text format for the action, caching it for later reuse."""
-        return self._format(action)
+class AbstractFormatter:
+    """A Formatter formats text based on the action of tokens."""
 
 
-class FormatContext:
-    """A FormatContext is used during a formatting job.
 
-    It maintains the state needed to format using a MetaTheme. The only API
-    used is the ``push()`` and ``pop()`` method, which are called by the
-    ``tokens()`` method of MetaTheme.
+class Formatter(AbstractFormatter):
+    """A Formatter is used to format or highlight text according to a Theme.
 
-    The default Formatter uses the ``window`` property and ``format`` method
-    to get the window style for the current theme and the factory that turns
-    a standard action if the format we want.
+    Supply the theme, and an optional factory that converts a TextFormat to
+    something else.
+
+    In addition to the default theme, other themes can be added coupled to a
+    specific language. This allows the formatter to switch theme based on the
+    language of the text.
 
     """
-    def __init__(self, formatter):
-        self._stack = []
-        self._formatter = formatter
-        self._current_theme = None
-        self._set_theme(formatter.theme())
-
-    def _switch_language(self, language):
-        self._set_theme(self._formatter.theme().get_theme(language))
-
-    def _set_theme(self, theme):
-        if theme is not self._current_theme:
-            self._current_theme = theme
-            c = self.cache = self._formatter.format_cache(theme)
-            self.window = c.window
-            self.format = c.format
-
-    def push(self, language):
-        self._stack.append(language)
-        if len(self._stack) < 2 or language is not self._stack[-2]:
-            self._switch_language(language)
-
-    def pop(self):
-        language = self._stack.pop()
-        if len(self._stack) > 0 and language is not self._stack[-1]:
-            self._switch_language(self._stack[-1])
-
-
-class Formatter:
-    """A Formatter is used to format or highlight text according to a theme.
-
-    Supply the theme, and an optional factory that converts a TextFormat
-    to something else.
-
-    """
-    def __init__(self, theme, factory=None):
+    def __init__(self, theme=None, factory=None):
         if factory is None:
             factory = lambda f: f
-        self._lock = threading.Lock()   # lock for FormatCaches
-        self._theme = theme
         self._factory = factory
-        self._caches = weakref.WeakKeyDictionary()
-        self._caches[theme] = c = FormatCache(theme, factory, False)
+        self._themes = {}
+        if theme is not None:
+            self.add_theme(None, theme)
 
-    def theme(self):
-        """Return the Theme we were instantiated with."""
-        return self._theme
+    def add_theme(self, language, theme, add_baseformat=False):
+        """Add a Theme.
 
-    @util.cached_method
-    def baseformat(self, role="window", state="default"):
-        """Return our textformat for the current line."""
-        return self._factory(self._theme.baseformat(role, state))
-
-    def format_cache(self, theme):
-        """Return a FormatCache for the Theme.
-
-        The FormatCache caches the converted textformat, optionally taking
-        the default window style into account.  And the Formatter caches the
-        FormatCaches :-)
+        If ``language`` is None, the theme becomes the default theme and the
+        ``add_baseformat`` argument is ignored. If a language is specified (a
+        :class:`~parce.language.Language` subclass), the theme will be used for
+        tokens from that language. If ``add_baseformat`` is True, the theme's
+        baseformat color (window) will be added to all the theme's text
+        formats.
 
         """
-        try:
-            return self._caches[theme]
-        except KeyError:
-            with self._lock:
-                try:
-                    return self._caches[theme]
-                except KeyError:
-                    add_window = self.theme().get_add_window(theme)
-                    c = self._caches[theme] = FormatCache(
-                                    theme, self._factory, add_window)
-                return c
+        cache = functools.lru_cache(maxsize=None)
+        if add_baseformat:
+            base_ = theme.baseformat()
+            base = self._factory(base_)
+            @cache
+            def factory(action):
+                return self._factory(base_ + theme.textformat(action))
 
-    def format_ranges(self, tree, start=0, end=None):
+        else:
+            base = None
+            @cache
+            def factory(action):
+                return self._factory(theme.textformat(action))
+
+        @cache
+        def baseformat(role, state):
+            return self._factory(theme.baseformat(role, state))
+
+        self._themes[language] = FormatCache(theme, base, factory, baseformat)
+
+    def get_theme(self, language=None):
+        """Return the theme for the specified language.
+
+        If language is None, the default theme is returned.
+        Returns None if the language has no specific theme.
+
+        """
+        fcache = self._themes.get(language)
+        if fcache:
+            return fcache.theme
+
+    def remove_theme(self, language):
+        """Remove the theme for the specified language."""
+        del self._themes[language]
+
+    def baseformat(self, role="window", state="default"):
+        """Return our textformat for the current line."""
+        return self._themes[None].baseformat(role, state)
+
+    def format_ranges(self, tree, start=0, end=None, formatcontext=None):
         """Yield FormatRange(pos, end, format) three-tuples.
 
         The ``format`` is the value returned by Theme.textformat() for the
@@ -173,19 +133,58 @@ class Formatter:
         skipped.
 
         """
-        c = FormatContext(self)
         def stream():
+            cache = self._themes.get
+            default_cache = c = cache(None)
+            formatcontext and formatcontext.start(c.theme)
+            curlang = None
+
             prev_end = start
-            for t in self._theme.tokens(c, tree, start, end):
-                if t.pos > prev_end and c.window is not None:
-                    # if a sub-language is active, draw its background
-                    yield prev_end, t.pos, c.window
-                f = c.format(t.action)
-                if f is not None:
-                    yield t.pos, t.end, f
-                prev_end = t.end
-            if end is not None and prev_end < end and c.window is not None:
-                yield prev_end, end, c.window
+            for context, slice_ in tree.context_slices(start, end):
+                lang = context.lexicon.language
+                if lang is not curlang:
+                    curlang = lang
+                    c = cache(lang, default_cache)
+                    formatcontext and formatcontext.switch(c.theme)
+                n = context[slice_]
+                stack = []
+                i = 0
+                while True:
+                    for i in range(i, len(n)):
+                        m = n[i]
+                        if m.is_token:
+                            if c.base is not None and m.pos > prev_end:
+                                yield prev_end, m.pos, c.base
+                            f = c.format(m.action)
+                            if f is not None:
+                                yield m.pos, m.end, f
+                            prev_end = m.end
+                        else:
+                            stack.append(i)
+                            i = 0
+                            n = m
+                            lang = n.lexicon.language
+                            if lang is not curlang:
+                                curlang = lang
+                                c = cache(lang, default_cache)
+                                formatcontext and formatcontext.switch(c.theme)
+                            break
+                    else:
+                        if stack:
+                            n = n.parent
+                            lang = n.lexicon.language
+                            if lang is not curlang:
+                                curlang = lang
+                                c = cache(lang, default_cache)
+                                formatcontext and formatcontext.switch(c.theme)
+
+                            i = stack.pop() + 1
+                        else:
+                            break
+            if c.base is not None and end is not None and prev_end < end:
+                yield prev_end, end, c.base
+            formatcontext and formatcontext.done()
+
         ranges = util.merge_adjacent(stream(), FormatRange)
         # make sure first and last range don't stick out
         if start > 0 or end is not None:
@@ -200,30 +199,4 @@ class Formatter:
                 yield r
         else:
             yield from ranges
-
-    def format_text(self, text, tree, start=0, end=None):
-        """Yield tuples(text, format).
-
-        All text in the range (start, end) is yielded; if ``end`` is None, all
-        text from ``start`` to the end of the text is yielded. If a piece of
-        text has no format, None is yielded for that format.
-
-        """
-        ranges = self.format_ranges(tree, start, end)
-        prev_end = start
-        for r in ranges:
-            if r.pos > prev_end:
-                yield text[prev_end:r.pos], None
-            yield text[r.pos:r.end], r.textformat
-            prev_end = r.end
-        if end is None:
-            end = len(text)
-        if prev_end < end:
-            yield text[prev_end:end], None
-
-    def format_document(self, cursor):
-        """Yield tuples(text, format) for the selected range of the Cursor."""
-        doc = cursor.document()
-        return self.format_text(doc.text(), doc.get_root(True), cursor.pos, cursor.end)
-
 

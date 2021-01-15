@@ -94,8 +94,21 @@ from . import themes
 from . import util
 
 
-class Theme:
+class AbstractTheme:
+    """Defines the interface of a Theme as used by a formatter."""
+
+    def baseformat(self, role="window", state="default"):
+        """Should return a text format for a specific role and a state."""
+        raise NotImplementedError
+
+    def textformat(self, action):
+        """Should return a text format for the specified action."""
+        raise NotImplementedError
+
+
+class Theme(AbstractTheme):
     """A Theme maps a StandardAction to a TextFormat with CSS properties."""
+
     def __init__(self, filename="", stylesheet=""):
         """Instantiate Theme from a CSS file or text.
 
@@ -181,104 +194,6 @@ class Theme:
         class_ = css_class(action)
         e = css.Element(class_=class_, parent=css.Element(class_="parce"))
         return self.TextFormat(self.style.select_element(e).properties())
-
-    def tokens(self, theme_context, tree, start=0, end=None):
-        """Yield tokens from ``tree.tokens_range(start, end)``.
-
-        If a context is entered, ``theme_context.push(language)`` is called
-        with the language of the context's lexicon. If the context is left,
-        ``theme_context.pop()`` is called.
-
-        In Theme, the ``theme_context`` argument is unused.
-
-        """
-        yield from tree.tokens_range(start, end)
-
-
-class MetaTheme:
-    """A Theme that encapsulates a default Theme and per-language sub-Themes."""
-    def __init__(self, theme):
-        """Instantiate with default theme."""
-        self._theme = theme
-        self._themes = {}
-        self._add_window = {theme: False}
-
-    def add_theme(self, language, theme, add_window=False):
-        """Add a specific Theme for the specified Language.
-
-        If ``add_window`` is set to True, the formatter will render text from
-        the specified language with its own ``window`` default style added to
-        all formats. A formatter will also need to take care to render
-        untokenized ranges with the ``window()`` style of the sub-theme.
-
-        """
-        self._themes[language] = theme
-        self._add_window[theme] = add_window
-
-    def get_theme(self, language):
-        """Return the tuple(theme, add_window) for the language.
-
-        If the exact language was not found, the base classes of the Language are
-        tried. If still no luck, self is returned.
-
-        """
-        try:
-            return self._themes[language]
-        except KeyError:
-            pass
-        for lang in language.mro()[:-2]:    # don't test Language and object
-            try:
-                return self._themes[lang]
-            except KeyError:
-                pass
-        return self
-
-    def get_add_window(self, theme):
-        """Return the ``add_window`` value that was set when adding this sub-theme."""
-        return self._add_window.get(theme, False)
-
-    def baseformat(self, role="window", state="default"):
-        """Return the base TextFormat for the rold and state of the default theme."""
-        return self._theme.baseformat(state)
-
-    def textformat(self, action):
-        """Return the TextFormat for the specified action of the default theme."""
-        return self._theme.textformat(action)
-
-    def tokens(self, theme_context, tree, start=0, end=None):
-        """Yield tokens from ``tree.tokens_range(start, end)``.
-
-        If a context is entered, ``theme_context.push(language)`` is called
-        with the language of the context's lexicon. If the context is left,
-        ``theme_context.pop()`` is called.
-
-        The theme_context can switch the theme, based on the current language.
-
-        """
-        for context, slice_ in tree.context_slices(start, end):
-            theme_context.push(context.lexicon.language)
-            for n in context[slice_]:
-                stack = []
-                i = 0
-                while True:
-                    for i in range(i, len(n)):
-                        m = n[i]
-                        if m.is_token:
-                            yield m
-                        else:
-                            stack.append(i)
-                            i = 0
-                            n = m
-                            theme_context.push(n.lexicon.language)
-                            break
-                    else:
-                        if stack:
-                            theme_context.pop()
-                            n = n.parent
-                            i = stack.pop() + 1
-                        else:
-                            break
-            theme_context.pop()
 
 
 class TextFormat:
