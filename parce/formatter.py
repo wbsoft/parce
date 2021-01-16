@@ -186,7 +186,7 @@ class Formatter(AbstractFormatter):
     """
     def __init__(self, theme=None, factory=None):
         if factory is None:
-            factory = lambda f: f
+            factory = lambda f: f or None
         self._factory = factory
         self._themes = {}
         if theme is not None:
