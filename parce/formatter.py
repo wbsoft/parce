@@ -277,3 +277,23 @@ class SimpleFormatter(AbstractFormatter):
         return {None: FormatCache(None, None, css_class, baseformat)}
 
 
+class FormatContext:
+    """FormatContext can be used to track theme changes during formatting.
+
+    A FormatContext instance can be given to the
+    :meth:`AbstractFormatter.format_ranges` method of a formatter.
+
+    Inheriting from this class and implementing the methods enable you to
+    react to theme changes during formatting.
+
+    """
+    def start(self, fcache):
+        """Called when formatting starts, with the default Theme's format cache."""
+
+    def switch(self, fcache):
+        """Called whenever formatting switches to a different theme."""
+
+    def done(self):
+        """Called when formatting has finished."""
+
+
