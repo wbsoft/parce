@@ -21,8 +21,9 @@
 The Formatter uses a Theme to highlight text according to the token's
 ``action`` attribute. The action is mapped to a TextFormat by the theme.
 
-When a MetaTheme is used, a Formatter is capable of switching Theme
-as the MetaTheme provides a special theme for a certain embedded language.
+It is possible to add more Themes to a formatter, coupled to a certain
+language, so that the formatter can switch to that theme for embedded pieces of
+text of that language.
 
 All kinds of text formatting and/or highlighting can be implemented by using
 or inheriting of Formatter. If you need to convert the TextFormats from the
@@ -53,6 +54,95 @@ FormatRange = collections.namedtuple("FormatRange", "pos end textformat")
 class AbstractFormatter:
     """A Formatter formats text based on the action of tokens."""
 
+    def format_caches(self):
+        """Should return a dictionary mapping language to FormatCache.
+
+        A FormatCache normally encapsulates a theme. The key None should be
+        present and denotes the default theme. Other keys should be
+        :class:`~parce.language.Language` subclasses, and their theme is used
+        for tokens that originate from that language.
+
+        """
+        raise NotImplementedError
+
+    def baseformat(self, role="window", state="default"):
+        """Return our textformat for the current line."""
+        return self.format_caches()[None].baseformat(role, state)
+
+    def format_ranges(self, tree, start=0, end=None, format_context=None):
+        """Yield FormatRange(pos, end, format) three-tuples.
+
+        The ``format`` is the value returned by Theme.textformat() for the
+        token's action, converted by our factory (and cached of course).
+        Ranges with a TextFormat for which our factory returns None are
+        skipped.
+
+        """
+        format_caches = self.format_caches()
+        if len(format_caches) == 1:
+            # language will never be switched, no need to follow language
+            def stream():
+                fc = format_caches.get(None)
+                format_context and format_context.start(fc)
+                for t in tree.tokens_range(start, end):
+                    f = fc.format(t.action)
+                    if f is not None:
+                        yield t.pos, t.end, f
+                format_context and format_context.done()
+        else:
+            # language can potentially switch, follow it
+            def stream():
+                cache = self.format_caches.get
+                default_fcache = fc = cache(None)
+                format_context and format_context.start(fc)
+                curlang = None
+
+                # Modifies curlang and current format cache fc if lang changes
+                def check_lang(lang):
+                    nonlocal curlang, fc
+                    if lang is not curlang:
+                        curlang = lang
+                        nfc = cache(lang, default_fcache)
+                        if nfc is not fc:
+                            fc = nfc
+                            if format_context:
+                                format_context.switch(fc)
+
+                prev_end = start
+                for context, slice_ in tree.context_slices(start, end):
+                    check_lang(context.lexicon.language)
+                    n = context[slice_]
+                    stack = []
+                    i = 0
+                    while True:
+                        for i in range(i, len(n)):
+                            m = n[i]
+                            if m.is_token:
+                                f = fc.format(m.action)
+                                if f is not None:
+                                    if fc.base is not None and m.pos > prev_end:
+                                        yield prev_end, m.pos, fc.base
+                                    yield m.pos, m.end, f
+                                    prev_end = m.end
+                            else:
+                                stack.append(i)
+                                i = 0
+                                n = m
+                                check_lang(n.lexicon.language)
+                                break
+                        else:
+                            if stack:
+                                n = n.parent
+                                check_lang(n.lexicon.language)
+                                i = stack.pop() + 1
+                            else:
+                                break
+                if fc.base is not None and end is not None and prev_end < end:
+                    yield prev_end, end, fc.base
+                format_context and format_context.done()
+
+        return util.merge_adjacent(
+            util.fix_boundaries(stream(), start, end), FormatRange)
 
 
 class Formatter(AbstractFormatter):
@@ -73,6 +163,10 @@ class Formatter(AbstractFormatter):
         self._themes = {}
         if theme is not None:
             self.add_theme(None, theme)
+
+    def format_caches(self):
+        """Reimplemented to return the format caches added by add_theme()."""
+        return self._themes
 
     def add_theme(self, language, theme, add_baseformat=False):
         """Add a Theme.
@@ -103,7 +197,7 @@ class Formatter(AbstractFormatter):
         def baseformat(role, state):
             return self._factory(theme.baseformat(role, state))
 
-        self._themes[language] = FormatCache(theme, base, factory, baseformat)
+        self.format_caches()[language] = FormatCache(theme, base, factory, baseformat)
 
     def get_theme(self, language=None):
         """Return the theme for the specified language.
@@ -112,89 +206,13 @@ class Formatter(AbstractFormatter):
         Returns None if the language has no specific theme.
 
         """
-        fcache = self._themes.get(language)
-        if fcache:
-            return fcache.theme
+        try:
+            return self.format_caches()[language].theme
+        except KeyError:
+            pass
 
     def remove_theme(self, language):
         """Remove the theme for the specified language."""
-        del self._themes[language]
+        del self.format_caches()[language]
 
-    def baseformat(self, role="window", state="default"):
-        """Return our textformat for the current line."""
-        return self._themes[None].baseformat(role, state)
-
-    def format_ranges(self, tree, start=0, end=None, format_context=None):
-        """Yield FormatRange(pos, end, format) three-tuples.
-
-        The ``format`` is the value returned by Theme.textformat() for the
-        token's action, converted by our factory (and cached of course).
-        Ranges with a TextFormat for which our factory returns None are
-        skipped.
-
-        """
-        def stream():
-            cache = self._themes.get
-            default_fcache = fc = cache(None)
-            format_context and format_context.start(fc)
-            curlang = None
-
-            # Modifies curlang and current format cache fc if lang changes
-            def check_lang(lang):
-                nonlocal curlang, fc
-                if lang is not curlang:
-                    curlang = lang
-                    nfc = cache(lang, default_fcache)
-                    if nfc is not fc:
-                        fc = nfc
-                        if format_context:
-                            format_context.switch(fc)
-
-            prev_end = start
-            for context, slice_ in tree.context_slices(start, end):
-                check_lang(context.lexicon.language)
-                n = context[slice_]
-                stack = []
-                i = 0
-                while True:
-                    for i in range(i, len(n)):
-                        m = n[i]
-                        if m.is_token:
-                            f = fc.format(m.action)
-                            if f is not None:
-                                if fc.base is not None and m.pos > prev_end:
-                                    yield prev_end, m.pos, fc.base
-                                yield m.pos, m.end, f
-                                prev_end = m.end
-                        else:
-                            stack.append(i)
-                            i = 0
-                            n = m
-                            check_lang(n.lexicon.language)
-                            break
-                    else:
-                        if stack:
-                            n = n.parent
-                            check_lang(n.lexicon.language)
-                            i = stack.pop() + 1
-                        else:
-                            break
-            if fc.base is not None and end is not None and prev_end < end:
-                yield prev_end, end, fc.base
-            format_context and format_context.done()
-
-        ranges = util.merge_adjacent(stream(), FormatRange)
-        # make sure first and last range don't stick out
-        if start > 0 or end is not None:
-            for r in ranges:
-                if r.pos < start:
-                    r = FormatRange(start, r.end, r.textformat)
-                for r1 in ranges:
-                    yield r
-                    r = r1
-                if end is not None and r.end > end:
-                    r = FormatRange(r.pos, end, r.textformat)
-                yield r
-        else:
-            yield from ranges
 
