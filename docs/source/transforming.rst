@@ -142,7 +142,8 @@ found in :file:`tests/calc.py`:
 
 Test it with::
 
-    >>> from parce.transform import *
+    >>> from parce.transform import transform_text
+    >>> from tests.calc import Calculator   # (from source directory)
     >>> transform_text(Calculator.root, " 1 + 1 ")
     2
     >>> transform_text(Calculator.root, " 1 + 2 * 3 ")
