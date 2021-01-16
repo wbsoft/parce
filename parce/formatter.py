@@ -18,8 +18,9 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 """
-The Formatter uses a Theme to highlight text according to the token's
-``action`` attribute. The action is mapped to a TextFormat by the theme.
+The Formatter uses a :mod:`Theme <parce.theme>` to highlight text
+according to a token's :mod:`~parce.action` attribute. The action is mapped to
+a :class:`~parce.theme.TextFormat` by the theme.
 
 It is possible to add more Themes to a formatter, coupled to a certain
 language, so that the formatter can switch to that theme for embedded pieces of
@@ -28,6 +29,10 @@ text of that language.
 All kinds of text formatting and/or highlighting can be implemented by using
 or inheriting of Formatter. If you need to convert the TextFormats from the
 theme to something else, you can provide a factory to Formatter to do that.
+
+There is also a :class:`SimpleFormatter` which just churns out the standard
+action of each token as a HTML class string, for example mapping
+``Literal.Number`` to ``"literal number"``, without needing a Theme.
 
 If you need more special behaviour, you can inherit from Formatter and
 reimplement ``format_ranges()``, to do other things or to use a different

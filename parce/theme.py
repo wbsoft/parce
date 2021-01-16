@@ -29,22 +29,23 @@ By default, the properties are read from a normal CSS (Cascading StyleSheets)
 file and presented to the user of the Theme module through TextFormat objects,
 although other storage backends could be devised.
 
-A Theme provides a ``textformat()`` for standard actions, and for three
-general situations: ``window()``, which denotes an editor window (or an
-encompassing DIV or PRE block in HTML), ``selection()``, which is used for
-selected text, and ``currentline()``, which can highlight the current line
-the cursor is in in an editor.
+A Theme provides a ``textformat()`` for standard actions, and a
+``baseformat()`` for general roles, such as ``"window"``, which denotes an
+editor window (or an encompassing DIV or PRE block in HTML), ``"selection"``,
+which is used for selected text, ``"current-line"``, which can highlight the
+current line the cursor is in in an editor.
 
-From the TextFormat returned by ``selection()`` and ``currentline()``, in
+From the TextFormat returned by ``baseformat("selection")`` and ``"currentline"``, in
 most cases only the background color will be used.
 
-The methods ``window()``, ``selection()`` and ``currentline()`` also accept a
-state argument, which can be "default", "focus" or "disabled". A theme always
-supports the default state, but can provide separate colors for the "focus"
-or "disabled" state, which can be used to change the basic formatting in an
+For the roles ``"window"``, ``"selection"`` and ``"current-line"``, the
+``baseformat()`` method also accepts a state argument, which can be
+``"default"``, ``"focus"`` or ``"disabled"``. A theme always supports the
+``"default"`` state, but can provide separate colors for the ``"focus"`` or
+``"disabled"`` state, which can be used to change the basic formatting in an
 editor window based on its state (in keyboard focus or disabled). If a theme
-does not support the "disabled" and/or "focus" state, the default scheme is
-used.
+does not support the ``"disabled"`` and/or ``"focus"`` state, the default
+scheme is used.
 
 In the ``themes/`` directory are bundled CSS themes that can be used.
 Instantiate a bundled theme with::
