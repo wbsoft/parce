@@ -48,7 +48,40 @@ from . import util
 
 
 FormatCache = collections.namedtuple("FormatCache", "theme base format baseformat")
+"""FormatCache is a named tuple encapsulating formatting logic.
+
+At least two attributes must be defined:
+
+``format(action)``
+    is called to return formatting information for the specified standard
+    action.
+``baseformat(role, state)``
+    is called to return general formatting information from a Theme, converted
+    using the factory that was given to the formatter. See the
+    :meth:`~parce.theme.Theme.baseformat` method of :class:`~parce.theme.Theme`.
+
+Both callables may return None. The two other attributes are:
+
+``theme``
+    a reference to the format cache's Theme object.
+
+``base``
+    the result of ``baseformat("window", "default")``, indicating the general
+    format of the text window (color, font, background color, etc). See the
+    :meth:`~parce.theme.Theme.baseformat` method of :class:`~parce.theme.Theme`.
+
+"""
+
 FormatRange = collections.namedtuple("FormatRange", "pos end textformat")
+"""A named tuple denoting a text range from ``pos`` to ``end`` that should be
+formatted with ``textformat``.
+
+The textformat can be any object, that depends on the factory function that is
+used to convert a standard action or (when using a :class:`~parce.theme.Theme`)
+a :class:`~parce.theme.TextFormat` to something you can use for the output
+format you want to create.
+
+"""
 
 
 class AbstractFormatter:
@@ -57,8 +90,8 @@ class AbstractFormatter:
     def format_caches(self):
         """Should return a dictionary mapping language to FormatCache.
 
-        A FormatCache normally encapsulates a theme. The key None should be
-        present and denotes the default theme. Other keys should be
+        A :class:`FormatCache` normally encapsulates a theme. The key None
+        should be present and denotes the default theme. Other keys should be
         :class:`~parce.language.Language` subclasses, and their theme is used
         for tokens that originate from that language.
 
@@ -195,7 +228,12 @@ class Formatter(AbstractFormatter):
             self.add_theme(None, theme)
 
     def format_caches(self):
-        """Reimplemented to return the format caches added by add_theme()."""
+        """Reimplemented to return the format caches added by add_theme().
+
+        The format cache caches formatting information from the theme, to
+        enable fast formatting.
+
+        """
         return self._themes
 
     def add_theme(self, language, theme, add_baseformat=False):
