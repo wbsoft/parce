@@ -168,7 +168,7 @@ class Formatter(AbstractFormatter):
     And here is an example using a factory that converts the textformat to a
     dictionary of css properties, e.g. to use for inline CSS highlighting. Note
     that when the factory returns None, a range is skipped, so we return None
-    incase a dictionary ends up empty::
+    in case a dictionary ends up empty::
 
         >>> factory = lambda tf: tf.css_properties() or None
         >>> f = Formatter(theme_by_name('default'), factory)
@@ -265,6 +265,10 @@ class SimpleFormatter(AbstractFormatter):
 
     """
     def format_caches(self):
+        """Reimplemented to return a FormatCache with a factory that concerts
+        an action to a css class string.
+
+        """
         from parce.theme import css_class
         def baseformat(role, state):
             return None
