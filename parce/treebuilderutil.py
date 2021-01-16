@@ -145,10 +145,10 @@ def get_prepared_lexer(tree, text, start):
             # go back further if this is the first token in a context whose
             # lexicon has consume == True
             if start_token.is_first() and start_token.parent.lexicon.consume:
-                start_token = start_token.previous_token()
-                if not start_token:
-                    return
-                continue
+                prev_token = start_token.previous_token()
+                if prev_token:
+                    start_token = prev_token
+                    continue
             break
         start = start_token.pos if start_token.previous_token() else 0
         lexer = get_lexer(start_token) if start else Lexer([tree.lexicon])
@@ -174,8 +174,14 @@ def events_with_tokens(start_token, last_token):
     Events are yielded together with token groups (or single tokens in a
     1-length tuple).
 
-    This can be used to compare an existing token structure with events
-    originating from a lexer.
+    This function is used by :func:`get_prepared_lexer` to compare an existing
+    token structure with events originating from a lexer.
+
+    The start_token must be the first of a group, if it is a GroupToken.
+    Additionally, it should not be the first token in a context whose lexicon
+    has the ``consume`` flag set. But if the start_token is the very first
+    token in a tree, it does not matter if it is not in the root context, this
+    case is handled gracefully.
 
     """
     context, start_trail, end_trail = start_token.common_ancestor_with_trail(last_token)
@@ -218,6 +224,14 @@ def events_with_tokens(start_token, last_token):
                         n = n.parent if stack else nodes # slice we started with
                     else:
                         break
+
+        if start_token.is_first() and not start_token.parent.is_root() \
+                and not start_token.previous_token():
+            # start token is the very first token, but it is not in the root
+            # context. So it is a child of a lexicon with consume, or a context
+            # that was jumped to via a default target. Build a target from root.
+            lexicons = [p.lexicon for p in start_token.ancestors()]
+            push(*lexicons[-2::-1])  # reversed, not root
 
         for context, slice_ in context.slices(start_trail, end_trail, target):
             yield from events(context[slice_])
