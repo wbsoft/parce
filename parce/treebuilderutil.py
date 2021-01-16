@@ -259,10 +259,10 @@ def find_token_before(node, pos):
     """A version of :meth:`~parce.tree.Context.find_token_before` that can handle
     empty contexts.
 
-    The new tree built inside
-    :meth:`~parce.treebuilder.BasicTreeBuilder.build_new` can have an empty
-    context at the beginning and/or the end. Returns None if there is no token
-    left from pos.
+    The new tree built inside :meth:`TreeBuilder.build_new_tree()
+    <parce.treebuilder.TreeBuilder.build_new_tree>` can have an empty context
+    at the beginning and/or the end. Returns None if there is no token left
+    from pos.
 
     """
     while True:
