@@ -156,14 +156,16 @@ class Formatter(AbstractFormatter):
         >>> tree = root(find("css"), "h1 { color: red; }")
         >>> f = Formatter(theme_by_name('default'))
         >>> list(f.format_ranges(tree))
-        [FormatRange(pos=0, end=2, textformat=<TextFormat color=Color(r=0, g=0,
-        b=139, a=1.0), font_weight='bold'>), FormatRange(pos=3, end=4, textformat
-        =<TextFormat font_weight='bold'>), FormatRange(pos=5, end=10, textformat=
-        <TextFormat color=Color(r=65, g=105, b=225, a=1.0), font_weight='bold'>),
-        FormatRange(pos=10, end=11, textformat=<TextFormat >), FormatRange(pos=12
-        , end=15, textformat=<TextFormat color=Color(r=46, g=139, b=87, a=1.0)>),
-        FormatRange(pos=15, end=16, textformat=<TextFormat >), FormatRange(pos=17
-        , end=18, textformat=<TextFormat font_weight='bold'>)]
+        [FormatRange(pos=0, end=2, textformat=<TextFormat color=Color(r=0, g=0,b=
+        139, a=1.0), font_weight='bold'>), FormatRange(pos=3, end=4, textformat=<
+        TextFormat font_weight='bold'>), FormatRange(pos=5, end=10, textformat=<T
+        extFormat color=Color(r=65, g=105, b=225, a=1.0), font_weight='bold'>), F
+        ormatRange(pos=12, end=15, textformat=<TextFormat color=Color(r=46, g=139
+        , b=87, a=1.0)>), FormatRange(pos=15, end=16, textformat=<TextFormat >),
+        FormatRange(pos=17, end=18, textformat=<TextFormat font_weight='bold'>)]
+
+    The default factory just yields the TextFormat right from the theme, unless
+    the format is empty, evaluating to None.
 
     And here is an example using a factory that converts the textformat to a
     dictionary of css properties, e.g. to use for inline CSS highlighting. Note
