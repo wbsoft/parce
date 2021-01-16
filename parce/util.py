@@ -453,6 +453,34 @@ def cached_property(func):
     return property(cached_method(func))
 
 
+def fix_boundaries(stream, start, end):
+    """Yield all items from the stream of tuples.
+
+    The first two items of each tuple are regarded as pos and end. This
+    function adjusts the pos of the first item and the end of the last item so
+    that they do not stick out of the range start..end. If the pos of the first
+    item is below start, it is set to start; if the end of the last item is
+    beyond end, it is set to end.
+
+    If start == 0, the first item will never be adjusted; if end is None, the
+    last item will not be adjusted.
+
+    """
+    if start == 0 and end is None:
+        yield from stream   # do nothing
+    else:
+        stream = iter(stream)
+        for i in stream:
+            if i[0] < start:
+                i = type(i)((start, i[1], *i[2:]))
+            for j in stream:
+                yield i
+                i = j
+            if end is not None and i[1] > end:
+                i = type(i)((i[0], end, *i[2:]))
+            yield i
+
+
 def merge_adjacent(stream, factory=tuple):
     """Yield items from a stream of tuples.
 
