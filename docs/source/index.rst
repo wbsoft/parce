@@ -18,8 +18,12 @@ Last update: |today|.
    building.rst
    doc.rst
    transforming.rst
-   out.rst
 
+.. toctree::
+   :maxdepth: 1
+   :caption: Appendix:
+
+   out.rst
    langs.rst
    stdactions.rst
    modoverview.rst

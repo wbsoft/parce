@@ -19,5 +19,5 @@
 
 
 """
-Output formatters for different formats.
+This module contains output formatters for different formats.
 """
