@@ -1,7 +1,8 @@
 ChangeLog
 =========
 
-current: parce-0.16.0
+
+2021-01-17: parce-0.16.0
 
 - redesigned theme and formatter module
 - HtmlFormatter is now usable and documented
