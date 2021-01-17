@@ -199,7 +199,7 @@ class AbstractFormatter:
         if end is None:
             end = len(text)
         if end > prev_end:
-            yield text[prev_end:], None
+            yield text[prev_end:end], None
 
     def format_document(self, cursor, format_context=None):
         """Yield all text in the cursor's selection in tuples(text, format).
