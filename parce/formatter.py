@@ -52,12 +52,12 @@ import weakref
 from . import util
 
 
-FormatCache = collections.namedtuple("FormatCache", "theme base format baseformat")
+FormatCache = collections.namedtuple("FormatCache", "theme base textformat baseformat")
 """FormatCache is a named tuple encapsulating formatting logic.
 
 At least two attributes must be defined:
 
-``format(action)``
+``textformat(action)``
     is called to return formatting information for the specified standard
     action.
 ``baseformat(role, state)``
@@ -123,7 +123,7 @@ class AbstractFormatter:
                 fc = format_caches.get(None)
                 format_context and format_context.start(fc)
                 for t in tree.tokens_range(start, end):
-                    f = fc.format(t.action)
+                    f = fc.textformat(t.action)
                     if f is not None:
                         yield t.pos, t.end, f
                 format_context and format_context.done()
@@ -156,7 +156,7 @@ class AbstractFormatter:
                         for i in range(i, len(n)):
                             m = n[i]
                             if m.is_token:
-                                f = fc.format(m.action)
+                                f = fc.textformat(m.action)
                                 if f is not None:
                                     if fc.base is not None and m.pos > prev_end:
                                         yield prev_end, m.pos, fc.base
