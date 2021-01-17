@@ -182,6 +182,51 @@ class AbstractFormatter:
         return util.merge_adjacent(
             util.fix_boundaries(stream(), start, end), FormatRange)
 
+    def format_text(self, text, tree, start=0, end=None, format_context=None):
+        """Yield all text in tuples(text, format).
+
+        For unparsed pieces of text, or pieces that had no format mapped to the
+        action, the format is None. The FormatContext, if given, is passed on
+        to :meth:`format_ranges`.
+
+        """
+        prev_end = start
+        for r in self.format_ranges(tree, start, end, format_context):
+            if r.pos > prev_end:
+                yield text[prev_end:r.pos], None
+            yield text[r.pos:r.end], r.textformat
+            prev_end = r.end
+        if end is None:
+            end = len(text)
+        if end > prev_end:
+            yield text[prev_end:], None
+
+    def format_document(self, cursor, format_context=None):
+        """Yield all text in the cursor's selection in tuples(text, format).
+
+        For unparsed pieces of text, or pieces that had no format mapped to the
+        action, the format is None.The FormatContext, if given, is passed on
+        to :meth:`format_ranges`. For example::
+
+            >>> from parce import Cursor, Document, theme_by_name
+            >>> from parce.lang.css import Css
+            >>> from parce.formatter import Formatter
+            >>> factory = lambda tf: tf.css_properties() or None
+            >>> f = Formatter(theme_by_name(), factory)
+            >>> d = Document(Css.root, "h1 { color: red; }")
+            >>> c = Cursor(d, 0, None)  # select all
+            >>> list(f.format_document(c))
+            [('h1', {'color': '#00008b', 'font-weight': 'bold'}), (' ', None), ('
+            {', {'font-weight': 'bold'}), (' ', None), ('color', {'color': '#4169
+            e1', 'font-weight': 'bold'}), (': ', None), ('red', {'color': '#2e8b5
+            7'}), ('; ', None), ('}', {'font-weight': 'bold'})]
+
+        """
+        if cursor.has_selection():
+            doc = cursor.document()
+            yield from self.format_text(
+                doc.text(), doc.get_root(True), cursor.pos, cursor.end, format_context)
+
 
 class Formatter(AbstractFormatter):
     """A Formatter is used to format or highlight text according to a Theme.
