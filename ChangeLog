@@ -1,9 +1,17 @@
 ChangeLog
 =========
 
+current: parce-0.16.0
+
+- redesigned theme and formatter module
+- HtmlFormatter is now usable and documented
+- fixed first ±10 tokens marked as updated even if they didn't change
+- added Tcl and DocBook languages
+- many documentation updates and improvements
+
+
 2021-01-12: parce-0.15.0
 
-- many documentation updates and improvements
 - documentation switched to Furo theme, looks better on small devices
 - the rule item MATCH(n) has changed to MATCH[n], which is more uniform
 - the rule item char() has been renamed to chars()
