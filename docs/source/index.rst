@@ -18,6 +18,7 @@ Last update: |today|.
    building.rst
    doc.rst
    transforming.rst
+   out.rst
 
    langs.rst
    stdactions.rst
