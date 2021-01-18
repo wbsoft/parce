@@ -57,7 +57,8 @@ from .standardaction import StandardAction
 _Unparsed = StandardAction("_Unparsed")
 
 
-FormatCache = collections.namedtuple("FormatCache", "theme base textformat baseformat")
+FormatCache = collections.namedtuple("FormatCache",
+    "theme base textformat baseformat unparsed")
 """FormatCache is a named tuple encapsulating formatting logic.
 
 At least two attributes must be defined:
@@ -70,7 +71,8 @@ At least two attributes must be defined:
     using the factory that was given to the formatter. See the
     :meth:`~parce.theme.Theme.baseformat` method of :class:`~parce.theme.Theme`.
 
-Both callables may return None. The two other attributes are:
+Both callables may return None. The three other attributes can be None; they
+are:
 
 ``theme``
     a reference to the format cache's Theme object.
@@ -79,6 +81,12 @@ Both callables may return None. The two other attributes are:
     the result of ``baseformat("window", "default")``, indicating the general
     format of the text window (color, font, background color, etc). See the
     :meth:`~parce.theme.Theme.baseformat` method of :class:`~parce.theme.Theme`.
+
+``unparsed``
+    the result of ``textformat(StandardAction("_Unparsed"))``, which denotes
+    the text format to use for unparsed text. A Theme can define that by putting
+    properties in the ``.parce ._unparsed`` class. By default unparsed text is
+    not formatted.
 
 """
 
@@ -121,11 +129,10 @@ class AbstractFormatter:
         skipped.
 
         """
-        format_caches = self.format_caches()
-
-        fc = format_caches.get(None)    # the default FormatCache
-
-        unparsed = fc.textformat(_Unparsed)
+        format_caches = self.format_caches() # caches for all added themes
+        cache = format_caches.get            # quick access
+        fc = default_fcache = cache(None)    # the default FormatCache
+        unparsed = fc.unparsed               # format for unparsed text if not None
 
         if len(format_caches) == 1:
             # language will never be switched, no need to follow language
@@ -134,9 +141,7 @@ class AbstractFormatter:
         else:
             # language can potentially switch, follow it
             def tokens():
-                cache = self.format_caches.get
                 nonlocal fc
-                default_fcache = fc
                 curlang = None
 
                 # Modifies curlang and current format cache fc if lang changes
@@ -189,7 +194,6 @@ class AbstractFormatter:
                         yield t.pos, t.end, f
                 if end is not None and prev_end < end:
                     yield prev_end, end, unparsed
-
         else:
             # yield fc.base (if defined) between tokens
             def stream():
@@ -331,7 +335,6 @@ class Formatter(AbstractFormatter):
             @util.cached_func
             def factory(action):
                 return self._factory(base_ + theme.textformat(action))
-
         else:
             base = None
             @util.cached_func
@@ -342,7 +345,9 @@ class Formatter(AbstractFormatter):
         def baseformat(role, state):
             return self._factory(theme.baseformat(role, state))
 
-        self.format_caches()[language] = FormatCache(theme, base, factory, baseformat)
+        unparsed = self._factory(theme.textformat(_Unparsed))
+        self.format_caches()[language] = \
+            FormatCache(theme, base, factory, baseformat, unparsed)
 
     def get_theme(self, language=None):
         """Return the theme for the specified language.
@@ -387,9 +392,8 @@ class SimpleFormatter(AbstractFormatter):
 
         """
         from parce.theme import css_class
-        factory = lambda action: None if action is _Unparsed else css_class(action)
         baseformat = lambda role, state: None
-        return {None: FormatCache(None, None, factory, baseformat)}
+        return {None: FormatCache(None, None, css_class, baseformat, None)}
 
 
 class FormatContext:
