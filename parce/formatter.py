@@ -248,10 +248,14 @@ class AbstractFormatter:
             >>> d = Document(Css.root, "h1 { color: red; }")
             >>> c = Cursor(d, 0, None)  # select all
             >>> list(f.format_document(c))
-            [('h1', {'color': '#00008b', 'font-weight': 'bold'}), (' ', None), ('
-            {', {'font-weight': 'bold'}), (' ', None), ('color', {'color': '#4169
-            e1', 'font-weight': 'bold'}), (': ', None), ('red', {'color': '#2e8b5
-            7'}), ('; ', None), ('}', {'font-weight': 'bold'})]
+            [('h1', {'color': '#00008b', 'font-weight': 'bold'}),
+             (' ', None),
+             ('{', {'font-weight': 'bold'}),
+             (' ', None),
+             ('color', {'color': '#4169e1', 'font-weight': 'bold'}),
+             (': ', None), ('red', {'color': '#2e8b57'}),
+             ('; ', None),
+             ('}', {'font-weight': 'bold'})]
 
         """
         if cursor.has_selection():
@@ -271,13 +275,11 @@ class Formatter(AbstractFormatter):
         >>> tree = root(find("css"), "h1 { color: red; }")
         >>> f = Formatter(theme_by_name('default'))
         >>> list(f.format_ranges(tree))
-        [FormatRange(pos=0, end=2, textformat=<TextFormat color=Color(r=0, g=0,b=
-        139, a=1.0), font_weight='bold'>), FormatRange(pos=3, end=4, textformat=<
-        TextFormat font_weight='bold'>), FormatRange(pos=5, end=10, textformat=<T
-        extFormat color=Color(r=65, g=105, b=225, a=1.0), font_weight='bold'>), F
-        ormatRange(pos=12, end=15, textformat=<TextFormat color=Color(r=46, g=139
-        , b=87, a=1.0)>), FormatRange(pos=15, end=16, textformat=<TextFormat >),
-        FormatRange(pos=17, end=18, textformat=<TextFormat font_weight='bold'>)]
+        [FormatRange(pos=0, end=2, textformat=<TextFormat color=Color(r=0, g=0,b=139, a=1.0), font_weight='bold'>),
+         FormatRange(pos=3, end=4, textformat=<TextFormat font_weight='bold'>),
+         FormatRange(pos=5, end=10, textformat=<TextFormat color=Color(r=65, g=105, b=225, a=1.0), font_weight='bold'>),
+         FormatRange(pos=12, end=15, textformat=<TextFormat color=Color(r=46, g=139, b=87, a=1.0)>),
+         FormatRange(pos=17, end=18, textformat=<TextFormat font_weight='bold'>)]
 
     The default factory just yields the TextFormat right from the theme, unless
     the format is empty, evaluating to None.
@@ -290,11 +292,11 @@ class Formatter(AbstractFormatter):
         >>> factory = lambda tf: tf.css_properties() or None
         >>> f = Formatter(theme_by_name('default'), factory)
         >>> list(f.format_ranges(tree))
-        [FormatRange(pos=0, end=2, textformat={'color': '#00008b', 'font-weight':
-        'bold'}), FormatRange(pos=3, end=4, textformat={'font-weight': 'bold'}),
-        FormatRange(pos=5, end=10, textformat={'color': '#4169e1', 'font-weight':
-        'bold'}), FormatRange(pos=12, end=15, textformat={'color': '#2e8b57'}),
-        FormatRange(pos=17, end=18, textformat={'font-weight': 'bold'})]
+        [FormatRange(pos=0, end=2, textformat={'color': '#00008b', 'font-weight': 'bold'}),
+         FormatRange(pos=3, end=4, textformat={'font-weight': 'bold'}),
+         FormatRange(pos=5, end=10, textformat={'color': '#4169e1', 'font-weight': 'bold'}),
+         FormatRange(pos=12, end=15, textformat={'color': '#2e8b57'}),
+         FormatRange(pos=17, end=18, textformat={'font-weight': 'bold'})]
 
     In addition to the default theme (which is required), other themes can be
     added coupled to a specific language. This allows the formatter to switch
