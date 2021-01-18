@@ -43,8 +43,7 @@ RE_JS_IDENT_TOKEN = _I_ = fr'(?:[{RE_JS_IDENT_STARTCHAR}]|{RE_JS_ESCAPE_CHAR})' 
                 fr'(?:[{RE_JS_IDENT_CHAR}]+|{RE_JS_ESCAPE_CHAR})*'
 
 RE_JS_DECIMAL_NUMBER = r'\d+(?:_\d+)*n|(?:\.\d+(?:_\d+)*|\d+(?:_\d+)*(?:\.(?:\d+(?:_\d+)*)?)?)(?:[eE][-+]\d+(?:_\d+)*)?'
-RE_JS_REGEXP = r'/[^*/\n](?:\\[\[\\^$.|?*+()]|\[(?:\\[\\\[\]]|[^\]])+\]|[^/\[\n])*/[gimsuy]?'
-
+RE_JS_REGEXP = r'/(?:\\.|[^\\\n/\[]|\[(?:\\.|[^\\\n\]])*\])+/[gimsuy]?'
 
 class JavaScript(Language):
     @lexicon
