@@ -453,6 +453,29 @@ def cached_property(func):
     return property(cached_method(func))
 
 
+def cached_func(func):
+    """Wrap a normal function and caches the return value.
+
+    The function's argument tuple should be hashable; keyword arguments are not
+    supported. The cache is thread-safe.
+
+    """
+    _cache = {}
+    _lock =threading.Lock()
+    @functools.wraps(func)
+    def wrapper(*args):
+        try:
+            return _cache[args]
+        except KeyError:
+            with _lock:
+                try:
+                    return _cache[args]
+                except KeyError:
+                    v = _cache[args] = func(*args)
+                    return v
+    return wrapper
+
+
 def fix_boundaries(stream, start, end):
     """Yield all items from the stream of tuples.
 

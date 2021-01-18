@@ -325,21 +325,20 @@ class Formatter(AbstractFormatter):
         formats.
 
         """
-        cache = functools.lru_cache(maxsize=None)
         if add_baseformat:
             base_ = theme.baseformat()
             base = self._factory(base_)
-            @cache
+            @util.cached_func
             def factory(action):
                 return self._factory(base_ + theme.textformat(action))
 
         else:
             base = None
-            @cache
+            @util.cached_func
             def factory(action):
                 return self._factory(theme.textformat(action))
 
-        @cache
+        @util.cached_func
         def baseformat(role, state):
             return self._factory(theme.baseformat(role, state))
 
