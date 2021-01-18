@@ -23,9 +23,9 @@ Last update: |today|.
    :maxdepth: 1
    :caption: Appendix:
 
-   out.rst
-   langs.rst
    stdactions.rst
+   langs.rst
+   out.rst
    modoverview.rst
 
 .. toctree::
