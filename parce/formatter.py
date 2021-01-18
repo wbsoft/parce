@@ -388,9 +388,9 @@ class SimpleFormatter(AbstractFormatter):
 
         """
         from parce.theme import css_class
-        def baseformat(role, state):
-            return None
-        return {None: FormatCache(None, None, css_class, baseformat)}
+        factory = lambda action: None if action is _Unparsed else css_class(action)
+        baseformat = lambda role, state: None
+        return {None: FormatCache(None, None, factory, baseformat)}
 
 
 class FormatContext:
