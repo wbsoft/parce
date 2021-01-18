@@ -51,6 +51,11 @@ import weakref
 
 from . import util
 
+# if a theme provides an "_unparsed" class, unparsed text is
+# highlighted by the fomatter
+from .standardaction import StandardAction
+_Unparsed = StandardAction("_Unparsed")
+
 
 FormatCache = collections.namedtuple("FormatCache", "theme base textformat baseformat")
 """FormatCache is a named tuple encapsulating formatting logic.
@@ -117,22 +122,21 @@ class AbstractFormatter:
 
         """
         format_caches = self.format_caches()
+
+        fc = format_caches.get(None)    # the default FormatCache
+
+        unparsed = fc.textformat(_Unparsed)
+
         if len(format_caches) == 1:
             # language will never be switched, no need to follow language
-            def stream():
-                fc = format_caches.get(None)
-                format_context and format_context.start(fc)
-                for t in tree.tokens_range(start, end):
-                    f = fc.textformat(t.action)
-                    if f is not None:
-                        yield t.pos, t.end, f
-                format_context and format_context.done()
+            def tokens():
+                return tree.tokens_range(start, end)
         else:
             # language can potentially switch, follow it
-            def stream():
+            def tokens():
                 cache = self.format_caches.get
-                default_fcache = fc = cache(None)
-                format_context and format_context.start(fc)
+                nonlocal fc
+                default_fcache = fc
                 curlang = None
 
                 # Modifies curlang and current format cache fc if lang changes
@@ -146,7 +150,6 @@ class AbstractFormatter:
                             if format_context:
                                 format_context.switch(fc)
 
-                prev_end = start
                 for context, slice_ in tree.context_slices(start, end):
                     check_lang(context.lexicon.language)
                     n = context[slice_]
@@ -155,19 +158,13 @@ class AbstractFormatter:
                     while True:
                         for i in range(i, len(n)):
                             m = n[i]
-                            if m.is_token:
-                                f = fc.textformat(m.action)
-                                if f is not None:
-                                    if fc.base is not None and m.pos > prev_end:
-                                        yield prev_end, m.pos, fc.base
-                                    yield m.pos, m.end, f
-                                    prev_end = m.end
-                            else:
+                            if m.is_context:
                                 stack.append(i)
                                 i = 0
                                 n = m
                                 check_lang(n.lexicon.language)
                                 break
+                            yield m
                         else:
                             if stack:
                                 n = n.parent
@@ -175,12 +172,43 @@ class AbstractFormatter:
                                 i = stack.pop() + 1
                             else:
                                 break
+
+        if unparsed is not None:
+            # Yield the unparsed format between tokens
+            def stream():
+                nonlocal fc
+                prev_end = start
+                for t in tokens():
+                    if t.pos > prev_end:
+                        yield prev_end, t.pos, unparsed
+                    prev_end = t.end
+                    f = fc.textformat(t.action)
+                    if f is None:
+                        f = fc.base
+                    if f is not None:
+                        yield t.pos, t.end, f
+                if end is not None and prev_end < end:
+                    yield prev_end, end, unparsed
+
+        else:
+            # yield fc.base (if defined) between tokens
+            def stream():
+                nonlocal fc
+                prev_end = start
+                for t in tokens():
+                    f = fc.textformat(t.action)
+                    if f is not None:
+                        if fc.base is not None and t.pos > prev_end:
+                            yield prev_end, t.pos, fc.base
+                        yield t.pos, t.end, f
+                        prev_end = t.end
                 if fc.base is not None and end is not None and prev_end < end:
                     yield prev_end, end, fc.base
-                format_context and format_context.done()
 
-        return util.merge_adjacent(
-            util.fix_boundaries(stream(), start, end), FormatRange)
+        format_context and format_context.start(fc)
+        yield from util.merge_adjacent(util.fix_boundaries(
+                                          stream(), start, end), FormatRange)
+        format_context and format_context.done()
 
     def format_text(self, text, tree, start=0, end=None, format_context=None):
         """Yield all text in tuples(text, format).

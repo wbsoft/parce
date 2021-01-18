@@ -1,0 +1,25 @@
+/*
+ * "Debug" CSS theme for parce.
+ *
+ * Name "debug"
+ *
+ * This theme highlights unparsed regions and tokens with Invalid action.
+ * The class "_unparsed" is handled specially by Formatter.
+ */
+
+
+.parce {
+    color: black;
+    background: white;
+    font: monospace;
+}
+
+.parce ._unparsed {
+    font-weight: bold;
+    color: red;
+    background: mistyrose;
+}
+
+.parce .invalid {
+    text-decoration: underline red solid;
+}
