@@ -518,10 +518,7 @@ class AbstractElement:
 
     def match(self, prelude):
         """Match with a compound selector expression (``prelude`` part of Rule)."""
-        for selectors in prelude:
-            if self.match_selectors(selectors):
-                return True
-        return False
+        return any(self.match_selectors(selectors) for selectors in prelude)
 
     def match_selectors(self, selectors):
         """Match with a list of selectors with operators in between."""
