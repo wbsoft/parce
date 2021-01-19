@@ -65,7 +65,7 @@ class JavaScript(Language):
         yield fr'(\.)\s*({_I_})\b(?:\s*([\(\[]))?', bygroup(Delimiter,
                 dselect(MATCH[3], {'(': Name.Method}, Name.Attribute), Delimiter), \
             dselect(MATCH[3], {'(': cls.call, '[': cls.index})
-        yield fr'({_I_})\b(?:\s*([\(\[]))?', bygroup(
+        yield fr'({_I_})(?:\s*([\(\[]))?', bygroup(
                 dselect(MATCH[2], {'(': Name.Function}, Name.Variable), Delimiter), \
             dselect(MATCH[2], {'(': cls.call, '[': cls.index})
         yield fr'{_I_}\b', select(call(str.isupper, TEXT), Name.Variable, Name.Class)
