@@ -71,10 +71,10 @@ Now we call the formatter to format the selected part of the document::
       <body>
         <div class="parce">
     <pre style="white-space: pre; background-color: #000000; color: #fffff0; fon
-    t-family: monospace; font-size: 12pt;">&lt;<span style="color: #87cefa; font
-    -weight: bold;">xml</span> <span style="color: #1e90ff;">attr</span>=<span s
-    tyle="color: #cd5c5c;">"value"</span>&gt;text&lt;/<span style="color: #87cef
-    a; font-weight: bold;">xml</span>&gt;
+    t-family: monospace;">&lt;<span style="color: #87cefa; font-weight: bold;">x
+    ml</span> <span style="color: #1e90ff;">attr</span>=<span style="color: #cd5
+    c5c;">"value"</span>&gt;text&lt;/<span style="color: #87cefa; font-weight: b
+    old;">xml</span>&gt;
     </pre>
         </div>
       </body>
@@ -250,10 +250,10 @@ add them to the formatter with ``add_baseformat = True``::
     <pre style="white-space: pre; background-color: #fffff0; color: #000000; font-family: monospace;">
     &lt;<span style="color: #00008b; font-weight: bold;">html</span>&gt;
     &lt;<span style="color: #00008b; font-weight: bold;">head</span>&gt;
-    &lt;<span style="color: #00008b; font-weight: bold;">style</span> <span style="color: #1e90ff;">type</span>=<span style="color: #b22222;">"text/css"</span>&gt;<span style="background-color: #000000; color: #fffff0; font-family: monospace; font-size: 12pt;">
-    </span><span style="background-color: #000000; color: #87cefa; font-family: monospace; font-size: 12pt; font-weight: bold;">h2</span><span style="background-color: #000000; color: #fffff0; font-family: monospace; font-size: 12pt;"> </span><span style="background-color: #000000; color: #fffff0; font-family: monospace; font-size: 12pt; font-weight: bold;">{</span><span style="background-color: #000000; color: #fffff0; font-family: monospace; font-size: 12pt;">
-        </span><span style="background-color: #000000; color: #4169e1; font-family: monospace; font-size: 12pt; font-weight: bold;">color</span><span style="background-color: #000000; color: #fffff0; font-family: monospace; font-size: 12pt;">: </span><span style="background-color: #000000; color: #2e8b57; font-family: monospace; font-size: 12pt;">green</span><span style="background-color: #000000; color: #fffff0; font-family: monospace; font-size: 12pt;">;
-    </span><span style="background-color: #000000; color: #fffff0; font-family: monospace; font-size: 12pt; font-weight: bold;">}</span>
+    &lt;<span style="color: #00008b; font-weight: bold;">style</span> <span style="color: #1e90ff;">type</span>=<span style="color: #b22222;">"text/css"</span>&gt;<span style="background-color: #000000; color: #fffff0; font-family: monospace;">
+    </span><span style="background-color: #000000; color: #87cefa; font-family: monospace; font-weight: bold;">h2</span><span style="background-color: #000000; color: #fffff0; font-family: monospace;"> </span><span style="background-color: #000000; color: #fffff0; font-family: monospace; font-weight: bold;">{</span><span style="background-color: #000000; color: #fffff0; font-family: monospace;">
+        </span><span style="background-color: #000000; color: #4169e1; font-family: monospace; font-weight: bold;">color</span><span style="background-color: #000000; color: #fffff0; font-family: monospace;">: </span><span style="background-color: #000000; color: #2e8b57; font-family: monospace;">green</span><span style="background-color: #000000; color: #fffff0; font-family: monospace;">;
+    </span><span style="background-color: #000000; color: #fffff0; font-family: monospace; font-weight: bold;">}</span>
     &lt;/<span style="color: #00008b; font-weight: bold;">style</span>&gt;
     &lt;/<span style="color: #00008b; font-weight: bold;">head</span>&gt;
     &lt;/<span style="color: #00008b; font-weight: bold;">html</span>&gt;
@@ -272,10 +272,10 @@ This output looks like:
       <pre style="white-space: pre; background-color: #fffff0; color: #000000; font-family: monospace;">
       &lt;<span style="color: #00008b; font-weight: bold;">html</span>&gt;
       &lt;<span style="color: #00008b; font-weight: bold;">head</span>&gt;
-      &lt;<span style="color: #00008b; font-weight: bold;">style</span> <span style="color: #1e90ff;">type</span>=<span style="color: #b22222;">"text/css"</span>&gt;<span style="background-color: #000000; color: #fffff0; font-family: monospace; font-size: 12pt;">
-      </span><span style="background-color: #000000; color: #87cefa; font-family: monospace; font-size: 12pt; font-weight: bold;">h2</span><span style="background-color: #000000; color: #fffff0; font-family: monospace; font-size: 12pt;"> </span><span style="background-color: #000000; color: #fffff0; font-family: monospace; font-size: 12pt; font-weight: bold;">{</span><span style="background-color: #000000; color: #fffff0; font-family: monospace; font-size: 12pt;">
-          </span><span style="background-color: #000000; color: #4169e1; font-family: monospace; font-size: 12pt; font-weight: bold;">color</span><span style="background-color: #000000; color: #fffff0; font-family: monospace; font-size: 12pt;">: </span><span style="background-color: #000000; color: #2e8b57; font-family: monospace; font-size: 12pt;">green</span><span style="background-color: #000000; color: #fffff0; font-family: monospace; font-size: 12pt;">;
-      </span><span style="background-color: #000000; color: #fffff0; font-family: monospace; font-size: 12pt; font-weight: bold;">}</span>
+      &lt;<span style="color: #00008b; font-weight: bold;">style</span> <span style="color: #1e90ff;">type</span>=<span style="color: #b22222;">"text/css"</span>&gt;<span style="background-color: #000000; color: #fffff0; font-family: monospace;">
+      </span><span style="background-color: #000000; color: #87cefa; font-family: monospace; font-weight: bold;">h2</span><span style="background-color: #000000; color: #fffff0; font-family: monospace;"> </span><span style="background-color: #000000; color: #fffff0; font-family: monospace; font-weight: bold;">{</span><span style="background-color: #000000; color: #fffff0; font-family: monospace;">
+          </span><span style="background-color: #000000; color: #4169e1; font-family: monospace; font-weight: bold;">color</span><span style="background-color: #000000; color: #fffff0; font-family: monospace;">: </span><span style="background-color: #000000; color: #2e8b57; font-family: monospace;">green</span><span style="background-color: #000000; color: #fffff0; font-family: monospace;">;
+      </span><span style="background-color: #000000; color: #fffff0; font-family: monospace; font-weight: bold;">}</span>
       &lt;/<span style="color: #00008b; font-weight: bold;">style</span>&gt;
       &lt;/<span style="color: #00008b; font-weight: bold;">head</span>&gt;
       &lt;/<span style="color: #00008b; font-weight: bold;">html</span>&gt;

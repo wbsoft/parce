@@ -12,7 +12,7 @@
 .parce {
     background: black;
     color: ivory;
-    font: monospace 12pt;
+    font-family: monospace;
 }
 
 .parce.current-line {
