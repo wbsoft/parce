@@ -142,9 +142,10 @@ Context have a ``query`` property that unleashes these powers::
 See the :mod:`~parce.query` module for more information.
 
 .. note::
-    Note that is is not needed at all to use the predefined actions of parce in
-    your language definition; you can specify any object you want, including
-    strings or methods.
+
+    Is is not needed at all to use the predefined actions of parce in your
+    language definition; you can specify any object you want, including strings
+    or methods.
 
 If you want, you can also get a flat stream of events describing the parsing
 process. Events are simply named tuples consisting of a ``target`` and

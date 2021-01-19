@@ -1,4 +1,4 @@
-Syntax Highlighting
+Syntax highlighting
 ===================
 
 The standard actions used in the bundled languages can be mapped to colors and

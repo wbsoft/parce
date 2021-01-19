@@ -121,13 +121,15 @@ Using the same Transform class, you can also transform a tree structure::
     >>> transform_tree(tree)
     [1, 2, 3, [4, 'Q', 6], 7, 8, 9]
 
-Note that the :func:`transform_tree` gets the root lexicon from the root
-element, and then automatically finds the corresponding Transform class, if you
-didn't specify one yourself.
+.. note::
 
-This is done by looking in the same module as the root lexicon's language,
-and finding there a Transform subclass with the same name with ``"Transform"``
-appended (see :meth:`Transformer.find_transform`).
+   Note that the :func:`transform_tree` gets the root lexicon from the root
+   element, and then automatically finds the corresponding Transform class, if
+   you didn't specify one yourself.
+
+   This is done by looking in the same module as the root lexicon's language,
+   and finding there a Transform subclass with the same name with
+   ``"Transform"`` appended (see :meth:`Transformer.find_transform`).
 
 Examples of Transform classes can be found in the :mod:`~parce.lang.css` and
 the :mod:`~parce.lang.json` modules.
