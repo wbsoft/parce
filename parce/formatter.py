@@ -105,6 +105,11 @@ format you want to create.
 class AbstractFormatter:
     """A Formatter formats text based on the action of tokens."""
 
+    def __repr__(self):
+        name = self.__class__.__name__
+        themes = ', '.join(repr(fc.theme) for fc in self.format_caches().values())
+        return '<{} [{}]>'.format(name, themes)
+
     def format_caches(self):
         """Should return a dictionary mapping language to FormatCache.
 

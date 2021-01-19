@@ -70,6 +70,7 @@ import collections
 import functools
 import os
 import re
+import reprlib
 
 from . import util
 from .lang.css import Css, Atrule, Rule, Value
@@ -123,6 +124,10 @@ class StyleSheet:
         self.rules = rules or []
         self.filename = filename
         self._imported_filenames = []
+
+    def __repr__(self):
+        fnames = ', '.join(map(os.path.basename, self.filenames()))
+        return '<{} [{}]>'.format(self.__class__.__name__, fnames)
 
     @classmethod
     def load_from_data(cls, data):
@@ -339,6 +344,9 @@ class Style:
     def __init__(self, rules):
         self.rules = rules
 
+    def __repr__(self):
+        return '<{} ({} rules)>'.format(self.__class__.__name__, len(self.rules))
+
     @style_query
     def select_element(self, element):
         """Select the rules that match with Element."""
@@ -378,6 +386,9 @@ class Atrules:
     """Represents the @rules that are not nested, e.g. @page etc."""
     def __init__(self, rules):
         self.rules = rules
+
+    def __repr__(self):
+        return '<{} ({} rules)>'.format(self.__class__.__name__, len(self.rules))
 
     @style_query
     def select(self, *keywords):

@@ -35,7 +35,13 @@ import parce.lang
 from parce.action import Comment
 
 
-class Language:
+class _LanguageType(type):
+    """Language meta type that prints a customized repr string."""
+    def __repr__(cls):
+        return '{}.{}'.format(cls.__module__, cls.__name__)
+
+
+class Language(metaclass=_LanguageType):
     """A Language represents a set of Lexicons comprising a specific language.
 
     A Language is never instantiated. The class itself serves as a namespace

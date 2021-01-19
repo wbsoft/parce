@@ -111,11 +111,6 @@ class Item:
         return ()
 
 
-class RuleItem(Item):
-    """Base class for items that may become visible in rules."""
-    __slots__ = ()
-
-
 class VariableItem(Item):
     """A named variable that's accessed in the namespace.
 
@@ -391,6 +386,9 @@ class SubgroupAction(ActionItem):
         """Yield the possible actions."""
         yield from self._actions
 
+    def _repr_args(self):
+        return self._actions
+
 
 class DelegateAction(ActionItem):
     """This action uses a lexicon to parse the text.
@@ -423,6 +421,9 @@ class DelegateAction(ActionItem):
     def variations(self):
         """Yield our lexicon."""
         yield self._lexicon
+
+    def _repr_args(self):
+        return self._lexicon,
 
 
 class SkipAction(ActionItem):

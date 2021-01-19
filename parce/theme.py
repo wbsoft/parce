@@ -89,6 +89,7 @@ base action types.
 import collections
 import itertools
 import functools
+import os
 
 from . import css
 from . import themes
@@ -120,6 +121,10 @@ class Theme(AbstractTheme):
         self._filename = filename
         self._css_text = stylesheet
         self.TextFormat = TextFormat
+
+    def __repr__(self):
+        fnames = ', '.join(map(os.path.basename, self.filenames()))
+        return '<{} [{}]>'.format(self.__class__.__name__, fnames)
 
     @classmethod
     def by_name(cls, name="default"):
