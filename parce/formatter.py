@@ -118,7 +118,10 @@ class AbstractFormatter:
 
     def baseformat(self, role="window", state="default"):
         """Return our textformat for the current line."""
-        return self.format_caches()[None].baseformat(role, state)
+        try:
+            return self.format_caches()[None].baseformat(role, state)
+        except KeyError:
+            pass
 
     def format_ranges(self, tree, start=0, end=None, format_context=None):
         """Yield FormatRange(pos, end, format) three-tuples.
@@ -129,12 +132,18 @@ class AbstractFormatter:
         skipped.
 
         """
-        format_caches = self.format_caches() # caches for all added themes
-        cache = format_caches.get            # quick access
-        fc = default_fcache = cache(None)    # the default FormatCache
-        unparsed = fc.unparsed               # format for unparsed text if not None
+        format_caches = self.format_caches()   # caches for all added themes
+        cache = format_caches.get              # quick access
+        fc = default_fcache = cache(None)      # the default FormatCache
 
-        if len(format_caches) == 1:
+        if fc is None:
+            # there is no default theme, don't yield tokens and use empty fc
+            fc = FormatCache(None, None, lambda action: None,
+                lambda role, state: None, None)
+            def tokens():
+                return
+                yield
+        elif len(format_caches) == 1:
             # language will never be switched, no need to follow language
             def tokens():
                 return tree.tokens_range(start, end)
@@ -178,10 +187,11 @@ class AbstractFormatter:
                             else:
                                 break
 
-        if unparsed is not None:
+        if fc.unparsed is not None:
             # Yield the unparsed format between tokens
             def stream():
                 nonlocal fc
+                unparsed = fc.unparsed      # store it, fc can change
                 prev_end = start
                 for t in tokens():
                     if t.pos > prev_end:
@@ -366,6 +376,12 @@ class Formatter(AbstractFormatter):
     def remove_theme(self, language):
         """Remove the theme for the specified language."""
         del self.format_caches()[language]
+
+    def copy_themes(self, formatter):
+        """Copy all themes from the other formatter."""
+        self.format_caches().clear()
+        for language, fc in formatter.format_caches().items():
+            self.add_theme(language, fc.theme, fc.base is not None)
 
 
 class SimpleFormatter(AbstractFormatter):
