@@ -215,7 +215,7 @@ class AbstractFormatter:
                         if fc.base is not None and t.pos > prev_end:
                             yield prev_end, t.pos, fc.base
                         yield t.pos, t.end, f
-                        prev_end = t.end
+                    prev_end = t.end
                 if fc.base is not None and end is not None and prev_end < end:
                     yield prev_end, end, fc.base
 

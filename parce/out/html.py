@@ -90,7 +90,7 @@ class HtmlFormatter(HtmlMixin, parce.formatter.Formatter):
     """A Formatter to output HTML."""
     def __init__(self, theme=None, factory=None):
         if factory is None:
-            factory = inline_css
+            factory = lambda tf: inline_css(tf) or None
         super().__init__(theme, factory)
 
     def html(self, cursor):
