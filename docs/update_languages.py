@@ -110,6 +110,7 @@ LANGS_INC_HEADER = r"""
 all_examples = collections.defaultdict(list)
 
 
+# formatter for the examples
 formatter = HtmlFormatter(parce.theme_by_name('default'))
 
 

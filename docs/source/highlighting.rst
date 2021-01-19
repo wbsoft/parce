@@ -88,6 +88,9 @@ The easiest way to create your own theme is by copying ``default.css`` or
 ``_template.css`` in the ``themes/`` directory to a new file and start editing
 that.
 
+CSS properties
+^^^^^^^^^^^^^^
+
 The following subset of CSS properties is supported by the default TextFormat
 used by the theming engine:
 
@@ -160,6 +163,84 @@ used by the theming engine:
 
    It is possible that not all formatters support all properties. For
    example Qt5's QTextCharFormat does not support double underline.
+
+
+CSS classes
+^^^^^^^^^^^
+
+To determine the style properties to use for a token, the token's action
+(which must be a standard action) is mapped to one or more CSS classes.
+This is described in :doc:`theme`, under "Mapping actions to CSS classes."
+The matching CSS rules are then combined to determine the actual style
+properties to use for the action.
+
+All rules should have a ``.parce`` ancestor class selector, so that the theme
+css file can directly be used in HTML (where tokens are mapped to class names
+with the :class:`~parce.out.html.SimpleHtmlFormatter`), without much chance
+that other parts of a web page's style are clobbered by the parce css file, for
+example:
+
+.. code-block:: css
+
+   .parce
+   .comment {
+       color: dimgray;
+       font-family: serif;
+       font-style: italic;
+   }
+
+This maps the ``Comment`` standard action to these color and font settings.
+
+General classes
+^^^^^^^^^^^^^^^
+
+There are some special classes that define other style aspects than that of
+individual tokens:
+
+
+.. list-table::
+   :header-rows: 1
+   :widths: 40 60
+
+   * - CSS Selector
+     - defines properties to use for:
+
+   * - ``.parce``
+     - the text view or block as a whole; e.g. a text editor window, or an HTML
+       ``<pre>`` block. A text editor is free to ignore font settings.
+
+   * - ``.parce.current-line``
+     - the line the cursor is in (only *background* probably makes sense)
+
+   * - ``.parce::selection``
+     - text selected by the user (also works in straight HTML in a modern browser)
+
+   * - ``.parce.current-line:focus``
+     - the current line when the window has focus
+
+   * - ``.parce::selection:focus``
+     - selected text when the window has focus
+
+   * - ``.parce:disabled``
+     - the text editor widget when it is disabled (i.e. the user can't interact
+       with it). If a text editor supports this at all, probably only the
+       changed colors will be used (via a widget's palette), not the font.
+
+   * - ``.parce.current-line:disabled``
+     - the current line when the text widget is disabled
+
+   * - ``.parce::selection:disabled``
+     - selected text when the text widget is disabled
+
+   * - ``.parce.trailing-whitespace``
+     - highlighting trailing whitespace, if desired (use only the *background*).
+       Not supported by the default formatter, but a text editor could implement
+       this and use a color from the theme.
+
+   * - ``.parce.eol-marker``
+     - the *color* to draw a "end-of-line" marker with, if desired.
+       Not supported by the default formatter, but a text editor could implement
+       this and use a color from the theme.
 
 
 Using multiple themes together
