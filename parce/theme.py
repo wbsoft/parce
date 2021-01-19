@@ -51,7 +51,7 @@ In the ``themes/`` directory are bundled CSS themes that can be used.
 Instantiate a bundled theme with::
 
     >>> from parce.theme import Theme
-    >>> th = Theme.byname("default")
+    >>> th = Theme.by_name("default")
 
 To use a custom CSS theme file, load it using::
 
@@ -122,7 +122,7 @@ class Theme(AbstractTheme):
         self.TextFormat = TextFormat
 
     @classmethod
-    def byname(cls, name="default"):
+    def by_name(cls, name="default"):
         """Create Theme by name.
 
         The name is a CSS file in the themes/ directory, without the ".css"
