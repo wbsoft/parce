@@ -18,6 +18,7 @@ Last update: |today|.
    building.rst
    doc.rst
    transforming.rst
+   highlighting.rst
 
 .. toctree::
    :maxdepth: 1
