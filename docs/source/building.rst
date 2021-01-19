@@ -151,7 +151,7 @@ not recommended to do so while parsing is busy, because you won't get reliable
 results.
 
 For more information, study the documentation and source code of the
-:py:mod:`treebuilder module <parce.treebuilder>`.
+:mod:`~parce.treebuilder` module.
 
 
 
