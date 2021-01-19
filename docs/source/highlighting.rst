@@ -22,7 +22,7 @@ This textformat is provided by the theme, which maps a standard action to a
 :class:`~parce.theme.TextFormat`, and converted to something the formatter can
 use using a factory function that is specified when creating the formatter.
 
-The text format provided by the theme is a simple data object with attributes
+A TextFormat provided by the theme is a simple data object with attributes
 that define text properties, such as color, font, decoration etc. The default
 Theme implementation reads these properties from a CSS (Cascading Style Sheets)
 file. Some CSS themes are provided, in the :mod:`~parce.themes` directory.
@@ -32,7 +32,7 @@ factory function, and then iterating over
 :meth:`~parce.formatter.AbstractFormatter.format_ranges`.
 
 Optionally, you can inherit from Formatter to implement useful other methods.
-In :mod:`parce.out` there are some modules implementing often used formatting
+In :mod:`parce.out` there are some modules containing often used formatting
 utilities.
 
 
@@ -175,10 +175,10 @@ The matching CSS rules are then combined to determine the actual style
 properties to use for the action.
 
 All rules should have a ``.parce`` ancestor class selector, so that the theme
-css file can directly be used in HTML (where tokens are mapped to class names
-with the :class:`~parce.out.html.SimpleHtmlFormatter`), without much chance
-that other parts of a web page's style are clobbered by the parce css file, for
-example:
+css file can directly be used in HTML (where tokens are mapped to class names,
+e.g. using the :class:`~parce.out.html.SimpleHtmlFormatter`), without much
+chance that other parts of a web page's style are clobbered by the parce css
+file, for example:
 
 .. code-block:: css
 
@@ -243,7 +243,7 @@ individual tokens:
        this and use a color from the theme.
 
    * - ``.parce.eol-marker``
-     - the *color* to draw an "end-of-line" marker with, if desired.
+     - drawing an "end-of-line" marker, if desired.
        Not supported by the default formatter, but a text editor could implement
        this and use a color from the theme.
 
