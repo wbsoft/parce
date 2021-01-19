@@ -169,9 +169,10 @@ class Theme(AbstractTheme):
         ``"current-line"``
             The TextFormat for the current line. If you use it, set only the
             *background* color in your theme file.
+        ``"leading-whitespace"``
+            The TextFormat to highlight leading whitespace, if desired.
         ``"trailing-whitespace"``
-            The TextFormat (use only the *background*) to highlight trailing
-            whitespace, if desired.
+            The TextFormat to highlight trailing whitespace, if desired.
         ``"eol-marker"``
             The *color* to draw a "end-of-line" marker with, if desired
 

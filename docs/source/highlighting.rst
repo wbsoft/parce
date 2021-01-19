@@ -232,13 +232,18 @@ individual tokens:
    * - ``.parce::selection:disabled``
      - selected text when the text widget is disabled
 
+   * - ``.parce.leading-whitespace``
+     - highlighting leading whitespace, if desired.
+       Not supported by the default formatter, but a text editor could implement
+       this and use a color from the theme.
+
    * - ``.parce.trailing-whitespace``
-     - highlighting trailing whitespace, if desired (use only the *background*).
+     - highlighting trailing whitespace, if desired.
        Not supported by the default formatter, but a text editor could implement
        this and use a color from the theme.
 
    * - ``.parce.eol-marker``
-     - the *color* to draw a "end-of-line" marker with, if desired.
+     - the *color* to draw an "end-of-line" marker with, if desired.
        Not supported by the default formatter, but a text editor could implement
        this and use a color from the theme.
 

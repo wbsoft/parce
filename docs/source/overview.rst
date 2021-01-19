@@ -17,8 +17,8 @@ taylor them to your own needs. This documentation helps you going, see
 Features
 ^^^^^^^^
 
-* lex text to a stream of `events` or a tree structure of `tokens`, according
-  to a language definition
+* tokenize text to a stream of `events` or a tree structure of `tokens`,
+  according to a language definition
 * examine and query the generated tree structure
 * transform the tree structure to anything else
 * apply changes to the text, and only update the needed part of a tree (also
@@ -27,8 +27,8 @@ Features
   tree structure up-to-date.
 * changes to be made to a document can be collected and applied at once
 * lex and transform in a background thread
-* map the `action` of a token to CSS classes for syntax highlighting based on
-  CSS
+* highlight text by mapping the `action` of a token to a CSS class and reading
+  style properties from a CSS "theme" file.
 
 A key feature of *parce* is that you can re-lex and re-transform only modified
 parts of a text if you already have lexed it. This makes *parce* suitable for
@@ -73,6 +73,7 @@ generic process, I decided to make *parce* a separate, generic Python package.
 TODO
 ^^^^
 
-* create highlighted output such as HTML
+* create highlighted output formatters for other formats than HTML, like LaTeX,
+  etc.
 * more bundled languages :-)
 
