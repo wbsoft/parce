@@ -10,8 +10,7 @@ How it works
 ------------
 
 In *parce*, this work is done by combining a
-:class:`~parce.formatter.Formatter` with one or more :class:`Themes
-<parce.theme.Theme>`.
+:class:`~parce.formatter.Formatter` with a :class:`~parce.theme.Theme`.
 
 A Formatter iterates over the tokens in a selected range and yields
 :class:`~parce.formatter.FormatRange` tuples, describing how a certain piece
