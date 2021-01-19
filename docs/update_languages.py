@@ -87,7 +87,9 @@ Root lexicon ``{root}`` and text:
 
 {code}
 
-Result tree::
+Result tree:
+
+.. code-block:: none
 
 {result}
 """
