@@ -18,7 +18,7 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 """
-Bash and other UNIX shell (sh)  syntax.
+Bash and other UNIX shell (sh) syntax.
 
 """
 
@@ -34,8 +34,18 @@ from parce.rule import *
 # Main source of information: man bash :-)
 
 
-RE_WORD = r'''[^|&;()<>\s$"'{}`!]+'''
 RE_NAME = r'[^\W\d]\w+'
+RE_BRACE = (
+    r'''([^|&;()<>\s"'`!{}]*)'''   # preamble
+    r'(\{)'     # brace {
+    r'(?:'
+        r'(?:\w\.\.\w|\d+\.\.\d+)(?:\.\.\d+)?'   # sequence expr
+        r'''|[^|&;()<>\s"'`!{}]*(?:,[^|&;()<>\s"'`!{}]*)+'''  # comma-separated strings
+    r')'       # expand expr
+    r'(\})'     # brace }
+    r'''([^|&;()<>\s"'`!{}]*)'''   # postscript
+)
+RE_WORD = r'''[^|&;()<>\s$"'`!]+'''
 
 
 class Bash(Language):
@@ -47,7 +57,7 @@ class Bash(Language):
         yield r'\A#!.*?$', Comment.Special
         yield r'(\w+)(=)', bygroup(Name.Variable.Definition, Operator.Assignment)
         yield r'let\b', Name.Builtin, cls.let_expr
-        yield r'\.(?!\w)', Keyword, cls.arguments
+        yield r'\.(?=$|\s)', Keyword, cls.arguments
         yield RE_NAME, findmember(TEXT, (
             (BASH_KEYWORDS, Keyword),
             (BASH_BUILTINS, Name.Builtin),
@@ -59,6 +69,7 @@ class Bash(Language):
     def common(cls):
         """Yield common stuff: comment, expression, expansions, etc."""
         yield '#', Comment, cls.comment
+        yield RE_BRACE, using(cls.brace_expansion)
         yield r'\(\(', Delimiter.Start, cls.arith_expr
         yield r'\(', Delimiter.Start, cls.subshell
         yield r'\{', Bracket.Start, cls.group_command
@@ -100,6 +111,13 @@ class Bash(Language):
         yield r"'", String.Start, cls.sqstring
         yield r"\$'", String.Start, cls.escape_string
         yield r'\$"', String.Start, cls.dqstring    # translated string
+
+    @lexicon
+    def brace_expansion(cls):
+        """Used to parse a brace expansion."""
+        yield from cls.substitution()
+        yield from cls.quoting()
+        yield default_action, Verbatim
 
     @lexicon(re_flags=re.MULTILINE)
     def arguments(cls):
