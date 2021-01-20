@@ -53,7 +53,7 @@ class Bash(Language):
 
     @lexicon(re_flags=re.MULTILINE)
     def root(cls):
-        """Root lexicon."""
+        """Root lexicon, finds commands and arguments etc."""
         yield r'\A#!.*?$', Comment.Special
         yield r'(\w+)(=)', bygroup(Name.Variable.Definition, Operator.Assignment)
         yield r'let\b', Name.Builtin, cls.let_expr
@@ -63,6 +63,8 @@ class Bash(Language):
             (BASH_BUILTINS, Name.Builtin),
             (UNIX_COMMANDS, Name.Command),
             ), Name), cls.arguments
+        yield r'\{(?=$|\s)', Bracket.Start, cls.group_command
+        yield r'\[\[(?=$|\s)', Bracket.Start, cls.cond_expr
         yield from cls.common()
 
     @classmethod
@@ -72,8 +74,6 @@ class Bash(Language):
         yield RE_BRACE, using(cls.brace_expansion)
         yield r'\(\(', Delimiter.Start, cls.arith_expr
         yield r'\(', Delimiter.Start, cls.subshell
-        yield r'\{', Bracket.Start, cls.group_command
-        yield r'\[\[', Bracket.Start, cls.cond_expr
 
         yield from cls.substitution()
         yield from cls.quoting()
