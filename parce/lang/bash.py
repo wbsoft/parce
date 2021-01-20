@@ -45,7 +45,7 @@ RE_BRACE = (
     r'(\})'     # brace }
     r'''([^|&;()<>\s"'`!{}]*)'''   # postscript
 )
-RE_WORD = r'''[^|&;()<>\s$"'`!]+'''
+RE_WORD = r'''[^|&;()<>\s$"'`!\\]+'''
 
 
 class Bash(Language):
@@ -174,13 +174,13 @@ class Bash(Language):
 
     @lexicon
     def subshell(cls):
-        """A subshell ( ... )."""
+        """A subshell ``(`` ... ``)``."""
         yield r'\)', Delimiter.End, -1
         yield from cls.root
 
     @lexicon
     def group_command(cls):
-        """A group command { ...; }."""
+        """A group command ``{ ...; }``."""
         yield r'\}', Bracket.End, -1
         yield from cls.root
 
@@ -195,14 +195,14 @@ class Bash(Language):
 
     @lexicon
     def arith_expr(cls):
-        """An arithmetic expression (( ... ))."""
+        """An arithmetic expression ``((`` ... ``))``."""
         yield r'\)\)', Delimiter.End, -1
         yield from cls.expression_common()
         yield from cls.common()
 
     @lexicon
     def cond_expr(cls):
-        """A conditional expression [[ ... ]]."""
+        """A conditional expression ``[[`` ... ``]]``."""
         yield r'\]\]', Bracket.End, -1
         yield from cls.expression_common()
         yield from cls.common()
