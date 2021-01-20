@@ -54,10 +54,12 @@ RE_HEX_COLOR = r"#[0-9a-fA-F]{3}(?:[0-9a-fA-F]{5}|[0-9a-fA-F]{3}|[0-9a-fA-F]?)"
 class Css(Language):
     @lexicon
     def root(cls):
+        """Toplevel items: at-rules, comments, normal rules."""
         yield from cls.toplevel()
 
     @classmethod
     def toplevel(cls):
+        """Find toplevel items: at-rules, comments, normal rules."""
         yield r"@", Keyword, cls.atrule, cls.atrule_keyword
         yield r"/\*", Comment, cls.comment
         yield r"\s+", skip  # skip whitespace
@@ -65,6 +67,7 @@ class Css(Language):
 
     @lexicon
     def prelude(cls):
+        """The prelude of a rule: one or more selectors. On ``{`` parse the rule."""
         yield r"\{", Bracket, -1, cls.rule
         yield r"(?=</)", None, -1   # back off if HTML </style> tag follows...
         yield from cls.selectors()
@@ -82,6 +85,7 @@ class Css(Language):
 
     @lexicon
     def selector(cls):
+        """All types of CSS selectors"""
         yield r"\*", Keyword    # "any" element
         yield r"\|", Keyword    # css selector namespace prefix separator
         yield r"#", Name.Identifier.Definition, cls.id_selector
@@ -106,7 +110,7 @@ class Css(Language):
 
     @lexicon
     def inline(cls):
-        """CSS that would be in a rule block, but also in a HTML style attribute."""
+        """CSS in a rule block, or in an HTML style attribute."""
         yield from anyof(cls.property, cls.declaration, cls.property)
         yield from cls.common()
 
@@ -122,7 +126,7 @@ class Css(Language):
 
     @classmethod
     def common(cls):
-        """Stuff that can be everywhere."""
+        """Find stuff that can be everywhere, string, comment, color, identifier"""
         yield r'"', String, cls.dqstring
         yield r"'", String, cls.sqstring
         yield r"/\*", Comment, cls.comment
@@ -166,17 +170,17 @@ class Css(Language):
 
     @lexicon
     def id_selector(cls):
-        """#id"""
+        """An ID selecter: ``#id``."""
         yield from cls.identifier_common(Name.Identifier.Definition)
 
     @lexicon
     def class_selector(cls):
-        """.classname"""
+        """A class selector: ``.classname``."""
         yield from cls.identifier_common(Name.Class)
 
     @lexicon
     def attribute_selector(cls):
-        """Stuff between [ and ]."""
+        """Stuff between ``[`` and ``]``."""
         yield r"\]", Delimiter, -1
         yield r"[~|^$*]?=", Operator
         yield r'"', String, cls.dqstring
@@ -217,19 +221,19 @@ class Css(Language):
 
     @lexicon
     def atrule_block(cls):
-        """a { } block from an @-rule."""
+        """A ``{`` ``}`` block from an @-rule."""
         yield r"\}", Bracket, -2  # immediately leave the atrule context
         yield from cls.inline()
 
     @lexicon
     def atrule_nested_block(cls):
-        """a { } block from @media, @document or @supports."""
+        """A ``{`` ``}`` block from @media, @document or @supports."""
         yield r"\}", Bracket, -2  # immediately leave the atrule_nested context
         yield from cls.toplevel()
 
     @classmethod
     def atrule_common(cls):
-        """Common stuff inside @-rules."""
+        """Find common stuff inside @-rules."""
         yield r";", Delimiter, -1
         yield r":", Keyword, cls.pseudo_class
         yield from cls.common()
@@ -259,7 +263,7 @@ class Css(Language):
 
     @lexicon
     def url_function(cls):
-        """url(....)"""
+        """The ``url`` function: ``url(``...``)``."""
         yield r"\)", Delimiter, -1
         yield r'"', String, cls.dqstring
         yield r"'", String, cls.sqstring
