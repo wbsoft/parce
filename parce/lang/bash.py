@@ -26,12 +26,16 @@ __all__ = ('Bash',)
 
 import re
 
-from parce import Language, lexicon, default_action
-from parce.action import (
-    Bracket, Comment, Delimiter, Escape, Keyword, Name, Number, Operator,
-    String, Text
-)
-from parce.rule import MATCH, bygroup, ifgroup, findmember
+from parce import Language, lexicon, skip, default_action, default_target
+from parce.action import *
+from parce.rule import *
+
+
+# Main source of information: man bash :-)
+
+
+RE_WORD = r'''[^|&;()<>\s$"'{}`!]+'''
+RE_NAME = r'[^\W\d]\w+'
 
 
 class Bash(Language):
@@ -41,6 +45,14 @@ class Bash(Language):
     def root(cls):
         """Root lexicon."""
         yield r'\A#!.*?$', Comment.Special
+        yield r'(\w+)(=)', bygroup(Name.Variable.Definition, Operator.Assignment)
+        yield r'let\b', Name.Builtin, cls.let_expr
+        yield r'\.(?!\w)', Keyword, cls.arguments
+        yield RE_NAME, findmember(TEXT, (
+            (BASH_KEYWORDS, Keyword),
+            (BASH_BUILTINS, Name.Builtin),
+            (UNIX_COMMANDS, Name.Command),
+            ), Name), cls.arguments
         yield from cls.common()
 
     @classmethod
@@ -52,7 +64,10 @@ class Bash(Language):
         yield r'\{', Bracket.Start, cls.group_command
         yield r'\[\[', Bracket.Start, cls.cond_expr
 
-        yield from cls.variable_expansion()
+        yield from cls.substitution()
+        yield from cls.quoting()
+        yield r'-[\w-]+', Name.Property     # option
+        yield RE_WORD, Text
 
     @classmethod
     def expression_common(cls):
@@ -61,19 +76,21 @@ class Bash(Language):
         yield r'0[xX][0-9a-fA-F]+', Number.Hexadecimal
         yield r'\d+#[0-9a-zA-Z@_]+', Number
         yield r'\d+', Number
+        yield r'(\w+)[ \t]*(=)', bygroup(Name.Variable.Definition, Operator.Assignment)
         yield r'\w+', Name.Variable
         yield r',', Delimiter.Separator
         yield r'\+\+?|--?|\*\*?|<[=<]?|>[=>]?|&&?|\|\|?|[=!]=|[~!/%^?:]', Operator
         yield r'(?:[*/%+&\-|]|<<|>>)?=', Operator.Assignment
 
     @classmethod
-    def variable_expansion(cls):
+    def substitution(cls):
         """Variable expansion with ``$``."""
         yield r'(\$)(\(\()', bygroup(Name.Variable, Delimiter.Start), cls.arith_expr
         yield r'(\$)(\()',  bygroup(Name.Variable, Delimiter.Start), cls.subshell
         yield r'\$[*@#?\$!0-9-]', Name.Variable.Special
         yield r'\$\w+', Name.Variable
         yield r'\$\{', Name.Variable, cls.parameter
+        yield r'`', Delimiter.Quote, cls.backtick
 
     @classmethod
     def quoting(cls):
@@ -81,13 +98,25 @@ class Bash(Language):
         yield r'\\.', Escape
         yield r'"', String.Start, cls.dqstring
         yield r"'", String.Start, cls.sqstring
+        yield r"\$'", String.Start, cls.escape_string
+        yield r'\$"', String.Start, cls.dqstring    # translated string
+
+    @lexicon(re_flags=re.MULTILINE)
+    def arguments(cls):
+        """Arguments after a command."""
+        yield r';', Delimiter, -1
+        yield r'$', None, -1
+        yield r'\|\|?|\&\&?', Delimiter.Connection, -1
+        yield from cls.common()
+        yield '[ \t]+', skip
+        yield default_target, -1
 
     @lexicon
     def dqstring(cls):
         """A double-quoted string."""
         yield r'"', String.End, -1
-        yield r'\\.', String.Escape
-        yield from cls.variable_expansion()
+        yield r'\\[\\$`"\n]', String.Escape
+        yield from cls.substitution()
         yield default_action, String
 
     @lexicon
@@ -95,6 +124,19 @@ class Bash(Language):
         """A single-quoted string."""
         yield r"'", String.End, -1
         yield default_action, String
+
+    @lexicon
+    def escape_string(cls):
+        """A single-quoted string."""
+        yield r"'", String.End, -1
+        yield r'\\(?:[abeEfnrtv\\\"\'?]|\d{3}|x[0-9a-fA-F]{2}|u[0-9a-fA-F]{4}|U[0-9a-fA-F]{8}|c.)', String.Escape
+        yield default_action, String
+
+    @lexicon
+    def backtick(cls):
+        r"""Stuff between ````` ... `````."""
+        yield r'`', Delimiter.Quote, -1
+        yield from cls.root
 
     @lexicon
     def parameter(cls):
@@ -109,7 +151,8 @@ class Bash(Language):
         """Contents of ``[`` ... ``]`` in an array reference."""
         yield r'\]', Delimiter.Bracket.End, -1
         yield from cls.expression_common()
-        yield from cls.variable_expansion()
+        yield from cls.substitution()
+        yield from cls.quoting()
 
     @lexicon
     def subshell(cls):
@@ -124,12 +167,19 @@ class Bash(Language):
         yield from cls.root
 
     # expressions
+    @lexicon(re_flags=re.MULTILINE)
+    def let_expr(cls):
+        """An expression after ``let``."""
+        yield r'$', None, -1
+        yield r';', Delimiter, -1
+        yield from cls.expression_common()
+        yield from cls.common()
+
     @lexicon
     def arith_expr(cls):
         """An arithmetic expression (( ... ))."""
         yield r'\)\)', Delimiter.End, -1
         yield from cls.expression_common()
-        yield from cls.variable_expansion()
         yield from cls.common()
 
     @lexicon
@@ -137,7 +187,6 @@ class Bash(Language):
         """A conditional expression [[ ... ]]."""
         yield r'\]\]', Bracket.End, -1
         yield from cls.expression_common()
-        yield from cls.variable_expansion()
         yield from cls.common()
 
 
@@ -152,5 +201,30 @@ class Bash(Language):
 BASH_KEYWORDS = (
     "case", "coproc", "do", "done", "elif", "else", "esac", "fi", "for",
     "function", "if", "in", "select", "then", "until", "while", "time",
+)
+
+UNIX_COMMANDS = (
+    "alias", "ar", "at", "awk", "basename", "bc", "bg", "cal", "cat", "cd",
+    "chgrp", "chmod", "chown", "cksum", "cmp", "comm", "cp", "crontab",
+    "csplit", "ctags", "cut", "dd", "df", "diff", "dirname", "du", "echo",
+    "ed", "egrep", "env", "ex", "exit", "expr", "false", "fg", "file", "find",
+    "fold", "fuser", "grep", "head", "iconv", "join", "kill", "lex", "ln",
+    "logname", "lp", "ls", "m4", "make", "man", "mesg", "mkdir", "more", "mv",
+    "nice", "nl", "nm", "od", "paste", "patch", "pax", "printf", "ps", "pwd",
+    "rm", "rmdir", "sed", "sleep", "sort", "split", "strings", "strip", "tail",
+    "talk", "tee", "test", "time", "touch", "tput", "tr", "true", "type",
+    "umask", "uname", "uniq", "unset", "vi", "wait", "wc", "who", "write",
+    "xargs", "yacc", "zip",
+)
+
+BASH_BUILTINS = (
+    "source", "alias", "bg", "bind", "break", "builtin", "caller", "cd",
+    "command", "compgen", "complete", "compopt", "continue", "declare",
+    "typeset", "dirs", "disown", "echo", "enable", "exec", "exit", "export",
+    "fc", "fg", "getopts", "hash", "help", "history", "jobs", "kill", "let",
+    "local", "logout", "mapfile", "readarray", "popd", "printf", "pushd",
+    "pwd", "read", "readonly", "return", "set", "shift", "shopt", "suspend",
+    "test", "times", "trap", "type", "ulimit", "umask", "unalias", "unset",
+    "wait",
 )
 
