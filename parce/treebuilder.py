@@ -60,15 +60,16 @@ def build_tree(root_lexicon, text, pos=0):
     """Build and return a tree in one go."""
     from parce.tree import Context, make_tokens # local is faster
     root = context = Context(root_lexicon, None)
-    lexer = Lexer([root_lexicon])
-    for e in lexer.events(text, pos):
-        if e.target:
-            for _ in range(e.target.pop, 0):
-                context = context.parent
-            for lexicon in e.target.push:
-                context = Context(lexicon, context)
-                context.parent.append(context)
-        context.extend(make_tokens(e, context))
+    if root_lexicon:
+        lexer = Lexer([root_lexicon])
+        for e in lexer.events(text, pos):
+            if e.target:
+                for _ in range(e.target.pop, 0):
+                    context = context.parent
+                for lexicon in e.target.push:
+                    context = Context(lexicon, context)
+                    context.parent.append(context)
+            context.extend(make_tokens(e, context))
     return root
 
 
