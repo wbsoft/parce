@@ -36,6 +36,15 @@ guessing accuracy.
 from parce.registry import register
 
 
+register("parce.lang.bash.Bash.root",
+    name = "Bash",
+    desc = "Bash and other shell language",
+    aliases = ["sh"],
+    filenames = [("*.sh", .7), ("*.bash", 1)],
+    mimetypes = [("text/x-shellscript", 1)],
+    guesses = [(r'^#!.*?/(ba)?sh', .5)]
+)
+
 register("parce.lang.css.Css.root",
     name = "CSS",
     desc = "Cascading Style Sheet",
