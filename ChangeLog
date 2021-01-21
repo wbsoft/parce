@@ -2,7 +2,7 @@ ChangeLog
 =========
 
 
-current: parce-0.17.0
+2021-01-21: parce-0.17.0
 
 - fixed treebuilder.build_tree() function with root lexicon None
 - fixed multiple selectors in css prelude not working
