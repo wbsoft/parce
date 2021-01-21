@@ -117,7 +117,7 @@ class Bash(Language):
         """Used to parse a brace expansion."""
         yield from cls.substitution()
         yield from cls.quoting()
-        yield default_action, Verbatim
+        yield default_action, Text.Preprocessed
 
     @lexicon(re_flags=re.MULTILINE)
     def arguments(cls):
