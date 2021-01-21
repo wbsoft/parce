@@ -59,6 +59,7 @@ class Tcl(Language):
 
     @lexicon(re_flags=re.MULTILINE)
     def root(cls):
+        yield r'\A#!.*?$', Comment.Special
         yield from cls.values()
         yield r"([^\s\\{}[\]$'();]+)(\()?", bygroup(
             findmember(MATCH[1], ((operators, Operator),

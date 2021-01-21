@@ -107,7 +107,7 @@
 
 .parce
 .unimportant {
-
+    color: dimgray;
 }
 
 .parce
@@ -149,27 +149,27 @@
 
 .parce
 .inserted {
-
+    color: forestgreen;
 }
 
 .parce
 .deleted {
-
+    color: firebrick;
 }
 
 .parce
 .quoted {
-
+    color: darkslategray;
 }
 
 .parce
 .bold {
-
+    font-weight: bold;
 }
 
 .parce
 .emphasized {
-
+    font-style: italic;
 }
 
 /* (Start, End, Indent and Dedent don't need styling) */
@@ -215,7 +215,7 @@
 
 .parce
 .command {
-
+    color: maroon;
 }
 
 .parce
@@ -231,7 +231,7 @@
 
 .parce
 .entity {
-
+    color: darkcyan;
 }
 
 .parce
@@ -242,7 +242,7 @@
 
 .parce
 .function {
-
+    color: darkgoldenrod;
 }
 
 .parce
@@ -252,7 +252,8 @@
 
 .parce
 .macro {
-
+    color: mediumblue;
+    background: aliceblue;
 }
 
 .parce
@@ -262,12 +263,14 @@
 
 .parce
 .method {
-
+    color: darkblue;
 }
 
 .parce
 .namespace {
-
+    color: darkmagenta;
+    background: cornsilk;
+    font-weight: bold;
 }
 
 .parce
@@ -292,12 +295,12 @@
 
 .parce
 .type {
-
+    color: blue;
 }
 
 .parce
 .variable {
-
+    color: chocolate;
 }
 
 
@@ -371,7 +374,8 @@
 
 .parce
 .prompt {
-
+    color: darkolivegreen;
+    font-weight: bold;
 }
 
 /*

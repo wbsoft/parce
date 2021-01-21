@@ -29,13 +29,15 @@ __all__ = ('Ini',)
 import re
 
 from parce import Language, lexicon, default_action, default_target
-from parce.action import Comment, Data, Delimiter, Escape, Name, Operator
+from parce.action import (
+    Bracket, Comment, Data, Delimiter, Escape, Name, Operator,
+)
 
 
 class Ini(Language):
     @lexicon
     def root(cls):
-        yield r'\[', Delimiter.Section, cls.section
+        yield r'\[', Bracket.Start, cls.section
         yield r'[;#]', Comment, cls.comment
         yield r'=', Operator.Assignment, cls.value
         yield default_target, cls.key
@@ -43,8 +45,8 @@ class Ini(Language):
     @lexicon
     def section(cls):
         """Parse text between [ ... ]."""
-        yield r'\]', Delimiter.Section, -1
-        yield default_action, Name.Namespace.Section
+        yield r'\]', Bracket.End, -1
+        yield default_action, Name.Namespace
 
     @lexicon
     def key(cls):

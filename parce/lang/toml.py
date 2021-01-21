@@ -51,8 +51,8 @@ class Toml(Language):
     @lexicon
     def root(cls):
         yield '#', Comment, cls.comment
-        yield r'(\[\[)(?:[ \t]*(\.))?', bygroup(Bracket, Invalid), cls.array_table
-        yield r'(\[)(?:[ \t]*(\.))?', bygroup(Bracket, Invalid), cls.table
+        yield r'(\[\[)(?:[ \t]*(\.))?', bygroup(Bracket.Start, Invalid), cls.array_table
+        yield r'(\[)(?:[ \t]*(\.))?', bygroup(Bracket.Start, Invalid), cls.table
         yield r'=[^\n#]*', Invalid
         yield r'\.[^\n#]*', Invalid
         yield r'\s+', skip
@@ -61,14 +61,14 @@ class Toml(Language):
     @lexicon
     def table(cls):
         yield r'(?:(\.)[ \t]*)?(\])([^\n#]*)', \
-            bygroup(Invalid, Bracket, select(call(str.isspace, TEXT), Invalid, skip)), -1
-        yield from cls.keys()
+            bygroup(Invalid, Bracket.End, select(call(str.isspace, TEXT), Invalid, skip)), -1
+        yield from cls.keys(Name.Namespace)
 
     @lexicon
     def array_table(cls):
         yield r'(?:(\.)[ \t]*)?(\]\])([^\n#]*)', \
-            bygroup(Invalid, Bracket, select(call(str.isspace, TEXT), Invalid, skip)), -1
-        yield from cls.keys()
+            bygroup(Invalid, Bracket.End, select(call(str.isspace, TEXT), Invalid, skip)), -1
+        yield from cls.keys(Name.Namespace)
 
     @lexicon(re_flags=re.MULTILINE)
     def key(cls):
@@ -83,8 +83,8 @@ class Toml(Language):
         yield from cls.values()
 
     @classmethod
-    def keys(cls):
-        yield r'[A-Za-z0-9_-]+', Name.Variable
+    def keys(cls, action=Name.Variable):
+        yield r'[A-Za-z0-9_-]+', action
         yield r'''(\.)(?=[ \t]*[\}\],'"A-Za-z0-9_-])''', Delimiter.Dot
         yield r'"', String, cls.string_basic
         yield r"'", String, cls.string_literal
