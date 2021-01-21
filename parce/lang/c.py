@@ -36,8 +36,13 @@ RE_C_IDENT_START  = fr'[^\W\d]|\$|{_E_}'
 RE_C_IDENT_CONT   = fr'[\w$]|{_E_}'
 RE_C_IDENT = r'(?:{})(?:{})*'.format(RE_C_IDENT_START, RE_C_IDENT_CONT)
 
-RE_C_DECIMAL_NUMBER = r'\d+(?:_\d+)*n|(?:\.\d+(?:_\d+)*|\d+(?:_\d+)*(?:\.(?:\d+(?:_\d+)*)?)?)(?:[eE][-+]\d+(?:_\d+)*)?'
-
+RE_C_NUMBER = (r'[-+]?(?:'
+    r'0(?:([oO]?[0-7]+)'                            # 1 octal
+        r'|([bB][01]+)'                             # 2 binary
+        r'|([xX][0-9a-fA-F]+))'                     # 3 hexadecimal
+    r'|((?:\d+(?:\.\d+)?|\.\d+)(?:[eE][-+]?\d+)?)'  # 4 decimal
+    r')'
+)
 
 
 class C(Language):
@@ -57,10 +62,7 @@ class C(Language):
         yield '#', Delimiter.Preprocessed, cls.macro
         yield r'\(', Delimiter.Start, cls.paren
         yield r';', Delimiter
-        yield RE_C_DECIMAL_NUMBER, Number.Decimal
-        yield '0[oO](?:_?[0-7])+n?', Number
-        yield '0[bB](?:_?[01])+n?', Number
-        yield '0[xX](?:_?[0-9a-fA-F])+n?', Number
+        yield RE_C_NUMBER, gselect(Number.Octal, Number.Binary, Number.Hexadecimal, Number.Decimal)
         yield r',', Delimiter.Separator
         yield r'(?:[*/%+&\-|]|<<|>>)=', Operator.Assignment
         yield r'\+\+?|--?|\*\*?|<[=<]?|>[=>]?|&&?|\|\|?|[=!]=|[~!/%^?:]', Operator
