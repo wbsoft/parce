@@ -90,8 +90,9 @@ class Bash(Language):
         yield r'(\w+)[ \t]*(=)', bygroup(Name.Variable.Definition, Operator.Assignment)
         yield r'\w+', Name.Variable
         yield r',', Delimiter.Separator
+        yield r'(?:[*/%+&\-|]|<<|>>)=', Operator.Assignment
         yield r'\+\+?|--?|\*\*?|<[=<]?|>[=>]?|&&?|\|\|?|[=!]=|[~!/%^?:]', Operator
-        yield r'(?:[*/%+&\-|]|<<|>>)?=', Operator.Assignment
+        yield r'=', Operator.Assignment
 
     @classmethod
     def substitution(cls):

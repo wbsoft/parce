@@ -42,7 +42,16 @@ register("parce.lang.bash.Bash.root",
     aliases = ["sh"],
     filenames = [("*.sh", .7), ("*.bash", 1)],
     mimetypes = [("text/x-shellscript", 1)],
-    guesses = [(r'^#!.*?/(ba)?sh', .5)]
+    guesses = [(r'^#!.*?/(ba)?sh', .5)],
+)
+
+register("parce.lang.c.C.root",
+    name = "C",
+    desc = "C/C++ programming language",
+    aliases = ["c", "cpp"],
+    filenames = [("*.[ch]", .7), ("*.[ch]pp", .7), ("*.cc", .7), ("*.hh", .7)],
+    mimetypes = [("text/x-c", 1)],
+    guesses = [(r'#include <[\w\.]+>', .5), (r'\busing namespace ', .5)],
 )
 
 register("parce.lang.css.Css.root",
