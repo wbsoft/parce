@@ -49,8 +49,8 @@ class C(Language):
         yield words(C89_WORDS + C99_WORDS + C11_WORDS, suffix=r'\b'), Keyword
         yield '"', String.Start, cls.string
         yield fr'({RE_C_IDENT})\s*(\()?', ifgroup(2,
-            (bygroup(Name.Function, Delimiter), cls.arguments),
-             bygroup(Name.Variable))
+            (bygroup(using(cls._func_name), Delimiter), cls.arguments),
+             bygroup(using(cls._variable_name)))
         yield '//', Comment, cls.singleline_comment
         yield r'/\*', Comment.Start, cls.multiline_comment
         yield r'\{', Bracket.Start, cls.compound
@@ -87,7 +87,7 @@ class C(Language):
     @lexicon
     def class_name(cls):
         """The class name after struct, union or enum."""
-        yield RE_C_IDENT, using(cls._lex_class_name), -1
+        yield RE_C_IDENT, using(cls._class_name), -1
         yield r'\s+', skip
         yield default_target, -1
 
@@ -110,16 +110,23 @@ class C(Language):
         yield r'[ \t]', skip
         yield default_target, -1
 
+    # these lexicons are used to split escaped parts out of long
+    # var/class/funcnames
+
     @lexicon
-    def _lex_class_name(cls):
-        """Split a class name in escaped parts, if any.
-
-        This lexicon is used in :meth:`class_name`, but never creates a context
-        ifself.
-
-        """
+    def _class_name(cls):
         yield RE_C_IDENT_ESCAPE, Escape
         yield default_action, Name.Class
+
+    @lexicon
+    def _func_name(cls):
+        yield RE_C_IDENT_ESCAPE, Escape
+        yield default_action, Name.Function
+
+    @lexicon
+    def _variable_name(cls):
+        yield RE_C_IDENT_ESCAPE, Escape
+        yield default_action, Name.Variable
 
     #------------------ comments -------------------------
     @lexicon(re_flags=re.MULTILINE)
