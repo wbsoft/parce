@@ -12,5 +12,10 @@
     div.section > dl.function {
         margin-top: 30px;
     }
+
+    div.token-tree.highlight-none div.highlight {
+        max-height: 500px;
+        overflow: scroll;
+    }
 }
 

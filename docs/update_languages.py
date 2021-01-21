@@ -90,6 +90,7 @@ Root lexicon ``{root}`` and text:
 Result tree:
 
 .. code-block:: none
+   :class: token-tree
 
 {result}
 """
