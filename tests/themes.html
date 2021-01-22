@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8"/>
+<title>Themes demo parce</title>
+<link rel="stylesheet" type="text/css" title="default" href="../parce/themes/default.css"/>
+<link rel="alternate stylesheet" type="text/css" title="debug" href="../parce/themes/debug.css"/>
+<link rel="alternate stylesheet" type="text/css" title="dark" href="../parce/themes/dark.css"/>
+<link rel="alternate stylesheet" type="text/css" title="terminal" href="../parce/themes/terminal.css"/>
+
+</head>
+
+<body>
+
+<h1>Themes demo and test for <em>parce</em>.</h1>
+
+<p>
+Use View→Page Style to select a stylesheet (theme).
+The contents of this file follows the <code>parce.action</code> module.
+Not all styles are coloured differently by all themes.
+Use this file to check whether the theme colors make sense.
+</p>
+
+<p>
+Every line start with the name of the standard action. In some cases
+a child action is availble in the toplevel module space, this is indicated
+by naming the base action on a separate line and indenting the child actions.
+For example <code>Data</code> is actually <code>Literal.Data</code>.
+</p>
+
+<pre class="parce">
+Default styles:
+
+This is text in the default window/base format.
+<span class="parce current-line">The current line (the cursor is in).</span>
+<span class="parce current-line">The current line with focus.</span>
+Select text in this paragraph to see the selection style.
+
+
+* Styles for the base types:
+
+  <span class="text">Text: this is some text</span>
+  <span class="whitespace">Whitespace:	    </span>
+  <span class="keyword">Keyword:</span> <span class="keyword">if</span> <span class="keyword">then</span> <span class="keyword">else</span>
+  <span class="delimiter">Delimiter: ; , { &gt;</span>
+  <span class="name">Name:</span> <span class="name">This</span> is a <span class="name">Name</span>
+  <span class="literal">Literal: This is literal text, e.g. verbatim text or a here document.</span>
+  <span class="comment">Comment: This is a comment.</span>
+
+
+* Styles for the mixin types:
+  (note that mixin types can be mixed with other styles, they just
+   add some properties, see below)
+
+  <span class="alert">Alert: this is text for things like TODO, BUG.</span>
+  <span class="important">Important: this is important text!</span>
+  <span class="unimportant">Unimportant: this is unimportant text.</span>
+  <span class="special">Special: this text stands out in a special, unusual way.</span>
+  <span class="definition">Definition: where something is defined, e.g. a variable.</span>
+  <span class="invalid">Invalid:</span> denotes text that's <span class="invalid">invalid in the current language.</span>
+  <span class="escape">Escape:</span> shows <span class="escape">\e</span>scaped text like <span class="escape">\u34ac</span> or <span class="escape">&amp;amp;</span>.
+  <span class="template">Template:</span> text that is a <span class="template">{template}</span>.
+  <span class="pseudo">Pseudo:</span> text that is <span class="pseudo">Not Real</span>.
+  <span class="preprocessed">Preprocessed:</span> preprocessed text, e.g. for a <span class="preprocessed">MACRO</span>.
+  <span class="inserted">Inserted: inserted text (e.g. in a diff).</span>
+  <span class="deleted">Deleted: deleted text.</span>
+  <span class="quoted">Quoted: quoted text.</span>
+  <span class="bold">Bold: bold text.</span>
+  <span class="emphasized">Emphasized: emphasized text.</span>
+  (<span class="start">Start</span>, <span class="end">End</span>, <span class="indent">Indent</span> and <span class="dedent">Dedent</span> don't have styling normally)
+
+
+* Styles for the <span class="name">Name</span> derivatives:
+
+  <span class="name attribute">Name.Attribute</span>
+  <span class="name builtin">Name.Builtin</span>
+  <span class="name class">Name.Class</span>
+  <span class="name command">Name.Command</span>
+  <span class="name constant">Name.Constant</span>
+  <span class="name decorator">Name.Decorator</span>
+  <span class="name entity">Name.Entity</span>
+  <span class="name exception">Name.Exception</span>
+  <span class="name function">Name.Function</span>
+  <span class="name identifier">Name.Identifier</span>
+  <span class="name macro">Name.Macro</span>
+  <span class="name markup">Name.Markup</span>
+  <span class="name method">Name.Method</span>
+  <span class="name namespace">Name.Namespace</span>
+  <span class="name object">Name.Object</span>
+  <span class="name property">Name.Property</span>
+  <span class="name symbol">Name.Symbol</span>
+  <span class="name tag">Name.Tag</span>
+  <span class="name type">Name.Type</span>
+  <span class="name variable">Name.Variable</span>
+
+
+* Styles for the <span class="literal">Literal</span> derivatives:
+
+  Literal.
+          <span class="literal data">Data</span>: for <span class="literal data">data</span>
+          <span class="literal verbatim">Verbatim</span>: for <span class="literal verbatim">verbatim text</span>
+          <span class="literal string">String</span>: for <span class="literal string">"strings"</span>
+          <span class="literal character">Character</span>: for things that denote a single character
+          <span class="literal number">Number</span>: for numeric text like <span class="literal number">1234</span> (accessible as Number)
+          <span class="literal number decimal">Number.Decimal: 1234</span>
+          <span class="literal number int">Number.Int: 120</span>
+          <span class="literal number float">Number.Float: 3.1415926535</span>
+          <span class="literal number binary">Number.Binary: 0b1101</span>
+          <span class="literal number hexadecimal">Number.Hexadecimal: 0xdeadbeef</span>
+          <span class="literal number octal">Number.Octal: 023</span>
+          <span class="literal number fraction">Number.Fraction: 1/2</span>
+          <span class="literal number boolean">Number.Boolean: True</span>
+          <span class="literal number infinity">Number.Infinity</span>
+          <span class="literal number nan">Number.NaN</span>
+  <span class="literal color">Literal.Color</span>
+  <span class="literal email">Literal.Email</span>
+  <span class="literal url">Literal.Url</span>
+  <span class="literal timestamp">Literal.Timestamp</span>
+  <span class="literal input">Literal.Input</span>
+  <span class="literal output">Literal.Ouput</span>
+  <span class="literal error">Literal.Error</span>
+  <span class="literal prompt">Literal.Prompt</span>
+
+
+* Styles for the <span class="delimiter">Delimiter</span> derivatives:
+
+  Delimiter.
+            <span class="delimiter connection">Connection</span>: connect things
+            <span class="delimiter direction">Direction</span>: implicates a direction
+            <span class="delimiter bracket">Bracket</span>: for { }, ( ), [ ] etc.
+            <span class="delimiter modechange">ModeChange</span>: a special char that changes mode
+            <span class="delimiter operator">Operator</span>: an arithmetic operator
+            <span class="delimiter operator assignment">Operator.Assignment</span>: an assignment operator
+            <span class="delimiter quote">Quote</span>: a quote like «
+
+
+* Commonly used mixes of styles:
+
+  <span class="comment alert">Comment.Alert</span>: <span class="comment">for a </span><span class="comment alert">TODO</span><span class="comment"> in a comment</span>
+  <span class="comment url">Comment.Url</span>: <span class="comment">for a </span><span class="comment url">http://www.url.com/</span><span class="comment"> in a comment</span>
+
+
+</pre>
+
+</body>
+</html>
