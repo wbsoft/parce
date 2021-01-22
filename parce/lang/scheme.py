@@ -92,7 +92,7 @@ class Scheme(Language):
 
     @classmethod
     def string_common(cls):
-        yield r'\\[\\"]', String.Escape
+        yield r'\\[\\"|afnrtvb]', String.Escape
         yield default_action, String
 
     # -------------- Comment ---------------------
