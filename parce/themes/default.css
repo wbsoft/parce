@@ -28,13 +28,15 @@
 }
 
 /* Selected text */
-.parce::selection {
+.parce::selection,
+.parce ::selection {
     background: lightgray;
     color: white;
 }
 
 /* Selected text when the window has focus */
-.parce::selection:focus {
+.parce::selection:focus,
+.parce ::selection:focus {
     background: dodgerblue;
     color: white;
 }
