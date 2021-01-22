@@ -155,15 +155,14 @@ function initialize_themes() {
     update_language();
 }
 </script>
-Theme:
-<select id="theme-selector" name="theme" onchange="update_theme()">
-@THEMES@
-</select>
 Language:
 <select id="language-selector" name="language" onchange="update_language()">
 @LANGUAGES@
 </select>
-
+Theme:
+<select id="theme-selector" name="theme" onchange="update_theme()">
+@THEMES@
+</select>
 
 <div id="all-examples" style="margin: 10px 0;">
 @EXAMPLES@
