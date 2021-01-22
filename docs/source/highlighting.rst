@@ -5,12 +5,8 @@ The standard actions used in the bundled languages can be mapped to colors and
 other text formatting properties, so text in any language can be highlighted in
 a pretty way, to improve readability.
 
-
-How it works
-------------
-
-In *parce*, this work is done by combining a
-:class:`~parce.formatter.Formatter` with a :class:`~parce.theme.Theme`.
+This is done by combining a :class:`~parce.formatter.Formatter` with a
+:class:`~parce.theme.Theme`.
 
 A Formatter iterates over the tokens in a selected range and yields
 :class:`~parce.formatter.FormatRange` tuples, describing how a certain piece
