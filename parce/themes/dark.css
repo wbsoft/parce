@@ -23,12 +23,14 @@
     background: #181818;
 }
 
-.parce::selection {
+.parce::selection,
+.parce ::selection {
     background: gray;
     color: white;
 }
 
-.parce::selection:focus {
+.parce::selection:focus,
+.parce ::selection:focus {
     background: dodgerblue;
     color: white;
 }
@@ -100,12 +102,12 @@
 
 .parce
 .unimportant {
-
+    color: gray;
 }
 
 .parce
 .special {
-    color: forestgreen;
+    color: lightgreen;
 }
 
 .parce
@@ -142,12 +144,12 @@
 
 .parce
 .inserted {
-
+    color: lightgreen;
 }
 
 .parce
 .deleted {
-
+    color: red;
 }
 
 .parce
@@ -157,12 +159,12 @@
 
 .parce
 .bold {
-
+    font-weight: bold;
 }
 
 .parce
 .emphasized {
-
+    font-style: italic;
 }
 
 /* (Start, End, Indent and Dedent don't need styling) */

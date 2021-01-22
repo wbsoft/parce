@@ -134,10 +134,22 @@ Select text in this paragraph to see the selection style.
             <span class="delimiter quote">Quote</span>: a quote like «
 
 
-* Commonly used mixes of styles:
+* Examples of mixin styles:
 
+  <span class="name class">Name.Class</span>, <span class="name class definition">Name.Class.Definition</span>
+  <span class="literal string">String</span>, <span class="literal string escape">String.Escape</span>, <span class="literal string escape invalid">String.Escape.Invalid</span>: <span class="literal string">"a string with a valid </span><span class="literal string escape">\n</span><span class="literal string"> and </span><span class="literal string escape invalid">\i</span><span class="literal string">nvalid escape."</span>
   <span class="comment alert">Comment.Alert</span>: <span class="comment">for a </span><span class="comment alert">TODO</span><span class="comment"> in a comment</span>
+  <span class="keyword invalid">Keyword.Invalid</span>: for a <span class="keyword invalid">keyword</span> where it is not allowed.
+
+
+* Other commonly used mixes of styles:
+
   <span class="comment url">Comment.Url</span>: <span class="comment">for a </span><span class="comment url">http://www.url.com/</span><span class="comment"> in a comment</span>
+
+
+* Only the "debug" theme highlights unparsed text:
+
+  <span class="_unparsed">This is unparsed text.</span>
 
 
 </pre>

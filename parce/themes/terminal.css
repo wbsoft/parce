@@ -27,13 +27,15 @@
 }
 
 /* Selected text */
-.parce::selection {
+.parce::selection,
+.parce ::selection {
     color: black;
     background: silver;
 }
 
 /* Selected text when the window has focus */
-.parce::selection:focus {
+.parce::selection:focus,
+.parce ::selection:focus {
 
 }
 
@@ -99,12 +101,12 @@
 
 .parce
 .important {
-
+    font-weight: bold;
 }
 
 .parce
 .unimportant {
-
+    color: gray;
 }
 
 .parce
@@ -119,7 +121,7 @@
 
 .parce
 .invalid {
-
+    text-decoration: underline red solid;
 }
 
 .parce
@@ -145,12 +147,12 @@
 
 .parce
 .inserted {
-
+    color: lime;
 }
 
 .parce
 .deleted {
-
+    color: red;
 }
 
 .parce
@@ -160,12 +162,12 @@
 
 .parce
 .bold {
-
+    font-weight: bold;
 }
 
 .parce
 .emphasized {
-
+    font-style: italic;
 }
 
 /* (Start, End, Indent and Dedent don't need styling) */

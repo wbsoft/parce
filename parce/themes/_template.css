@@ -25,12 +25,14 @@
 }
 
 /* Selected text */
-.parce::selection {
+.parce::selection,
+.parce ::selection {
 
 }
 
 /* Selected text when the window has focus */
-.parce::selection:focus {
+.parce::selection:focus,
+.parce ::selection:focus {
 
 }
 

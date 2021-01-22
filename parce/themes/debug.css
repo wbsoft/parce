@@ -10,6 +10,8 @@
 
 .parce {
     font: monospace;
+    color: gray;
+    background: white;
 }
 
 .parce ._unparsed {
