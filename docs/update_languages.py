@@ -295,6 +295,9 @@ def format_all_examples():
     import parce.themes
 
     themes = list(sorted(parce.themes.get_all_themes()))
+    # default at first and debug at end
+    themes = ["default"] + [t for t in themes if t not in ("default", "debug")] + ["debug"]
+
     all_themes = [
         (name, HtmlFormatter(parce.theme_by_name(name)))
             for name in themes]
@@ -303,15 +306,16 @@ def format_all_examples():
     examples_html = []
     tokentrees_html = []
 
-    for lang in sorted(all_examples, key=format):
+    for lang in sorted(all_examples, key=lambda l: l.__name__):
+        print (lang)
         langname = lang.__name__
         lang_class = langname.lower()
-        languages.append((lang_class, langname))
         examples = all_examples[lang]
         for n, (root_lexicon, text) in enumerate(examples):
             if n > 0:
-                langname.append(" ({})".format(n + 1))
+                langname += " ({})".format(n + 1)
                 lang_class += format(n)
+            languages.append((lang_class, langname))
             doc = parce.Document(root_lexicon, text)
             # themed boxes
             for name, f in all_themes:

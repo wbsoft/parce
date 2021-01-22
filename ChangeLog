@@ -6,6 +6,7 @@ current: parce-0.18.0
 
 - added solarized light and dark themes
 - added tests/themes.html to view the themes in a browser
+- added examples page to the docs, using the examples from the tests/ dir.
 
 
 2021-01-21: parce-0.17.0
