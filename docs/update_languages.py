@@ -36,7 +36,7 @@ sys.path.insert(0, "..")
 import parce
 import parce.registry
 from parce.language import get_all_modules, get_languages
-from parce.out.html import HtmlFormatter
+from parce.out.html import HtmlFormatter, escape
 
 
 STUB = r"""
@@ -109,12 +109,86 @@ LANGS_INC_HEADER = r"""
 
 """
 
+EXAMPLE_THEME_STUB_HTML = r"""
+<div id="all-themed-examples"
+     style="padding: 10px; background: lightgray; border-radius: 4px;">
+<script type="text/javascript">
+/*
+ * select the example corresponding to selected language and theme.
+ */
+function update_theme() {
+
+    var examples = document.getElementById("all-examples").children;
+    var lang = document.getElementById("language-selector").value;
+    var theme = document.getElementById("theme-selector").value;
+    var show = lang + "_" + theme;
+
+    for (var i = 0; i < examples.length; i++) {
+        box = examples[i]
+        if (box.className == show) {
+            box.style.display = "block";
+        } else {
+            box.style.display = "none";
+        }
+    }
+}
+
+function update_language() {
+
+    var trees = document.getElementById("all-tokentrees").children;
+    var lang = document.getElementById("language-selector").value;
+    var show = "tokentree_" + lang;
+
+    for (var i = 0; i < trees.length; i++) {
+        box = trees[i]
+        if (box.className == show) {
+            box.style.display = "block";
+        } else {
+            box.style.display = "none";
+        }
+    }
+
+    update_theme();
+}
+
+function initialize_themes() {
+    update_language();
+}
+</script>
+Theme:
+<select id="theme-selector" name="theme" onchange="update_theme()">
+@THEMES@
+</select>
+Language:
+<select id="language-selector" name="language" onchange="update_language()">
+@LANGUAGES@
+</select>
+
+
+<div id="all-examples" style="margin: 10px 0;">
+@EXAMPLES@
+</div>
+<div id="all-tokentrees" style="margin: 10px 0 0;">
+@TOKENTREES@
+</div>
+</div> <!--all-examples-->
+
+<script type="text/javascript">
+    initialize_themes();
+</script>
+</div> <!--all-themed-examples-->
+"""
+
+
 # mapping from the example files to their Language
 all_examples = collections.defaultdict(list)
 
 
-# formatter for the examples
-formatter = HtmlFormatter(parce.theme_by_name('default'))
+# default theme
+default_theme = parce.theme_by_name('default')
+
+# default formatter for the examples
+default_formatter = HtmlFormatter(default_theme)
 
 
 def title(text, char='-'):
@@ -125,6 +199,19 @@ def title(text, char='-'):
 def indent(text, indent=3):
     """Indent text."""
     return '\n'.join(' ' * indent + line for line in text.splitlines())
+
+
+def make_html(doc, formatter=None):
+    """Formats Document as HTML using formatter.
+
+    If formatter is None, the default formatter is used.
+
+    """
+    f = default_formatter if formatter is None else formatter
+    cursor = parce.Cursor(doc, 0, None)
+    return HTML_STUB.format(
+                baseformat=f.baseformat() or "",
+                html=f.html(cursor))
 
 
 def make_stub(module):
@@ -160,10 +247,7 @@ def make_stub(module):
             doc = parce.Document(root_lexicon, text)
             buf = io.StringIO()
             doc.get_root(True).dump(buf)
-            cursor = parce.Cursor(doc, 0, None)
-            html = HTML_STUB.format(
-                baseformat=formatter.baseformat() or "",
-                html=formatter.html(cursor))
+            html = make_html(doc)
             example.append(EXAMPLE_STUB.format(root=root_lexicon, language=module,
                 code=indent(html, 6), result=indent(buf.getvalue())))
 
@@ -192,11 +276,8 @@ def load_examples():
         all_examples[root_lexicon.language].append((root_lexicon, text))
 
 
-def main():
-    """Main function."""
-    load_examples()
-
-    # write the source/langs.inc file and all the module doc files
+def write_langs_and_module_stubs():
+    """Write the source/langs.inc file and all the module doc files"""
     with open("source/langs.inc", "w") as f:
         f.write(LANGS_INC_HEADER)
         for name in get_all_modules():
@@ -207,6 +288,59 @@ def main():
                 make_stub(name)
                 f.write("   * - :mod:`~parce.lang.{0}`\n".format(name))
                 f.write("     - {0}\n\n".format(clss))
+
+
+def format_all_examples():
+    """Format all examples, using all themes."""
+    import parce.themes
+
+    themes = list(sorted(parce.themes.get_all_themes()))
+    all_themes = [
+        (name, HtmlFormatter(parce.theme_by_name(name)))
+            for name in themes]
+
+    languages = []
+    examples_html = []
+    tokentrees_html = []
+
+    for lang in sorted(all_examples, key=format):
+        langname = lang.__name__
+        lang_class = langname.lower()
+        languages.append((lang_class, langname))
+        examples = all_examples[lang]
+        for n, (root_lexicon, text) in enumerate(examples):
+            if n > 0:
+                langname.append(" ({})".format(n + 1))
+                lang_class += format(n)
+            doc = parce.Document(root_lexicon, text)
+            # themed boxes
+            for name, f in all_themes:
+                html = '<pre style="padding: 2px; height: 300px; overflow: auto; {3}" class="{0}_{1}">{2}</pre>\n'.format(
+                    lang_class, name, f.html(parce.Cursor(doc, 0, None)), f.baseformat())
+                examples_html.append(html)
+            # tokentree box
+            buf = io.StringIO()
+            doc.get_root(True).dump(buf)
+            html = '<pre style="padding: 2px; height: 300px; overflow: auto; background: ivory;" class="tokentree_{0}">{1}</pre>\n'.format(
+                lang_class, escape(buf.getvalue()))
+            tokentrees_html.append(html)
+
+    text = EXAMPLE_THEME_STUB_HTML\
+        .replace("@THEMES@", '\n'.join(map('<option value="{0}">{0}</option>'.format, themes))) \
+        .replace("@LANGUAGES@", '\n'.join('<option value="{0}">{1}</option>'.format(*l) for l in languages)) \
+        .replace("@EXAMPLES@", '\n'.join(examples_html)) \
+        .replace("@TOKENTREES@", '\n'.join(tokentrees_html))
+
+    with open("source/examples.html", "w") as f:
+        f.write(text)
+
+
+def main():
+    """Main function."""
+    load_examples()
+    write_langs_and_module_stubs()
+    format_all_examples()
+
 
 if __name__ == "__main__":
     main()

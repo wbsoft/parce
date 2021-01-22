@@ -24,6 +24,7 @@ Last update: |today|.
    :maxdepth: 1
    :caption: Appendix:
 
+   examples.rst
    stdactions.rst
    langs.rst
    out.rst
