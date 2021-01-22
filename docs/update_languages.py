@@ -307,7 +307,6 @@ def format_all_examples():
     tokentrees_html = []
 
     for lang in sorted(all_examples, key=lambda l: l.__name__):
-        print (lang)
         langname = lang.__name__
         lang_class = langname.lower()
         examples = all_examples[lang]
