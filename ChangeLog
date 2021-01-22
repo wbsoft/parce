@@ -2,6 +2,12 @@ ChangeLog
 =========
 
 
+current: parce-0.18.0
+
+- added solarized light and dark themes
+- added tests/themes.html to view the themes in a browser
+
+
 2021-01-21: parce-0.17.0
 
 - fixed treebuilder.build_tree() function with root lexicon None

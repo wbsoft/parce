@@ -1,0 +1,464 @@
+/*
+ * Template CSS theme for parce.
+ *
+ * Name "solarized-light"
+ *
+ * Port of the solarized theme at
+ * https://github.com/altercation/solarized
+ */
+
+
+/* The 16 used colors: */
+/* #002b36; /* base03 */
+/* #073642; /* base02 */
+/* #586e75; /* base01 */
+/* #657b83; /* base00 */
+/* #839496; /* base0 */
+/* #93a1a1; /* base1 */
+/* #eee8d5; /* base2 */
+/* #fdf6e3; /* base3 */
+/* #b58900; /* yellow */
+/* #cb4b16; /* orange */
+/* #dc322f; /* red */
+/* #d33682; /* magenta */
+/* #6c71c4; /* violet */
+/* #268bd2; /* blue */
+/* #2aa198; /* cyan */
+/* #859900; /* green */
+
+/* Solarized light:
+ * - default body text: base 00
+ * - optional emphasized text: base 01
+ * - comments, secondary text: base 1
+ * - background: base 3
+ * - background highlights: base 2
+ */
+
+/*
+ * Default style for a parce DIV or text editing window etc.
+ */
+
+/* Default */
+.parce {
+    font-family: monospace;
+    color: #657b83; /* base00 */
+    background: #fdf6e3; /* base3 */
+}
+
+/* The line the cursor is in */
+.parce.current-line {
+    background: #eee8d5; /* base2 */
+}
+
+/* The current line when the window has focus */
+.parce.current-line:focus {
+
+}
+
+/* Selected text [inverted] */
+.parce::selection,
+.parce ::selection {
+    color: #839496; /* base0 */
+    background: #002b36; /* base03 */
+}
+
+/* Selected text when the window has focus */
+.parce::selection:focus,
+.parce ::selection:focus {
+
+}
+
+/* The current line when text widget is disabled
+ * (probably unused normally)
+ */
+.parce.current-line:disabled {
+
+}
+
+.parce::selection:disabled {
+
+}
+
+
+/*
+ * Styles for the base types
+ */
+.parce
+.text {
+
+}
+
+.parce
+.whitespace {
+
+}
+
+.parce
+.keyword {
+    font-weight: bold;
+    color: #586e75; /* base01 */
+}
+
+.parce
+.delimiter {
+
+}
+
+.parce
+.name {
+
+}
+
+.parce
+.literal {
+    color: #2aa198; /* cyan */
+}
+
+.parce
+.comment {
+    color: #93a1a1; /* base1 */
+    font-style: italic;
+}
+
+/*
+ * Styles for the mixin types
+ */
+.parce
+.alert {
+    color: #dc322f; /* red */
+}
+
+.parce
+.important {
+    color: #586e75; /* base01 */
+}
+
+.parce
+.unimportant {
+    color: #93a1a1; /* base1 */
+}
+
+.parce
+.special {
+
+}
+
+.parce
+.definition {
+    font-weight: bold;
+}
+
+.parce
+.invalid {
+    text-decoration: underline #dc322f /* red */ solid;
+}
+
+.parce
+.escape {
+    font-weight: bold;
+    color: #268bd2; /* blue */
+}
+
+.parce
+.template {
+
+}
+
+.parce
+.pseudo {
+
+}
+
+.parce
+.preprocessed {
+    color: #cb4b16; /* orange */
+}
+
+.parce
+.inserted {
+    color: #859900; /* green */
+}
+
+.parce
+.deleted {
+    color: #dc322f; /* red */
+}
+
+.parce
+.quoted {
+
+}
+
+.parce
+.bold {
+    font-weight: bold;
+}
+
+.parce
+.emphasized {
+    font-style: italic;
+}
+
+/* (Start, End, Indent and Dedent don't need styling) */
+.parce
+.start {
+
+}
+
+.parce
+.end {
+
+}
+
+.parce
+.indent {
+
+}
+
+.parce
+.dedent {
+
+}
+
+
+/*
+ * Styles for Name derivatives
+ */
+.parce
+.attribute {
+
+}
+
+.parce
+.builtin {
+    color: #268bd2; /* blue */
+}
+
+.parce
+.class {
+    color: #b58900; /* yellow */
+}
+
+.parce
+.command {
+
+}
+
+.parce
+.constant {
+    color: #d33682; /* magenta */
+}
+
+.parce
+.decorator {
+    font-weight: bold;
+    color: #6c71c4; /* violet */
+}
+
+.parce
+.entity {
+
+}
+
+.parce
+.exception {
+    font-weight: bold;
+    color: #dc322f; /* red */
+}
+
+.parce
+.function {
+    color: #cb4b16; /* orange */
+}
+
+.parce
+.identifier {
+
+}
+
+.parce
+.macro {
+    color: #cb4b16; /* orange */
+}
+
+.parce
+.markup {
+    color: #859900; /* green */
+}
+
+.parce
+.method {
+    color: #cb4b16; /* orange */
+}
+
+.parce
+.namespace {
+    color: #d33682; /* magenta */
+}
+
+.parce
+.object {
+
+}
+
+.parce
+.property {
+
+}
+
+.parce
+.symbol {
+
+}
+
+.parce
+.tag {
+
+}
+
+.parce
+.type {
+
+}
+
+.parce
+.variable {
+
+}
+
+
+/*
+ * Styles for Literal derivatives
+ */
+.parce
+.data {
+
+}
+
+.parce
+.verbatim {
+
+}
+
+.parce
+.string {
+
+}
+
+.parce
+.number {
+
+}
+
+.parce
+.fraction {
+
+}
+
+.parce
+.boolean {
+
+}
+
+.parce
+.color {
+
+}
+
+.parce
+.email {
+    text-decoration: underline #268bd2 /* blue */ dashed;
+}
+
+.parce
+.url {
+    text-decoration: underline #268bd2 /* blue */ dashed;
+}
+
+.parce
+.timestamp {
+
+}
+
+.parce
+.input {
+
+}
+
+.parce
+.output {
+
+}
+
+.parce
+.error {
+    color: #dc322f; /* red */
+}
+
+.parce
+.prompt {
+    font-weight: bold;
+    color: #93a1a1; /* base1 */
+}
+
+/*
+ * String styles
+ */
+.parce
+.string.double {
+
+}
+
+.parce
+.string.single {
+
+}
+
+.parce
+.string.escape {
+    color: #b58900; /* yellow */
+}
+
+/*
+ * Styles for Delimiter derivatives
+ */
+.parce
+.connection {
+
+}
+
+.parce
+.direction {
+
+}
+
+.parce
+.operator {
+
+}
+
+.parce
+.assignment {
+
+}
+
+.parce
+.bracket {
+    font-weight: bold;
+}
+
+.parce
+.modechange {
+
+}
+
+.parce
+.quote {
+
+}
+
+.parce
+.separator {
+
+}
+
