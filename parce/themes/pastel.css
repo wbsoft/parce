@@ -1,0 +1,441 @@
+/*
+ * CSS theme for parce.
+ *
+ * Name "pastel"
+ * 
+ */
+
+
+/*
+ * Default style for a parce DIV or text editing window etc.
+ */
+
+/* Default */
+.parce {
+    background: #fcfefc;
+    color: dimgray;
+    font: monospace;
+}
+
+/* The line the cursor is in */
+.parce.current-line {
+    background: floralwhite;
+}
+
+/* The current line when the window has focus */
+.parce.current-line:focus {
+    background: floralwhite;
+}
+
+/* Selected text */
+.parce::selection,
+.parce ::selection {
+    background: lightslategray;
+    color: white;
+}
+
+/* Selected text when the window has focus */
+.parce::selection:focus,
+.parce ::selection:focus {
+    background: lightslategray;
+    color: white;
+}
+
+/* The current line when text widget is disabled
+ * (probably unused normally)
+ */
+.parce.current-line:disabled {
+
+}
+
+.parce::selection:disabled {
+
+}
+
+
+/*
+ * Styles for the base types
+ */
+.parce
+.text {
+
+}
+
+.parce
+.whitespace {
+
+}
+
+.parce
+.keyword {
+    font-weight: bold;
+}
+
+.parce
+.delimiter {
+
+}
+
+.parce
+.name {
+    color: cornflowerblue;
+}
+
+.parce
+.literal {
+    color: limegreen;
+}
+
+.parce
+.comment {
+    color: darkgray;
+    font-style: italic;
+}
+
+/*
+ * Styles for the mixin types
+ */
+.parce
+.alert {
+    color: lightsalmon;
+    font-weight: bold;
+}
+
+.parce
+.important {
+    font-weight: bold;
+}
+
+.parce
+.unimportant {
+    color: darkgray;
+}
+
+.parce
+.special {
+    color: forestgreen;
+}
+
+.parce
+.definition {
+    font-weight: bold;
+}
+
+.parce
+.invalid {
+    text-decoration: underline lightsalmon solid;
+}
+
+.parce
+.escape {
+    font-weight: bold;
+    color: cadetblue;
+}
+
+.parce
+.template {
+    font-weight: bold;
+    color: mediumaquamarine;
+}
+
+.parce
+.pseudo {
+    color: orange !important;
+}
+
+.parce
+.preprocessed {
+    color: yellowgreen !important;
+}
+
+.parce
+.inserted {
+    color: forestgreen;
+}
+
+.parce
+.deleted {
+    color: tomato;
+}
+
+.parce
+.quoted {
+    color: slategray;
+}
+
+.parce
+.bold {
+    font-weight: bold;
+}
+
+.parce
+.emphasized {
+    font-style: italic;
+}
+
+/* (Start, End, Indent and Dedent don't need styling) */
+.parce
+.start {
+
+}
+
+.parce
+.end {
+
+}
+
+.parce
+.indent {
+
+}
+
+.parce
+.dedent {
+
+}
+
+
+/*
+ * Styles for Name derivatives
+ */
+.parce
+.attribute {
+    color: steelblue;
+}
+
+.parce
+.builtin {
+    color: chocolate;
+    font-weight: bold;
+}
+
+.parce
+.class {
+    color: dodgerblue;
+}
+
+.parce
+.command {
+    color: chocolate;
+}
+
+.parce
+.constant {
+    color: palevioletred;
+}
+
+.parce
+.decorator {
+    color: orange;
+    font-weight: bold;
+}
+
+.parce
+.entity {
+    color: cadetblue;
+}
+
+.parce
+.exception {
+    color: tomato;
+    font-weight: bold;
+}
+
+.parce
+.function {
+    color: darkgoldenrod;
+}
+
+.parce
+.identifier {
+    color: brown;
+}
+
+.parce
+.macro {
+    color: yellowgreen;
+}
+
+.parce
+.markup {
+    color: limegreen;
+}
+
+.parce
+.method {
+    color: royalblue;
+}
+
+.parce
+.namespace {
+    color: orchid;
+    font-weight: bold;
+}
+
+.parce
+.object {
+    color: orchid;
+}
+
+.parce
+.property {
+    color: teal;
+}
+
+.parce
+.symbol {
+
+}
+
+.parce
+.tag {
+    font-weight: bold;
+}
+
+.parce
+.type {
+    color: dodgerblue;
+}
+
+.parce
+.variable {
+    color: sandybrown;
+}
+
+
+/*
+ * Styles for Literal derivatives
+ */
+.parce
+.data {
+
+}
+
+.parce
+.verbatim {
+
+}
+
+.parce
+.string {
+    color: tomato;
+}
+
+.parce
+.number {
+    color: goldenrod;
+}
+
+.parce
+.fraction {
+
+}
+
+.parce
+.boolean {
+
+}
+
+.parce
+.color {
+
+}
+
+.parce
+.email {
+    text-decoration: underline paleturquoise dashed;
+}
+
+.parce
+.url {
+    text-decoration: underline paleturquoise dashed;
+}
+
+.parce
+.timestamp {
+
+}
+
+.parce
+.input {
+
+}
+
+.parce
+.output {
+
+}
+
+.parce
+.error {
+
+}
+
+.parce
+.prompt {
+    color: yellowgreen;
+    font-weight: bold;
+}
+
+/*
+ * String styles
+ */
+.parce
+.string.double {
+
+}
+
+.parce
+.string.single {
+
+}
+
+.parce
+.string.escape {
+    color: lightsalmon;
+}
+
+/*
+ * Styles for Delimiter derivatives
+ */
+.parce
+.connection {
+
+}
+
+.parce
+.direction {
+
+}
+
+.parce
+.operator {
+
+}
+
+.parce
+.assignment {
+
+}
+
+.parce
+.bracket {
+    font-weight: bold;
+}
+
+.parce
+.modechange {
+    font-weight: bold;
+    color: slategray;
+}
+
+.parce
+.quote {
+
+}
+
+.parce
+.separator {
+
+}
+
