@@ -154,8 +154,8 @@ induce other behaviour:
 
 2.  The ``default_target`` rule, which defines the target to choose when
     none of the normal rules match. This can be seen as a "fallthrough"
-    possibility to check for some text, but just go one somewhere else
-    in case the text is not there.
+    possibility to check for some text, but just go on somewhere else in case
+    the text is not there.
 
     An example::
 
