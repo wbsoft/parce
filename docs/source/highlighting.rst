@@ -106,6 +106,9 @@ used by the theming engine:
     * - ``background``
       - only colors are supported, same as ``color``
 
+    * - ``caret-color``
+      - same as ``color``
+
     * - ``text-decoration-color``
       - same as ``color``
 

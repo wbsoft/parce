@@ -236,6 +236,7 @@ class TextFormat:
     """
     color = None                    #: the foreground color as Color(r, g, b, a) tuple
     background_color = None         #: the background color (id)
+    caret_color = None              #: the color for the text cursor
     text_decoration_color = None    #: the color for text decoration
     text_decoration_line = ()       #: underline, overline and/or line-through
     text_decoration_style = None    #: solid, double, dotted, dashed or wavy
@@ -272,6 +273,7 @@ class TextFormat:
         for props in (
             ('color',),
             ('background_color',),
+            ('caret_color',),
             ('text_decoration_color', 'text_decoration_line', 'text_decoration_style'),
             ('font_family',),
             ('font_kerning',),
@@ -320,6 +322,8 @@ class TextFormat:
             yield "color", css.color2hex(self.color)
         if self.background_color:
             yield "background-color", css.color2hex(self.background_color)
+        if self.caret_color:
+            yield "caret-color", css.color2hex(self.caret_color)
 
     def write_text_decoration(self):
         """Yield a text-decoration property, if set."""
@@ -373,6 +377,13 @@ class TextFormat:
     @_dispatch("background")
     def read_background(self, values):
         self.read_background_color(values)
+
+    @_dispatch("caret-color")
+    def read_caret_color(self, values):
+        for v in values:
+            if v.color:
+                self.caret_color = v.color
+                return
 
     @_dispatch("text-decoration-color")
     def read_text_decoration_color(self, values):
