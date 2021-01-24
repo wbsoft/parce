@@ -106,16 +106,17 @@ class AbstractTheme:
 
 
 class Theme(AbstractTheme):
-    """A Theme maps a StandardAction to a TextFormat with CSS properties."""
+    """A Theme maps a StandardAction to a TextFormat with CSS properties.
+
+    Zero or more ``filenames`` can be given, which are loaded after another. If
+    the ``stylesheet`` text is given, it is added to the stylesheets loaded
+    from the filename(s). (If the ``basename`` is given, it is used to resolve
+    ``@import`` rules in the ``stylesheet`` text.)
+
+    """
 
     def __init__(self, *filenames, stylesheet="", basename=""):
-        """Instantiate the Theme from CSS file(s) and/or text.
-
-        If the ``stylesheet`` text is given, it is added to the stylesheets
-        loaded from the filename(s). If the ``basename`` is given, it is used
-        to resolve ``@import`` rules in the ``stylesheet`` text.
-
-        """
+        """Instantiate the Theme from CSS file(s) and/or text."""
         self._filenames = filenames
         self._css_text = stylesheet
         self._css_base = basename
