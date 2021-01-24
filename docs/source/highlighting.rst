@@ -230,20 +230,52 @@ individual tokens:
    * - ``.parce::selection:disabled``
      - selected text when the text widget is disabled
 
+
+Editor features
+^^^^^^^^^^^^^^^
+
+The following CSS classes are not used by the *parce* formatter itself, but
+they can be used to define text editor styles so that they relate with the
+theme (other classes might be designed as well for custom usage of *parce*
+themes):
+
+.. list-table::
+   :header-rows: 1
+   :widths: 40 60
+
+   * - CSS Selector
+     - defines properties to use for:
+
    * - ``.parce.leading-whitespace``
      - highlighting leading whitespace, if desired.
-       Not supported by the default formatter, but a text editor could implement
-       this and use a color from the theme.
 
    * - ``.parce.trailing-whitespace``
      - highlighting trailing whitespace, if desired.
-       Not supported by the default formatter, but a text editor could implement
-       this and use a color from the theme.
 
    * - ``.parce.eol-marker``
      - drawing an "end-of-line" marker, if desired.
-       Not supported by the default formatter, but a text editor could implement
-       this and use a color from the theme.
+
+   * - ``.parce.margin-linenumbers``
+     - the region displaying line numbers.
+
+   * - ``.parce.margin-folding``
+     - the region displaying folding markers.
+
+   * - ``.parce.mark-line``
+     - a (book)marked line (at least background should be defined)
+
+   * - ``.parce.mark-search``
+     - search results in the text (at least background should be defined)
+
+   * - ``.parce.mark-error``
+     - a line marked as containing e.g. a compile error in the text (at least
+       background should be defined)
+
+   * - ``.parce.brace-match``
+     - a matching bracket or parenthesis, etc.
+
+   * - ``.brace-fail``
+     - a bracket or parenthesis that has no valid match.
 
 
 Using multiple themes together

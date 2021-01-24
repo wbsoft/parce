@@ -47,6 +47,48 @@
 
 }
 
+/*
+ * Styles for some editor regions/features
+ */
+.parce.leading-whitespace {
+
+}
+
+.parce.trailing-whitespace {
+
+}
+
+.parce.eol-marker {
+
+}
+
+.parce.margin-folding {
+
+}
+
+.parce.margin-linenumbers {
+
+}
+
+.parce.mark-line {
+
+}
+
+.parce.mark-search {
+
+}
+
+.parce.mark-error {
+
+}
+
+.parce.brace-match {
+
+}
+
+.parce.brace-fail {
+
+}
 
 /*
  * Styles for the base types
