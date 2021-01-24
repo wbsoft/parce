@@ -249,7 +249,10 @@ class StyleSheet:
         return cls(get_rules(css), filename)
 
     def __add__(self, other):
-        return type(self)(self.rules + other.rules)
+        """Create a new StyleSheet by appending the other's rules."""
+        new = type(self)(self.rules + other.rules)
+        new._imported_filenames = list(set(self.filenames() + other.filenames()))
+        return new
 
     @style_query
     def filter_conditions(self, keyword, predicate):
