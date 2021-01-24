@@ -274,7 +274,7 @@ themes):
    * - ``.parce.brace-match``
      - a matching bracket or parenthesis, etc.
 
-   * - ``.brace-fail``
+   * - ``.parce.brace-nomatch``
      - a bracket or parenthesis that has no valid match.
 
 
