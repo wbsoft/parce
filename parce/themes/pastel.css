@@ -1,8 +1,9 @@
 /*
  * CSS theme for parce.
  *
- * Name "pastel"
- * 
+ * Name: pastel
+ *
+ * A theme with very light colors
  */
 
 
@@ -50,6 +51,52 @@
 
 .parce::selection:disabled {
 
+}
+
+
+/*
+ * Styles for some editor regions/features
+ */
+.parce.leading-whitespace {
+
+}
+
+.parce.trailing-whitespace {
+
+}
+
+.parce.eol-marker {
+
+}
+
+.parce.margin-folding {
+    color: gray;
+    background: gainsboro;
+}
+
+.parce.margin-linenumbers {
+    color: white;
+    background: silver;
+}
+
+.parce.mark-line {
+    background: lightcyan;
+}
+
+.parce.mark-search {
+    background: #bfb;
+}
+
+.parce.mark-error {
+    background: papayawhip;
+}
+
+.parce.brace-match {
+    background: lightblue;
+}
+
+.parce.brace-nomatch {
+    background: lightpink;
 }
 
 

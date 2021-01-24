@@ -1,7 +1,9 @@
 /*
  * Template CSS theme for parce.
  *
- * Use this as a template when creating a theme.
+ * Name: terminal
+ *
+ * A dark theme using only the 16 CSS 1 ansi terminal colors
  */
 
 
@@ -48,6 +50,52 @@
 
 .parce::selection:disabled {
 
+}
+
+
+/*
+ * Styles for some editor regions/features
+ */
+.parce.leading-whitespace {
+
+}
+
+.parce.trailing-whitespace {
+
+}
+
+.parce.eol-marker {
+
+}
+
+.parce.margin-folding {
+    color: gray;
+    background: black;
+}
+
+.parce.margin-linenumbers {
+    color: gray;
+    background: black;
+}
+
+.parce.mark-line {
+    background: navy;
+}
+
+.parce.mark-search {
+    background: green;
+}
+
+.parce.mark-error {
+    background: maroon;
+}
+
+.parce.brace-match {
+    background: blue;
+}
+
+.parce.brace-nomatch {
+    background: red;
 }
 
 

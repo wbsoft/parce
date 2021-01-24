@@ -1,7 +1,7 @@
 /*
  * Template CSS theme for parce.
  *
- * Name "solarized-light"
+ * Name: solarized-dark
  *
  * Port of the solarized theme at
  * https://github.com/altercation/solarized
@@ -77,6 +77,52 @@
 
 .parce::selection:disabled {
 
+}
+
+
+/*
+ * Styles for some editor regions/features
+ */
+.parce.leading-whitespace {
+
+}
+
+.parce.trailing-whitespace {
+
+}
+
+.parce.eol-marker {
+
+}
+
+.parce.margin-folding {
+    color: #586e75; /* base01 */
+    background: #073642; /* base02 */
+}
+
+.parce.margin-linenumbers {
+    color: #586e75; /* base01 */
+    background: #073642; /* base02 */
+}
+
+.parce.mark-line {
+    background: #146; /* blue, darker */
+}
+
+.parce.mark-search {
+    background: #241; /* green, darker */
+}
+
+.parce.mark-error {
+    background: #622; /* red, darker */
+}
+
+.parce.brace-match {
+    background: #157; /* blue, darker */
+}
+
+.parce.brace-nomatch {
+    background: #622; /* red, darker */
 }
 
 

@@ -1,10 +1,11 @@
 /*
  * "Debug" CSS theme for parce.
  *
- * Name "debug"
+ * Name: debug
  *
  * This theme highlights unparsed regions and tokens with Invalid action.
  * The class "_unparsed" is handled specially by Formatter.
+ * The editor styles are copied from "pastel".
  */
 
 
@@ -24,3 +25,39 @@
 .parce .error {
     text-decoration: underline red solid;
 }
+
+
+/*
+ * Styles for some editor regions/features
+ */
+.parce.margin-folding {
+    color: gray;
+    background: gainsboro;
+}
+
+.parce.margin-linenumbers {
+    color: white;
+    background: silver;
+}
+
+.parce.mark-line {
+    background: lightcyan;
+}
+
+.parce.mark-search {
+    background: #bfb;
+}
+
+.parce.mark-error {
+    background: papayawhip;
+}
+
+.parce.brace-match {
+    background: lightblue;
+}
+
+.parce.brace-nomatch {
+    background: lightpink;
+}
+
+

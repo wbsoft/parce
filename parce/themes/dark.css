@@ -1,7 +1,7 @@
 /*
  * Dark CSS theme for parce.
  *
- * Name "dark"
+ * Name: dark
  */
 
 
@@ -45,6 +45,52 @@
 .parce::selection:disabled {
 
 }
+
+/*
+ * Styles for some editor regions/features
+ */
+.parce.leading-whitespace {
+
+}
+
+.parce.trailing-whitespace {
+
+}
+
+.parce.eol-marker {
+
+}
+
+.parce.margin-folding {
+    color: gainsboro;
+    background: #222;
+}
+
+.parce.margin-linenumbers {
+    color: gray;
+    background: #444;
+}
+
+.parce.mark-line {
+    background: midnightblue;
+}
+
+.parce.mark-search {
+    background: darkgreen;
+}
+
+.parce.mark-error {
+    background: brown;
+}
+
+.parce.brace-match {
+    background: blue;
+}
+
+.parce.brace-nomatch {
+    background: crimson;
+}
+
 
 /*
  * Styles for the base types
