@@ -147,8 +147,8 @@ class Theme(AbstractTheme):
     def baseformat(self, role="window", state="default"):
         """Return a TextFormat for a specific role and a state.
 
-        The role may be any string that maps to a CSS class in the theme
-        CSS file that is available there together with the 'parce' class.
+        The ``role`` may be any string that maps to a CSS class in the theme
+        CSS file that is available there together with the ``parce`` class.
 
         The following roles are recognized and used by parce, but you may
         also define your own roles in your (applications') theme CSS files:
@@ -164,15 +164,10 @@ class Theme(AbstractTheme):
         ``"current-line"``
             The TextFormat for the current line. If you use it, set only the
             *background* color in your theme file.
-        ``"leading-whitespace"``
-            The TextFormat to highlight leading whitespace, if desired.
-        ``"trailing-whitespace"``
-            The TextFormat to highlight trailing whitespace, if desired.
-        ``"eol-marker"``
-            The *color* to draw a "end-of-line" marker with, if desired
 
         The state argument may be "default", "focus", or "disabled", and
         reflects the state of the user interface the style variant is used for.
+        If the state is "focus" or "disabled", it is added as a pseudo class.
 
         """
         if role == "window":
