@@ -157,5 +157,36 @@ Select text in this paragraph to see the selection style.
 
 </pre>
 
+<h2>Editor demo:</h2>
+
+<table style="border: 2px solid lightgray;" border="0" cellspacing="0" cellpadding="0">
+<tr>
+<td><pre class="parce margin-linenumbers"> 1
+ 2
+ 3
+ 4
+ 5
+ 6
+ 7
+ 8 </pre></td>
+<td><pre class="parce margin-folding">|
+|
++-
+|
+|
++-
+
+  </pre></td>
+<td><pre contenteditable="true" style="min-width: 400px;" class="parce">First line
+<span style="display: block; min-width: 300px;" class="parce mark-error">second line
+</span>third line
+<span style="display: block; min-width: 300px;" class="parce current-line">fourth line (current line)
+</span>fifth line <span class="parce brace-match">(</span>paren matches here<span class="parce brace-match">)</span>, but unmatched <span class="parce brace-nomatch">{</span>
+sixth line <span class="parce mark-search">search result</span>
+seventh line
+<span style="display: block; min-width: 300px;" class="parce mark-line">last line (marked)</span></pre></td>
+</tr>
+</table>
+
 </body>
 </html>

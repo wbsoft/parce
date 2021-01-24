@@ -54,6 +54,52 @@
 
 
 /*
+ * Styles for some editor regions/features
+ */
+.parce.leading-whitespace {
+
+}
+
+.parce.trailing-whitespace {
+
+}
+
+.parce.eol-marker {
+
+}
+
+.parce.margin-folding {
+    color: gray;
+    background: gainsboro;
+}
+
+.parce.margin-linenumbers {
+    color: gray;
+    background: silver;
+}
+
+.parce.mark-line {
+    background: powderblue;
+}
+
+.parce.mark-search {
+    background: palegreen;
+}
+
+.parce.mark-error {
+    background: lightpink;
+}
+
+.parce.brace-match {
+    background: lightblue;
+}
+
+.parce.brace-nomatch {
+    background: lightpink;
+}
+
+
+/*
  * Styles for the base types
  */
 .parce
