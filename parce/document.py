@@ -565,8 +565,8 @@ class AbstractTextRange:
         return self.document().token(self.pos)
 
     def tokens(self):
-        """Convenience method returning a tuple with all Tokens that are in
-        or overlap this text range.
+        """Convenience method yielding all Tokens that are in or overlap this
+        text range.
 
         The Document must have the :class:`~parce.treedocument.TreeDocument`
         class mixed in (i.e. have the ``get_root()`` method.
@@ -720,4 +720,14 @@ class Block(AbstractTextRange):
             end = self.pos - len(self.document().block_separator)
             pos = self.document().find_start_of_block(end)
             return type(self)(self.document(), pos, end)
+
+    def tokens(self):
+        """Convenience method returning a tuple with all Tokens that are in
+        or overlap this text range.
+
+        The Document must have the :class:`~parce.treedocument.TreeDocument`
+        class mixed in (i.e. have the ``get_root()`` method.
+
+        """
+        return tuple(super().tokens())
 

@@ -152,9 +152,9 @@ Of course, you can get to the tokens by examining the tree, but there are a few
 convenience methods. :meth:`Document.token(pos)
 <parce.treedocument.TreeDocumentMixin.token>` returns the token closest at the
 specified position (and on the same line), and :meth:`Cursor.token()
-<parce.document.Cursor.token>` does the same. :meth:`Cursor.tokens()
-<parce.document.Cursor.tokens>` yields the tokens in the selected range, if
-any.
+<parce.document.AbstractTextRange.token>` does the same. :meth:`Cursor.tokens()
+<parce.document.AbstractTextRange.tokens>` yields the tokens in the selected
+range, if any.
 
 :meth:`Block.tokens() <parce.document.Block.tokens>` returns a tuple of the
 tokens at that line::
@@ -171,16 +171,19 @@ tokens at that line::
 More goodies
 ------------
 
-The ``parce.Document`` class is in fact built from two base classes:
-``AbstractDocument``/``Document`` from the :py:mod:`document <parce.document>`
-module and ``TreeDocumentMixin`` from the :py:mod:`treedocument
-<parce.treedocument>` module.
+The :class:`parce.Document` class is in fact built from two base classes:
+:class:`~parce.document.AbstractDocument`/:class:`~parce.document.Document`
+from the :mod:`~parce.document` module and
+:class:`~parce.treedocument.TreeDocumentMixin` from the
+:mod:`~parce.treedocument` module.
 
 Using both base classes, it is not difficult to design a class that wraps an
 object representing a text document in a GUI editor. You need only to provide
-two methods in your wrapper: ``text()`` to get all text, and
-``_update_contents()`` to change the text programmatically. When the text is
-changed, AbstractDocument calls ``contents_changed``, which in
+two methods in your wrapper: :meth:`~parce.document.AbstractDocument.text` to
+get all text, and :meth:`~parce.document.AbstractDocument._update_contents` to
+change the text programmatically. When the text is changed,
+``AbstractDocument`` calls
+:meth:`~parce.document.AbstractDocument.contents_changed`, which in
 ``TreeDocumentMixin`` is implemented to inform the TreeBuilder about a part of
 text that needs to be retokenized. Also your wrapper class should call
 ``contents_changed`` whenever the user has typed in the editor.
