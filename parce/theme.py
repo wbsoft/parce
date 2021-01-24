@@ -35,8 +35,8 @@ editor window (or an encompassing DIV or PRE block in HTML), ``"selection"``,
 which is used for selected text, ``"current-line"``, which can highlight the
 current line the cursor is in in an editor.
 
-From the TextFormat returned by ``baseformat("selection")`` and ``"currentline"``, in
-most cases only the background color will be used.
+From the TextFormat returned by ``baseformat("selection")`` and
+``"current-line"``, in most cases only the background color will be used.
 
 For the roles ``"window"``, ``"selection"`` and ``"current-line"``, the
 ``baseformat()`` method also accepts a state argument, which can be
@@ -47,14 +47,9 @@ editor window based on its state (in keyboard focus or disabled). If a theme
 does not support the ``"disabled"`` and/or ``"focus"`` state, the default
 scheme is used.
 
-In the ``themes/`` directory are bundled CSS themes that can be used.
-Instantiate a bundled theme with::
+A Theme is loaded from a CSS file using::
 
     >>> from parce.theme import Theme
-    >>> th = Theme.by_name("default")
-
-To use a custom CSS theme file, load it using::
-
     >>> th = Theme('/path/to/my/custom.css')
 
 Get a TextFormat for an action, use e.g.::
@@ -62,6 +57,9 @@ Get a TextFormat for an action, use e.g.::
     >>> f = th.textformat(String)
     >>> f
     <TextFormat color=Color(r=192, g=0, b=0, a=255)>
+
+Multiple CSS files can be combined into one theme, and CSS rules can also
+be provided as plain text when instantiating a Theme.
 
 
 Mapping actions to CSS classes
@@ -92,7 +90,6 @@ import functools
 import os
 
 from . import css
-from . import themes
 from . import util
 
 
@@ -111,38 +108,30 @@ class AbstractTheme:
 class Theme(AbstractTheme):
     """A Theme maps a StandardAction to a TextFormat with CSS properties."""
 
-    def __init__(self, filename="", stylesheet=""):
-        """Instantiate Theme from a CSS file or text.
+    def __init__(self, *filenames, stylesheet="", basename=""):
+        """Instantiate the Theme from CSS file(s) and/or text.
 
-        If the ``stylesheet`` text is given, it is used as the stylesheet. Only
-        if the text is empty, the filename is used to read the stylesheet from.
+        If the ``stylesheet`` text is given, it is added to the stylesheets
+        loaded from the filename(s). If the ``basename`` is given, it is used
+        to resolve ``@import`` rules in the ``stylesheet`` text.
 
         """
-        self._filename = filename
+        self._filenames = filenames
         self._css_text = stylesheet
+        self._css_base = basename
         self.TextFormat = TextFormat
 
     def __repr__(self):
         fnames = ', '.join(map(os.path.basename, self.filenames()))
         return '<{} [{}]>'.format(self.__class__.__name__, fnames)
 
-    @classmethod
-    def by_name(cls, name="default"):
-        """Create Theme by name.
-
-        The name is a CSS file in the themes/ directory, without the ".css"
-        extension.
-
-        """
-        return cls(themes.filename(name))
-
     @util.cached_property
     def _stylesheet(self):
         """Load and cache the StyleSheet."""
-        if self._css_text or not self._filename:
-            return css.StyleSheet.from_text(self._css_text, self._filename)
-        else:
-            return css.StyleSheet.from_file(self._filename)
+        sheets = [css.StyleSheet.from_file(f) for f in self._filenames]
+        if self._css_text or not self._filenames:
+            sheets.append(css.StyleSheet.from_text(self._css_text, self._css_base))
+        return sum(sheets[1:], sheets[0])
 
     @util.cached_property
     def style(self):

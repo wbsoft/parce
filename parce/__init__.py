@@ -159,8 +159,8 @@ def events(root_lexicon, text):
 
 def theme_by_name(name="default"):
     """Return a Theme from the default themes in the themes/ directory."""
-    from .theme import Theme
-    return Theme.by_name(name)
+    from . import theme, themes
+    return theme.Theme(themes.filename(name))
 
 
 def theme_from_file(filename):
