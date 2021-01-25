@@ -293,9 +293,7 @@ def same_events(e1, e2):
     a tree.
 
     """
-    if e1.lexemes != e2.lexemes:
-        return False
-    elif e1.target != e2.target:
+    if e1 != e2:
         return False
     elif e1.target is None or not e1.target.push:
         return True
