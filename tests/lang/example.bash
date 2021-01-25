@@ -18,3 +18,16 @@ else
 fi
 
 exec kate --use --line $line --column $col "$file"
+
+# here is a here document
+cat <<EOF
+blabla blabla
+blabla $variable, $(command)
+EOF
+
+# and here is another, quoted.
+cat <<-"EOF"
+	blabla blabla
+	blabla $variable, $(command)
+	EOF
+

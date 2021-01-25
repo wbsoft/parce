@@ -75,9 +75,10 @@ class Bash(Language):
         yield r'\(\(', Delimiter.Start, cls.arith_expr
         yield r'\(', Delimiter.Start, cls.subshell
 
-        yield r'(\{\w+\}|\d+)?(<<-?)(?:(\w+)|("([^"\n]+)"))', \
-            bygroup(Name.Identifier, Delimiter.Direction, Name.Identifier, String, None), \
-            derive(ifgroup(3, cls.here_document, cls.here_document_quoted), call(cls.make_heredoc_regex, MATCH)), \
+        yield r'(\{\w+\}|\d+)?(<<-?)(?=(\w+)|"([^"\n]+)"|' r"'([^'\n]+)')", \
+            bygroup(Name.Identifier, Delimiter.Direction), \
+            derive(ifgroup(3, cls.here_document, cls.here_document_quoted),
+                   call(cls.make_heredoc_regex, MATCH)), \
             cls.arguments
         yield from cls.substitution()
         yield from cls.quoting()
@@ -129,9 +130,9 @@ class Bash(Language):
         """Arguments after a command."""
         yield r';', Delimiter, -1
         yield r'$', None, -1
-        yield r'\|\|?|\&\&?', Delimiter.Connection, -1
+        yield r'\|\|?|\&\&?', Delimiter.Connection  # TODO: new command starts
         yield from cls.common()
-        yield '[ \t]+', skip
+        yield r'[ \t]+', skip
         yield default_target, -1
 
     @classmethod
@@ -142,24 +143,24 @@ class Bash(Language):
         lexicons with.
 
         """
-        pat = m.group(m.lastindex + 5) or m.group(m.lastindex + 3)
+        pat = m.group(m.lastindex + 5) or m.group(m.lastindex + 4) or m.group(m.lastindex + 3)
         if m.group(m.lastindex + 2) == "<<-":
             # allow stripping tabs from doc and delimiter
-            return r'^\t*(' + re.escape(pat) +  r')\s*$'
+            return r'^\t*(' + re.escape(pat) +  r')[\t ]*$'
         else:
-            return r'^(' + re.escape(pat) + r')\s*$'
+            return r'^(' + re.escape(pat) + r')[\t ]*$'
 
     @lexicon(re_flags=re.MULTILINE)
     def here_document(cls):
         """A here document that is expanded, terminated by ARG."""
-        yield arg(escape=False), Name.Identifier, -1
+        yield arg(escape=False), bygroup(Name.Identifier), -1
         yield from cls.substitution()
         yield default_action, Verbatim
 
     @lexicon(re_flags=re.MULTILINE)
     def here_document_quoted(cls):
         """A here document that's not expanded, terminated by ARG."""
-        yield arg(escape=False), Name.Identifier, -1
+        yield arg(escape=False), bygroup(Name.Identifier), -1
         yield default_action, Verbatim
 
     @lexicon
