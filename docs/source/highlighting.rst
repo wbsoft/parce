@@ -282,24 +282,24 @@ Using multiple themes together
 ------------------------------
 
 Suppose you want to highlight tokens from embedded pieces of a different
-language with a different theme. E.g. you have document containing HTML markup
-and want to highlight embedded CSS with a different color theme.
+language with a different theme. E.g. you have a document containing HTML
+markup and want to highlight embedded CSS with a different color theme.
 
-To do this, you create a formatter and then add other themes for specific
+To do this, create a formatter and then add other themes for specific
 languages::
 
     >>> import parce
     >>> doc = parce.Document(parce.find("html"), '''
-    <html>
-    <head>
-    <style type="text/css">
-    h2 {
-        color: green;
-    }
-    </style>
-    </head>
-    </html>
-    ''')
+    ... <html>
+    ... <head>
+    ... <style type="text/css">
+    ... h2 {
+    ...     color: green;
+    ... }
+    ... </style>
+    ... </head>
+    ... </html>
+    ... ''')
     >>> from parce.out.html import HtmlFormatter
     >>> f = HtmlFormatter(parce.theme_by_name('default'))
     >>> f.add_theme(parce.find("css").language, parce.theme_by_name('dark'))
@@ -379,7 +379,12 @@ add them to the formatter with ``add_baseformat = True``::
     </html>
 
 
-This output looks like:
+When a theme is added to a formatter with ``add_baseformat = True``, two things
+are done: 1) all unparsed text (text between tokens) is formatted using the
+baseformat of the embedded theme, and 2) all textformats of the embedded theme
+are combined with the theme's baseformat.
+
+The output looks like:
 
 .. admonition:: HTML
 

@@ -110,6 +110,44 @@ class AbstractFormatter:
         themes = ', '.join(repr(fc.theme) for fc in self.format_caches().values())
         return '<{} [{}]>'.format(name, themes)
 
+    def baseformat(self, role="window", state="default", language=None):
+        """Return the base format for the specified ``role`` and ``state``.
+
+        This is the value returned by :meth:`Theme.baseformat(role, state)
+        <parce.theme.Theme.baseformat>`, converted by our factory (and cached
+        of course).
+
+        If the ``language`` is given, the theme added for that language is
+        consulted.
+
+        If the theme does not provide a baseformat, or no theme was added for the
+        specified language, None is returned.
+
+        """
+        try:
+            return self.format_caches()[language].baseformat(role, state)
+        except KeyError:
+            pass
+
+    def textformat(self, action, language=None):
+        """Return the text format for the specified action.
+
+        This is the value returned by :meth:`Theme.textformat(action)
+        <parce.theme.Theme.textformat>`, converted by our factory (and cached
+        of course).
+
+        If the ``language`` is given, the theme added for that language is
+        consulted.
+
+        If the theme does not provide a text format for the action, or no theme
+        was added for the specified language, None is returned.
+
+        """
+        try:
+            return self.format_caches()[language].textformat(action)
+        except KeyError:
+            pass
+
     def format_caches(self):
         """Should return a dictionary mapping language to FormatCache.
 
@@ -121,17 +159,10 @@ class AbstractFormatter:
         """
         raise NotImplementedError
 
-    def baseformat(self, role="window", state="default"):
-        """Return our textformat for the current line."""
-        try:
-            return self.format_caches()[None].baseformat(role, state)
-        except KeyError:
-            pass
-
     def format_ranges(self, tree, start=0, end=None, format_context=None):
         """Yield FormatRange(pos, end, format) three-tuples.
 
-        The ``format`` is the value returned by Theme.textformat() for the
+        The ``format`` is the value returned by ``Theme.textformat()`` for the
         token's action, converted by our factory (and cached of course).
         Ranges with a TextFormat for which our factory returns None are
         skipped.
