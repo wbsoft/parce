@@ -4,9 +4,13 @@ ChangeLog
 
 current: parce-0.18.0
 
-- added solarized light and dark themes
+- fix a treebuilder bug where different derived lexicons compared the same
+- here documents in bash are supported
+- more editor style properties were added to the themes
+- added pastel and solarized light and dark themes
 - added tests/themes.html to view the themes in a browser
 - added examples page to the docs, using the examples from the tests/ dir.
+- many documentation updates
 
 
 2021-01-21: parce-0.17.0
