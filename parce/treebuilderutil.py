@@ -158,7 +158,7 @@ def get_prepared_lexer(tree, text, start):
         old_events = events_with_tokens(start_token, last_token)
         prev = None
         for (old, tokens), new in zip(old_events, events):
-            if old != new:
+            if not same_events(old, new):
                 if prev:
                     return lexer, itertools.chain((new,), events), prev
                 break
@@ -282,4 +282,25 @@ def find_token_before(node, pos):
         node = node[i-1]
         if node.is_token:
             return node
+
+
+def same_events(e1, e2):
+    """Compare Event tuples in a robust way.
+
+    Returns True if the events are completely the same. The lexicon in a target
+    is compared on identity instead of equality. This prevents different
+    derived lexicons from comparing the same, which is needed when rebuilding
+    a tree.
+
+    """
+    if e1.lexemes != e2.lexemes:
+        return False
+    elif e1.target != e2.target:
+        return False
+    elif e1.target is None or not e1.target.push:
+        return True
+    # both targets compare equal, and have a non-empty push value that compares
+    # equal, so now we only need to compare the lexicons on identity.
+    return all(l1 is l2 for l1, l2 in zip(e1.target.push, e2.target.push))
+
 
