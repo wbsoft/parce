@@ -75,6 +75,10 @@ class Bash(Language):
         yield r'\(\(', Delimiter.Start, cls.arith_expr
         yield r'\(', Delimiter.Start, cls.subshell
 
+        yield r'(\{\w+\}|\d+)?(<<-?)(?:(\w+)|("([^"\n]+)"))', \
+            bygroup(Name.Identifier, Delimiter.Direction, Name.Identifier, String, None), \
+            derive(ifgroup(3, cls.here_document, cls.here_document_quoted), call(cls.make_heredoc_regex, MATCH)), \
+            cls.arguments
         yield from cls.substitution()
         yield from cls.quoting()
         yield r'-[\w-]+', Name.Property     # option
@@ -129,6 +133,34 @@ class Bash(Language):
         yield from cls.common()
         yield '[ \t]+', skip
         yield default_target, -1
+
+    @classmethod
+    def make_heredoc_regex(cls, m):
+        """Make a regular expression to terminate the here doc with.
+
+        The returned pattern is used to terminate the both here_document
+        lexicons with.
+
+        """
+        pat = m.group(m.lastindex + 5) or m.group(m.lastindex + 3)
+        if m.group(m.lastindex + 2) == "<<-":
+            # allow stripping tabs from doc and delimiter
+            return r'^\t*(' + re.escape(pat) +  r')\s*$'
+        else:
+            return r'^(' + re.escape(pat) + r')\s*$'
+
+    @lexicon(re_flags=re.MULTILINE)
+    def here_document(cls):
+        """A here document that is expanded, terminated by ARG."""
+        yield arg(escape=False), Name.Identifier, -1
+        yield from cls.substitution()
+        yield default_action, Verbatim
+
+    @lexicon(re_flags=re.MULTILINE)
+    def here_document_quoted(cls):
+        """A here document that's not expanded, terminated by ARG."""
+        yield arg(escape=False), Name.Identifier, -1
+        yield default_action, Verbatim
 
     @lexicon
     def dqstring(cls):
