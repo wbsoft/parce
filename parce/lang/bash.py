@@ -98,7 +98,7 @@ class Bash(Language):
             derive(ifgroup(3, cls.here_document, cls.here_document_quoted),
                    call(cls.make_heredoc_regex, MATCH)), \
             cls.cmdline, cls.arguments
-        yield r'(\{\w+\}|\d+)?(>&|&?>>?|<)([\d-])?', bygroup(Name.Identifier, Delimiter.Direction, Name.Identifier)
+        yield r'(\{\w+\}|\d+)?(<(?:[&>]|<<)?|&>>?|>[&>]?)([\d-]-?)?', bygroup(Name.Identifier, Delimiter.Direction, Name.Identifier)
         yield from cls.substitution()
         yield from cls.quoting()
         yield r'-[\w-]+', Name.Property     # option
