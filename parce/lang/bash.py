@@ -62,15 +62,20 @@ class Bash(Language):
 
         """
         yield r'\A#!.*?$', Comment.Special
-        yield default_target, derive(cls.cmdline, ARG)
+        yield '#', Comment, cls.comment
+        yield '\n', skip
+        yield default_target, derive(cls.command, ARG)
 
     @lexicon(re_flags=re.MULTILINE)
-    def cmdline(cls):
+    def command(cls):
         """Find commands and arguments, pops back on line end or when ARG is ahead."""
         arguments = derive(cls.arguments, ARG)  # pass on the ` to arguments lexicon
-        yield '$', None, -1
-        yield arg(prefix='(?=', suffix=')'), None, -1
         yield r'\\\n', Whitespace.Escape
+        yield r'[ \t]+', skip
+        yield '$', None, -1
+        yield r';', Delimiter, -1
+        yield arg(prefix='(?=', suffix=')'), None, -1
+        yield '#', Comment, cls.comment
         yield r'(\w+)(=)', bygroup(Name.Variable.Definition, Operator.Assignment), cls.assignment
         yield r'let\b', Name.Builtin, cls.let_expr
         yield r'\.(?=$|\s)', Keyword, arguments
@@ -91,19 +96,17 @@ class Bash(Language):
         yield r'\[\[(?=$|\s)', Bracket.Start, cls.cond_expr
         yield r'\[(?=$|\s)', Bracket.Start, cls.test_expr
         yield RE_COMMAND, Name.Command, arguments
-        yield from cls.common()
         yield r'\(', Delimiter.Start, cls.subshell
+        yield r'\|\|?|\&\&?', Delimiter.Connection, -1
+        yield default_target, arguments
 
     @lexicon(re_flags=re.MULTILINE)
     def arguments(cls):
         """Arguments after a command, called from root."""
         yield arg(prefix='(?=', suffix=')'), None, -2
         yield r'\\\n', Whitespace.Escape
-        yield r';', Delimiter, -1
-        yield r'$', None, -1
-        yield r'\|\|?|\&\&?', Delimiter.Connection, -1
-        yield from cls.common()
         yield r'[ \t]+', skip
+        yield from cls.common()
         yield default_target, -1
 
     @classmethod
@@ -118,7 +121,7 @@ class Bash(Language):
             bygroup(Name.Identifier, Delimiter.Direction), \
             derive(ifgroup(3, cls.here_document, cls.here_document_quoted),
                    call(cls.make_heredoc_regex, MATCH)), \
-            cls.cmdline, cls.arguments
+            cls.command, cls.arguments
         yield r'(\{\w+\}|\d+)?(&>>?|[<>][&>]?)(\d?-?)', bygroup(Name.Identifier, Delimiter.Direction, Name.Identifier)
         yield from cls.substitution()
         yield from cls.quoting()
