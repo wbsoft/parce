@@ -93,12 +93,13 @@ class Bash(Language):
         yield r'\(\(', Delimiter.Start, cls.arith_expr
         yield r'\(', Delimiter.Start, cls.subshell
 
+        yield r'(\{\w+\}|\d+)?(<<<)', bygroup(Name.Identifier, Delimiter.Direction), cls.here_string
         yield r'(\{\w+\}|\d+)?(<<-?)(?=(\w+)|"([^"\n]+)"|' r"'([^'\n]+)')", \
             bygroup(Name.Identifier, Delimiter.Direction), \
             derive(ifgroup(3, cls.here_document, cls.here_document_quoted),
                    call(cls.make_heredoc_regex, MATCH)), \
             cls.cmdline, cls.arguments
-        yield r'(\{\w+\}|\d+)?(<(?:[&>]|<<)?|&>>?|>[&>]?)([\d-]-?)?', bygroup(Name.Identifier, Delimiter.Direction, Name.Identifier)
+        yield r'(\{\w+\}|\d+)?(&>>?|[<>][&>]?)([\d-]-?)?', bygroup(Name.Identifier, Delimiter.Direction, Name.Identifier)
         yield from cls.substitution()
         yield from cls.quoting()
         yield r'-[\w-]+', Name.Property     # option
@@ -172,6 +173,14 @@ class Bash(Language):
         """A here document that's not expanded, terminated by ARG."""
         yield arg(escape=False), bygroup(Name.Identifier), -1
         yield default_action, Verbatim
+
+    @lexicon(re_flags=re.MULTILINE)
+    def here_string(cls):
+        """A here-string, the text after ``<<<``."""
+        yield from cls.substitution()
+        yield from cls.quoting()
+        yield RE_WORD, Verbatim
+        yield default_target, -1
 
     @lexicon
     def dqstring(cls):
