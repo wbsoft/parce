@@ -34,7 +34,7 @@ from parce.rule import *
 # Main source of information: man bash :-)
 
 
-RE_NAME = r'[^\W\d]\w+'
+RE_NAME = r'[^\W\d]\w*(?:[-.+]\w+)*'
 RE_COMMAND = r'''[^\s|&;()<>$"'`#][^\s|&;()<>$"'`]*'''
 RE_BRACE = (
     r'''([^|&;()<>\s"'`!{}]*)'''   # preamble
@@ -68,9 +68,9 @@ class Bash(Language):
         yield r'let\b', Name.Builtin, cls.let_expr
         yield r'\.(?=$|\s)', Keyword, arguments
         yield r'exec\b', Name.Builtin
-        yield r'(local)[ \t]+(\w+)(=)?', bygroup(Name.Builtin, Name.Variable.Definition, Operator.Assignment), \
+        yield r'(local|export)[ \t]+(\w+)(=)?', bygroup(Name.Builtin, Name.Variable.Definition, Operator.Assignment), \
             ifgroup(3, cls.assignment)
-        yield r'({})(\(\))?'.format(RE_NAME), ifgroup(2,
+        yield r'({})(\(\))?(?=\s|$)'.format(RE_NAME), ifgroup(2,
             bygroup(findmember(TEXT, (
                 (BASH_KEYWORDS, Keyword.Invalid),
                 (BASH_BUILTINS, Name.Builtin.Invalid),
@@ -115,8 +115,8 @@ class Bash(Language):
         yield from cls.substitution()
         yield from cls.quoting()
         yield r'-[\w-]+', Name.Property     # option
-        yield RE_NAME, Name.Identifier
-        yield RE_WORD, Text
+        is_pattern = lambda t: '*' in t or '?' in t or '[' and ']' in t
+        yield RE_WORD, select(call(is_pattern, TEXT), Text, Text.Template)
 
     @classmethod
     def numeric_common(cls):
@@ -144,7 +144,7 @@ class Bash(Language):
         yield r'(\$)(\()',  bygroup(Name.Variable, Delimiter.Start), cls.subshell
         yield r'\$[*@#?\$!0-9-]', Name.Variable.Special
         yield r'\$\w+', Name.Variable
-        yield r'\$\{', Name.Variable, cls.parameter
+        yield r'(\$\{)([!#@*])?(\w*)', bygroup(Name.Variable, Delimiter.ModeChange, Name.Variable), cls.parameter
         yield r'`', Delimiter.Quote, cls.backtick
 
     @classmethod
@@ -239,14 +239,18 @@ class Bash(Language):
     def parameter(cls):
         """Contents of ``${`` ... ``}``."""
         yield r'\}', Name.Variable, -1
-        yield r'\w+', Name.Variable
+        yield r'\d+', Number
+        yield from cls.substitution()
         yield r'\[', Delimiter.Bracket.Start, cls.subscript
         yield r':[-=?+]?|##?|%%?|\^\^?|,,?|@', Delimiter.ModeChange
+        is_pattern = lambda t: '*' in t or '?' in t or '[' and ']' in t
+        yield r'[\w*\.?\[\]]+',  select(call(is_pattern, TEXT), Name.Variable, Text.Template)
 
     @lexicon
     def subscript(cls):
         """Contents of ``[`` ... ``]`` in an array reference."""
         yield r'\]', Delimiter.Bracket.End, -1
+        yield '[@*]', Character.Special # makes sense in ${bla[@]}
         yield from cls.expression_common()
         yield from cls.substitution()
         yield from cls.quoting()
