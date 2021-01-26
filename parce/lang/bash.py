@@ -60,24 +60,36 @@ class Bash(Language):
     @lexicon(re_flags=re.MULTILINE)
     def cmdline(cls):
         """Find commands and arguments, pops back on line end."""
+        arguments = derive(cls.arguments, ARG)
+        yield ifarg('`'), Delimiter.Quote, -1
         yield '$', None, -1
         yield '(?=\))', None, -1
-        yield r'(\w+)(=)', bygroup(Name.Variable.Definition, Operator.Assignment)
+        yield r'(\w+)(=)', bygroup(Name.Variable.Definition, Operator.Assignment), cls.assignment
         yield r'let\b', Name.Builtin, cls.let_expr
-        yield r'\.(?=$|\s)', Keyword, cls.arguments
-        yield RE_NAME, findmember(TEXT, (
-            (BASH_KEYWORDS, Keyword),
-            (BASH_BUILTINS, (Name.Builtin, ifneq(TEXT, 'exec', cls.arguments))),
-            (UNIX_COMMANDS, (Name.Command.Definition, cls.arguments)),
-            ), (Name.Command, cls.arguments))
+        yield r'\.(?=$|\s)', Keyword, arguments
+        yield r'exec\b', Name.Builtin
+        yield r'(local)[ \t]+(\w+)(=)?', bygroup(Name.Builtin, Name.Variable.Definition, Operator.Assignment), \
+            ifgroup(3, cls.assignment)
+        yield r'({})(\(\))?'.format(RE_NAME), ifgroup(2,
+            bygroup(findmember(TEXT, (
+                (BASH_KEYWORDS, Keyword.Invalid),
+                (BASH_BUILTINS, Name.Builtin.Invalid),
+                ), Name.Function.Definition), Bracket),
+            findmember(TEXT, (
+                (BASH_KEYWORDS, Keyword),
+                (BASH_BUILTINS, (Name.Builtin, arguments)),
+                (UNIX_COMMANDS, (Name.Command.Definition, arguments)),
+                ), (Name.Command, arguments)))
         yield r'\{(?=$|\s)', Bracket.Start, cls.group_command
         yield r'\[\[(?=$|\s)', Bracket.Start, cls.cond_expr
-        yield RE_COMMAND, Name.Command, cls.arguments
+        yield r'\[(?=$|\s)', Bracket.Start, cls.test_expr
+        yield RE_COMMAND, Name.Command, arguments
         yield from cls.common()
 
     @lexicon(re_flags=re.MULTILINE)
     def arguments(cls):
         """Arguments after a command."""
+        yield ifarg('(?=`)'), None, -1
         yield r';', Delimiter, -1
         yield r'$', None, -1
         yield r'\|\|?|\&\&?', Delimiter.Connection, -1
@@ -93,8 +105,8 @@ class Bash(Language):
         yield r'\(\(', Delimiter.Start, cls.arith_expr
         yield r'\(', Delimiter.Start, cls.subshell
 
-        yield r'(\{\w+\}|\d+)?(<<<)', bygroup(Name.Identifier, Delimiter.Direction), cls.here_string
-        yield r'(\{\w+\}|\d+)?(<<-?)(?=(\w+)|"([^"\n]+)"|' r"'([^'\n]+)')", \
+        yield r'(\{\w+\}|\d+)?(<<<)[ \t]*', bygroup(Name.Identifier, Delimiter.Direction), cls.here_string
+        yield r'(\{\w+\}|\d+)?(<<-?)[ \t]*(?=(\w+)|"([^"\n]+)"|' r"'([^'\n]+)')", \
             bygroup(Name.Identifier, Delimiter.Direction), \
             derive(ifgroup(3, cls.here_document, cls.here_document_quoted),
                    call(cls.make_heredoc_regex, MATCH)), \
@@ -107,12 +119,17 @@ class Bash(Language):
         yield RE_WORD, Text
 
     @classmethod
-    def expression_common(cls):
-        """Common things in expressions."""
+    def numeric_common(cls):
+        """Nummeric values."""
         yield r'0\d+', Number.Octal
         yield r'0[xX][0-9a-fA-F]+', Number.Hexadecimal
         yield r'\d+#[0-9a-zA-Z@_]+', Number
         yield r'\d+', Number
+
+    @classmethod
+    def expression_common(cls):
+        """Common things in expressions."""
+        yield from cls.numeric_common()
         yield r'(\w+)[ \t]*(=)', bygroup(Name.Variable.Definition, Operator.Assignment)
         yield r'\w+', Name.Variable
         yield r',', Delimiter.Separator
@@ -182,6 +199,15 @@ class Bash(Language):
         yield RE_WORD, Verbatim
         yield default_target, -1
 
+    @lexicon(re_flags=re.MULTILINE)
+    def assignment(cls):
+        """An assignment, the text after ``=``."""
+        yield from cls.substitution()
+        yield from cls.quoting()
+        yield from cls.numeric_common()
+        yield RE_WORD, Verbatim
+        yield default_target, -1
+
     @lexicon
     def dqstring(cls):
         """A double-quoted string."""
@@ -207,7 +233,7 @@ class Bash(Language):
     def backtick(cls):
         r"""Stuff between ````` ... `````."""
         yield r'`', Delimiter.Quote, -1
-        yield from cls.root
+        yield from cls.cmdline('`')
 
     @lexicon
     def parameter(cls):
@@ -260,6 +286,13 @@ class Bash(Language):
         yield from cls.expression_common()
         yield from cls.common()
 
+    @lexicon
+    def test_expr(cls):
+        """A test expression ``[`` ... ``]``."""
+        yield r'\]', Bracket.End, -1
+        yield r'-[\w-]+', Name.Property     # option
+        yield from cls.expression_common()
+        yield from cls.common()
 
     @lexicon(re_flags=re.MULTILINE)
     def comment(cls):
