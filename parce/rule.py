@@ -98,13 +98,13 @@ def select(index, *items):
 
         keywords_list = ['def', 'class', 'for', 'if', 'else', 'return']
 
-        def predicate(text):
+        def is_keyword(text):
             return text in keywords_list
 
         class MyLang(Language):
             @lexicon
             def root(cls):
-                yield r'\w+', select(call(predicate, TEXT), Name.Command, Keyword)
+                yield r'\w+', select(call(is_keyword, TEXT), Name.Command, Keyword)
 
     If the selected item is a list or tuple, it is unrolled when injected
     into the rule.
