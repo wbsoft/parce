@@ -35,6 +35,7 @@ from parce.rule import *
 
 
 RE_NAME = r'[^\W\d]\w+'
+RE_COMMAND = r'''[^\s|&;()<>$"'`#][^\s|&;()<>$"'`]*'''
 RE_BRACE = (
     r'''([^|&;()<>\s"'`!{}]*)'''   # preamble
     r'(\{)'     # brace {
@@ -53,19 +54,36 @@ class Bash(Language):
 
     @lexicon(re_flags=re.MULTILINE)
     def root(cls):
-        """Root lexicon, finds commands and arguments etc."""
         yield r'\A#!.*?$', Comment.Special
+        yield default_target, cls.cmdline
+
+    @lexicon(re_flags=re.MULTILINE)
+    def cmdline(cls):
+        """Find commands and arguments, pops back on line end."""
+        yield '$', None, -1
+        yield '(?=\))', None, -1
         yield r'(\w+)(=)', bygroup(Name.Variable.Definition, Operator.Assignment)
         yield r'let\b', Name.Builtin, cls.let_expr
         yield r'\.(?=$|\s)', Keyword, cls.arguments
         yield RE_NAME, findmember(TEXT, (
             (BASH_KEYWORDS, Keyword),
-            (BASH_BUILTINS, Name.Builtin),
-            (UNIX_COMMANDS, Name.Command),
-            ), Name), cls.arguments
+            (BASH_BUILTINS, (Name.Builtin, ifneq(TEXT, 'exec', cls.arguments))),
+            (UNIX_COMMANDS, (Name.Command.Definition, cls.arguments)),
+            ), (Name.Command, cls.arguments))
         yield r'\{(?=$|\s)', Bracket.Start, cls.group_command
         yield r'\[\[(?=$|\s)', Bracket.Start, cls.cond_expr
+        yield RE_COMMAND, Name.Command, cls.arguments
         yield from cls.common()
+
+    @lexicon(re_flags=re.MULTILINE)
+    def arguments(cls):
+        """Arguments after a command."""
+        yield r';', Delimiter, -1
+        yield r'$', None, -1
+        yield r'\|\|?|\&\&?', Delimiter.Connection, -1
+        yield from cls.common()
+        yield r'[ \t]+', skip
+        yield default_target, -1
 
     @classmethod
     def common(cls):
@@ -79,10 +97,12 @@ class Bash(Language):
             bygroup(Name.Identifier, Delimiter.Direction), \
             derive(ifgroup(3, cls.here_document, cls.here_document_quoted),
                    call(cls.make_heredoc_regex, MATCH)), \
-            cls.arguments
+            cls.cmdline, cls.arguments
+        yield r'(\{\w+\}|\d+)?(>&|&?>>?|<)([\d-])?', bygroup(Name.Identifier, Delimiter.Direction, Name.Identifier)
         yield from cls.substitution()
         yield from cls.quoting()
         yield r'-[\w-]+', Name.Property     # option
+        yield RE_NAME, Name.Identifier
         yield RE_WORD, Text
 
     @classmethod
@@ -124,16 +144,6 @@ class Bash(Language):
         yield from cls.substitution()
         yield from cls.quoting()
         yield default_action, Text.Preprocessed
-
-    @lexicon(re_flags=re.MULTILINE)
-    def arguments(cls):
-        """Arguments after a command."""
-        yield r';', Delimiter, -1
-        yield r'$', None, -1
-        yield r'\|\|?|\&\&?', Delimiter.Connection  # TODO: new command starts
-        yield from cls.common()
-        yield r'[ \t]+', skip
-        yield default_target, -1
 
     @classmethod
     def make_heredoc_regex(cls, m):
