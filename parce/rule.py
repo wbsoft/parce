@@ -53,9 +53,9 @@ from . import ruleitem
 
 
 __all__ = (
-    'anyof', 'arg', 'bygroup', 'call', 'chars', 'derive', 'dselect',
-    'findmember', 'gselect', 'ifarg', 'ifeq', 'ifgroup', 'ifmember', 'ifneq',
-    'pattern', 'select', 'target', 'using', 'words',
+    'ARG', 'MATCH', 'TEXT', 'anyof', 'arg', 'bygroup', 'call', 'chars',
+    'derive', 'dselect', 'findmember', 'gselect', 'ifarg', 'ifeq', 'ifgroup',
+    'ifmember', 'ifneq', 'pattern', 'select', 'target', 'using', 'words',
 )
 
 
