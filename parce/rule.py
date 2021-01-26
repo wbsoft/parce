@@ -52,6 +52,13 @@ from . import regex
 from . import ruleitem
 
 
+__all__ = (
+    'anyof', 'arg', 'bygroup', 'call', 'chars', 'derive', 'dselect',
+    'findmember', 'gselect', 'ifarg', 'ifeq', 'ifgroup', 'ifmember', 'ifneq',
+    'pattern', 'select', 'target', 'using', 'words',
+)
+
+
 ARG = ruleitem.VariableItem('arg')
 """The lexicon argument.
 
