@@ -54,16 +54,23 @@ class Bash(Language):
 
     @lexicon(re_flags=re.MULTILINE)
     def root(cls):
+        """Find one or mode command lines.
+
+        This lexicon is derived with the special character ````` if called from
+        the :meth:`backtick` lexicon, or with ```)``` from the :meth:`subshell`
+        lexicon.
+
+        """
         yield r'\A#!.*?$', Comment.Special
-        yield default_target, cls.cmdline
+        yield default_target, derive(cls.cmdline, ARG)
 
     @lexicon(re_flags=re.MULTILINE)
     def cmdline(cls):
-        """Find commands and arguments, pops back on line end."""
-        arguments = derive(cls.arguments, ARG)
-        yield ifarg('`'), Delimiter.Quote, -1
+        """Find commands and arguments, pops back on line end or when ARG is ahead."""
+        arguments = derive(cls.arguments, ARG)  # pass on the ` to arguments lexicon
         yield '$', None, -1
-        yield '(?=\))', None, -1
+        yield arg(prefix='(?=', suffix=')'), None, -1
+        yield r'\\\n', Whitespace.Escape
         yield r'(\w+)(=)', bygroup(Name.Variable.Definition, Operator.Assignment), cls.assignment
         yield r'let\b', Name.Builtin, cls.let_expr
         yield r'\.(?=$|\s)', Keyword, arguments
@@ -85,11 +92,13 @@ class Bash(Language):
         yield r'\[(?=$|\s)', Bracket.Start, cls.test_expr
         yield RE_COMMAND, Name.Command, arguments
         yield from cls.common()
+        yield r'\(', Delimiter.Start, cls.subshell
 
     @lexicon(re_flags=re.MULTILINE)
     def arguments(cls):
-        """Arguments after a command."""
-        yield ifarg('(?=`)'), None, -1
+        """Arguments after a command, called from root."""
+        yield arg(prefix='(?=', suffix=')'), None, -2
+        yield r'\\\n', Whitespace.Escape
         yield r';', Delimiter, -1
         yield r'$', None, -1
         yield r'\|\|?|\&\&?', Delimiter.Connection, -1
@@ -103,7 +112,6 @@ class Bash(Language):
         yield '#', Comment, cls.comment
         yield RE_BRACE, using(cls.brace_expansion)
         yield r'\(\(', Delimiter.Start, cls.arith_expr
-        yield r'\(', Delimiter.Start, cls.subshell
 
         yield r'(\{\w+\}|\d+)?(<<<)[ \t]*', bygroup(Name.Identifier, Delimiter.Direction), cls.here_string
         yield r'(\{\w+\}|\d+)?(<<-?)[ \t]*(?=(\w+)|"([^"\n]+)"|' r"'([^'\n]+)')", \
@@ -233,7 +241,7 @@ class Bash(Language):
     def backtick(cls):
         r"""Stuff between ````` ... `````."""
         yield r'`', Delimiter.Quote, -1
-        yield from cls.cmdline('`')
+        yield from cls.root('`')
 
     @lexicon
     def parameter(cls):
@@ -259,7 +267,7 @@ class Bash(Language):
     def subshell(cls):
         """A subshell ``(`` ... ``)``."""
         yield r'\)', Delimiter.End, -1
-        yield from cls.root
+        yield from cls.root(')')
 
     @lexicon
     def group_command(cls):
