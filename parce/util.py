@@ -99,6 +99,9 @@ class Dispatcher:
         self._tables = weakref.WeakKeyDictionary()
         self._default_func = default_func
 
+    def __set_name__(self, owner, name):
+        self._name = name
+
     def __call__(self, *args):
         def decorator(func):
             for a in args:
@@ -110,28 +113,16 @@ class Dispatcher:
         try:
             table = self._tables[owner]
         except KeyError:
-            # find our name, and find Dispatchers in base classes with same name
+            # find Dispatchers in base classes with the same name
             # if found, inherit their references
-            if self._default_func:
-                mro = iter(owner.mro()[1:])
-                name = self._default_func.__name__
-            else:
-                mro = iter(owner.mro())
-                def get_name():
-                    for c in mro:
-                        for n, v in c.__dict__.items():
-                            if v is self:
-                                return n
-                name = get_name()
             dispatchers = []
-            for c in mro:
-                d = c.__dict__.get(name)
+            for c in owner.mro():
+                d = c.__dict__.get(self._name)
                 if type(d) is type(self):
                     dispatchers.append(d)
             _table = {}
             for d in reversed(dispatchers):
                 _table.update(d._table)
-            _table.update(self._table)
             # now, store the actual functions instead of their names
             table = self._tables[owner] = {a: getattr(owner, name)
                         for a, name in _table.items()}
