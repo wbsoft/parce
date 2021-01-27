@@ -277,11 +277,11 @@ class AbstractIndenter:
         for event, *args in self.indent_events(block, prev_indents):
             if event is INDENT:
                 info.indents.append(None)
-                find_dedenters = False
+                find_dedents = False
             elif event is DEDENT:
                 if find_dedents:
                     info.dedents_start += 1
-                elif indenters:
+                elif info.indents:
                     info.indents.pop()
                 else:
                     info.dedents_end += 1
@@ -289,7 +289,7 @@ class AbstractIndenter:
                 find_dedents = False
             elif event is CURRENT_INDENT:
                 info.indent = args[0]
-            elif event is ALIGN and info.indents and args:
+            elif event is ALIGN:
                 info.indents[-1] = args[0]
             elif event is PREFER_INDENT:
                 info.prefer_indent = args[0]
