@@ -572,8 +572,7 @@ class AbstractTextRange:
         class mixed in (i.e. have the ``get_root()`` method.
 
         """
-        root = self.document().get_root(True)
-        return tuple(root.tokens_range(self.pos, self.end))
+        return self.document().get_root(True).tokens_range(self.pos, self.end)
 
 
 class Cursor(AbstractTextRange):
@@ -723,7 +722,7 @@ class Block(AbstractTextRange):
 
     def tokens(self):
         """Convenience method returning a tuple with all Tokens that are in
-        or overlap this text range.
+        or overlap this block.
 
         The Document must have the :class:`~parce.treedocument.TreeDocument`
         class mixed in (i.e. have the ``get_root()`` method.
