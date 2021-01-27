@@ -274,8 +274,17 @@ class AbstractIndenter:
 
         find_dedents = True
 
-        for event, *args in self.indent_events(block, prev_indents):
-            if event is INDENT:
+        for event in self.indent_events(block, prev_indents):
+            if isinstance(event, tuple):
+                event, arg = event[:2]
+                if event is CURRENT_INDENT:
+                    info.indent = arg
+                elif event is ALIGN:
+                    if info.indents and info.indents[-1] is None:
+                        info.indents[-1] = arg
+                elif event is PREFER_INDENT:
+                    info.prefer_indent = arg
+            elif event is INDENT:
                 info.indents.append(None)
                 find_dedents = False
             elif event is DEDENT:
@@ -287,12 +296,6 @@ class AbstractIndenter:
                     info.dedents_end += 1
             elif event is NO_DEDENT:
                 find_dedents = False
-            elif event is CURRENT_INDENT:
-                info.indent = args[0]
-            elif event is ALIGN:
-                info.indents[-1] = args[0]
-            elif event is PREFER_INDENT:
-                info.prefer_indent = args[0]
             else: # event in (BLANK, NO_INDENT, NO_STRIP):
                 info._state |= event
 

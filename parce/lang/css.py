@@ -897,6 +897,6 @@ class CssIndent(Indent):
         for t in tokens:
             if t.action is Bracket:
                 if t == "{":
-                    yield INDENT,
+                    yield INDENT
                 elif t == "}":
-                    yield DEDENT,
+                    yield DEDENT
