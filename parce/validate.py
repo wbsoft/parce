@@ -192,7 +192,7 @@ class LexiconValidator:
                     # run away default states creating new contexts all the time
                     self.error("circular default target: {}".format(lexicons), lexicon)
                 return
-            for pattern, *target in lexicon():
+            for pattern, *target in lexicon.rules:
                 if pattern is parce.default_target:
                     break
             else:
