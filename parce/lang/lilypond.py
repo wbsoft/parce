@@ -226,7 +226,7 @@ class LilyPond(Language):
         yield r'[.,]', Delimiter
         yield r'(:)\s*(8|16|32|64|128|256|512|1024|2048)(?!\d)', bygroup(Delimiter.Tremolo, Duration.Tremolo)
         yield RE_FRACTION, Number
-        yield RE_LILYPOND_DURATION, Duration, cls.duration_dots
+        yield RE_LILYPOND_DURATION, Duration, cls.duration
         yield r"\d+", Number
         yield from cls.commands()
 
@@ -249,7 +249,7 @@ class LilyPond(Language):
         yield SKIP_WHITESPACE
         yield from cls.common() # markup, scheme, string, comment
         yield RE_LILYPOND_SYMBOL, Name.Symbol
-        yield RE_LILYPOND_DURATION, Duration, cls.duration_dots
+        yield RE_LILYPOND_DURATION, Duration, cls.duration
         yield r"(=)\s*(?:(\d+)(?:\s*(-)\s*(\d+))?)?", bygroup(
             Operator.Assignment, Number, Operator, Number), -1
         yield default_target, -1
@@ -312,11 +312,12 @@ class LilyPond(Language):
         yield r"[?!]", Accidental
         yield r"=(,+|'+)?", OctaveCheck, -1
         yield SKIP_WHITESPACE
+        yield from cls.find_comment()
         yield default_target, -1
 
     # ------------------ duration ------------------------
     @lexicon
-    def duration_dots(cls):
+    def duration(cls):
         """Zero or more dots after a duration. """
         yield SKIP_WHITESPACE
         yield r'\.', Duration.Dot
@@ -354,7 +355,7 @@ class LilyPond(Language):
                 "_": LyricSkip,
             }, LyricText)
         yield RE_FRACTION, Number
-        yield RE_LILYPOND_DURATION, Duration, cls.duration_dots
+        yield RE_LILYPOND_DURATION, Duration, cls.duration
         yield from cls.commands()
 
     @lexicon(consume=True)
