@@ -309,9 +309,9 @@ class LilyPond(Language):
     @lexicon
     def pitch(cls):
         """A note name, find octave/accidental etc after it."""
-        yield r",+|'+", Octave
+        yield r",(?:\s*?,)*|'(?:\s*?')*", Octave
         yield r"[?!]", Accidental
-        yield r"=(,+|'+)?", OctaveCheck, -1
+        yield r"=(?:,(?:\s*?,)*|'(?:\s*?')*)?", OctaveCheck, -1
         yield SKIP_WHITESPACE
         yield from cls.find_comment()
         yield default_target, -1
