@@ -62,8 +62,8 @@ RE_LILYPOND_PITCHWORD = r"(?<![^\W\d])[a-zé]+(?:[_-][a-zé]+)*(?![^\W\d_])"
 # a pitch name followed by an optional octave (two capturing groups)
 RE_LILYPOND_PITCH_OCT = "(" + RE_LILYPOND_PITCHWORD + r")\s*('+|,+)?"
 
-RE_LILYPOND_DURATION = \
-    r"(\\(maxima|longa|breve)\b|(1|2|4|8|16|32|64|128|256|512|1024|2048)(?!\d))"
+# all durations
+RE_LILYPOND_DURATION = words(lilypond_words.durations, suffix = r'(?!\d)')
 
 
 # Standard actions defined/used here:
@@ -293,6 +293,7 @@ class LilyPond(Language):
         """A script abbreviation or fingering digit."""
         yield r"[+|!>._^-]", Script, -1
         yield r"\d+", Fingering, -1
+        yield SKIP_WHITESPACE
         yield default_target, -1
 
     # ------------------ pitch --------------------------
@@ -326,7 +327,7 @@ class LilyPond(Language):
 
     @lexicon
     def duration_scaling(cls):
-        """ * n / m after a duration. """
+        """ ``*n/m`` after a duration. """
         yield SKIP_WHITESPACE
         #yield from cls.find_comment()
         yield r"(\*)\s*(\d+(?:/\d+)?)", bygroup(Duration, Duration.Scaling)

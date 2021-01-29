@@ -1889,3 +1889,8 @@ drum_pitch_names = (
 )
 drum_pitch_names_set = frozenset(drum_pitch_names)
 
+
+durations = (
+    '\\maxima', '\\longa', '\\breve',
+    '1', '2', '4', '8', '16', '32', '64', '128', '256', '512', '1024', '2048',
+)
