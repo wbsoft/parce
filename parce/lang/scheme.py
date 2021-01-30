@@ -31,7 +31,7 @@ from parce.action import (
     Bracket, Character, Comment, Delimiter, Keyword, Name, Number, String)
 from parce.rule import TEXT, bygroup, ifmember, gselect
 
-RE_SCHEME_RIGHT_BOUND = r"(?=$|[)\s])"
+RE_SCHEME_RIGHT_BOUND = r"(?=$|[()\s])"
 RE_SCHEME_NUMBER = (r"(#[eEiI])?(#d)?("             # #e, #i and/or #d prefix
     r"([-+]?(?:(?:\d+(?:\.\d*)|\.\d+)(?:[eE]\d+)?))"# float
     r"|[-+]?\d+(?:(/\d+)|())"                       # fraction, int

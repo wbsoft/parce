@@ -215,7 +215,7 @@ class LilyPond(Language):
         yield r"[()]", Spanner.Slur
         yield r"~", Spanner.Tie
         yield r"[-_^]", Direction, cls.script
-        yield r"(\\=)\s*(?:(\d+)|({}))".format(RE_LILYPOND_SYMBOL), \
+        yield r"(\\=)\s*(?:(\d+)|({}))?".format(RE_LILYPOND_SYMBOL), \
             bygroup(Spanner.Id, Number, cls.ifpitch(Name.Symbol.Invalid, Name.Symbol))
         yield r"q(?![^\W\d])", Pitch
         yield RE_LILYPOND_REST, Rest
