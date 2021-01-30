@@ -538,8 +538,6 @@ music_commands = (
     'startGraceMusic',
     'startGroup',
     'startStaff',
-    'startTextSpan',
-    'startTrillSpan',
     'stemDown',
     'stemNeutral',
     'stemUp',
@@ -548,8 +546,6 @@ music_commands = (
     'stopGraceMusic',
     'stopGroup',
     'stopStaff',
-    'stopTextSpan',
-    'stopTrillSpan',
     'stringTuning', # since 2.16
     'strokeFingerOrientations',
     'stropha',
@@ -684,9 +680,18 @@ ancient_scripts = (
 )
 
 
+# these spanner events are also articulations in LilyPond
+spanner_events = (
+    'startTextSpan',
+    'stopTextSpan',
+    'startTrillSpan',
+    'stopTrillSpan',
+)
+
+
 all_articulations = (
     articulations + ornaments + fermatas + instrument_scripts +
-    repeat_scripts + ancient_scripts
+    repeat_scripts + ancient_scripts + spanner_events
 )
 
 
