@@ -221,6 +221,43 @@ markup_commands_nargs = (
 
 markup_commands = sum(markup_commands_nargs, ())
 
+dynamics = (
+    "n",    # niente, since 2.22
+    "ppppp",
+    "pppp",
+    "ppp",
+    "pp",
+    "p",
+    "mp",
+    "mf",
+    "f",
+    "ff",
+    "fff",
+    "ffff",
+    "fffff",
+
+    "fp",
+    "sf",
+    "sfp",
+    "sff",
+    "sfz",
+    "fz",   # undocumented
+    "sp",
+    "spp",
+    "rfz",
+
+    # dynamic spanners:
+    "cr",
+    "decr",
+    "enddecr",
+    "endcr",
+    "cresc",
+    "endcresc",
+    "dim",
+    "enddim",
+    "decresc",
+    "enddecresc",
+)
 
 music_commands = (
     'absolute', # since 2.18
@@ -292,8 +329,6 @@ music_commands = (
     'compoundMeter', # since 2.16
     'compressFullBarRests',
     'context',
-    'cr',
-    'cresc',
     'crescHairpin',
     'crescTextCresc',
     'crossStaff', # since 2.16
@@ -309,7 +344,6 @@ music_commands = (
     'dashPlus',
     'dashUnderscore',
     'deadNote',  # since 2.16
-    'decr',
     'default',
     'defaultNoteHeads',  # since 2.16
     'defaultTimeSignature',
@@ -317,7 +351,6 @@ music_commands = (
     'deminutum',
     'denies',
     'descendens',
-    'dim',
     'dimHairpin',
     'dimTextDecr',
     'dimTextDecresc',
@@ -338,10 +371,6 @@ music_commands = (
     'dynamicUp',
     'easyHeadsOff',
     'easyHeadsOn',
-    'endcr',
-    'endcresc',
-    'enddecr',
-    'enddim',
     'endincipit',
     'endSpanners',
     'episemFinis',
@@ -352,24 +381,17 @@ music_commands = (
     'escapedParenthesisOpenSymbol',
     'escapedSmallerSymbol',
     'expandFullBarRests',
-    'f',
     'featherDurations',
     'fermataMarkup',
-    'ff',
-    'fff',
-    'ffff',
-    'fffff',
     'figuremode',
     'figures',
     'finalis',
     'fingeringOrientations',
     'flexa',
-    'fp',
     'frenchChords',
     'fullJazzExceptions',
     'funkHeads',
     'funkHeadsMinor',
-    'fz',
     'germanChords',
     'glissando',
     'grace',
@@ -422,9 +444,7 @@ music_commands = (
     'mergeDifferentlyDottedOn',
     'mergeDifferentlyHeadedOff',
     'mergeDifferentlyHeadedOn',
-    'mf',
     'mm',
-    'mp',
     'musicMap',
     'neumeDemoLayout',
     'new',
@@ -444,7 +464,6 @@ music_commands = (
     'override',
     'overrideProperty',
     'overrideTimeSignatureSettings',  # since 2.16
-    'p',
     'pageBreak',
     'pageTurn',
     'palmMute',  # since 2.16
@@ -469,10 +488,6 @@ music_commands = (
     'pitchedTrill',
     'pointAndClickOff',
     'pointAndClickOn',
-    'pp',
-    'ppp',
-    'pppp',
-    'ppppp',
     'predefinedFretboardsOff',
     'predefinedFretboardsOn',
     'pt',
@@ -489,7 +504,6 @@ music_commands = (
     'responsum',
     'rest',
     'revert',
-    'rfz',
     'rightHandFinger',
     'sacredHarpHeads',
     'sacredHarpHeadsMinor',
@@ -497,10 +511,6 @@ music_commands = (
     'scoreTweak',
     'semiGermanChords',
     'set',
-    'sf',
-    'sff',
-    'sfp',
-    'sfz',
     'shape', # since 2.16
     'shiftDurations',
     'shiftOff',
@@ -522,9 +532,7 @@ music_commands = (
     'sostenutoOn',
     'southernHarmonyHeads',
     'southernHarmonyHeadsMinor',
-    'sp',
     'spacingTweaks',
-    'spp',
     'startAcciaccaturaMusic',
     'startAppoggiaturaMusic',
     'startGraceMusic',

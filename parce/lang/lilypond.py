@@ -47,12 +47,8 @@ RE_LILYPOND_SYMBOL = RE_LILYPOND_ID + RE_LILYPOND_ID_RIGHT_BOUND
 RE_LILYPOND_COMMAND = r"\\(" + RE_LILYPOND_ID + ")" + RE_LILYPOND_ID_RIGHT_BOUND
 RE_LILYPOND_MARKUP_TEXT = r'[^{}"\\\s$#]+'
 RE_LILYPOND_LYRIC_TEXT = r'[^{}"\\\s$#\d]+'
-RE_LILYPOND_DYNAMIC = (
-    r"\\[<!>]|"
-    r"\\(f{1,5}|p{1,5}"
-    r"|mf|mp|fp|spp?|sff?|sfz|rfz"
-    r"|cresc|decresc|dim|cr|decr"
-    r")(?![A-Za-z])")
+RE_LILYPOND_DYNAMIC = \
+    r"\\(?:[<!>]|(?:{})(?![A-Za-z]))".format(words(lilypond_words.dynamics))
 
 RE_LILYPOND_REST = r"[rRs](?![^\W\d])"
 
@@ -87,6 +83,7 @@ Spanner = Name.Symbol.Spanner
 Spanner.Slur
 Spanner.Ligature
 Spanner.Tie
+Spanner.Id
 Script = Character.Script
 Fingering = Number.Fingering
 
@@ -218,6 +215,8 @@ class LilyPond(Language):
         yield r"[()]", Spanner.Slur
         yield r"~", Spanner.Tie
         yield r"[-_^]", Direction, cls.script
+        yield r"(\\=)\s*(?:(\d+)|({}))".format(RE_LILYPOND_SYMBOL), \
+            bygroup(Spanner.Id, Number, cls.ifpitch(Name.Symbol.Invalid, Name.Symbol))
         yield r"q(?![^\W\d])", Pitch
         yield RE_LILYPOND_REST, Rest
         yield RE_LILYPOND_PITCHWORD, cls.ifpitch((Pitch, cls.pitch))
