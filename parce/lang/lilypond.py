@@ -84,6 +84,7 @@ Spanner.Slur
 Spanner.Ligature
 Spanner.Tie
 Spanner.Id
+Spanner.PesOrFlexa
 Script = Character.Script
 Fingering = Number.Fingering
 
@@ -214,6 +215,7 @@ class LilyPond(Language):
         yield r"\\[()]", Spanner.Slur.Phrasing
         yield r"[()]", Spanner.Slur
         yield r"~", Spanner.Tie
+        yield r"\\~", Spanner.PesOrFlexa
         yield r"[-_^]", Direction, cls.script
         yield r"(\\=)\s*(?:(\d+)|({}))?".format(RE_LILYPOND_SYMBOL), \
             bygroup(Spanner.Id, Number, cls.ifpitch(Name.Symbol.Invalid, Name.Symbol))
