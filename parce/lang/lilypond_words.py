@@ -623,27 +623,32 @@ articulations = (
 
 ornaments = (
     'prall',
-    'mordent',
-    'prallmordent',
-    'turn',
+    'prallup',
+    'pralldown',
     'upprall',
     'downprall',
+    'prallprall',
+    'lineprall',
+    'prallmordent',
+    'mordent',
     'upmordent',
     'downmordent',
-    'lineprall',
-    'prallprall',
-    'pralldown',
-    'prallup',
-    'reverseturn',
     'trill',
+    'turn',
+    'reverseturn',
+    'slashturn',
+    'haydnturn',
 )
 
 
 fermatas = (
+    'veryshortfermata',
     'shortfermata',
     'fermata',
     'longfermata',
     'verylongfermata',
+    'henzeshortfermata',
+    'henzelongfermata',
 )
 
 
@@ -651,15 +656,15 @@ instrument_scripts = (
     'upbow',
     'downbow',
     'flageolet',
-    'thumb',
-    'snappizzicato',
     'open',
     'halfopen',
-    'stopped',
     'lheel',
     'rheel',
     'ltoe',
     'rtoe',
+    'snappizzicato',
+    'stopped',
+    'thumb',
 )
 
 
@@ -671,9 +676,9 @@ repeat_scripts = (
 
 
 ancient_scripts = (
-    'ictus',
     'accentus',
     'circulus',
+    'ictus',
     'semicirculus',
     'signumcongruentiae',
 )
