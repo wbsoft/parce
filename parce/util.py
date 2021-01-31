@@ -38,8 +38,8 @@ class Dispatcher:
     """Dispatches calls via an instance to methods based on the first argument.
 
     A Dispatcher is used as a decorator when defining a class, and then called
-    via an instance to select a method based on the first argument (which must
-    be hashable).
+    via or in an instance to select a method based on the first argument (which
+    must be hashable).
 
     If you override methods in a subclass that were dispatched, the
     dispatcher automatically dispatches to the new method. If you want to add
@@ -91,13 +91,20 @@ class Dispatcher:
         >>> i.handle_input(3, 10)
         Default function called: 3 10
 
-    To get the method for a key without calling it directly, use::
+    To get the method for a key without calling it directly, e.g. to see of
+    a method exists for a key, use::
 
         >>> meth = i.dispatch.get(1)   # returns a bound method
         >>> if meth:
         ...     meth("hi there")
         ...
         One called hi there
+
+    If you specified a default method on creation of the dispatcher, that
+    method is also accessible, in the ``default`` attribute::
+
+        >>> i.dispatch.default(1, 2)
+        Default function called: 1 2
 
     """
 
