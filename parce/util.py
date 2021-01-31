@@ -91,6 +91,13 @@ class Dispatcher:
         >>> i.handle_input(3, 10)
         Default function called: 3 10
 
+    To get the method for a key without calling it directly, use::
+
+        >>> meth = i.dispatch.get(1)   # returns a bound method
+        >>> if meth:
+        ...     meth("hi there")
+        ...
+        One called hi there
 
     """
 
@@ -126,13 +133,19 @@ class Dispatcher:
             # now, store the actual functions instead of their names
             table = self._tables[owner] = {a: getattr(owner, name)
                         for a, name in _table.items()}
-        def func(key, *args, **kwargs):
-            f = table.get(key)
-            if f:
-                return f(instance, *args, **kwargs)
-            if self._default_func:
-                return self._default_func(instance, key, *args, **kwargs)
-        return func
+        class dispatcher:
+            default_func = self._default_func
+            def __call__(self, key, *args, **kwargs):
+                f = table.get(key)
+                if f:
+                    return f(instance, *args, **kwargs)
+                if self.default_func:
+                    return self.default_func(instance, key, *args, **kwargs)
+            def get(self, key):
+                f = table.get(key)
+                if f:
+                    return f.__get__(instance, owner)
+        return dispatcher()
 
 
 class _Observer:
