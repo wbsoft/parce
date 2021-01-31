@@ -102,6 +102,7 @@ class Dispatcher:
     """
 
     def __init__(self, default_func=None):
+        self._lock = threading.Lock()
         self._table = {}
         self._tables = weakref.WeakKeyDictionary()
         self._default_func = default_func
@@ -120,32 +121,65 @@ class Dispatcher:
         try:
             table = self._tables[owner]
         except KeyError:
-            # find Dispatchers in base classes with the same name
-            # if found, inherit their references
-            dispatchers = []
-            for c in owner.mro():
-                d = c.__dict__.get(self._name)
-                if type(d) is type(self):
-                    dispatchers.append(d)
-            _table = {}
-            for d in reversed(dispatchers):
-                _table.update(d._table)
-            # now, store the actual functions instead of their names
-            table = self._tables[owner] = {a: getattr(owner, name)
-                        for a, name in _table.items()}
-        class dispatcher:
-            default_func = self._default_func
-            def __call__(self, key, *args, **kwargs):
-                f = table.get(key)
-                if f:
-                    return f(instance, *args, **kwargs)
-                if self.default_func:
-                    return self.default_func(instance, key, *args, **kwargs)
-            def get(self, key):
-                f = table.get(key)
-                if f:
-                    return f.__get__(instance, owner)
-        return dispatcher()
+            with self._lock:
+                try:
+                    table = self._tables[owner]
+                except KeyError:
+                    # find Dispatchers in base classes with the same name
+                    # if found, inherit their references
+                    dispatchers = []
+                    for c in owner.mro():
+                        d = c.__dict__.get(self._name)
+                        if type(d) is type(self):
+                            dispatchers.append(d)
+                    _table = {}
+                    for d in reversed(dispatchers):
+                        _table.update(d._table)
+                    # now, store the actual functions instead of their names
+                    table = self._tables[owner] = {a: getattr(owner, name)
+                                for a, name in _table.items()}
+        return _Dispatcher(self, table, instance, owner)
+
+
+class _Dispatcher:
+    """Helper class for Dispatcher."""
+    __slots__ = ("_dispatcher", "_table", "_instance", "_owner")
+    def __init__(self, dispatcher, table, instance, owner):
+        self._dispatcher = dispatcher
+        self._table = table
+        self._instance = instance
+        self._owner = owner
+
+    def __repr__(self):
+        return "<{}.{} {}.{} of {}>".format(
+            self._dispatcher.__class__.__module__,
+            self._dispatcher.__class__.__name__,
+            self._owner.__name__,
+            self._dispatcher._name,
+            repr(self._instance))
+
+    def __call__(self, key, *args, **kwargs):
+        """Call the stored method based on the key (first argument) with the
+        other arguments."""
+        f = self._table.get(key)
+        if f:
+            return f(self._instance, *args, **kwargs)
+        f = self.default
+        if f:
+            return f(key, *args, **kwargs)
+
+    @property
+    def default(self):
+        """The bound method specified as default, if any."""
+        f = self._dispatcher._default_func
+        if f:
+            return f.__get__(self._instance, self._owner)
+
+    def get(self, key):
+        """Return the bound method for the key, without calling it."""
+        f = self._table.get(key)
+        if f:
+            return f.__get__(self._instance, self._owner)
 
 
 class _Observer:
