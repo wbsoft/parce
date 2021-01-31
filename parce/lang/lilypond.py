@@ -225,7 +225,7 @@ class LilyPond(Language):
         yield words(lilypond_words.contexts), Context
         yield words(lilypond_words.grobs), Grob
         yield r'[.,]', Delimiter
-        yield r'(:)\s*(8|16|32|64|128|256|512|1024|2048)(?!\d)', bygroup(Delimiter.Tremolo, Duration.Tremolo)
+        yield r'(:)\s*(8|16|32|64|128|256|512|1024|2048)?(?!\d)', bygroup(Delimiter.Tremolo, Duration.Tremolo)
         yield RE_FRACTION, Number
         yield RE_LILYPOND_DURATION, Duration, cls.duration
         yield r"\d+", Number
