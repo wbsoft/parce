@@ -183,6 +183,8 @@ class LilyPond(Language):
         yield r"(\\with)\s*(\{)", bygroup(Keyword, Bracket.Start), cls.layout_context
         yield r"(\\key)(?![^\W\d])(?:\s+(" + RE_LILYPOND_PITCHWORD +"))?", \
             bygroup(Name.Builtin, cls.ifpitch())
+        yield r"(\\fixed)(?![^\W\d])(?:\s+" + RE_LILYPOND_PITCH_OCT + ")?", \
+            bygroup(Name.Builtin, cls.ifpitch(), Octave)
         yield r"(\\relative)(?![^\W\d])(?:\s+" + RE_LILYPOND_PITCH_OCT + ")?", \
             bygroup(Name.Builtin, cls.ifpitch(), Octave)
         yield (r"(\\transpose)(?![^\W\d])(?:\s+" + RE_LILYPOND_PITCH_OCT + ")?"
