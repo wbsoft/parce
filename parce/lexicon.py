@@ -156,8 +156,9 @@ class Lexicon:
         self.qualname = language.__module__ + '.' + self.fullname
         self.__doc__ = descriptor.rules_func.__doc__
         self._derived = {}
-        # lock is used when creating a derivate and/or the parse() instance function
-        self._lock = threading.Lock()
+        # locks are used when creating a derivate and/or the parse() instance function
+        self._lock_derive = threading.Lock()
+        self._lock_build = threading.Lock()
 
     def __call__(self, arg=None):
         """Create a derived Lexicon with argument ``arg``.
@@ -190,7 +191,7 @@ class Lexicon:
         try:
             return self._derived[arg]
         except KeyError:
-            with self._lock:
+            with self._lock_derive:
                 try:
                     lexicon = self._derived[arg]
                 except KeyError:
@@ -253,7 +254,7 @@ class Lexicon:
 
         """
         if name in ("parse",):
-            with self._lock:
+            with self._lock_build:
                 try:
                     return object.__getattribute__(self, name)
                 except AttributeError:
