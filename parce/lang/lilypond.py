@@ -31,7 +31,7 @@ from parce.action import (
     Bracket, Character, Comment, Delimiter, Direction, Keyword, Name, Number,
     Operator, Separator, String, Text)
 from parce.rule import (
-    MATCH, TEXT, arg, bygroup, call, dselect, findmember, ifeq, ifgroup,
+    MATCH, TEXT, arg, bygroup, call, dselect, findmember, ifarg, ifeq, ifgroup,
     ifmember, select, words)
 
 from . import lilypond_words
@@ -45,10 +45,8 @@ RE_LILYPOND_ID_RIGHT_BOUND = r"(?![_-]?[^\W\d_])"
 RE_LILYPOND_ID = r"[^\W\d_]+(?:[_-][^\W\d_]+)*"
 RE_LILYPOND_SYMBOL = RE_LILYPOND_ID + RE_LILYPOND_ID_RIGHT_BOUND
 RE_LILYPOND_COMMAND = r"\\(" + RE_LILYPOND_ID + ")" + RE_LILYPOND_ID_RIGHT_BOUND
-RE_LILYPOND_MARKUP_TEXT = r'[^{}"\\\s$#]+'
-RE_LILYPOND_LYRIC_TEXT = r'[^{}"\\\s$#\d]+'
-RE_LILYPOND_DYNAMIC = \
-    r"\\(?:[<!>]|(?:{})(?![A-Za-z]))".format(words(lilypond_words.dynamics))
+RE_LILYPOND_MARKUP_TEXT = r'[^%{}"\\\s$#][^{}"\\\s$#]*'
+RE_LILYPOND_LYRIC_TEXT = r'[^%{}"\\\s$#\d][^{}"\\\s$#\d]*'
 
 RE_LILYPOND_REST = r"[rRs](?![^\W\d])"
 
@@ -175,32 +173,39 @@ class LilyPond(Language):
     @classmethod
     def commands(cls):
         """Yield commands that can occur in all input modes."""
-        yield RE_LILYPOND_DYNAMIC, Dynamic
-        yield r"(\\repeat)\b(?:\s+([a-z]+)\s*(\d+)?)?", bygroup(Keyword, Name.Symbol, Number)
-        yield r"\\(?:un)?set(?![^\W\d])", Keyword, cls.set_unset
-        yield r"\\(?:override|revert)(?![^\W\d])", Keyword, cls.override
-        yield r"\\(?:new|change|context)(?![^\W\d])", Keyword, cls.context
         yield r"(\\with)\s*(\{)", bygroup(Keyword, Bracket.Start), cls.layout_context
-        yield r"(\\key)(?![^\W\d])(?:\s+(" + RE_LILYPOND_PITCHWORD +"))?", \
-            bygroup(Name.Builtin, cls.ifpitch())
-        yield r"(\\fixed)(?![^\W\d])(?:\s+" + RE_LILYPOND_PITCH_OCT + ")?", \
-            bygroup(Name.Builtin, cls.ifpitch(), Octave)
-        yield r"(\\relative)(?![^\W\d])(?:\s+" + RE_LILYPOND_PITCH_OCT + ")?", \
-            bygroup(Name.Builtin, cls.ifpitch(), Octave)
-        yield (r"(\\transpose)(?![^\W\d])(?:\s+" + RE_LILYPOND_PITCH_OCT + ")?"
-               r"(?:\s*" + RE_LILYPOND_PITCH_OCT + ")?"), \
-               bygroup(Name.Builtin, cls.ifpitch(), Octave, cls.ifpitch(), Octave)
-        yield r"\\tempo(?![^\W\d])", Name.Builtin, cls.tempo
-        yield r"(\\chord(?:s|mode))\b\s*(\{)?", bygroup(Keyword, Bracket.Start), \
-            ifgroup(2, cls.chordmode)
-        yield from cls.notemode_rule()
-        yield from cls.lyricmode_rules()
-        yield from cls.drummode_rule()
-        yield RE_LILYPOND_COMMAND, findmember(MATCH[1], (
-            (lilypond_words.keywords, Keyword),
-            (lilypond_words.music_commands, Name.Builtin),
-            (lilypond_words.all_articulations, Articulation),
-            ), Name.Command)
+        yield r'(' + RE_LILYPOND_COMMAND + r')(?=\s*([.,])?)', ifgroup(3,
+            # part of a \bla.bla or \bla.1 construct, always a user command
+            (Name.Command, cls.identifier_ref),
+            # no "." or "," , can be a builtin
+            dselect(MATCH[2], {
+                # input modes
+                "lyricsto": (Keyword.Lyric, cls.lyricsto, cls.start_with_scheme_or_string),
+                "addlyrics": (Keyword.Lyric, cls.lyricmode),
+                "lyrics": (Keyword.Lyric, cls.lyricmode),
+                "lyricmode": (Keyword.Lyric, cls.lyricmode),
+                "chords": (Keyword, cls.chordmode),
+                "chordmode": (Keyword, cls.chordmode),
+                "drums": (Keyword, cls.drummode),
+                "drummode": (Keyword, cls.drummode),
+                "figures": (Keyword, cls.figuremode),
+                "figuremode": (Keyword, cls.figuremode),
+                # commands that expect some symbols in all input modes
+                "set": (Keyword, cls.property_set),
+                "unset": (Keyword, cls.property, cls.start_with_scheme_or_string),
+                "override": (Keyword, cls.property_set),
+                "revert": (Keyword, cls.property, cls.start_with_scheme_or_string),
+                "new": (Keyword, cls.property_set),
+                "change": (Keyword, cls.property_set),
+                "context": (Keyword, cls.property_set),
+                #"repeat": (Keyword, cls.repeat),       #TODO
+            },
+            findmember(MATCH[2], (
+                (lilypond_words.keywords, Keyword),
+                (lilypond_words.music_commands, Name.Builtin),
+                (lilypond_words.all_articulations, Articulation),
+                (lilypond_words.dynamics, Dynamic),
+            ), Name.Command)))
 
     # ------------------ music ----------------------
     @classmethod
@@ -218,6 +223,7 @@ class LilyPond(Language):
         yield r"[()]", Spanner.Slur
         yield r"~", Spanner.Tie
         yield r"\\~", Spanner.PesOrFlexa
+        yield r"\\[<>!]", Dynamic
         yield r"[-_^]", Direction, cls.script
         yield r"(\\=)\s*(?:(\d+)|({}))?".format(RE_LILYPOND_SYMBOL), \
             bygroup(Spanner.Id, Number, cls.ifpitch(Name.Symbol.Invalid, Name.Symbol))
@@ -245,49 +251,42 @@ class LilyPond(Language):
         yield r">", Delimiter.Chord.End, -1
         yield from cls.music()
 
-    # ------------------ special commands ---------------
-    @lexicon(consume=True)
-    def tempo(cls):
-        """Find content after a tempo command."""
-        yield SKIP_WHITESPACE
-        yield from cls.common() # markup, scheme, string, comment
-        yield RE_LILYPOND_SYMBOL, Name.Symbol
-        yield RE_LILYPOND_DURATION, Duration, cls.duration
-        yield r"(=)\s*(?:(\d+)(?:\s*(-)\s*(\d+))?)?", bygroup(
-            Operator.Assignment, Number, Operator, Number), -1
-        yield default_target, -1
+    # ------------------ properties ---------------------
+    @classmethod
+    def property_action(cls, text):
+        """Return a proper dynamic action for the name of a symbol."""
+        return findmember(text, (
+                (lilypond_words.grobs, Grob),
+                (lilypond_words.contexts, Context),
+                ), Name.Variable)
 
-    @lexicon(consume=True)
-    def context(cls):
-        """\\new, \\change, \\context Context [="name"] stuff."""
-        yield SKIP_WHITESPACE
-        yield words(lilypond_words.contexts), Context
-        yield "=", Operator.Assignment
-        yield RE_LILYPOND_SYMBOL, Name.Symbol
-        yield r"(\\with)\s*(\{)", bygroup(Keyword, Bracket.Start), -1, cls.layout_context
-        yield from cls.common()
-        yield default_target, -1
+    @lexicon
+    def property_set(cls):
+        """Read property names, delimiters, strings and scheme.
 
-    @lexicon(consume=True)
-    def set_unset(cls):
-        """\\set, \\unset."""
-        yield SKIP_WHITESPACE
-        yield words(lilypond_words.contexts), Context
-        yield r'[.,]', Delimiter
-        yield r"(=)(?:\s*(" + RE_FRACTION + r"|\d+))?", bygroup(Operator.Assignment, Number)
-        yield RE_LILYPOND_SYMBOL + r"(?=\s*([,.=])?)", Name.Variable.Definition, ifeq(MATCH[1], None, -1)
-        yield default_target, -1
+        Calls :meth:`property_action` to get an action for the text.
+        Quits on ``"="`` or any non-word and non-whitespace character.
 
-    @lexicon(consume=True)
-    def override(cls):
-        """\\override, \\revert."""
-        yield SKIP_WHITESPACE
-        yield words(lilypond_words.contexts), Context
-        yield words(lilypond_words.grobs), Grob
-        yield r'[.,]', Delimiter
-        yield r"=", Operator.Assignment, -1
-        yield RE_LILYPOND_SYMBOL + r"(?=\s*([,.=])?)", Name.Variable, ifeq(MATCH[1], None, -1)
+        """
+        yield '=', Operator.Assignment, -1
+        yield from cls.find_string()
         yield from cls.find_scheme()
+        yield from cls.find_comment()
+        yield RE_LILYPOND_SYMBOL, cls.property_action(TEXT)
+        yield r'[.,]', Separator
+        yield r'(?=[^\w\s])', None, -1
+
+    @lexicon
+    def property(cls):
+        """Read property names, delimiters, strings and scheme.
+
+        Calls :meth:`property_action` to get an action for the text.
+
+        """
+        yield SKIP_WHITESPACE
+        yield RE_LILYPOND_SYMBOL + r"(?=\s*([,.])?)", cls.property_action(TEXT), ifeq(MATCH[1], None, -1)
+        yield r'([.,])\s*(?=[#$"])', Separator, cls.start_with_scheme_or_string
+        yield r'([.,])\s*(' + RE_LILYPOND_SYMBOL +  ')', bygroup(Separator, cls.property_action(MATCH[2]))
         yield default_target, -1
 
     # ------------------ script -------------------------
@@ -338,94 +337,97 @@ class LilyPond(Language):
 
 
     # --------------------- lyrics -----------------------
-    @classmethod
-    def lyricmode_rules(cls):
-        """Find lyric mode music."""
-        yield r"(\\(?:lyric(?:mode|s)|addlyrics))\b\s*(\\s(?:equential|imultaneous)\b)?\s*(\{|<<)?", \
-            bygroup(Keyword.Lyric, Keyword, Bracket.Start), \
-            dselect(MATCH[3], {'{': cls.lyricmode('}'), '<<': cls.lyricmode('>>')})
-        yield r"\\lyricsto\b", Keyword.Lyric, cls.lyricsto
-
-    @lexicon(consume=True)
+    @lexicon
     def lyricmode(cls):
         """Yield contents in lyric mode."""
+        yield SKIP_WHITESPACE
+        yield r"\\s(sequential|imultaneous)\b", Keyword
+        yield r"<<", Bracket.Start, -1, cls.lyriclist('>>')
+        yield r"\{", Bracket.Start, -1, cls.lyriclist('}')
+        yield from cls.find_comment()
+        yield default_target, -1
+
+    @lexicon
+    def lyricsto(cls):
+        r"""Find the argument of a ``\lyricsto`` command."""
+        yield RE_LILYPOND_SYMBOL, Name.Symbol, -1, cls.lyricmode
+        yield default_target, -1, cls.lyricmode
+
+    @lexicon(consume=True)
+    def lyriclist(cls):
+        """Lyrics between ``{`` ... ``}``.
+
+        Derive with the desired closing delimiter (``}`` or ``>>``).
+
+        """
         yield arg(), Bracket.End, -1
-        yield from cls.common()
-        yield r"<<", Bracket.Start, cls.lyricmode('>>')
-        yield r"\{", Bracket.Start, cls.lyricmode('}')
+        yield r"<<", Bracket.Start, cls.lyriclist('>>')
+        yield r"\{", Bracket.Start, cls.lyriclist('}')
         yield RE_LILYPOND_LYRIC_TEXT, dselect(TEXT, {
                 "--": LyricHyphen,
                 "__": LyricExtender,
                 "_": LyricSkip,
             }, LyricText)
-        yield RE_FRACTION, Number
-        yield RE_LILYPOND_DURATION, Duration, cls.duration
+        yield from cls.common()
         yield from cls.commands()
 
-    @lexicon(consume=True)
-    def lyricsto(cls):
-        """Find the argument of a \\lyricsto command."""
-        yield from cls.base()
-        yield RE_LILYPOND_SYMBOL, Name.Symbol
-        yield r"\\s(sequential|imultaneous)\b", Keyword
-        yield r"<<", Bracket.Start, -1, cls.lyricmode('>>')
-        yield r"\{", Bracket.Start, -1, cls.lyricmode('}')
-        yield SKIP_WHITESPACE
-        yield default_target, -1
-
-    # ---------------------- notemode ---------------------
-    @classmethod
-    def notemode_rule(cls):
-        """Yield the rule for \\notemode / \\notes."""
-        yield r"(\\note(?:s|mode))\b\s*(\{|<<)?", bygroup(Keyword, Bracket.Start), \
-            dselect(MATCH[2], {
-                "{": (cls.notemode, cls.musiclist('}')),
-                "<<": (cls.notemode, cls.musiclist('>>')),
-            })
-
-    @lexicon
-    def notemode(cls):
-        """\\notemode and \\notes."""
-        yield default_target, -1
 
     # ---------------------- drummode ---------------------
-    @classmethod
-    def drummode_rule(cls):
-        """Yield the rule for \\drummode / \\drums."""
-        yield r"(\\drum(?:s|mode))\b\s*(\{|<<)?", bygroup(Keyword.Drum, Bracket.Start), \
-            dselect(MATCH[2], {
-                "{": (cls.drummode('}')),
-                "<<": (cls.drummode('>>')),
-            })
-
-    @lexicon(consume=True)
+    @lexicon
     def drummode(cls):
         """\\drummode and \\drums."""
-        yield r"\{", Bracket.Start, cls.drummode('}')
-        yield r"<<", Bracket.Start, cls.drummode('>>')
+        yield SKIP_WHITESPACE
+        yield r"\\s(sequential|imultaneous)\b", Keyword
+        yield r"\{", Bracket.Start, -1, cls.drumlist('}')
+        yield r"<<", Bracket.Start, -1, cls.drumlist('>>')
+        yield from cls.find_comment()
+        yield default_target, -1
+
+    @lexicon(consume=True)
+    def drumlist(cls):
+        """Drum music between ``{`` ... ``}`` or ``<<`` ... ``>>``."""
         yield arg(), Bracket.End, -1
+        yield r"\{", Bracket.Start, cls.drumlist('}')
+        yield r"<<", Bracket.Start, cls.drumlist('>>')
         yield RE_LILYPOND_REST, Rest
         yield RE_LILYPOND_PITCHWORD, ifmember(TEXT, lilypond_words.drum_pitch_names_set, Pitch.Drum, Name.Symbol)
         yield from cls.music()
 
     # ---------------------- chordmode ---------------------
-    @lexicon(consume=True)
+    @lexicon
     def chordmode(cls):
         """\\chordmode and \\chords."""
-        yield r":|/\+?", Separator.Chord, cls.chord_modifier
-        yield r"\}", Bracket.End, -1
-        yield r"\{", Bracket.Start, 1
+        yield SKIP_WHITESPACE
+        yield r"\\s(sequential|imultaneous)\b", Keyword
+        yield r"\{", Bracket.Start, -1, cls.chordlist('}')
+        yield r"<<", Bracket.Start, -1, cls.chordlist('>>')
+        yield from cls.find_comment()
+        yield default_target, -1
+
+    @lexicon(consume=True)
+    def chordlist(cls):
+        """Chordmode music between ``{`` ... ``}`` or ``<<`` ... ``>>``."""
+        yield arg(), Bracket.End, -1
+        yield r"\{", Bracket.Start, cls.chordlist('}')
+        yield r"<<", Bracket.Start, cls.chordlist('>>')
+        yield r"[:^]", Separator.Chord, cls.chord_modifier
+        yield r"(/\+?)\s*(" + RE_LILYPOND_PITCHWORD + ")?", bygroup(Separator.Chord, cls.ifpitch())
         yield from cls.music()
 
     @lexicon
     def chord_modifier(cls):
         """Stuff in chord mode after a `:`"""
+        yield SKIP_WHITESPACE
         yield r"((?<![a-z])|^)(?:aug|dim|sus|min|maj|m)(?![a-z])", Name.Symbol
         yield r"(\d+)([-+])?", bygroup(Number, Operator.Alteration)
         yield r"\.", Separator.Dot
-        yield r"/\+?", Separator.Chord
-        yield RE_LILYPOND_PITCHWORD, cls.ifpitch()
         yield default_target, -1
+
+    # --------------------- figuremode -------------------
+    @lexicon(consume=True)
+    def figuremode(cls):
+        """\\figuremode and \\figures."""
+        return () #TEMP
 
     # -------------------- base stuff --------------------
     @classmethod
@@ -447,16 +449,26 @@ class LilyPond(Language):
         yield SKIP_WHITESPACE
         yield r'([.,])\s*(\d+)' + RE_LILYPOND_ID_RIGHT_BOUND, bygroup(Separator, Number)
         yield r'([.,])\s*(' + RE_LILYPOND_ID + r')' + RE_LILYPOND_ID_RIGHT_BOUND, bygroup(Separator, Name.Variable)
-        yield r'([.,])\s*(?=[#$"])', Separator, cls.identifier_scheme_or_string
+        yield r'([.,])\s*(?=[#$"])', Separator, cls.start_with_scheme_or_string
+        yield default_target, -1
+
+    @lexicon(consume=True)
+    def identifier_ref(cls):
+        r"""\bla.bla.bla syntax."""
+        yield SKIP_WHITESPACE
+        yield r'([.,])\s*(\d+)' + RE_LILYPOND_ID_RIGHT_BOUND, bygroup(Separator, Number)
+        yield r'([.,])\s*(' + RE_LILYPOND_ID + r')' + RE_LILYPOND_ID_RIGHT_BOUND, bygroup(Separator, Name.Variable)
+        yield r'([.,])\s*(?=[#$"])', Separator, cls.start_with_scheme_or_string
         yield default_target, -1
 
     @lexicon
-    def identifier_scheme_or_string(cls):
+    def start_with_scheme_or_string(cls):
         """Pick a scheme expression or a string.
 
         Immediately pops back, so this context is never actually created.
 
         """
+        yield SKIP_WHITESPACE
         yield from cls.find_string(-1)
         yield from cls.find_scheme(-1)
         yield default_target, -1
