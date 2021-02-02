@@ -28,8 +28,8 @@ import re
 
 from parce import Language, lexicon, skip, default_action, default_target
 from parce.action import (
-    Bracket, Character, Comment, Delimiter, Direction, Keyword, Name, Number,
-    Operator, Separator, String, Text)
+    Bracket, Character, Comment, Delimiter, Direction, Keyword, Literal, Name,
+    Number, Operator, Separator, String, Text)
 from parce.rule import (
     MATCH, TEXT, arg, bygroup, call, dselect, findmember, ifarg, ifeq, ifgroup,
     ifmember, select, words)
@@ -52,6 +52,9 @@ RE_LILYPOND_REST = r"[rRs](?![^\W\d])"
 
 # a string that could be a valid pitch name (or drum name)
 RE_LILYPOND_PITCHWORD = r"(?<![^\W\d])[a-zé]+(?:[_-][a-zé]+)*(?![^\W\d_])"
+
+# all durations
+RE_LILYPOND_DURATION = words(lilypond_words.durations, suffix = r'(?!\d)')
 
 
 # Standard actions defined/used here:
@@ -226,7 +229,7 @@ class LilyPond(Language):
         yield r'[.,]', Delimiter
         yield r'(:)\s*(8|16|32|64|128|256|512|1024|2048)?(?!\d)', bygroup(Delimiter.Tremolo, Duration.Tremolo)
         yield RE_FRACTION, Number
-        yield words(lilypond_words.durations, suffix = r'(?!\d)'), Duration, cls.duration
+        yield RE_LILYPOND_DURATION, Duration, cls.duration
         yield r"\d+", Number
         yield from cls.commands()
 
@@ -383,6 +386,7 @@ class LilyPond(Language):
                 "__": LyricExtender,
                 "_": LyricSkip,
             }, LyricText)
+        yield RE_LILYPOND_DURATION, Duration, cls.duration
         yield from cls.common()
         yield from cls.commands()
 
@@ -466,7 +470,20 @@ class LilyPond(Language):
         yield arg(), Bracket.End, -1
         yield r"\{", Bracket.Start, cls.figurelist('}')
         yield r"<<", Bracket.Start, cls.figurelist('>>')
-        # TODO
+        yield r'<', Delimiter.Chord.Start, cls.figure
+        yield RE_LILYPOND_DURATION, Duration, cls.duration
+        yield from cls.common()
+        yield from cls.commands()
+
+    @lexicon(consume=True)
+    def figure(cls):
+        """Stuff between ``<`` and ``>`` in figure mode."""
+        yield r'>', Delimiter.Chord.End, -1
+        yield from cls.common()
+        yield r'[-+!]+', Accidental
+        yield r'_|\d+', Pitch.Figure
+        yield r'[][]+', Literal.Verbatim
+        yield r'\\[\\!+]|/', Character
 
     # -------------------- base stuff --------------------
     @classmethod
