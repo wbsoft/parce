@@ -109,10 +109,7 @@ class LilyPond(Language):
     @lexicon(consume=True)
     def book(cls):
         """Book or bookpart."""
-        yield r'\}', Bracket.End, -1
-        yield from cls.common()
-        yield from cls.blocks()
-        yield from cls.music()
+        yield from cls.score
 
     @lexicon(consume=True)
     def score(cls):
