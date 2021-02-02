@@ -53,12 +53,6 @@ RE_LILYPOND_REST = r"[rRs](?![^\W\d])"
 # a string that could be a valid pitch name (or drum name)
 RE_LILYPOND_PITCHWORD = r"(?<![^\W\d])[a-zé]+(?:[_-][a-zé]+)*(?![^\W\d_])"
 
-# a pitch name followed by an optional octave (two capturing groups)
-RE_LILYPOND_PITCH_OCT = "(" + RE_LILYPOND_PITCHWORD + r")\s*('+|,+)?"
-
-# all durations
-RE_LILYPOND_DURATION = words(lilypond_words.durations, suffix = r'(?!\d)')
-
 
 # Standard actions defined/used here:
 Rest = Text.Music.Rest
@@ -151,12 +145,11 @@ class LilyPond(Language):
 
     @lexicon(consume=True)
     def layout_context(cls):
-        r"""Contents of \layout or \midi { \context { } } or \with. { }."""
+        r"""Contents of ``\layout`` or ``\midi { \context { } }`` or ``\with. { }``."""
         yield r'\}', Bracket.End, -1
-        yield words(lilypond_words.contexts, prefix=r"\\", suffix=r"\b"), Context
-        yield words(lilypond_words.grobs), Grob
-        yield words(lilypond_words.keywords, prefix=r"\\", suffix=r"(?![^\W\d])"), Keyword
-        yield RE_LILYPOND_SYMBOL, Name.Variable, cls.identifier
+        yield RE_LILYPOND_SYMBOL, findmember(TEXT, (
+                (lilypond_words.contexts, Context),
+                (lilypond_words.grobs, Grob)), (Name.Variable, cls.identifier))
         yield r'\d+', Number, cls.unit
         yield from cls.common()
         yield from cls.commands()
@@ -226,13 +219,14 @@ class LilyPond(Language):
             bygroup(Spanner.Id, Number, cls.ifpitch(Name.Symbol.Invalid, Name.Symbol))
         yield r"q(?![^\W\d])", Pitch
         yield RE_LILYPOND_REST, Rest
-        yield RE_LILYPOND_PITCHWORD, cls.ifpitch((Pitch, cls.pitch))
-        yield words(lilypond_words.contexts), Context
-        yield words(lilypond_words.grobs), Grob
+        yield RE_LILYPOND_SYMBOL, findmember(TEXT, (
+                (lilypond_words.all_pitch_names, (Pitch, cls.pitch)),
+                (lilypond_words.contexts, Context),
+                (lilypond_words.grobs, Grob)), Name.Symbol)
         yield r'[.,]', Delimiter
         yield r'(:)\s*(8|16|32|64|128|256|512|1024|2048)?(?!\d)', bygroup(Delimiter.Tremolo, Duration.Tremolo)
         yield RE_FRACTION, Number
-        yield RE_LILYPOND_DURATION, Duration, cls.duration
+        yield words(lilypond_words.durations, suffix = r'(?!\d)'), Duration, cls.duration
         yield r"\d+", Number
         yield from cls.commands()
 
