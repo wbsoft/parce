@@ -181,9 +181,9 @@ class LilyPond(Language):
                 "unset": (Keyword, cls.property, cls.start_with_scheme_or_string),
                 "override": (Keyword, cls.property_set),
                 "revert": (Keyword, cls.property, cls.start_with_scheme_or_string),
-                "new": (Keyword, cls.property_set),
-                "change": (Keyword, cls.property_set),
-                "context": (Keyword, cls.property_set),
+                "new": (Keyword, cls.translator),
+                "change": (Keyword, cls.translator),
+                "context": (Keyword, cls.translator),
                 "repeat": (Keyword, cls.repeat),
             },
             (findmember(MATCH[2], (
@@ -293,6 +293,15 @@ class LilyPond(Language):
         yield from cls.find_string()
         yield from cls.find_comment()
         yield r'\d+', Number, -1
+        yield default_target, -1
+
+    # ------------------ translator ---------------------
+    @lexicon
+    def translator(cls):
+        r"""``\new``, ``\context`` and ``\change``."""
+        yield SKIP_WHITESPACE
+        yield r'(' + RE_LILYPOND_SYMBOL + ')\s*(=)?', \
+                bygroup(cls.property_action(TEXT), Operator.Assignment), -1
         yield default_target, -1
 
     # ------------------ script -------------------------
