@@ -194,7 +194,7 @@ class LilyPond(Language):
                 "new": (Keyword, cls.property_set),
                 "change": (Keyword, cls.property_set),
                 "context": (Keyword, cls.property_set),
-                #"repeat": (Keyword, cls.repeat),       #TODO
+                "repeat": (Keyword, cls.repeat),
             },
             (findmember(MATCH[2], (
                 (lilypond_words.keywords, Keyword),
@@ -291,6 +291,17 @@ class LilyPond(Language):
         yield RE_LILYPOND_SYMBOL + r"(?=\s*([,.])?)", cls.property_action(TEXT), ifeq(MATCH[1], None, -1)
         yield r'([.,])\s*(?=[#$"])', Separator, cls.start_with_scheme_or_string
         yield r'([.,])\s*(' + RE_LILYPOND_SYMBOL +  ')', bygroup(Separator, cls.property_action(MATCH[2]))
+        yield default_target, -1
+
+    # ------------------ repeat -------------------------
+    @lexicon
+    def repeat(cls):
+        """\\repeat mode n."""
+        yield SKIP_WHITESPACE
+        yield words(("volta", "unfold", "percent", "tremolo"), suffix=r'\b'), Name.Type
+        yield from cls.find_string()
+        yield from cls.find_comment()
+        yield r'\d+', Number, -1
         yield default_target, -1
 
     # ------------------ script -------------------------
