@@ -353,17 +353,29 @@ class LilyPond(Language):
         yield r"(\*)\s*(\d+(?:/\d+)?)", bygroup(Duration, Duration.Scaling)
         yield default_target, -2
 
+    # --------------------- input modes ------------------
+    @classmethod
+    def inputmode(cls, lexicon):
+        """Yield boilerplate rules for an input mode."""
+        yield SKIP_WHITESPACE
+        yield r"\\s(sequential|imultaneous)\b", Keyword
+        yield r"<<", Bracket.Start, -1, lexicon('>>')
+        yield r"\{", Bracket.Start, -1, lexicon('}')
+        yield from cls.find_comment()
+        yield default_target, -1
+
+    @classmethod
+    def inputmode_list(cls, lexicon):
+        """Yield boilerplate rules for the contents of an input mode."""
+        yield arg(), Bracket.End, -1
+        yield r"<<", Bracket.Start, lexicon('>>')
+        yield r"\{", Bracket.Start, lexicon('}')
 
     # --------------------- lyrics -----------------------
     @lexicon
     def lyricmode(cls):
         """Yield contents in lyric mode."""
-        yield SKIP_WHITESPACE
-        yield r"\\s(sequential|imultaneous)\b", Keyword
-        yield r"<<", Bracket.Start, -1, cls.lyriclist('>>')
-        yield r"\{", Bracket.Start, -1, cls.lyriclist('}')
-        yield from cls.find_comment()
-        yield default_target, -1
+        yield from cls.inputmode(cls.lyriclist)
 
     @lexicon
     def lyricsto(cls):
@@ -378,9 +390,7 @@ class LilyPond(Language):
         Derive with the desired closing delimiter (``}`` or ``>>``).
 
         """
-        yield arg(), Bracket.End, -1
-        yield r"<<", Bracket.Start, cls.lyriclist('>>')
-        yield r"\{", Bracket.Start, cls.lyriclist('}')
+        yield from cls.inputmode_list(cls.lyriclist)
         yield RE_LILYPOND_LYRIC_TEXT, dselect(TEXT, {
                 "--": LyricHyphen,
                 "__": LyricExtender,
@@ -395,19 +405,12 @@ class LilyPond(Language):
     @lexicon
     def drummode(cls):
         """\\drummode and \\drums."""
-        yield SKIP_WHITESPACE
-        yield r"\\s(sequential|imultaneous)\b", Keyword
-        yield r"\{", Bracket.Start, -1, cls.drumlist('}')
-        yield r"<<", Bracket.Start, -1, cls.drumlist('>>')
-        yield from cls.find_comment()
-        yield default_target, -1
+        yield from cls.inputmode(cls.drumlist)
 
     @lexicon(consume=True)
     def drumlist(cls):
         """Drum music between ``{`` ... ``}`` or ``<<`` ... ``>>``."""
-        yield arg(), Bracket.End, -1
-        yield r"\{", Bracket.Start, cls.drumlist('}')
-        yield r"<<", Bracket.Start, cls.drumlist('>>')
+        yield from cls.inputmode_list(cls.drumlist)
         yield RE_LILYPOND_REST, Rest
         yield RE_LILYPOND_PITCHWORD, ifmember(TEXT, lilypond_words.drum_pitch_names_set, Pitch.Drum, Name.Symbol)
         yield from cls.music()
@@ -416,19 +419,12 @@ class LilyPond(Language):
     @lexicon
     def chordmode(cls):
         """\\chordmode and \\chords."""
-        yield SKIP_WHITESPACE
-        yield r"\\s(sequential|imultaneous)\b", Keyword
-        yield r"\{", Bracket.Start, -1, cls.chordlist('}')
-        yield r"<<", Bracket.Start, -1, cls.chordlist('>>')
-        yield from cls.find_comment()
-        yield default_target, -1
+        yield from cls.inputmode(cls.chordlist)
 
     @lexicon(consume=True)
     def chordlist(cls):
         """Chordmode music between ``{`` ... ``}`` or ``<<`` ... ``>>``."""
-        yield arg(), Bracket.End, -1
-        yield r"\{", Bracket.Start, cls.chordlist('}')
-        yield r"<<", Bracket.Start, cls.chordlist('>>')
+        yield from cls.inputmode_list(cls.chordlist)
         yield r"[:^]", Separator.Chord, cls.chord_modifier
         yield r"(/\+?)\s*(" + RE_LILYPOND_PITCHWORD + ")?", bygroup(Separator.Chord, cls.ifpitch())
         yield from cls.music()
@@ -446,30 +442,18 @@ class LilyPond(Language):
     @lexicon
     def notemode(cls):
         """Notemode switches back to music e.g. in lyrics."""
-        yield SKIP_WHITESPACE
-        yield r"\\s(sequential|imultaneous)\b", Keyword
-        yield r"\{", Bracket.Start, -1, cls.musiclist('}')
-        yield r"<<", Bracket.Start, -1, cls.musiclist('>>')
-        yield from cls.find_comment()
-        yield default_target, -1
+        yield from cls.inputmode(cls.musiclist)
 
     # --------------------- figuremode -------------------
     @lexicon
     def figuremode(cls):
         """\\figuremode and \\figures."""
-        yield SKIP_WHITESPACE
-        yield r"\\s(sequential|imultaneous)\b", Keyword
-        yield r"\{", Bracket.Start, -1, cls.figurelist('}')
-        yield r"<<", Bracket.Start, -1, cls.figurelist('>>')
-        yield from cls.find_comment()
-        yield default_target, -1
+        yield from cls.inputmode(cls.figurelist)
 
     @lexicon(consume=True)
     def figurelist(cls):
         """figuremode music between ``{`` ... ``}`` or ``<<`` ... ``>>``."""
-        yield arg(), Bracket.End, -1
-        yield r"\{", Bracket.Start, cls.figurelist('}')
-        yield r"<<", Bracket.Start, cls.figurelist('>>')
+        yield from cls.inputmode_list(cls.figurelist)
         yield r'<', Delimiter.Chord.Start, cls.figure
         yield RE_LILYPOND_DURATION, Duration, cls.duration
         yield from cls.common()
