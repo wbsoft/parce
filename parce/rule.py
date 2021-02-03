@@ -308,27 +308,20 @@ def findmember(item, pairs, default=()):
     matter.
 
     """
-    sequences = []
-    items = []
-    all_items = set()
     try:
         pairs = pairs.items()   # succeeds if it's a dict
     except AttributeError:
         pass
+    d = {}
+    items = [default]
     for s, i in pairs:
-        s = frozenset(set(s) - all_items)
+        s = set(s) - set(d)
         if s:
-            all_items |= s
-            sequences.append(s)
+            d.update(dict.fromkeys(s, len(items)))
             items.append(i)
-    last = len(items)
-    items.append(default)
-    def predicate(text):
-        for i, sequence in enumerate(sequences):
-            if text in sequence:
-                return i
-        return last
-    return select(call(predicate, item), *items)
+    def get_index(text):
+        return d.get(text, 0)
+    return select(call(get_index, item), *items)
 
 
 ### Pattern helpers
