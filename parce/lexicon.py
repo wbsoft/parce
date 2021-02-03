@@ -212,12 +212,16 @@ class Lexicon:
 
     @util.cached_property
     def _rules(self):
-        """Yield the rules.
+        """Return all rules in a tuple.
 
-        Rule items that depend on the lexicon argument are not yet evaluated.
+        Rule items that depend on the lexicon argument are only evaluated if
+        this is a derived lexicon.
 
         """
-        return tuple(self.descriptor.rules_func(self.language) or ())
+        rules = self.descriptor.rules_func(self.language) or ()
+        if self.arg is not None:
+            rules = (pre_evaluate_rule(rule, self.arg) for rule in rules)
+        return tuple(rules)
 
     @util.cached_property
     def rules(self):
@@ -237,7 +241,7 @@ class Lexicon:
         argument are already evaluated.
 
         """
-        yield from self.rules if self.arg is not None else self._rules
+        yield from self._rules
 
     def __repr__(self):
         s = self.fullname
