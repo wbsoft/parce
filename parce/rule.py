@@ -317,9 +317,10 @@ def findmember(item, pairs, default=()):
         pass
     for s, i in pairs:
         s = frozenset(set(s) - all_items)
-        all_items |= s
-        sequences.append(s)
-        items.append(i)
+        if s:
+            all_items |= s
+            sequences.append(s)
+            items.append(i)
     last = len(items)
     items.append(default)
     def predicate(text):
