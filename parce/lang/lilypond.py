@@ -96,6 +96,8 @@ class LilyPond(Language):
                 (lilypond_words.grobs, Grob)),
               (Name.Variable.Definition, cls.identifier))
         yield from cls.find_string(cls.identifier)
+        # prevent catching a number as a duration after an assignment
+        yield r'(=)\s*(\d+)', bygroup(Operator.Assignment, Number)
         yield from cls.music()
 
     @classmethod
@@ -123,14 +125,14 @@ class LilyPond(Language):
     def header(cls):
         """A header block."""
         yield r'\}', Bracket.End, -1
-        yield RE_LILYPOND_SYMBOL, Name.Variable, cls.identifier
+        yield RE_LILYPOND_SYMBOL, Name.Attribute, cls.identifier
         yield from cls.common()
 
     @lexicon(consume=True)
     def paper(cls):
         """A paper block."""
         yield r'\}', Bracket.End, -1
-        yield RE_LILYPOND_SYMBOL, Name.Variable, cls.identifier
+        yield RE_LILYPOND_SYMBOL, Name.Attribute, cls.identifier
         yield r'\d+', Number, cls.unit
         yield RE_FRACTION, Number
         yield from cls.common()
@@ -140,7 +142,7 @@ class LilyPond(Language):
     def layout(cls):
         """A layout block."""
         yield r'\}', Bracket.End, -1
-        yield RE_LILYPOND_SYMBOL, Name.Variable, cls.identifier
+        yield RE_LILYPOND_SYMBOL, Name.Attribute, cls.identifier
         yield r'\d+', Number, cls.unit
         yield r"(\\context)\s*(\{)", bygroup(Keyword, Bracket.Start), cls.layout_context
         yield from cls.music()
