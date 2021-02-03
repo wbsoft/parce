@@ -90,7 +90,11 @@ class LilyPond(Language):
     def root(cls):
         """Toplevel LilyPond document."""
         yield from cls.blocks()
-        yield RE_LILYPOND_SYMBOL, Name.Variable.Definition, cls.identifier
+        yield RE_LILYPOND_SYMBOL, findmember(TEXT, (
+                (lilypond_words.all_pitch_names, (Pitch, cls.pitch)),
+                (lilypond_words.contexts, Context),
+                (lilypond_words.grobs, Grob)),
+              (Name.Variable.Definition, cls.identifier))
         yield from cls.find_string(cls.identifier)
         yield from cls.music()
 
@@ -196,7 +200,7 @@ class LilyPond(Language):
                 (lilypond_words.contexts, Name.Builtin.Context),
                 (lilypond_words.dynamics, Dynamic),
                 (lilypond_words.modes, Name.Type),
-            ), Name.Command), ifgroup(4, cls.start_with_scheme_or_string))))
+            ), Name.Variable), ifgroup(4, cls.start_with_scheme_or_string))))
         # seldom used, but nevertheless allowed in LilyPond: \"blabla"
         yield r'(\\)(")', bygroup(Name.Command, String), cls.identifier, cls.string
 

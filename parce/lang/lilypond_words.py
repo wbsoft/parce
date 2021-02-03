@@ -387,6 +387,7 @@ music_commands = (
     'figures',
     'finalis',
     'fingeringOrientations',
+    'fixed',    # since 2.20
     'flexa',
     'frenchChords',
     'fullJazzExceptions',
