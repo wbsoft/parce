@@ -143,9 +143,9 @@ class Lexicon:
         self.re_flags = descriptor._re_flags
         #: Whether this lexicon wants the token(s) that switched to it
         self.consume = descriptor._consume
-        #: The argument the lexicon was called with (creating a derived
-        #: Lexicon). None for a normal lexicon.
-        self.arg = arg
+        # The argument the lexicon was called with (creating a derived
+        # Lexicon). None for a normal lexicon.
+        self._arg = arg
         #: The short name (name of the method this Lexicon was defined with)
         self.name = descriptor.rules_func.__name__
         #: The short name with the Language name prepended, like
@@ -159,6 +159,14 @@ class Lexicon:
         # locks are used when creating a derivate and/or the parse() instance function
         self._lock_derive = threading.Lock()
         self._lock_build = threading.Lock()
+
+    @property
+    def arg(self):
+        """The argument the lexicon was called with (creating a derived
+        Lexicon). None for a normal lexicon.
+
+        """
+        return self._arg
 
     def __call__(self, arg=None):
         """Create a derived Lexicon with argument ``arg``.
