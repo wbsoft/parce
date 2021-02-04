@@ -98,6 +98,8 @@ class LilyPond(Language):
         yield from cls.find_string(cls.identifier)
         yield '=', Operator.Assignment, cls.start_list
         yield from cls.music()
+        yield from cls.common()
+        yield from cls.commands(list_target=cls.start_list)
 
     @classmethod
     def blocks(cls):
@@ -119,6 +121,8 @@ class LilyPond(Language):
         yield r'\}', Bracket.End, -1
         yield from cls.blocks()
         yield from cls.music()
+        yield from cls.common()
+        yield from cls.commands()
 
     @lexicon(consume=True)
     def header(cls):
@@ -145,6 +149,8 @@ class LilyPond(Language):
         yield r'\d+', Number, cls.unit
         yield r"(\\context)\s*(\{)", bygroup(Keyword, Bracket.Start), cls.layout_context
         yield from cls.music()
+        yield from cls.common()
+        yield from cls.commands()
 
     @lexicon(consume=True)
     def midi(cls):
@@ -164,12 +170,18 @@ class LilyPond(Language):
 
     # ------------------ commands that can occur in all input modes --------
     @classmethod
-    def commands(cls):
-        """Yield commands that can occur in all input modes."""
+    def commands(cls, /, list_target=0):
+        """Yield commands that can occur in all input modes.
+
+        If a ``list_target`` is given, that lexicon is pushed after a Keyword,
+        to be able to parse symbols, strings, numbers or scheme. This makes
+        sense in e.g. lyrics mode.
+
+        """
         yield r"(\\with)\s*(\{)", bygroup(Keyword, Bracket.Start), cls.layout_context
         yield r'(' + RE_LILYPOND_COMMAND + r')(?=\s*([.,]))?', ifgroup(3,
             # part of a \bla.bla or \bla.1 construct, always a user command
-            (Name.Command, cls.identifier_ref),
+            (Name.Variable, cls.identifier_ref),
             # no "." or "," , can be a builtin
             dselect(MATCH[2], {
                 # input modes
@@ -188,13 +200,13 @@ class LilyPond(Language):
                 "repeat": (Keyword, cls.repeat),
             },
             (findmember(MATCH[2], (
-                (lilypond_words.keywords, Keyword),
+                (lilypond_words.keywords, (Keyword, list_target)),
                 (lilypond_words.music_commands, Name.Builtin),
                 (lilypond_words.all_articulations, Articulation),
                 (lilypond_words.contexts, Name.Builtin.Context),
                 (lilypond_words.dynamics, Dynamic),
                 (lilypond_words.modes, Name.Type),
-            ), Name.Variable), cls.start_list)))
+            ), Name.Variable))))
         # seldom used, but nevertheless allowed in LilyPond: \"blabla"
         yield r'(\\)(?=")', Name.Command, cls.identifier_ref
 
@@ -204,7 +216,6 @@ class LilyPond(Language):
         """Musical items."""
         yield from cls.find_string(cls.list)
         yield from cls.find_scheme(cls.list)
-        yield from cls.common()
         yield r"\{", Bracket.Start, cls.musiclist('}')
         yield r"<<", Bracket.Start, cls.musiclist('>>')
         yield r"<", Delimiter.Chord.Start, cls.chord
@@ -232,7 +243,6 @@ class LilyPond(Language):
         yield r'(\d+)(?=\s*,)', Number, cls.list
         yield RE_LILYPOND_DURATION, Duration, cls.duration
         yield r"\d+", Number, cls.list
-        yield from cls.commands()
 
     @lexicon(consume=True)
     def musiclist(cls):
@@ -243,12 +253,16 @@ class LilyPond(Language):
         """
         yield arg(), Bracket.End, -1
         yield from cls.music()
+        yield from cls.common()
+        yield from cls.commands()
 
     @lexicon(consume=True)
     def chord(cls):
         """A ``<`` chord ``>`` construct."""
         yield r">", Delimiter.Chord.End, -1
         yield from cls.music()
+        yield from cls.common()
+        yield from cls.commands()
 
     # ------------------ repeat -------------------------
     @lexicon
@@ -352,7 +366,7 @@ class LilyPond(Language):
         yield RE_FRACTION, Number.Fraction
         yield RE_LILYPOND_DURATION, Duration, cls.duration
         yield from cls.common()
-        yield from cls.commands()
+        yield from cls.commands(list_target=cls.start_list)
 
 
     # ---------------------- drummode ---------------------
@@ -368,6 +382,8 @@ class LilyPond(Language):
         yield RE_LILYPOND_REST, Rest
         yield RE_LILYPOND_PITCHWORD, ifmember(TEXT, lilypond_words.drum_pitch_names_set, Pitch.Drum, Name.Symbol)
         yield from cls.music()
+        yield from cls.common()
+        yield from cls.commands()
 
     # ---------------------- chordmode ---------------------
     @lexicon
@@ -382,6 +398,8 @@ class LilyPond(Language):
         yield r"[:^]", Separator.Chord, cls.chord_modifier
         yield r"(/\+?)\s*(" + RE_LILYPOND_PITCHWORD + ")?", bygroup(Separator.Chord, cls.ifpitch())
         yield from cls.music()
+        yield from cls.common()
+        yield from cls.commands()
 
     @lexicon
     def chord_modifier(cls):
@@ -410,6 +428,7 @@ class LilyPond(Language):
         yield from cls.inputmode_list(cls.figurelist)
         yield r'<', Delimiter.Chord.Start, cls.figure
         yield RE_LILYPOND_DURATION, Duration, cls.duration
+        yield from cls.music()
         yield from cls.common()
         yield from cls.commands()
 
@@ -429,7 +448,7 @@ class LilyPond(Language):
         """Find comment, string, scheme, the ``=`` operator and  markup."""
         yield from cls.base()
         yield "=", Operator.Assignment, cls.start_list
-        yield r"\\markup(?:lines|list)?" + RE_LILYPOND_ID_RIGHT_BOUND, Keyword.Markup, cls.markup
+        yield from cls.find_markup()
 
     @classmethod
     def base(cls):
@@ -456,7 +475,7 @@ class LilyPond(Language):
         yield r'([.,])\s*(\d+)(?!/\d)' + RE_LILYPOND_ID_RIGHT_BOUND, bygroup(Separator, Number)
         yield r'([.,])\s*(' + RE_LILYPOND_ID + r')' + RE_LILYPOND_ID_RIGHT_BOUND, \
             bygroup(Separator, cls.symbol_action(MATCH[2], Name.Variable))
-        yield r'([.,])\s*(?=[#$"])', Separator, cls.continue_list
+        yield r'([.,])\s*(?=[#$"])', Separator, cls._continue_list
         yield from cls.find_comment()
         yield default_target, -1
 
@@ -471,7 +490,7 @@ class LilyPond(Language):
         yield default_target, -1
 
     @lexicon
-    def continue_list(cls):
+    def _continue_list(cls):
         """Continue a list, this context is never created: all contents remain in ``list``."""
         yield from cls.find_string(-1)
         yield from cls.find_scheme(-1)
@@ -505,6 +524,11 @@ class LilyPond(Language):
 
 
     # -------------------- markup --------------------
+    @classmethod
+    def find_markup(cls):
+        r"""Find ``\markup``, ``\markuplines`` and ``\markuplist``."""
+        yield r"\\markup(?:lines|list)?" + RE_LILYPOND_ID_RIGHT_BOUND, Keyword.Markup, cls.markup
+
     @lexicon(consume=True)
     def markup(cls):
         """Markup without environment. Try to guess the n of arguments."""
