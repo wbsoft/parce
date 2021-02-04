@@ -46,7 +46,7 @@ RE_LILYPOND_ID = r"[^\W\d_]+(?:[_-][^\W\d_]+)*"
 RE_LILYPOND_SYMBOL = RE_LILYPOND_ID + RE_LILYPOND_ID_RIGHT_BOUND
 RE_LILYPOND_COMMAND = r"\\(" + RE_LILYPOND_ID + ")" + RE_LILYPOND_ID_RIGHT_BOUND
 RE_LILYPOND_MARKUP_TEXT = r'[^%{}"\\\s$#][^{}"\\\s$#]*'
-RE_LILYPOND_LYRIC_TEXT = r'[^%{}"\\\s$#\d][^{}"\\\s$#\d]*'
+RE_LILYPOND_LYRIC_TEXT = r'[^%={}"\\\s$#\d][^{}"\\\s$#\d]*'
 
 RE_LILYPOND_REST = r"[rRs](?![^\W\d])"
 
@@ -92,12 +92,11 @@ class LilyPond(Language):
         yield from cls.blocks()
         yield RE_LILYPOND_SYMBOL, findmember(TEXT, (
                 (lilypond_words.all_pitch_names, (Pitch, cls.pitch)),
-                (lilypond_words.contexts, Context),
-                (lilypond_words.grobs, Grob)),
+                (lilypond_words.contexts, (Context, cls.identifier)),
+                (lilypond_words.grobs, (Grob, cls.identifier))),
               (Name.Variable.Definition, cls.identifier))
         yield from cls.find_string(cls.identifier)
-        # prevent catching a number as a duration after an assignment
-        yield r'(=)\s*(\d+)', bygroup(Operator.Assignment, Number)
+        yield '=', Operator.Assignment, cls.start_list
         yield from cls.music()
 
     @classmethod
@@ -168,13 +167,13 @@ class LilyPond(Language):
     def commands(cls):
         """Yield commands that can occur in all input modes."""
         yield r"(\\with)\s*(\{)", bygroup(Keyword, Bracket.Start), cls.layout_context
-        yield r'(' + RE_LILYPOND_COMMAND + r')(?=\s*(?:(\.)|([$#"])))?', ifgroup(3,
+        yield r'(' + RE_LILYPOND_COMMAND + r')(?=\s*([.,]))?', ifgroup(3,
             # part of a \bla.bla or \bla.1 construct, always a user command
-            (Name.Command, cls.identifier),
+            (Name.Command, cls.identifier_ref),
             # no "." or "," , can be a builtin
             dselect(MATCH[2], {
                 # input modes
-                "lyricsto": (Keyword.Lyric, cls.lyricsto, cls.start_with_scheme_or_string),
+                "lyricsto": (Keyword.Lyric, cls.lyricsto, cls.start_list),
                 "addlyrics": (Keyword.Lyric, cls.lyricmode),
                 "lyrics": (Keyword.Lyric, cls.lyricmode),
                 "lyricmode": (Keyword.Lyric, cls.lyricmode),
@@ -186,13 +185,6 @@ class LilyPond(Language):
                 "figuremode": (Keyword, cls.figuremode),
                 "notemode": (Keyword, cls.notemode),    # \notes doesn't exist anymore
                 # commands that expect some symbols in all input modes
-                "set": (Keyword, cls.property_set),
-                "unset": (Keyword, cls.property, cls.start_with_scheme_or_string),
-                "override": (Keyword, cls.property_set),
-                "revert": (Keyword, cls.property, cls.start_with_scheme_or_string),
-                "new": (Keyword, cls.translator),
-                "change": (Keyword, cls.translator),
-                "context": (Keyword, cls.translator),
                 "repeat": (Keyword, cls.repeat),
             },
             (findmember(MATCH[2], (
@@ -202,14 +194,16 @@ class LilyPond(Language):
                 (lilypond_words.contexts, Name.Builtin.Context),
                 (lilypond_words.dynamics, Dynamic),
                 (lilypond_words.modes, Name.Type),
-            ), Name.Variable), ifgroup(4, cls.start_with_scheme_or_string))))
+            ), Name.Variable), cls.start_list)))
         # seldom used, but nevertheless allowed in LilyPond: \"blabla"
-        yield r'(\\)(")', bygroup(Name.Command, String), cls.identifier, cls.string
+        yield r'(\\)(?=")', Name.Command, cls.identifier_ref
 
     # ------------------ music ----------------------
     @classmethod
     def music(cls):
         """Musical items."""
+        yield from cls.find_string(cls.list)
+        yield from cls.find_scheme(cls.list)
         yield from cls.common()
         yield r"\{", Bracket.Start, cls.musiclist('}')
         yield r"<<", Bracket.Start, cls.musiclist('>>')
@@ -230,14 +224,14 @@ class LilyPond(Language):
         yield RE_LILYPOND_REST, Rest
         yield RE_LILYPOND_SYMBOL, findmember(TEXT, (
                 (lilypond_words.all_pitch_names, (Pitch, cls.pitch)),
-                (lilypond_words.contexts, Context),
-                (lilypond_words.grobs, Grob)), Name.Symbol)
+                (lilypond_words.contexts, (Context, cls.list)),
+                (lilypond_words.grobs, (Grob, cls.list))), (Name.Symbol, cls.list))
         yield r'[.,]', Delimiter
         yield r'(:)\s*(8|16|32|64|128|256|512|1024|2048)?(?!\d)', bygroup(Delimiter.Tremolo, Duration.Tremolo)
         yield RE_FRACTION, Number.Fraction
-        yield r'(\d+)\s*(,)', bygroup(Number, Separator), cls.numberlist
+        yield r'(\d+)(?=\s*,)', Number, cls.list
         yield RE_LILYPOND_DURATION, Duration, cls.duration
-        yield r"\d+", Number
+        yield r"\d+", Number, cls.list
         yield from cls.commands()
 
     @lexicon(consume=True)
@@ -256,45 +250,6 @@ class LilyPond(Language):
         yield r">", Delimiter.Chord.End, -1
         yield from cls.music()
 
-    # ------------------ properties ---------------------
-    @classmethod
-    def property_action(cls, text):
-        """Return a proper dynamic action for the name of a symbol."""
-        return findmember(text, (
-                (lilypond_words.grobs, Grob),
-                (lilypond_words.contexts, Context),
-                ), Name.Variable)
-
-    @lexicon
-    def property_set(cls):
-        """Read property names, delimiters, strings and scheme.
-
-        Calls :meth:`property_action` to get an action for the text.
-        Quits on ``"="`` or any non-alphabethic and non-whitespace character.
-
-        """
-        yield SKIP_WHITESPACE
-        yield '=', Operator.Assignment, -1
-        yield from cls.find_string()
-        yield from cls.find_scheme()
-        yield from cls.find_comment()
-        yield RE_LILYPOND_SYMBOL, cls.property_action(TEXT)
-        yield r'[.,]', Separator
-        yield r'(?=[\W\d])', None, -1
-
-    @lexicon
-    def property(cls):
-        """Read property names, delimiters, strings and scheme.
-
-        Calls :meth:`property_action` to get an action for the text.
-
-        """
-        yield SKIP_WHITESPACE
-        yield RE_LILYPOND_SYMBOL + r"(?=\s*([,.])?)", cls.property_action(TEXT), ifeq(MATCH[1], None, -1)
-        yield r'([.,])\s*(?=[#$"])', Separator, cls.start_with_scheme_or_string
-        yield r'([.,])\s*(' + RE_LILYPOND_SYMBOL +  ')', bygroup(Separator, cls.property_action(MATCH[2]))
-        yield default_target, -1
-
     # ------------------ repeat -------------------------
     @lexicon
     def repeat(cls):
@@ -304,15 +259,6 @@ class LilyPond(Language):
         yield from cls.find_string()
         yield from cls.find_comment()
         yield r'\d+', Number, -1
-        yield default_target, -1
-
-    # ------------------ translator ---------------------
-    @lexicon
-    def translator(cls):
-        r"""``\new``, ``\context`` and ``\change``."""
-        yield SKIP_WHITESPACE
-        yield r'(' + RE_LILYPOND_SYMBOL + ')\s*(=)?', \
-                bygroup(cls.property_action(TEXT), Operator.Assignment), -1
         yield default_target, -1
 
     # ------------------ script -------------------------
@@ -388,7 +334,6 @@ class LilyPond(Language):
     @lexicon
     def lyricsto(cls):
         r"""Find the argument of a ``\lyricsto`` command."""
-        yield RE_LILYPOND_SYMBOL, Name.Symbol, -1, cls.lyricmode
         yield default_target, -1, cls.lyricmode
 
     @lexicon(consume=True)
@@ -483,7 +428,7 @@ class LilyPond(Language):
     def common(cls):
         """Find comment, string, scheme, the ``=`` operator and  markup."""
         yield from cls.base()
-        yield "=", Operator.Assignment
+        yield "=", Operator.Assignment, cls.start_list
         yield r"\\markup(?:lines|list)?" + RE_LILYPOND_ID_RIGHT_BOUND, Keyword.Markup, cls.markup
 
     @classmethod
@@ -494,31 +439,54 @@ class LilyPond(Language):
         yield from cls.find_comment()
 
     @lexicon(consume=True)
-    def numberlist(cls):
-        """A list of numbers, like ``2, 2, 2, 3``."""
+    def list(cls):
+        r"""A list of numbers, symbols, strings or scheme expressions.
+
+        Consumes both . and , as separators.
+
+        Jump here:
+
+        * plainly: start_list
+        * when a ", # or $ is ahead: start_list
+        * from a number followed by , (but don't consume the ,)
+        * from a symbol
+
+        """
         yield SKIP_WHITESPACE
-        yield r'(\d+)(?:\s*(,))?', bygroup(Number, Separator), ifgroup(2, (), -1)
+        yield r'([.,])\s*(\d+)(?!/\d)' + RE_LILYPOND_ID_RIGHT_BOUND, bygroup(Separator, Number)
+        yield r'([.,])\s*(' + RE_LILYPOND_ID + r')' + RE_LILYPOND_ID_RIGHT_BOUND, \
+            bygroup(Separator, cls.symbol_action(MATCH[2], Name.Variable))
+        yield r'([.,])\s*(?=[#$"])', Separator, cls.continue_list
+        yield from cls.find_comment()
+        yield default_target, -1
+
+    @lexicon
+    def start_list(cls):
+        """Start a list, this context is never created: all contents go to ``list``."""
+        yield SKIP_WHITESPACE
+        yield from cls.find_string(-1, cls.list)
+        yield from cls.find_scheme(-1, cls.list)
+        yield r'\d+' + RE_LILYPOND_ID_RIGHT_BOUND, Number, -1, cls.list
+        yield RE_LILYPOND_SYMBOL, cls.symbol_action(TEXT, Name.Variable), -1, cls.list
+        yield default_target, -1
+
+    @lexicon
+    def continue_list(cls):
+        """Continue a list, this context is never created: all contents remain in ``list``."""
+        yield from cls.find_string(-1)
+        yield from cls.find_scheme(-1)
+        yield default_target, -1
 
     @lexicon(consume=True)
     def identifier(cls):
         """bla.bla.bla syntax."""
-        yield SKIP_WHITESPACE
-        yield r'(\.)\s*(\d+)' + RE_LILYPOND_ID_RIGHT_BOUND, bygroup(Separator, Number)
-        yield r'(\.)\s*(' + RE_LILYPOND_ID + r')' + RE_LILYPOND_ID_RIGHT_BOUND, bygroup(Separator, Name.Variable)
-        yield r'(\.)\s*(?=[#$"])', Separator, cls.start_with_scheme_or_string
-        yield default_target, -1
+        yield from cls.list
 
-    @lexicon
-    def start_with_scheme_or_string(cls):
-        """Pick a scheme expression or a string.
-
-        Immediately pops back, so this context is never actually created.
-
-        """
-        yield SKIP_WHITESPACE
-        yield from cls.find_string(-1)
-        yield from cls.find_scheme(-1)
-        yield default_target, -1
+    @lexicon(consume=True)
+    def identifier_ref(cls):
+        r"""\bla.bla.bla syntax."""
+        yield r'(?<=\\)"', String, cls.string   # only after '\'
+        yield from cls.list
 
     @lexicon(consume=True)
     def unit(cls):
@@ -526,6 +494,15 @@ class LilyPond(Language):
         yield SKIP_WHITESPACE
         yield r'\\(mm|in|pt|cm)' + RE_LILYPOND_ID_RIGHT_BOUND, Name.Builtin, -1
         yield default_target, -1
+
+    @classmethod
+    def symbol_action(self, text, default=Name.Symbol):
+        """Return a proper dynamic action for the name of a symbol."""
+        return findmember(text, (
+                (lilypond_words.grobs, Grob),
+                (lilypond_words.contexts, Context),
+                ), default)
+
 
     # -------------------- markup --------------------
     @lexicon(consume=True)
@@ -565,9 +542,9 @@ class LilyPond(Language):
 
     # -------------- Scheme ---------------------
     @classmethod
-    def find_scheme(cls, extra_target=0):
+    def find_scheme(cls, *extra_target):
         """Find scheme."""
-        yield r'[#$]', Delimiter.ModeChange.SchemeStart, extra_target, cls.get_scheme_target()
+        yield r'[#$]', Delimiter.ModeChange.SchemeStart, *extra_target, cls.get_scheme_target()
 
     @classmethod
     def get_scheme_target(cls):
@@ -583,9 +560,9 @@ class LilyPond(Language):
 
     # -------------- String ---------------------
     @classmethod
-    def find_string(cls, extra_target=0):
+    def find_string(cls, *extra_target):
         """Find a string."""
-        yield '"', String, extra_target, cls.string
+        yield '"', String, *extra_target, cls.string
 
     @lexicon(consume=True)
     def string(cls):
@@ -596,10 +573,10 @@ class LilyPond(Language):
 
     # -------------- Comment ---------------------
     @classmethod
-    def find_comment(cls):
+    def find_comment(cls, *extra_target):
         """Find single-line or block comments."""
-        yield r'%\{', Comment, cls.multiline_comment
-        yield r'%', Comment, cls.singleline_comment
+        yield r'%\{', Comment, *extra_target, cls.multiline_comment
+        yield r'%', Comment, *extra_target, cls.singleline_comment
 
     @lexicon(consume=True)
     def multiline_comment(cls):
