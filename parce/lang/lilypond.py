@@ -474,7 +474,7 @@ class LilyPond(Language):
         yield SKIP_WHITESPACE
         yield r'([.,])\s*(\d+)(?!/\d)' + RE_LILYPOND_ID_RIGHT_BOUND, bygroup(Separator, Number)
         yield r'([.,])\s*(' + RE_LILYPOND_ID + r')' + RE_LILYPOND_ID_RIGHT_BOUND, \
-            bygroup(Separator, cls.symbol_action(MATCH[2], Name.Variable))
+            bygroup(Separator, cls.get_symbol_action(MATCH[2], Name.Variable))
         yield r'([.,])\s*(?=[#$"])', Separator, cls._continue_list
         yield from cls.find_comment()
         yield default_target, -1
@@ -486,7 +486,7 @@ class LilyPond(Language):
         yield from cls.find_string(-1, cls.list)
         yield from cls.find_scheme(-1, cls.list)
         yield r'\d+(?!/\d)' + RE_LILYPOND_ID_RIGHT_BOUND, Number, -1, cls.list
-        yield RE_LILYPOND_SYMBOL, cls.symbol_action(TEXT, Name.Variable), -1, cls.list
+        yield RE_LILYPOND_SYMBOL, cls.get_symbol_action(TEXT, Name.Variable), -1, cls.list
         yield default_target, -1
 
     @lexicon
@@ -515,7 +515,7 @@ class LilyPond(Language):
         yield default_target, -1
 
     @classmethod
-    def symbol_action(self, text, default=Name.Symbol):
+    def get_symbol_action(self, text, default=Name.Symbol):
         """Return a proper dynamic action for the name of a symbol."""
         return findmember(text, (
                 (lilypond_words.grobs, Grob),
@@ -534,8 +534,9 @@ class LilyPond(Language):
         """Markup without environment. Try to guess the n of arguments."""
         yield r'\{', Bracket.Markup.Start, -1, cls.markuplist
         yield r"(\\score)\s*(\{)", bygroup(Name.Function.Markup, Bracket.Start), -1, cls.score
-        yield RE_LILYPOND_COMMAND, cls.get_markup_action(), \
-            select(call(cls.get_markup_argument_count, MATCH[1]), -1, 0, 1, 2, 3)
+        yield RE_LILYPOND_COMMAND, cls.get_markup_action(), findmember(MATCH[1],
+            tuple((lilypond_words.markup_commands_nargs[n], n-1) for n in range(5)),
+            select(call(cls.get_markup_argument_count, MATCH[1]), -1, 0, 1, 2, 3))
         yield from cls.find_string(-1)
         yield from cls.find_scheme(-1)
         yield from cls.find_comment()
@@ -543,10 +544,7 @@ class LilyPond(Language):
 
     @classmethod
     def get_markup_argument_count(cls, command):
-        """Return the number of arguments the markup command (without \\) expects."""
-        for i in range(5):
-            if command in lilypond_words.markup_commands_nargs[i]:
-                return i
+        """Return the number of arguments the user markup command (without \\) expects."""
         return 1    # assume a user command has one argument
 
     @lexicon(consume=True)
