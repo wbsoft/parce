@@ -129,24 +129,21 @@ class LilyPond(Language):
         """A header block."""
         yield r'\}', Bracket.End, -1
         yield RE_LILYPOND_SYMBOL, Name.Attribute, cls.identifier
+        yield RE_FRACTION, Number.Fraction
+        yield r'\d+\.\d+', Number.Float
         yield from cls.common()
+        yield from cls.commands()
 
     @lexicon(consume=True)
     def paper(cls):
         """A paper block."""
-        yield r'\}', Bracket.End, -1
-        yield RE_LILYPOND_SYMBOL, Name.Attribute, cls.identifier
-        yield r'\d+', Number, cls.unit
-        yield RE_FRACTION, Number
-        yield from cls.common()
-        yield from cls.commands()
+        yield from cls.header
 
     @lexicon(consume=True)
     def layout(cls):
         """A layout block."""
         yield r'\}', Bracket.End, -1
         yield RE_LILYPOND_SYMBOL, Name.Attribute, cls.identifier
-        yield r'\d+', Number, cls.unit
         yield r"(\\context)\s*(\{)", bygroup(Keyword, Bracket.Start), cls.layout_context
         yield from cls.music()
         yield from cls.common()
@@ -160,13 +157,10 @@ class LilyPond(Language):
     @lexicon(consume=True)
     def layout_context(cls):
         r"""Contents of ``\layout`` or ``\midi { \context { } }`` or ``\with. { }``."""
-        yield r'\}', Bracket.End, -1
         yield RE_LILYPOND_SYMBOL, findmember(TEXT, (
                 (lilypond_words.contexts, Context),
                 (lilypond_words.grobs, Grob)), (Name.Variable, cls.identifier))
-        yield r'\d+', Number, cls.unit
-        yield from cls.common()
-        yield from cls.commands()
+        yield from cls.header
 
     # ------------------ commands that can occur in all input modes --------
     @classmethod
@@ -240,6 +234,7 @@ class LilyPond(Language):
         yield r'[.,]', Delimiter
         yield r'(:)\s*(8|16|32|64|128|256|512|1024|2048)?(?!\d)', bygroup(Delimiter.Tremolo, Duration.Tremolo)
         yield RE_FRACTION, Number.Fraction
+        yield r'\d+\.\d+', Number.Float
         yield r'(\d+)(?=\s*,)', Number, cls.list
         yield RE_LILYPOND_DURATION, Duration, cls.duration
         yield r"\d+", Number, cls.list
@@ -368,7 +363,6 @@ class LilyPond(Language):
         yield from cls.common()
         yield from cls.commands(list_target=cls.start_list)
 
-
     # ---------------------- drummode ---------------------
     @lexicon
     def drummode(cls):
@@ -472,7 +466,7 @@ class LilyPond(Language):
 
         """
         yield SKIP_WHITESPACE
-        yield r'([.,])\s*(\d+)(?!/\d)' + RE_LILYPOND_ID_RIGHT_BOUND, bygroup(Separator, Number)
+        yield r'([.,])\s*(\d+)(?!(?:/|\.\d+))' + RE_LILYPOND_ID_RIGHT_BOUND, bygroup(Separator, Number)
         yield r'([.,])\s*(' + RE_LILYPOND_ID + r')' + RE_LILYPOND_ID_RIGHT_BOUND, \
             bygroup(Separator, cls.get_symbol_action(MATCH[2], Name.Variable))
         yield r'([.,])\s*(?=[#$"])', Separator, cls._continue_list
@@ -485,7 +479,8 @@ class LilyPond(Language):
         yield SKIP_WHITESPACE
         yield from cls.find_string(-1, cls.list)
         yield from cls.find_scheme(-1, cls.list)
-        yield r'\d+(?!/\d)' + RE_LILYPOND_ID_RIGHT_BOUND, Number, -1, cls.list
+                 # vvvvvvvvv not a real or fraction
+        yield r'\d+(?!(?:/|\.\d+))' + RE_LILYPOND_ID_RIGHT_BOUND, Number, -1, cls.list
         yield RE_LILYPOND_SYMBOL, cls.get_symbol_action(TEXT, Name.Variable), -1, cls.list
         yield default_target, -1
 
@@ -507,13 +502,6 @@ class LilyPond(Language):
         yield r'(?<=\\)"', String, cls.string   # only after '\'
         yield from cls.list
 
-    @lexicon(consume=True)
-    def unit(cls):
-        """A unit that might occur after a numeric value in a paper block."""
-        yield SKIP_WHITESPACE
-        yield r'\\(mm|in|pt|cm)' + RE_LILYPOND_ID_RIGHT_BOUND, Name.Builtin, -1
-        yield default_target, -1
-
     @classmethod
     def get_symbol_action(self, text, default=Name.Symbol):
         """Return a proper dynamic action for the name of a symbol."""
@@ -521,7 +509,6 @@ class LilyPond(Language):
                 (lilypond_words.grobs, Grob),
                 (lilypond_words.contexts, Context),
                 ), default)
-
 
     # -------------------- markup --------------------
     @classmethod
@@ -544,7 +531,13 @@ class LilyPond(Language):
 
     @classmethod
     def get_markup_argument_count(cls, command):
-        """Return the number of arguments the user markup command (without \\) expects."""
+        r"""Return the number of arguments of a user markup command (without
+        ``\``) expects.
+
+        The default implementation returns 1. You could re-implement this
+        method if you have some special commands to add.
+
+        """
         return 1    # assume a user command has one argument
 
     @lexicon(consume=True)
