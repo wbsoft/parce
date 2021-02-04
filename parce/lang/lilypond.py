@@ -234,7 +234,8 @@ class LilyPond(Language):
                 (lilypond_words.grobs, Grob)), Name.Symbol)
         yield r'[.,]', Delimiter
         yield r'(:)\s*(8|16|32|64|128|256|512|1024|2048)?(?!\d)', bygroup(Delimiter.Tremolo, Duration.Tremolo)
-        yield RE_FRACTION, Number
+        yield RE_FRACTION, Number.Fraction
+        yield r'(\d+)\s*(,)', bygroup(Number, Separator), cls.numberlist
         yield RE_LILYPOND_DURATION, Duration, cls.duration
         yield r"\d+", Number
         yield from cls.commands()
@@ -269,16 +270,17 @@ class LilyPond(Language):
         """Read property names, delimiters, strings and scheme.
 
         Calls :meth:`property_action` to get an action for the text.
-        Quits on ``"="`` or any non-word and non-whitespace character.
+        Quits on ``"="`` or any non-alphabethic and non-whitespace character.
 
         """
+        yield SKIP_WHITESPACE
         yield '=', Operator.Assignment, -1
         yield from cls.find_string()
         yield from cls.find_scheme()
         yield from cls.find_comment()
         yield RE_LILYPOND_SYMBOL, cls.property_action(TEXT)
         yield r'[.,]', Separator
-        yield r'(?=[^\w\s])', None, -1
+        yield r'(?=[\W\d])', None, -1
 
     @lexicon
     def property(cls):
@@ -402,6 +404,7 @@ class LilyPond(Language):
                 "__": LyricExtender,
                 "_": LyricSkip,
             }, LyricText)
+        yield RE_FRACTION, Number.Fraction
         yield RE_LILYPOND_DURATION, Duration, cls.duration
         yield from cls.common()
         yield from cls.commands()
@@ -489,6 +492,12 @@ class LilyPond(Language):
         yield from cls.find_string()
         yield from cls.find_scheme()
         yield from cls.find_comment()
+
+    @lexicon(consume=True)
+    def numberlist(cls):
+        """A list of numbers, like ``2, 2, 2, 3``."""
+        yield SKIP_WHITESPACE
+        yield r'(\d+)(?:\s*(,))?', bygroup(Number, Separator), ifgroup(2, (), -1)
 
     @lexicon(consume=True)
     def identifier(cls):
