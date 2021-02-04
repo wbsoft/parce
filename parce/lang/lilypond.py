@@ -466,7 +466,7 @@ class LilyPond(Language):
         yield SKIP_WHITESPACE
         yield from cls.find_string(-1, cls.list)
         yield from cls.find_scheme(-1, cls.list)
-        yield r'\d+' + RE_LILYPOND_ID_RIGHT_BOUND, Number, -1, cls.list
+        yield r'\d+(?!/\d)' + RE_LILYPOND_ID_RIGHT_BOUND, Number, -1, cls.list
         yield RE_LILYPOND_SYMBOL, cls.symbol_action(TEXT, Name.Variable), -1, cls.list
         yield default_target, -1
 
