@@ -321,7 +321,7 @@ class LilyPond(Language):
     def inputmode(cls, lexicon):
         """Yield boilerplate rules for an input mode."""
         yield SKIP_WHITESPACE
-        yield r"\\s(sequential|imultaneous)\b", Keyword
+        yield r"\\s(equential|imultaneous)\b", Keyword
         yield r"<<", Bracket.Start, -1, lexicon('>>')
         yield r"\{", Bracket.Start, -1, lexicon('}')
         yield from cls.find_comment()
