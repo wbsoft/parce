@@ -572,7 +572,11 @@ markup_commands_nargs = (
 ),
 )
 
-markup_commands = sum(markup_commands_nargs, ())
+markup_commands = {}
+for n, cmds in enumerate(markup_commands_nargs):
+    markup_commands.update(dict.fromkeys(cmds, n))
+del n, cmds
+
 
 dynamics = (
     "n",    # niente, since 2.22

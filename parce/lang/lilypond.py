@@ -521,9 +521,8 @@ class LilyPond(Language):
         """Markup without environment. Try to guess the n of arguments."""
         yield r'\{', Bracket.Markup.Start, -1, cls.markuplist
         yield r"(\\score)\s*(\{)", bygroup(Name.Function.Markup, Bracket.Start), -1, cls.score
-        yield RE_LILYPOND_COMMAND, cls.get_markup_action(), findmember(MATCH[1],
-            tuple((lilypond_words.markup_commands_nargs[n], n-1) for n in range(5)),
-            select(call(cls.get_markup_argument_count, MATCH[1]), -1, 0, 1, 2, 3))
+        yield RE_LILYPOND_COMMAND, cls.get_markup_action(), \
+            select(call(cls.get_markup_argument_count, MATCH[1]), -1, 0, 1, 2, 3)
         yield from cls.find_string(-1)
         yield from cls.find_scheme(-1)
         yield from cls.find_comment()
@@ -531,14 +530,16 @@ class LilyPond(Language):
 
     @classmethod
     def get_markup_argument_count(cls, command):
-        r"""Return the number of arguments of a user markup command (without
-        ``\``) expects.
+        r"""Return the number of arguments of a markup command (without ``\``) expects.
 
-        The default implementation returns 1. You could re-implement this
-        method if you have some special commands to add.
+        The default implementation returns 1 for unknown commands. You could
+        re-implement this method if you have some special commands to add.
 
         """
-        return 1    # assume a user command has one argument
+        try:
+            return lilypond_words.markup_commands[command]
+        except KeyError:
+            return 1    # assume a user command has one argument
 
     @lexicon(consume=True)
     def markuplist(cls):
