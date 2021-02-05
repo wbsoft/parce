@@ -55,7 +55,6 @@ keywords = (
     #'type',
     'undo', # since 2.18 (not mentioned in the command index)
     'version',
-    'score',
 
     # input modes
     'addlyrics',
@@ -78,6 +77,7 @@ keywords = (
     'midi',
     'layout',
     'with',
+    'score',
 )
 
 
