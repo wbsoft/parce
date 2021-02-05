@@ -173,7 +173,7 @@ class LilyPond(Language):
 
         """
         yield r"(\\with)\s*(\{)", bygroup(Keyword, Bracket.Start), cls.layout_context
-        yield r'(' + RE_LILYPOND_COMMAND + r')(?=\s*([.,]))?', ifgroup(3,
+        yield r'(' + RE_LILYPOND_COMMAND + r')(?=\s*(\.))?', ifgroup(3,
             # part of a \bla.bla or \bla.1 construct, always a user command
             (Name.Variable, cls.identifier_ref),
             # no "." or "," , can be a builtin
@@ -200,9 +200,9 @@ class LilyPond(Language):
                 (lilypond_words.contexts, Name.Builtin.Context),
                 (lilypond_words.dynamics, Dynamic),
                 (lilypond_words.modes, Name.Type),
-            ), Name.Variable))))
+            ), (Name.Variable, cls.identifier_ref)))))
         # seldom used, but nevertheless allowed in LilyPond: \"blabla"
-        yield r'(\\)(?=")', Name.Command, cls.identifier_ref
+        yield r'(\\)(?=")', Name.Variable, cls.identifier_ref
 
     # ------------------ music ----------------------
     @classmethod
