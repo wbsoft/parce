@@ -101,7 +101,6 @@ music_commands = (
     'applyMusic',
     'applyOutput',
     'appoggiatura',
-    'arpeggio',
     'arpeggioArrowDown',
     'arpeggioArrowUp',
     'arpeggioBracket',
@@ -207,7 +206,6 @@ music_commands = (
     'funkHeads',
     'funkHeadsMinor',
     'germanChords',
-    'glissando',
     'grace',
     'graceSettings',
     'harmonic',
@@ -691,6 +689,8 @@ spanner_events = (
     'laissezVibrer',
     'melisma',
     'melismaEnd',
+    'arpeggio',
+    'glissando',
 )
 
 
