@@ -165,7 +165,6 @@ music_commands = (
     'defaultTimeSignature',
     'defineBarLine', # since 2.18
     'deminutum',
-    'denies',
     'descendens',
     'dimHairpin',
     'dimTextDecr',
@@ -247,8 +246,6 @@ music_commands = (
     'markup',
     'markuplines', # deprecated, till 2.14
     'markuplist', # from 2.16
-    'melisma',
-    'melismaEnd',
     'mergeDifferentlyDottedOff',
     'mergeDifferentlyDottedOn',
     'mergeDifferentlyHeadedOff',
@@ -268,7 +265,6 @@ music_commands = (
     'oneVoice',
     'oriscus',
     'ottava',
-    'override',
     'overrideProperty',
     'overrideTimeSignatureSettings',  # since 2.16
     'pageBreak',
@@ -309,7 +305,6 @@ music_commands = (
     'resetRelativeOctave',
     'responsum',
     'rest',
-    'revert',
     'rightHandFinger',
     'sacredHarpHeads',
     'sacredHarpHeadsMinor',
@@ -375,7 +370,7 @@ music_commands = (
     'tieUp',
     'tildeSymbol',
     'time',
-    'times',
+    'times',    # not mentioned since 2.18 (superseded by \tuplet)
     'timing',
     'tiny',
     'tocItem', # since ?
@@ -694,6 +689,8 @@ spanner_events = (
     'stopTrillSpan',
     'repeatTie',
     'laissezVibrer',
+    'melisma',
+    'melismaEnd',
 )
 
 
