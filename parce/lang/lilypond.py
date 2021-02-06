@@ -117,7 +117,7 @@ class LilyPond(Language):
 
     @lexicon(consume=True)
     def score(cls):
-        """A score block, can also occur inside markup."""
+        """A score block."""
         yield r'\}', Bracket.End, -1
         yield from cls.blocks()
         yield from cls.music()
@@ -523,15 +523,13 @@ class LilyPond(Language):
     @lexicon(consume=True)
     def markup(cls):
         """Markup without environment. Try to guess the n of arguments."""
-        yield r'\{', Bracket.Markup.Start, -1, cls.markuplist
-        yield from cls.markup_rules(-1)
+        yield from cls._markup_rules(-1)
 
     @lexicon(consume=True)
     def markuplist(cls):
         """Markup in environment from ``{`` until ``}``."""
         yield r'\}', Bracket.Markup.End, -1
-        yield r'\{', Bracket.Markup.Start, 1
-        yield from cls.markup_rules()
+        yield from cls._markup_rules()
 
     @lexicon(consume=True)
     def markupscore(cls):
@@ -539,12 +537,15 @@ class LilyPond(Language):
         yield from cls.score
 
     @classmethod
-    def markup_rules(cls, *extra_target):
+    def _markup_rules(cls, *extra_target):
         r"""Markup rules. Specify ``-1`` if outside an environment."""
+        yield r'\{', Bracket.Markup.Start, *extra_target, cls.markuplist
         if extra_target:
+            # count the arguments of markup commands and stack markup contexts
             yield RE_LILYPOND_COMMAND, cls.get_markup_action(), \
                 select(call(cls.get_markup_argument_count, MATCH[1]), -1, 0, 1, 2, 3)
         else:
+            # in an environment; no need to count the arguments.
             yield RE_LILYPOND_COMMAND, cls.get_markup_action()
         yield r"(\\score(?:-lines)?)\s*(\{)", bygroup(Name.Function.Markup, Bracket.Start), *extra_target, cls.markupscore
         yield from cls.find_string(*extra_target)
