@@ -133,7 +133,6 @@ music_commands = (
     'bracketOpenSymbol',
     'break',
     'breathe',
-    'breve',
     'cadenzaOff',
     'cadenzaOn',
     'caesura',
@@ -236,11 +235,9 @@ music_commands = (
     'key',
     'killCues',
     'label',
-    'laissezVibrer',
     'large',
     'ligature',
     'linea',
-    'longa',
     'maininput',
     'majorSevenSymbol',
     'makeClusters',
@@ -250,7 +247,6 @@ music_commands = (
     'markup',
     'markuplines', # deprecated, till 2.14
     'markuplist', # from 2.16
-    'maxima',
     'melisma',
     'melismaEnd',
     'mergeDifferentlyDottedOff',
@@ -310,7 +306,6 @@ music_commands = (
     'RemoveEmptyStaffContext',
     'removeWithTag',
     'repeat',
-    'repeatTie',
     'resetRelativeOctave',
     'responsum',
     'rest',
@@ -697,6 +692,8 @@ spanner_events = (
     'stopTextSpan',
     'startTrillSpan',
     'stopTrillSpan',
+    'repeatTie',
+    'laissezVibrer',
 )
 
 

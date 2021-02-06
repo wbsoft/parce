@@ -195,10 +195,10 @@ class LilyPond(Language):
             },
             (findmember(MATCH[2], (
                 (lilypond_words.keywords, (Keyword, list_target)),
-                (lilypond_words.music_commands, Name.Builtin),
                 (lilypond_words.all_articulations, Articulation),
-                (lilypond_words.contexts, Name.Builtin.Context),
                 (lilypond_words.dynamics, Dynamic),
+                (lilypond_words.music_commands, Name.Builtin),
+                (lilypond_words.contexts, Name.Builtin.Context),
                 (lilypond_words.modes, Name.Type),
             ), (Name.Variable, cls.identifier_ref)))))
         # seldom used, but nevertheless allowed in LilyPond: \"blabla"
