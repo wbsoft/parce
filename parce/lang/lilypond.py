@@ -405,6 +405,7 @@ class LilyPond(Language):
         yield r"((?<![a-z])|^)(?:aug|dim|sus|min|maj|m)(?![a-z])", Name.Symbol
         yield r"(\d+)([-+])?", bygroup(Number, Operator.Alteration)
         yield r"\.", Separator.Dot
+        yield from cls.find_comment()
         yield default_target, -1
 
     # --------------------- notemode -------------------
