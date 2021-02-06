@@ -524,13 +524,33 @@ class LilyPond(Language):
     def markup(cls):
         """Markup without environment. Try to guess the n of arguments."""
         yield r'\{', Bracket.Markup.Start, -1, cls.markuplist
-        yield r"(\\score)\s*(\{)", bygroup(Name.Function.Markup, Bracket.Start), -1, cls.score
-        yield RE_LILYPOND_COMMAND, cls.get_markup_action(), \
-            select(call(cls.get_markup_argument_count, MATCH[1]), -1, 0, 1, 2, 3)
-        yield from cls.find_string(-1)
-        yield from cls.find_scheme(-1)
+        yield from cls.markup_rules(-1)
+
+    @lexicon(consume=True)
+    def markuplist(cls):
+        """Markup in environment from ``{`` until ``}``."""
+        yield r'\}', Bracket.Markup.End, -1
+        yield r'\{', Bracket.Markup.Start, 1
+        yield from cls.markup_rules()
+
+    @lexicon(consume=True)
+    def markupscore(cls):
+        r"""``\score { }`` or ``\score-lines { }`` in markup."""
+        yield from cls.score
+
+    @classmethod
+    def markup_rules(cls, *extra_target):
+        r"""Markup rules. Specify ``-1`` if outside an environment."""
+        if extra_target:
+            yield RE_LILYPOND_COMMAND, cls.get_markup_action(), \
+                select(call(cls.get_markup_argument_count, MATCH[1]), -1, 0, 1, 2, 3)
+        else:
+            yield RE_LILYPOND_COMMAND, cls.get_markup_action()
+        yield r"(\\score(?:-lines)?)\s*(\{)", bygroup(Name.Function.Markup, Bracket.Start), *extra_target, cls.markupscore
+        yield from cls.find_string(*extra_target)
+        yield from cls.find_scheme(*extra_target)
         yield from cls.find_comment()
-        yield RE_LILYPOND_MARKUP_TEXT, Text, -1
+        yield RE_LILYPOND_MARKUP_TEXT, Text, *extra_target
 
     @classmethod
     def get_markup_argument_count(cls, command):
@@ -544,16 +564,6 @@ class LilyPond(Language):
             return lilypond_words.markup_commands[command]
         except KeyError:
             return 1    # assume a user command has one argument
-
-    @lexicon(consume=True)
-    def markuplist(cls):
-        """Markup until } ."""
-        yield r'\}', Bracket.Markup.End, -1
-        yield r'\{', Bracket.Markup.Start, 1
-        yield r"(\\score)\s*(\{)", bygroup(Name.Function.Markup, Bracket.Start), cls.score
-        yield RE_LILYPOND_COMMAND, cls.get_markup_action()
-        yield from cls.base()
-        yield RE_LILYPOND_MARKUP_TEXT, Text
 
     @classmethod
     def get_markup_action(cls):

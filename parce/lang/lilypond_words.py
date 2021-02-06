@@ -195,8 +195,6 @@ music_commands = (
     'expandFullBarRests',
     'featherDurations',
     'fermataMarkup',
-    'figuremode',
-    'figures',
     'finalis',
     'fingeringOrientations',
     'fixed',    # since 2.20
@@ -309,7 +307,6 @@ music_commands = (
     'scaleDurations',
     'scoreTweak',
     'semiGermanChords',
-    'set',
     'shape', # since 2.16
     'shiftDurations',
     'shiftOff',
@@ -385,7 +382,6 @@ music_commands = (
     'unfoldRepeats',
     'unHideNotes',
     'unit',
-    'unset',
     'versus',
     'virga',
     'virgula',
@@ -410,6 +406,7 @@ markup_commands_nargs = (
 (
     'doubleflat',
     'doublesharp',
+    'draw-hline',       # since 2.14
     'eyeglasses',
     'flat',
     'natural',
@@ -434,15 +431,21 @@ markup_commands_nargs = (
     'char',
     'circle',
     'column',
+    'column-lines',     # since 2.14
     'concat',
+    'compound-meter',   # since 2.22
     'dir-column',
+    'discant',          # since 2.20
     'draw-dashed-line', # since 2.18
     'draw-dotted-line', # since 2.18
     'draw-line',
     'dynamic',
+    'ellipse',          # since 2.20
     'fill-line',
     'finger',
+    'first-visible',    # since 2.20
     'fontCaps',
+    'freeBass',         # since 2.20 #(use-modules (scm accreg))
     'fret-diagram',
     'fret-diagram-terse',
     'fret-diagram-verbose',
@@ -454,6 +457,7 @@ markup_commands_nargs = (
     'italic',
     'justify',
     'justify-field',
+    'justify-line',     # since 2.20
     'justify-string',
     'large',
     'larger',
@@ -471,8 +475,13 @@ markup_commands_nargs = (
     'normal-size-super',
     'normal-text',
     'number',
-    'oval', # since 2.18
+    'oval',         # since 2.18
+    'overlay',      # since 2.20
+    'overtie',      # since 2.20
+    'parenthesize', # since 2.14
     'postscript',
+    'property-recursive',   # since 2.16
+    'rest',         # since 2.20
     'right-align',
     'right-brace',
     'right-column',
@@ -480,22 +489,29 @@ markup_commands_nargs = (
     'rounded-box',
     'sans',
     'score',
+    'score-lines',  # since 2.20
     'simple',
     'slashed-digit',
     'small',
     'smallCaps',
     'smaller',
+    'stdBase',      # since 2.20 #(use-modules (scm accreg))
+    'stdBaseIV',    # since 2.20 #(use-modules (scm accreg))
+    'stdBaseV',     # since 2.20 #(use-modules (scm accreg))
+    'stdBaseVI',    # since 2.20 #(use-modules (scm accreg))
     'stencil',
     'sub',
     'super',
     'teeny',
     'text',
+    'tie',          # since 2.20
     'tied-lyric',
     'tiny',
     'transparent',
     'triangle',
     'typewriter',
     'underline',
+    'undertie',     # since 2.20
     'upright',
     'vcenter',
     'vspace',
@@ -518,21 +534,28 @@ markup_commands_nargs = (
     'hcenter-in',
     'lower',
     'magnify',
+    'map-markup-commands',  # since 2.20
     'note',
     'on-the-fly',
     'override',
+    'override-lines',       # since 2.12
     'pad-around',
     'pad-markup',
     'pad-x',
     'page-link',
-    'path',     # added in LP 2.13.31
+    'path',         # since 2.14
     'raise',
+    'replace',      # since 2.20
+    'rest-by-number',   # since 2.20
     'rotate',
     'scale',
+    'table',        # since 2.20
     'translate',
     'translate-scaled',
     'with-color',
+    'with-dimensions-from', # since 2.20
     'with-link',
+    'with-outline',     # since 2.20
     'with-url',
     'woodwind-diagram',
 ),
@@ -541,6 +564,7 @@ markup_commands_nargs = (
     'arrow-head',
     'beam',
     'draw-circle',
+    'draw-squiggle-line',   # since 2.20
     'epsfile',
     'filled-box',
     'general-align',
