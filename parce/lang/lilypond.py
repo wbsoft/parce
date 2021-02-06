@@ -434,11 +434,23 @@ class LilyPond(Language):
     def figure(cls):
         """Stuff between ``<`` and ``>`` in figure mode."""
         yield r'>', Delimiter.Chord.End, -1
-        yield from cls.common()
-        yield r'[-+!]+', Accidental
+        yield r'\[', Bracket.Start, cls.figurebracket
+        yield from cls._figure_rules()
+
+    @lexicon(consume=True)
+    def figurebracket(cls):
+        """Stuff between ``[`` and ``]`` in a bass figure."""
+        yield r'>', Delimiter.Chord.End, -2
+        yield r'\]', Bracket.End, -1
+        yield from cls._figure_rules()
+
+    @classmethod
+    def _figure_rules(cls):
+        """Rules for figures in [ ] and < >."""
         yield r'_|\d+', Pitch.Figure
-        yield r'[][]+', Literal.Verbatim
-        yield r'\\[\\!+]|/', Character
+        yield r'[-+!]+', Accidental
+        yield r'\\[\\!+]|/', Character.Alteration
+        yield from cls.common()
 
     # -------------------- base stuff --------------------
     @classmethod
