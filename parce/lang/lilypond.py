@@ -448,7 +448,7 @@ class LilyPond(Language):
     def _figure_rules(cls):
         """Rules for figures in [ ] and < >."""
         yield r'_|\d+', Pitch.Figure
-        yield r'[-+!]+', Accidental
+        yield r'--?|\+\+?|!', Accidental
         yield r'\\[\\!+]|/', Character.Alteration
         yield from cls.common()
 
