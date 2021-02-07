@@ -552,6 +552,7 @@ class LilyPond(Language):
     def _markup_rules(cls, *extra_target):
         r"""Markup rules. Specify ``-1`` if outside an environment."""
         yield r'\{', Bracket.Markup.Start, *extra_target, cls.markuplist
+        yield r"(\\score(?:-lines)?)\s*(\{)", bygroup(Name.Function.Markup, Bracket.Start), *extra_target, cls.markupscore
         if extra_target:
             # count the arguments of markup commands and stack markup contexts
             yield RE_LILYPOND_COMMAND, cls.get_markup_action(), \
@@ -559,7 +560,6 @@ class LilyPond(Language):
         else:
             # in an environment; no need to count the arguments.
             yield RE_LILYPOND_COMMAND, cls.get_markup_action()
-        yield r"(\\score(?:-lines)?)\s*(\{)", bygroup(Name.Function.Markup, Bracket.Start), *extra_target, cls.markupscore
         yield from cls.find_string(*extra_target)
         yield from cls.find_scheme(*extra_target)
         yield from cls.find_comment()
