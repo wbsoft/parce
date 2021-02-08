@@ -349,6 +349,7 @@ music_commands = (
     'sustainOn',
     'tabFullNotation',
     'tag',
+    'tagGroup',     # since 2.20
     'teeny',
     'tempo',
     'tempoWholesPerMinute',
