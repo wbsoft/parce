@@ -34,6 +34,7 @@ keywords = (
     'defaultchild',
     'denies',
     #'description',
+    'etc',  # since 2.20
     #'grobdescriptions',
     'hide', # since 2.18
     'include',
