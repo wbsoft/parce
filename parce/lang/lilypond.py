@@ -92,11 +92,10 @@ class LilyPond(Language):
         yield from cls.blocks()
         yield RE_LILYPOND_SYMBOL, findmember(TEXT, (
                 (lilypond_words.all_pitch_names, (Pitch, cls.pitch)),
-                (lilypond_words.contexts, (Context, cls.identifier)),
-                (lilypond_words.grobs, (Grob, cls.identifier))),
-              (Name.Variable.Definition, cls.identifier))
-        yield from cls.find_string(cls.identifier)
-        yield '=', Operator.Assignment, cls.start_list
+                (lilypond_words.contexts, (Context, cls.list)),
+                (lilypond_words.grobs, (Grob, cls.list)),
+            ), (Name.Variable.Definition, cls.list))
+        yield from cls.find_string(cls.list)
         yield from cls.music()
         yield from cls.common()
         yield from cls.commands(list_target=cls.start_list)
@@ -128,7 +127,7 @@ class LilyPond(Language):
     def header(cls):
         """A header block."""
         yield r'\}', Bracket.End, -1
-        yield RE_LILYPOND_SYMBOL, Name.Attribute, cls.identifier
+        yield RE_LILYPOND_SYMBOL, Name.Attribute, cls.list
         yield RE_FRACTION, Number.Fraction
         yield r'\d+\.\d+', Number.Float
         yield from cls.common()
@@ -143,7 +142,7 @@ class LilyPond(Language):
     def layout(cls):
         """A layout block."""
         yield r'\}', Bracket.End, -1
-        yield RE_LILYPOND_SYMBOL, Name.Attribute, cls.identifier
+        yield RE_LILYPOND_SYMBOL, Name.Attribute, cls.list
         yield r"(\\context)\s*(\{)", bygroup(Keyword, Bracket.Start), cls.layout_context
         yield from cls.music()
         yield from cls.common()
@@ -159,9 +158,10 @@ class LilyPond(Language):
         r"""Contents of ``\layout`` or ``\midi { \context { } }`` or ``\with. { }``."""
         yield r'\}', Bracket.End, -1
         yield RE_LILYPOND_SYMBOL, findmember(TEXT, (
+                (lilypond_words.all_pitch_names, (Pitch, cls.pitch)),
                 (lilypond_words.contexts, (Context, cls.list)),
-                (lilypond_words.grobs, (Grob, cls.list))),
-            (Name.Variable, cls.identifier))
+                (lilypond_words.grobs, (Grob, cls.list)),
+            ), (Name.Variable, cls.list))
         yield from cls.music()
         yield from cls.common()
         yield from cls.commands(list_target=cls.start_list)
@@ -234,7 +234,8 @@ class LilyPond(Language):
         yield RE_LILYPOND_SYMBOL, findmember(TEXT, (
                 (lilypond_words.all_pitch_names, (Pitch, cls.pitch)),
                 (lilypond_words.contexts, (Context, cls.list)),
-                (lilypond_words.grobs, (Grob, cls.list))), (Name.Symbol, cls.list))
+                (lilypond_words.grobs, (Grob, cls.list)),
+            ), (Name.Symbol, cls.list))
         yield r'[.,]', Delimiter
         yield r'(:)\s*(8|16|32|64|128|256|512|1024|2048)?(?!\d)', bygroup(Delimiter.Tremolo, Duration.Tremolo)
         yield RE_FRACTION, Number.Fraction
@@ -510,11 +511,6 @@ class LilyPond(Language):
         yield from cls.find_string(-1)
         yield from cls.find_scheme(-1)
         yield default_target, -1
-
-    @lexicon(consume=True)
-    def identifier(cls):
-        """bla.bla.bla syntax."""
-        yield from cls.list
 
     @lexicon(consume=True)
     def identifier_ref(cls):
