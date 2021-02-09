@@ -551,8 +551,8 @@ class LilyPond(Language):
     @classmethod
     def _markup_rules(cls, *extra_target):
         r"""Markup rules. Specify ``-1`` if outside an environment."""
-        yield r'\{', Bracket.Markup.Start, *extra_target, cls.markuplist
-        yield r"(\\score(?:-lines)?)\s*(\{)", bygroup(Name.Function.Markup, Bracket.Start), *extra_target, cls.markupscore
+        yield (r'\{', Bracket.Markup.Start, *extra_target, cls.markuplist)
+        yield (r"(\\score(?:-lines)?)\s*(\{)", bygroup(Name.Function.Markup, Bracket.Start), *extra_target, cls.markupscore)
         if extra_target:
             # count the arguments of markup commands and stack markup contexts
             yield RE_LILYPOND_COMMAND, cls.get_markup_action(), \
@@ -563,7 +563,7 @@ class LilyPond(Language):
         yield from cls.find_string(*extra_target)
         yield from cls.find_scheme(*extra_target)
         yield from cls.find_comment()
-        yield RE_LILYPOND_MARKUP_TEXT, Text, *extra_target
+        yield (RE_LILYPOND_MARKUP_TEXT, Text, *extra_target)
 
     @classmethod
     def get_markup_argument_count(cls, command):
@@ -587,7 +587,7 @@ class LilyPond(Language):
     @classmethod
     def find_scheme(cls, *extra_target):
         """Find scheme."""
-        yield r'[#$]', Delimiter.ModeChange.SchemeStart, *extra_target, cls.get_scheme_target()
+        yield (r'[#$]', Delimiter.ModeChange.SchemeStart, *extra_target, cls.get_scheme_target())
 
     @classmethod
     def get_scheme_target(cls):
@@ -605,7 +605,7 @@ class LilyPond(Language):
     @classmethod
     def find_string(cls, *extra_target):
         """Find a string."""
-        yield '"', String, *extra_target, cls.string
+        yield ('"', String, *extra_target, cls.string)
 
     @lexicon(consume=True)
     def string(cls):
@@ -618,8 +618,8 @@ class LilyPond(Language):
     @classmethod
     def find_comment(cls, *extra_target):
         """Find single-line or block comments."""
-        yield r'%\{', Comment, *extra_target, cls.multiline_comment
-        yield r'%', Comment, *extra_target, cls.singleline_comment
+        yield (r'%\{', Comment, *extra_target, cls.multiline_comment)
+        yield (r'%', Comment, *extra_target, cls.singleline_comment)
 
     @lexicon(consume=True)
     def multiline_comment(cls):
