@@ -1,6 +1,11 @@
 ChangeLog
 =========
 
+current: parce-0.20.0
+
+- don't (yet) use positional-only arguments, keep python 3.6 support
+- simplified LilyPond tokenizing, removed identifier context
+
 
 2021-02-07: parce-0.19.0
 
