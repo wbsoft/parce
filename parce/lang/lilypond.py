@@ -147,7 +147,7 @@ class LilyPond(Language):
         yield r"(\\context)\s*(\{)", bygroup(Keyword, Bracket.Start), cls.layout_context
         yield from cls.music()
         yield from cls.common()
-        yield from cls.commands()
+        yield from cls.commands(list_target=cls.start_list)
 
     @lexicon(consume=True)
     def midi(cls):
@@ -157,14 +157,18 @@ class LilyPond(Language):
     @lexicon(consume=True)
     def layout_context(cls):
         r"""Contents of ``\layout`` or ``\midi { \context { } }`` or ``\with. { }``."""
+        yield r'\}', Bracket.End, -1
         yield RE_LILYPOND_SYMBOL, findmember(TEXT, (
-                (lilypond_words.contexts, Context),
-                (lilypond_words.grobs, Grob)), (Name.Variable, cls.identifier))
-        yield from cls.header
+                (lilypond_words.contexts, (Context, cls.list)),
+                (lilypond_words.grobs, (Grob, cls.list))),
+            (Name.Variable, cls.identifier))
+        yield from cls.music()
+        yield from cls.common()
+        yield from cls.commands(list_target=cls.start_list)
 
     # ------------------ commands that can occur in all input modes --------
     @classmethod
-    def commands(cls, /, list_target=0):
+    def commands(cls, *, list_target=0):
         """Yield commands that can occur in all input modes.
 
         If a ``list_target`` is given, that lexicon is pushed after a Keyword,
