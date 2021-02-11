@@ -299,6 +299,9 @@ class Query:
         context itself is deleted instead of all its children (except for the
         root of course). Returns the number of nodes that were deleted.
 
+        (Note that if you delete tokens from a tree which belong to a group, the
+        tree cannot reliably be used by a treebuilder for a partial rebuild.)
+
         """
         d = collections.defaultdict(list)
         for n in self.uniq.remove_descendants:

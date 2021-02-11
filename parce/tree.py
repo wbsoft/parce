@@ -498,6 +498,14 @@ class GroupToken(Token):
     regular expression match, the `group` attribute is the index of the token
     in the group of tokens that were created together.
 
+    The last token in the group has a negative value, so it can be recognized
+    as the last. For example, tokens of a three-group have the indices 0, 1 and
+    -2.
+
+    The methods :meth:`get_group`, :meth:`get_group_start` and
+    :meth:`get_group_end` can only be reliably used when there are no tokens
+    deleted from the tree, and when the tokens really have a parent.
+
     """
     __slots__ = "group",
 
@@ -509,35 +517,47 @@ class GroupToken(Token):
         """Return a copy of the Token, but with the specified parent."""
         return type(self)(self.group, parent, self.pos, self.text, self.action)
 
+    @classmethod
+    def make_group(cls, parent, lexemes):
+        """Create a tuple of GroupTokens for the lexemes."""
+        group = tuple(cls(n, parent, *t) for n, t in enumerate(lexemes))
+        group[-1].group *= -1
+        return group
+
     def get_group(self):
         """Return the whole group this token belongs to as a list."""
         p = self.parent
         i = j = self.parent_index()
-        while i and p[i].group > 0 and p[i-1].is_token and p[i-1].group is not None and p[i-1].group < p[i].group:
-            i -= 1
-        z = len(p)
-        j += 1
-        while j < z and p[j].is_token and p[j].group and p[j].group > p[j-1].group:
+        z = len(p) - 1
+        if self.group < 0:
+            # we are at the last
+            i += self.group
+        else:
+            i -= self.group
             j += 1
-        return p[i:j]
+            while j < z and p[j].group > 0:
+                j += 1
+        return p[i:j+1]
 
     def get_group_start(self):
         """Return the first token of the group this token belongs to."""
-        p = self.parent
         i = self.parent_index()
-        while i and p[i].group > 0 and p[i-1].is_token and p[i-1].group is not None and p[i-1].group < p[i].group:
-            i -= 1
-        return p[i]
+        if self.group < 0:
+            i += self.group
+        else:
+            i -= self.group
+        return self.parent[i]
 
     def get_group_end(self):
         """Return the last token of the group this token belongs to."""
         p = self.parent
-        j = self.parent_index() + 1
-        z = len(p)
-        while j < z and p[j].is_token and p[j].group and p[j].group > p[j-1].group:
-            j += 1
-        return p[j-1]
-
+        i = self.parent_index()
+        z = len(p) - 1
+        if self.group >= 0:
+            i += 1
+            while i < z and p[i].group > 0:
+                i += 1
+        return p[i]
 
 
 class Context(list, Node):
@@ -1026,7 +1046,7 @@ def make_tokens(event, parent=None):
 
     """
     if len(event.lexemes) > 1:
-        return tuple(GroupToken(n, parent, *t) for n, t in enumerate(event.lexemes))
+        return GroupToken.make_group(parent, event.lexemes)
     else:
         return Token(parent, *event.lexemes[0]),
 

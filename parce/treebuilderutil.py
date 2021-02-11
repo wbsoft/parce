@@ -208,12 +208,10 @@ def events_with_tokens(start_token, last_token):
                         group = m,
                         if m.group is not None:
                             # find the last token in this group
-                            for g, j in enumerate(range(i + 1, z), m.group + 1):
-                                if n[j].is_context or n[j].group != g:
-                                    break
-                            else:
-                                j = z
-                            group = n[i:j]
+                            j = i + 1
+                            while j < z and n[j].group > 0:
+                                j += 1
+                            group = n[i:j+1]
                         lexemes = tuple((t.pos, t.text, t.action) for t in group)
                         yield Event(get(), lexemes), group
                         i += len(group)
