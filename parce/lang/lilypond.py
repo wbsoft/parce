@@ -201,6 +201,7 @@ class LilyPond(Language):
                 (lilypond_words.keywords, (Keyword, list_target)),
                 (lilypond_words.all_articulations, Articulation),
                 (lilypond_words.dynamics, Dynamic),
+                (lilypond_words.units, Name.Builtin.Unit),
                 (lilypond_words.music_commands, Name.Builtin),
                 (lilypond_words.contexts, Name.Builtin.Context),
                 (lilypond_words.modes, Name.Type),
@@ -507,8 +508,9 @@ class LilyPond(Language):
         yield SKIP_WHITESPACE
         yield from cls.find_string(-1, cls.list)
         yield from cls.find_scheme(-1, cls.list)
-                 # vvvvvvvvv not a real or fraction
-        yield r'\d+(?!(?:/|\.\d+))' + RE_LILYPOND_ID_RIGHT_BOUND, Number, -1, cls.list
+               # vvvvvvvv not a real or fraction
+        yield r'(?=\d+[\./])', None, -1
+        yield r'\d+', Number, -1, cls.list
         yield RE_LILYPOND_SYMBOL, cls.get_symbol_action(TEXT, Name.Variable), -1, cls.list
         yield default_target, -1
 

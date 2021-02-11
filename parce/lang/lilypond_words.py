@@ -148,7 +148,6 @@ music_commands = (
     #'chordRootNamer',
     'chordRepeats', # since 2.16
     'clef',
-    'cm',
     'compoundMeter', # since 2.16
     'compressFullBarRests',
     'crescHairpin',
@@ -229,7 +228,6 @@ music_commands = (
     'IJ',
     'improvisationOff',
     'improvisationOn',
-    'in',
     'inclinatum',
     'includePageLayoutFile',
     'indent',
@@ -259,7 +257,6 @@ music_commands = (
     'mergeDifferentlyDottedOn',
     'mergeDifferentlyHeadedOff',
     'mergeDifferentlyHeadedOn',
-    'mm',
     'musicMap',
     'neumeDemoLayout',
     'newSpacingSection',
@@ -302,7 +299,6 @@ music_commands = (
     'pointAndClickOn',
     'predefinedFretboardsOff',
     'predefinedFretboardsOn',
-    'pt',
     'pushToTag', # since 2.16
     'quilisma',
     'quoteDuring',
@@ -416,6 +412,12 @@ music_commands = (
     'xNotesOn',
 )
 
+units = (
+    'mm',
+    'cm',
+    'in',
+    'pt',
+)
 
 markup_commands_nargs = (
 # no arguments
