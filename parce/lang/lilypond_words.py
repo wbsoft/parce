@@ -129,8 +129,8 @@ music_commands = (
     'blackTriangleMarkup',
     'bookOutputName',
     'bookOutputSuffix',
-    'bracketCloseSymbol',
-    'bracketOpenSymbol',
+    'bracketCloseSymbol',   # removed in 2.18
+    'bracketOpenSymbol',    # removed in 2.18
     'break',
     'breathe',
     'cadenzaOff',
@@ -188,11 +188,11 @@ music_commands = (
     'endSpanners',
     'episemFinis',
     'episemInitium',
-    'escapedBiggerSymbol',
-    'escapedExclamationSymbol',
-    'escapedParenthesisCloseSymbol',
-    'escapedParenthesisOpenSymbol',
-    'escapedSmallerSymbol',
+    'escapedBiggerSymbol',              # removed in 2.18
+    'escapedExclamationSymbol',         # removed in 2.18
+    'escapedParenthesisCloseSymbol',    # removed in 2.18
+    'escapedParenthesisOpenSymbol',     # removed in 2.18
+    'escapedSmallerSymbol',             # removed in 2.18
     'expandFullBarRests',
     'featherDurations',
     'fermataMarkup',
@@ -235,7 +235,7 @@ music_commands = (
     'ligature',
     'linea',
     'maininput',
-    'majorSevenSymbol',
+    #'majorSevenSymbol',    # not used as a command
     'makeClusters',
     'mark',
     'markLengthOff', # since 2.18
@@ -269,8 +269,8 @@ music_commands = (
     'palmMute',  # since 2.16
     'palmMuteOn',  # since 2.16
     'parallelMusic',
-    'parenthesisCloseSymbol',
-    'parenthesisOpenSymbol',
+    'parenthesisCloseSymbol',       # removed in 2.18
+    'parenthesisOpenSymbol',        # removed in 2.18
     'parenthesize',
     'partcombine',
     'partCombineListener',
@@ -284,7 +284,7 @@ music_commands = (
     'phrasingSlurNeutral',
     'phrasingSlurSolid',
     'phrasingSlurUp',
-    'pipeSymbol',
+    'pipeSymbol',                   # removed in 2.18
     'pitchedTrill',
     'pointAndClickOff',
     'pointAndClickOn',
@@ -365,7 +365,7 @@ music_commands = (
     'tieNeutral',
     'tieSolid',
     'tieUp',
-    'tildeSymbol',
+    'tildeSymbol',          # removed in 2.18
     'time',
     'times',    # not mentioned since 2.18 (superseded by \tuplet)
     'timing',
@@ -760,6 +760,7 @@ contexts = (
     'MensuralVoice',
     'NoteNames',
     'NullVoice',     # since 2.18
+    'OneStaff',      # since 2.20
     'PetrucciStaff', # since 2.16
     'PetrucciVoice', # since 2.16
     'PianoStaff',
@@ -769,7 +770,7 @@ contexts = (
     'StaffGroup',
     'TabStaff',
     'TabVoice',
-    'Timing',
+    'Timing',        # not a real context, but an alias created by Timing_translator
     'VaticanaStaff',
     'VaticanaVoice',
     'Voice',
@@ -786,6 +787,7 @@ grobs = (
     'AmbitusNoteHead',
     'Arpeggio',
     'BalloonTextItem',
+    'BalloonTextSpanner',   # since 2.22
     'BarLine',
     'BarNumber',
     'BassFigure',
@@ -813,6 +815,7 @@ grobs = (
     'DoublePercentRepeat',
     'DoublePercentRepeatCounter',
     'DoubleRepeatSlash',
+    'DurationLine',         # since 2.22
     'DynamicLineSpanner',
     'DynamicText',
     'DynamicTextSpanner',
@@ -829,6 +832,7 @@ grobs = (
     'GridPoint',
     'Hairpin',
     'HorizontalBracket',
+    'HorizontalBracketText',    # since 2.20
     'InstrumentName',
     'InstrumentSwitch',
     'KeyCancellation',
@@ -845,11 +849,13 @@ grobs = (
     'LyricText',
     'MeasureCounter',
     'MeasureGrouping',
+    'MeasureSpanner',           # since 2.22
     'MelodyItem',
     'MensuralLigature',
     'MetronomeMark',
     'MultiMeasureRest',
     'MultiMeasureRestNumber',
+    'MultiMeasureRestScript',   # since 2.22
     'MultiMeasureRestText',
     'NonMusicalPaperColumn',
     'NoteCollision',
