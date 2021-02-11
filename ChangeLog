@@ -6,6 +6,7 @@ current: parce-0.21.0
 
 - adapt some more places where erroneously Python 3.8 syntax was used (asterisk
   in return or yield statements without parentheses).
+- lilypond: in lyric word, highlight tie and space separately
 
 
 2021-02-09: parce-0.20.0

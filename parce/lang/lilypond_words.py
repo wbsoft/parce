@@ -113,6 +113,12 @@ music_commands = (
     'autoAccidentals',
     'autoBeamOff',
     'autoBeamOn',
+    'autoBreaksOff',            # since 2.20
+    'autoBreaksOn',             # since 2.20
+    'autoLineBreaksOff',            # since 2.20
+    'autoLineBreaksOn',             # since 2.20
+    'autoPageBreaksOff',            # since 2.20
+    'autoPageBreaksOn',             # since 2.20
     'autochange',
     'balloonGrobText',
     'balloonLengthOff',
@@ -159,7 +165,9 @@ music_commands = (
     'dashLarger',
     'dashPlus',
     'dashUnderscore',
-    'deadNote',  # since 2.16
+    'deadNote',         # since 2.16
+    'deadNotesOff',     # since 2.20
+    'deadNotesOn',      # since 2.20
     'default',
     'defaultNoteHeads',  # since 2.16
     'defaultTimeSignature',
@@ -208,6 +216,8 @@ music_commands = (
     'grace',
     'graceSettings',
     'harmonic',
+    'harmonicsOff',
+    'harmonicsOn',
     'hideNotes',
     'hideStaffSwitch',
     'huge',
@@ -229,6 +239,8 @@ music_commands = (
     'italianChords',
     'keepWithTag',
     'key',
+    'kievanOff',            # since 2.20
+    'kievanOn',             # since 2.20
     'killCues',
     'label',
     'large',
@@ -400,6 +412,8 @@ music_commands = (
     'walkerHeadsMinor',
     'whiteTriangleMarkup',
     'withMusicProperty',
+    'xNotesOff',
+    'xNotesOn',
 )
 
 
