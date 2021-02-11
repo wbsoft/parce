@@ -2,11 +2,15 @@ ChangeLog
 =========
 
 
-current: parce-0.21.0
+2021-02-11: parce-0.21.0
 
+- small change in GroupToken handling: now the last token has a negative index.
+  This makes it easier to recognize the last group token in a stream.
 - adapt some more places where erroneously Python 3.8 syntax was used (asterisk
   in return or yield statements without parentheses).
-- lilypond: in lyric word, highlight tie and space separately
+- lilypond language definition:
+  * in lyric word, highlight tie and space separately
+  * added many missing commands/words
 
 
 2021-02-09: parce-0.20.0
