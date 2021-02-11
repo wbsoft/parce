@@ -32,7 +32,7 @@ from parce.action import (
     Number, Operator, Separator, String, Text)
 from parce.rule import (
     MATCH, TEXT, arg, bygroup, call, dselect, findmember, ifarg, ifeq, ifgroup,
-    ifmember, select, words)
+    ifmember, select, using, words)
 
 from . import lilypond_words
 
@@ -362,11 +362,22 @@ class LilyPond(Language):
                 "--": LyricHyphen,
                 "__": LyricExtender,
                 "_": LyricSkip,
-            }, LyricText)
+            }, (using(cls._lyricword), cls.lyricword))
         yield RE_FRACTION, Number.Fraction
         yield RE_LILYPOND_DURATION, Duration, cls.duration
         yield from cls.common()
         yield from cls.commands(list_target=cls.start_list)
+
+    @lexicon(consume=True)
+    def lyricword(cls):
+        """One lyric word."""
+        yield default_target, -1
+
+    @lexicon
+    def _lyricword(cls):
+        """Contents of lyric word, highlight tie and space separately."""
+        yield '[_~]', Spanner.Tie
+        yield default_action, LyricText
 
     # ---------------------- drummode ---------------------
     @lexicon
