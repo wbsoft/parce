@@ -426,6 +426,7 @@ markup_commands_nargs = (
     'doublesharp',
     'draw-hline',       # since 2.14
     'eyeglasses',
+    'fermata',          # since 2.18
     'flat',
     'natural',
     'null',
