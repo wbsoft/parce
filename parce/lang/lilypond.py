@@ -498,7 +498,7 @@ class LilyPond(Language):
         yield r'([.,])\s*(\d+)(?!(?:/|\.\d+))' + RE_LILYPOND_ID_RIGHT_BOUND, bygroup(Separator, Number)
         yield r'([.,])\s*(' + RE_LILYPOND_ID + r')' + RE_LILYPOND_ID_RIGHT_BOUND, \
             bygroup(Separator, cls.get_symbol_action(MATCH[2], Name.Variable))
-        yield r'([.,])\s*(?=[#$"])', Separator, cls._continue_list
+        yield r'([.,])\s*(?=[#$"])', bygroup(Separator), cls._continue_list
         yield from cls.find_comment()
         yield default_target, -1
 
