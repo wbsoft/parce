@@ -69,14 +69,24 @@ class Items(list):
     the methods still work.
 
     """
-    __slots__ = ()
+    __slots__ = ('_arg',)
+
+    def __init__(self, arg, iterable=()):
+        """Items is initialized with the lexicon's argument."""
+        self._arg = arg
+        super().__init__(iterable)
 
     def __getitem__(self, n):
         """Reimplemented to return an Items instance when slicing."""
         result = super().__getitem__(n)
         if isinstance(n, slice):
-            return type(self)(result)
+            return type(self)(self.arg, result)
         return result
+
+    @property
+    def arg(self):
+        """The lexicon's argument (if any)."""
+        return self._arg
 
     def tokens(self, *texts):
         """Yield only the tokens, ignoring Item objects that represent
@@ -195,7 +205,7 @@ class Transformer(parce.util.Observable):
         curlang = root_lexicon.language
         transform = self.get_transform(curlang)
 
-        items = Items()
+        items = Items(root_lexicon.arg)
         stack = []
         events = parce.lexer.Lexer([root_lexicon]).events(text, pos)
         lexicon = root_lexicon
@@ -221,7 +231,7 @@ class Transformer(parce.util.Observable):
                         items.append(item)
                 for l in e.target.push:
                     stack.append((lexicon, items))
-                    items = Items()
+                    items = Items(l.arg)
                     lexicon = l
             items.extend(make_tokens(e))
 
@@ -245,7 +255,7 @@ class Transformer(parce.util.Observable):
         transform = self.get_transform(curlang)
 
         stack = []
-        node, items, i = tree, Items(), 0
+        node, items, i = tree, Items(tree.lexicon.arg), 0
         while not self._interrupt[tree]:
             for i in range(i, len(node)):
                 n = node[i]
@@ -264,7 +274,7 @@ class Transformer(parce.util.Observable):
                             items.append(Item(name, self._cache[n]))
                         except KeyError:
                             stack.append((items, i + 1))
-                            node, items, i = n, Items(), 0
+                            node, items, i = n, Items(n.lexicon.arg), 0
                             break
             else:
                 if curlang is not node.lexicon.language:
