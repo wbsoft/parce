@@ -495,28 +495,19 @@ def object_locker():
     locker_lock = threading.Lock()
 
     def lock_object(obj):
-        try:
-            cm_func = locker[obj]
-        except KeyError:
-            with locker_lock:
-                try:
-                    cm_func = locker[obj]
-                except KeyError:
-                    lock = threading.Lock()
-                    # the locking context manager func, acquires the lock
-                    def cm_func():
+        with locker_lock:
+            try:
+                return locker[obj]
+            except KeyError:
+                lock = locker[obj] = threading.Lock()
+                @contextlib.contextmanager
+                def cleanup():
+                    try:
                         with lock:
                             yield
-                    locker[obj] = cm_func
-                    # this func is used for the first time, it clears the lock
-                    # after running, others that were waiting already have it...
-                    def cm_func():
-                        try:
-                            with lock:
-                                yield
-                        finally:
-                            del locker[obj]
-        return contextlib.contextmanager(cm_func)()
+                    finally:
+                        del locker[obj]
+                return cleanup()
     return lock_object
 
 
@@ -533,15 +524,12 @@ def cached_method(func):
 
     @functools.wraps(func)
     def wrapper(self, *args):
-        try:
-            return cache[self][args]
-        except KeyError:
-            with lock(self):
-                try:
-                    return cache[self][args]
-                except KeyError:
-                    v = cache.setdefault(self, {})[args] = func(self, *args)
-                    return v
+        with lock(self):
+            try:
+                return cache[self][args]
+            except KeyError:
+                v = cache.setdefault(self, {})[args] = func(self, *args)
+                return v
     return wrapper
 
 
@@ -557,26 +545,35 @@ def cached_func(func):
     supported. The cache is thread-safe.
 
     """
-    cache = caching_dict(lambda args: func(*args))
+    cache = caching_dict(func, True)
     @functools.wraps(func)
     def wrapper(*args):
         return cache[args]
     return wrapper
 
 
-def caching_dict(func):
+def caching_dict(func, unpack=False):
     """Create a dict with a thread-safe factory function for missing keys.
 
-    This is a thread-safe alternative for :class:`collections.defaultdict`.
+    This is a thread-safe alternative for :class:`collections.defaultdict`. The
+    ``func`` is called when a key is missing, with one argument (key); or with
+    the arguments unpacked if ``unpack`` is set to True. Built-in locking makes
+    sure another thread can not call the factory function at the same time.
 
     """
     lock = threading.Lock()
 
     class cache(dict):
-        def __getitem__(self, key):
-            try:
-                return super().__getitem__(key)
-            except KeyError:
+        if unpack:
+            def __getitem__(self, key):
+                with lock:
+                    try:
+                        return super().__getitem__(key)
+                    except KeyError:
+                        value = self[key] = func(*key)
+                        return value
+        else:
+            def __getitem__(self, key):
                 with lock:
                     try:
                         return super().__getitem__(key)
