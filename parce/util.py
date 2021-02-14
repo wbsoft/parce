@@ -26,7 +26,6 @@ This module only depends on the Python standard library.
 """
 
 import bisect
-import re
 import codecs
 import contextlib
 import functools
@@ -689,11 +688,6 @@ def split_list(l, separator):
             return
         yield l[i:j]
         i = j + 1
-
-
-def quote(s):
-    """Like repr, but return s with double quotes, escaping " and \\."""
-    return '"' + re.sub(r'([\\"])', r'\\\1', s) + '"'
 
 
 def tokens(nodes):
