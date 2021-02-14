@@ -459,6 +459,45 @@ class Symbol:
         return self._name_
 
 
+def object_locker():
+    """Return a callable that can hold a lock on an object.
+
+    The lock is automatically created and deleted when the last lock is
+    released. Keeps a reference to the object until the last lock is released.
+
+    Usage example::
+
+        >>> lock = object_locker()
+        >>> with lock(obj):
+        ...     do_something()
+
+    """
+    locker = {}
+    locker_lock = threading.Lock()
+
+    def lock_object(obj):
+        try:
+            cm_func = locker[obj]
+        except KeyError:
+            with locker_lock:
+                try:
+                    cm_func = locker[obj]
+                except KeyError:
+                    lock = threading.Lock()
+                    def cm_func():
+                        with lock:
+                            yield obj
+                    locker[obj] = cm_func
+                    def cm_func():
+                        try:
+                            with lock:
+                                yield obj
+                        finally:
+                            del locker[obj]
+        return contextlib.contextmanager(cm_func)()
+    return lock_object
+
+
 def cached_method(func):
     """Wrap a method and caches its return value.
 
@@ -467,17 +506,8 @@ def cached_method(func):
     instance.
 
     """
+    lock = object_locker()
     _cache = weakref.WeakKeyDictionary()
-    _locker = weakref.WeakKeyDictionary()
-    _lock = threading.Lock()
-
-    def lock(obj):
-        with _lock:
-            try:
-                return _locker[obj]
-            except KeyError:
-                lock = _locker[obj] = threading.Lock()
-                return lock
 
     @functools.wraps(func)
     def wrapper(self, *args):
