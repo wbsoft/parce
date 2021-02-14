@@ -185,8 +185,7 @@ class Transformer(parce.util.Observable):
     """
     def __init__(self):
         super().__init__()
-        self._lock = threading.Lock()   # for instantiating Transforms
-        self._transforms = {}
+        self._transforms = parce.util.caching_dict(self.find_transform)
         self._cache = weakref.WeakKeyDictionary()
         self._interrupt = weakref.WeakKeyDictionary()
 
@@ -378,15 +377,7 @@ class Transformer(parce.util.Observable):
 
     def get_transform(self, language):
         """Return a Transform class instance for the specified language."""
-        try:
-            return self._transforms[language]
-        except KeyError:
-            with self._lock:
-                try:
-                    tf = self._transforms[language]
-                except KeyError:
-                    tf = self._transforms[language] = self.find_transform(language)
-                return tf
+        return self._transforms[language]
 
     def add_transform(self, language, transform):
         """Add a Transform instance for the specified language."""

@@ -155,9 +155,7 @@ class Lexicon:
         #: ``'parce.lang.xml.Xml.root'``.
         self.qualname = language.__module__ + '.' + self.fullname
         self.__doc__ = descriptor.rules_func.__doc__
-        self._derived = {}
-        # locks are used when creating a derivate and/or the parse() instance function
-        self._lock_derive = threading.Lock()
+        # lock is used when creating the parse() instance function
         self._lock_build = threading.Lock()
 
     @property
@@ -196,15 +194,12 @@ class Lexicon:
         elif self.arg is not None:
             vanilla = self.descriptor.__get__(None, self.language)
             return vanilla(arg)
-        try:
-            return self._derived[arg]
-        except KeyError:
-            with self._lock_derive:
-                try:
-                    lexicon = self._derived[arg]
-                except KeyError:
-                    lexicon = self._derived[arg] = Lexicon(self.descriptor, self.language, arg)
-            return lexicon
+        return self._derive(arg)
+
+    @util.cached_method
+    def _derive(self, arg):
+        """Factory, called when a derived lexicon needs to be created."""
+        return Lexicon(self.descriptor, self.language, arg)
 
     def __eq__(self, other):
         """Return True if we are the same lexicon or a derivate from the same."""

@@ -84,7 +84,8 @@ The following events can be yielded (simply module constants):
 
 import collections
 import sys
-import threading
+
+import parce.util
 
 # events w/o args
 INDENT          = 1
@@ -322,8 +323,7 @@ class Indenter(AbstractIndenter):
 
     """
     def __init__(self):
-        self._lock = threading.Lock()   # for instantiating Indents
-        self._indents = {}
+        self._indents = parce.util.caching_dict(self.find_indent)
 
     def indent_events(self, block, prev_indents=()):
         """Reimplemented to use Indent subclasses for the specified language."""
@@ -347,15 +347,7 @@ class Indenter(AbstractIndenter):
 
     def get_indent(self, language):
         """Return a Indent class instance for the specified language."""
-        try:
-            return self._indents[language]
-        except KeyError:
-            with self._lock:
-                try:
-                    i = self._indents[language]
-                except KeyError:
-                    i = self._indents[language] = self.find_indent(language)
-                return i
+        return self._indents[language]
 
     def add_indent(self, language, indent):
         """Add a Indent instance for the specified language."""
