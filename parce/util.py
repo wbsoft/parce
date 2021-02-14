@@ -535,18 +535,18 @@ def cached_func(func):
     supported. The cache is thread-safe.
 
     """
-    _cache = {}
-    _lock =threading.Lock()
+    cache = {}
+    lock = threading.Lock()
     @functools.wraps(func)
     def wrapper(*args):
         try:
-            return _cache[args]
+            return cache[args]
         except KeyError:
-            with _lock:
+            with lock:
                 try:
-                    return _cache[args]
+                    return cache[args]
                 except KeyError:
-                    v = _cache[args] = func(*args)
+                    v = cache[args] = func(*args)
                     return v
     return wrapper
 
