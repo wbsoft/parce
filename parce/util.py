@@ -440,24 +440,6 @@ class Switch:
         return s
 
 
-class Symbol:
-    """An unique object that has a name."""
-    __slots__ = ('_name_',)
-    _store_ = {}
-    _lock_ = threading.Lock()
-    def __new__(cls, name):
-        with cls._lock_:
-            try:
-                obj = cls._store_[name]
-            except KeyError:
-                obj = cls._store_[name] = object.__new__(cls)
-                obj._name_ = name
-            return obj
-
-    def __repr__(self):
-        return self._name_
-
-
 def object_locker():
     """Return a callable that can hold a lock on an object.
 
@@ -580,6 +562,18 @@ def caching_dict(func, unpack=False):
                         value = self[key] = func(key)
                         return value
     return cache()
+
+
+class Symbol:
+    """An unique object that has a name; the same name returns the same object."""
+    def __repr__(self):
+        return self._name
+
+    @cached_func
+    def __new__(cls, name):
+        obj = object.__new__(cls)
+        obj._name = name
+        return obj
 
 
 def fix_boundaries(stream, start, end):
