@@ -210,8 +210,6 @@ class Transformer(parce.util.Observable):
         events = parce.lexer.Lexer([root_lexicon]).events(text, pos)
         lexicon = root_lexicon
 
-        no_object = object()                # sentinel for missing method
-
         def get_object_item(items):
             """Get the object item, may update curlang and transform variables."""
             nonlocal curlang, transform
@@ -220,14 +218,15 @@ class Transformer(parce.util.Observable):
                 transform = self.get_transform(curlang)
             name = lexicon.name
             meth = getattr(transform, name, None)
-            return Item(name, meth(items)) if meth else no_object
+            if meth:
+                return Item(name, meth(items))
 
         for e in events:
             if e.target:
                 for _ in range(e.target.pop, 0):
                     item = get_object_item(items)
                     lexicon, items = stack.pop()
-                    if item is not no_object:
+                    if item:
                         items.append(item)
                 for l in e.target.push:
                     stack.append((lexicon, items))
@@ -239,10 +238,11 @@ class Transformer(parce.util.Observable):
         while stack:
             item = get_object_item(items)
             lexicon, items = stack.pop()
-            if item is not no_object:
+            if item:
                 items.append(item)
         item = get_object_item(items)
-        return None if item is no_object else item.obj
+        if item:
+            return item.obj
 
     def transform_tree(self, tree):
         """Evaluate a tree structure."""
@@ -253,44 +253,40 @@ class Transformer(parce.util.Observable):
 
         curlang = tree.lexicon.language
         transform = self.get_transform(curlang)
-
-        stack = []
-        node, items, i = tree, Items(tree.lexicon.arg), 0
-        while not self._interrupt[tree]:
-            for i in range(i, len(node)):
-                n = node[i]
-                if n.is_token:
-                    items.append(n)
+        root_meth = getattr(transform, tree.lexicon.name, None)
+        if root_meth:
+            stack = []
+            node, items, i = tree, Items(tree.lexicon.arg), 0
+            while not self._interrupt[tree]:
+                for i in range(i, len(node)):
+                    n = node[i]
+                    if n.is_token:
+                        items.append(n)
+                    else:
+                        # a context; do we have a method for it?
+                        if curlang is not n.lexicon.language:
+                            curlang = n.lexicon.language
+                            transform = self.get_transform(curlang)
+                        name = n.lexicon.name
+                        meth = getattr(transform, name, None)
+                        # don't bother going in this context is there is no method
+                        if meth:
+                            try:
+                                items.append(Item(name, self._cache[n]))
+                            except KeyError:
+                                stack.append((items, i + 1, meth))
+                                node, items, i = n, Items(n.lexicon.arg), 0
+                                break
                 else:
-                    # a context; do we have a method for it?
-                    if curlang is not n.lexicon.language:
-                        curlang = n.lexicon.language
-                        transform = self.get_transform(curlang)
-                    name = n.lexicon.name
-                    meth = getattr(transform, name, None)
-                    # don't bother going in this context is there is no method
-                    if meth:
-                        try:
-                            items.append(Item(name, self._cache[n]))
-                        except KeyError:
-                            stack.append((items, i + 1))
-                            node, items, i = n, Items(n.lexicon.arg), 0
-                            break
-            else:
-                if curlang is not node.lexicon.language:
-                    curlang = node.lexicon.language
-                    transform = self.get_transform(curlang)
-                name = node.lexicon.name
-                meth = getattr(transform, name, None)
-                obj = meth(items) if meth else None
-                if stack:
-                    self._cache[node] = obj
-                    items, i = stack.pop()
-                    items.append(Item(name, obj))
-                    node = node.parent
-                else:
-                    break
-        return obj
+                    if stack:
+                        name = node.lexicon.name
+                        olditems, i, meth = stack.pop()
+                        obj = self._cache[node] = meth(items)
+                        items = olditems
+                        items.append(Item(name, obj))
+                        node = node.parent
+                    else:
+                        return root_meth(items)
 
     def build(self, tree):
         """Called when a tree needs to be transformed.
