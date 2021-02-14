@@ -462,14 +462,33 @@ class Symbol:
 def object_locker():
     """Return a callable that can hold a lock on an object.
 
-    The lock is automatically created and deleted when the last lock is
-    released. Keeps a reference to the object until the last lock is released.
+    The lock is automatically created when requested for the first time, and
+    deleted when released for the last time. Keeps a reference to the object
+    until the last lock is released.
 
     Usage example::
 
         >>> lock = object_locker()
         >>> with lock(obj):
         ...     do_something()
+
+    The lock object should remain alive as long as the object is alive, so it
+    is reused; it is the context where the locking is active. This function
+    is an alternative to::
+
+        >>> class Object:
+        ...     def __init__(self):
+        ...         self._lock = threading.Lock()
+        ...
+        >>> o = Object()
+
+    and then later::
+
+        >>> with o._lock:
+        ...     do_something()
+
+    In this use case the allocated lock lives as long as the object, which
+    might not be desirable if you have a large amount of objects of this type.
 
     """
     locker = {}
@@ -484,14 +503,17 @@ def object_locker():
                     cm_func = locker[obj]
                 except KeyError:
                     lock = threading.Lock()
+                    # the locking context manager func, acquires the lock
                     def cm_func():
                         with lock:
-                            yield obj
+                            yield
                     locker[obj] = cm_func
+                    # this func is used for the first time, it clears the lock
+                    # after running, others that were waiting already have it...
                     def cm_func():
                         try:
                             with lock:
-                                yield obj
+                                yield
                         finally:
                             del locker[obj]
         return contextlib.contextmanager(cm_func)()
@@ -507,18 +529,18 @@ def cached_method(func):
 
     """
     lock = object_locker()
-    _cache = weakref.WeakKeyDictionary()
+    cache = weakref.WeakKeyDictionary()
 
     @functools.wraps(func)
     def wrapper(self, *args):
         try:
-            return _cache[self][args]
+            return cache[self][args]
         except KeyError:
             with lock(self):
                 try:
-                    return _cache[self][args]
+                    return cache[self][args]
                 except KeyError:
-                    v = _cache.setdefault(self, {})[args] = func(self, *args)
+                    v = cache.setdefault(self, {})[args] = func(self, *args)
                     return v
     return wrapper
 
@@ -535,20 +557,33 @@ def cached_func(func):
     supported. The cache is thread-safe.
 
     """
-    cache = {}
-    lock = threading.Lock()
+    cache = caching_dict(func)
     @functools.wraps(func)
     def wrapper(*args):
-        try:
-            return cache[args]
-        except KeyError:
-            with lock:
-                try:
-                    return cache[args]
-                except KeyError:
-                    v = cache[args] = func(*args)
-                    return v
+        return cache[args]
     return wrapper
+
+
+def caching_dict(func):
+    """Create a dict with a thread-safe factory function for missing keys.
+
+    This is a thread-safe alternative for :class:`collections.defaultdict`.
+
+    """
+    lock = threading.Lock()
+
+    class cache(dict):
+        def __getitem__(self, key):
+            try:
+                return super().__getitem__(key)
+            except KeyError:
+                with lock:
+                    try:
+                        return super().__getitem__(key)
+                    except KeyError:
+                        value = self[key] = func(key)
+                        return value
+    return cache()
 
 
 def fix_boundaries(stream, start, end):
