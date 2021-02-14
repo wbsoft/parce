@@ -557,7 +557,7 @@ def cached_func(func):
     supported. The cache is thread-safe.
 
     """
-    cache = caching_dict(func)
+    cache = caching_dict(lambda args: func(*args))
     @functools.wraps(func)
     def wrapper(*args):
         return cache[args]
