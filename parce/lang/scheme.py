@@ -70,12 +70,11 @@ class Scheme(Language):
         yield r"#\\([a-z]+|.)", Character, pop
         yield RE_SCHEME_ID, cls.get_word_action(), pop
 
-        yield r'(#[eEiI])?(#([bBoOxXdD]))', \
-            bygroup(Number.Prefix, Number.Prefix), pop, \
-            findmember(MATCH[3], (
-                ('bB', cls.number(2)),
-                ('oO', cls.number(8)),
-                ('xX', cls.number(16))), cls.number)
+        yield r'(#[eEiI])?(#([bBoOxXdD]))', findmember(MATCH[3], (
+            ('bB', (bygroup(Number.Prefix, Number.Binary.Prefix), pop, cls.number(2))),
+            ('oO', (bygroup(Number.Prefix, Number.Octal.Prefix), pop, cls.number(8))),
+            ('xX', (bygroup(Number.Prefix, Number.Hexadecimal.Prefix), pop, cls.number(16)))),
+               (bygroup(Number.Prefix, Number.Decimal.Prefix), pop, cls.number))
         yield r'#[eEiI]', Number.Prefix, pop, cls.number
         yield r'[-+]inf.0', Number.Infinity, pop, cls.number
         yield r'[-+]nan.0', Number.NaN, pop, cls.number
