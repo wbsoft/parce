@@ -268,7 +268,7 @@ class Transformer(parce.util.Observable):
                             transform = self.get_transform(curlang)
                         name = n.lexicon.name
                         meth = getattr(transform, name, None)
-                        # don't bother going in this context is there is no method
+                        # don't bother going in this context if there is no method
                         if meth:
                             try:
                                 items.append(Item(name, self._cache[n]))
