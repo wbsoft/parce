@@ -68,6 +68,7 @@ class Scheme(Language):
 
         yield r"#[tTfF]\b", Number.Boolean, pop
         yield r"#\\([a-z]+|.)", Character, pop
+        yield RE_SCHEME_ID, cls.get_word_action(), pop
 
         yield r'(#[eEiI])?(#([bBoOxXdD]))', \
             bygroup(Number.Prefix, Number.Prefix), pop, \
