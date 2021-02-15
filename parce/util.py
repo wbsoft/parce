@@ -443,7 +443,7 @@ class Switch:
 def object_locker():
     """Return a callable that can hold a lock on an object.
 
-    The lock is automatically created when requested for the first time, and
+    The Lock is automatically created when requested for the first time, and
     deleted when released for the last time. Keeps a reference to the object
     until the last lock is released.
 
@@ -453,9 +453,9 @@ def object_locker():
         >>> with lock(obj):
         ...     do_something()
 
-    The lock object should remain alive as long as the object is alive, so it
-    is reused; it is the context where the locking is active. This function
-    is an alternative to::
+    The lock callable should remain alive as long as the object is alive, so it
+    is reused; it is the context where the locking is active. This function is
+    an alternative to::
 
         >>> class Object:
         ...     def __init__(self):
@@ -468,7 +468,7 @@ def object_locker():
         >>> with o._lock:
         ...     do_something()
 
-    In this use case the allocated lock lives as long as the object, which
+    In this use case the allocated Lock lives as long as the object, which
     might not be desirable if you have a large amount of objects of this type.
 
     """
