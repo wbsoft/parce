@@ -536,10 +536,11 @@ def cached_func(func):
 def caching_dict(func, unpack=False):
     """Create a dict with a thread-safe factory function for missing keys.
 
-    This is a thread-safe alternative for :class:`collections.defaultdict`. The
-    ``func`` is called when a key is missing, with one argument (key); or with
-    the arguments unpacked if ``unpack`` is set to True. Built-in locking makes
-    sure another thread can not call the factory function at the same time.
+    When a key is not present, the factory function is called. The difference
+    with :class:`collections.defaultdict` is that the factory function is
+    called with the key as argument, or, if ``unpack`` is set to True, with the
+    key arguments unpacked. Built-in locking makes sure another thread cannot
+    call the factory function at the same time.
 
     """
     lock = threading.Lock()
