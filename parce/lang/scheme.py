@@ -80,8 +80,7 @@ class Scheme(Language):
         yield r'[-+]inf.0', Number.Infinity, pop, cls.number
         yield r'[-+]nan.0', Number.NaN, pop, cls.number
         yield r'[-+]', Operator.Sign, pop, cls.number
-        yield r'(\.?)(\d+)(#*)', bygroup(Number.Dot, Number.Decimal, Number.Special.UnknownDigit), \
-            pop, cls.number
+        yield r'(\.?)(\d+)', bygroup(Number.Dot, Number.Decimal), pop, cls.number
 
         if pop == 0:
             yield r"\.(?!\S)", Delimiter.Dot
@@ -107,10 +106,9 @@ class Scheme(Language):
     def number(self):
         """Decimal numbers, derive with 2 for binary, 8 for octal, 16 for hexadecimal numbers."""
         yield RE_SCHEME_RIGHT_BOUND, None, -1
-        _pat = lambda radix: '([{}]+)(#*)'.format('0123456789abcdef'[:radix or 10])
-        yield pattern(call(_pat, ARG)), bygroup(
-            dselect(ARG, {2: Number.Binary, 8: Number.Octal, 16: Number.Hexadecimal}, Number.Decimal),
-            Number.Special.UnknownDigit)
+        _pat = lambda radix: '[{}]+'.format('0123456789abcdef'[:radix or 10])
+        yield pattern(call(_pat, ARG)), \
+            dselect(ARG, {2: Number.Binary, 8: Number.Octal, 16: Number.Hexadecimal}, Number.Decimal)
         yield r'[-+]inf.0', Number.Infinity
         yield r'[-+]nan.0', Number.NaN
         yield r'[-+]', Operator.Sign
@@ -119,6 +117,7 @@ class Scheme(Language):
         yield ifarg(None, r'\.'), Number.Dot
         yield '@', Separator.Polar
         yield '/', Separator.Fraction
+        yield '#+', Number.Special.UnknownDigit
         yield default_action, Number.Invalid
 
     # -------------- String ---------------------
