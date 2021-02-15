@@ -19,6 +19,13 @@
 
 """
 Scheme.
+
+Tries to adhere to the official Scheme syntax, especially the complicated
+number syntax. See for more information:
+
+* https://www.gnu.org/software/guile/manual/r5rs.html#Formal-syntax
+* https://www.scheme.com/tspl4/grammar.html
+
 """
 
 __all__ = ('Scheme', 'SchemeLily')
@@ -27,11 +34,10 @@ import re
 
 
 from parce import Language, lexicon, skip, default_action, default_target
-from parce.action import (
-    Bracket, Character, Comment, Delimiter, Keyword, Name, Number, String)
-from parce.rule import TEXT, bygroup, ifmember, gselect
+from parce.action import *
+from parce.rule import *
 
-# https://www.gnu.org/software/guile/manual/r5rs.html#Formal-syntax
+
 RE_SCHEME_RIGHT_BOUND = r"(?=$|[()\s;]|#\()"
 
 RE_SCHEME_ID_SPECIAL_INITIAL = r'!$%&*/:<=>?^_~'
@@ -44,19 +50,6 @@ RE_SCHEME_ID = r'(?:' + \
     '|' + RE_SCHEME_ID_INITIAL + '(?:' + RE_SCHEME_ID_SUBSEQUENT + ')*' + \
     ')' + RE_SCHEME_RIGHT_BOUND
 
-
-
-
-
-RE_SCHEME_NUMBER = (r"(#[eEiI])?(#d)?("             # #e, #i and/or #d prefix
-    r"([-+]?(?:(?:\d+(?:\.\d*)|\.\d+)(?:[eE]\d+)?))"# float
-    r"|[-+]?\d+(?:(/\d+)|())"                       # fraction, int
-    r"|#(?:([bB][-+]?[0-1]+)"                       # binary
-        r"|([oO][-+]?[0-7]+)"                       # octal
-        r"|([xX][-+]?[0-9a-fA-F]+))"                # hexadecimal
-    r"|[-+](?:([iI][nN][fF])|([nN][aA][nN]))\.0"    # inf, NaN
-    r")" + RE_SCHEME_RIGHT_BOUND
-)
 
 class Scheme(Language):
     @lexicon
@@ -72,17 +65,25 @@ class Scheme(Language):
         yield r'"', String, pop, cls.string
         yield r';', Comment, pop, cls.singleline_comment
         yield r'#!', Comment, pop, cls.multiline_comment
-        yield RE_SCHEME_NUMBER, bygroup(
-            Number.Prefix, Number.Prefix,
-            gselect(None, None, None,
-                Number.Float, Number.Fraction, Number.Int,
-                Number.Binary, Number.Octal, Number.Hexadecimal,
-                Number.Infinity, Number.NaN)), pop
-        if pop == 0:
-            yield r"\.(?!\S)", Delimiter.Dot
+
         yield r"#[tTfF]\b", Number.Boolean, pop
         yield r"#\\([a-z]+|.)", Character, pop
-        yield r'[^()"{}\s]+', cls.get_word_action(), pop
+
+        yield r'(#[eEiI])?(#([bBoOxXdD]))', \
+            bygroup(Number.Prefix, Number.Prefix), pop, \
+            findmember(MATCH[3], (
+                ('bB', cls.number(2)),
+                ('oO', cls.number(8)),
+                ('xX', cls.number(16))), cls.number)
+        yield r'#[eEiI]', Number.Prefix, pop, cls.number
+        yield r'[-+]inf.0', Number.Infinity, pop, cls.number
+        yield r'[-+]nan.0', Number.NaN, pop, cls.number
+        yield r'[-+]', Operator.Sign, pop, cls.number
+        yield r'(\.?)(\d+)(#*)', bygroup(Number.Dot, Number.Decimal, Number.Special.UnknownDigit), \
+            pop, cls.number
+
+        if pop == 0:
+            yield r"\.(?!\S)", Delimiter.Dot
 
     @lexicon(consume=True)
     def list(cls):
@@ -99,6 +100,25 @@ class Scheme(Language):
         """Return a dynamic action that is chosen based on the text."""
         from . import scheme_words
         return ifmember(TEXT, scheme_words.keywords, Keyword, Name)
+
+    # -------------- Number ---------------------
+    @lexicon(consume=True, re_flags=re.I)
+    def number(self):
+        """Decimal numbers, derive with 2 for binary, 8 for octal, 16 for hexadecimal numbers."""
+        yield RE_SCHEME_RIGHT_BOUND, None, -1
+        _pat = lambda radix: '([{}]+)(#*)'.format('0123456789abcdef'[:radix or 10])
+        yield pattern(call(_pat, ARG)), bygroup(
+            dselect(ARG, {2: Number.Binary, 8: Number.Octal, 16: Number.Hexadecimal}, Number.Decimal),
+            Number.Special.UnknownDigit)
+        yield r'[-+]inf.0', Number.Infinity
+        yield r'[-+]nan.0', Number.NaN
+        yield r'[-+]', Operator.Sign
+        yield 'i', Number.Imaginary
+        yield ifarg(None, '[esfdl]'), Number.Exponent
+        yield ifarg(None, r'\.'), Number.Dot
+        yield '@', Separator.Polar
+        yield '/', Separator.Fraction
+        yield default_action, Number.Invalid
 
     # -------------- String ---------------------
     @lexicon(consume=True)
