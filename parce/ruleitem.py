@@ -389,6 +389,11 @@ class SubgroupAction(ActionItem):
     def _repr_args(self):
         return self._actions
 
+    def pre_evaluate(self, ns):
+        """Reimplemented to only pre-evaluate subgroup actions (evaluating happens in the lexer)."""
+        items, ok = pre_evaluate(self._actions, ns)
+        return self if ok & _UNCHANGED else type(self)(*items), ok
+
 
 class DelegateAction(ActionItem):
     """This action uses a lexicon to parse the text.
