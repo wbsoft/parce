@@ -31,7 +31,23 @@ from parce.action import (
     Bracket, Character, Comment, Delimiter, Keyword, Name, Number, String)
 from parce.rule import TEXT, bygroup, ifmember, gselect
 
+# https://www.gnu.org/software/guile/manual/r5rs.html#Formal-syntax
 RE_SCHEME_RIGHT_BOUND = r"(?=$|[()\s;]|#\()"
+
+RE_SCHEME_ID_SPECIAL_INITIAL = r'!$%&*/:<=>?^_~'
+RE_SCHEME_ID_INITIAL = r'(?:[^\W\d]|[' + RE_SCHEME_ID_SPECIAL_INITIAL + '])'
+RE_SCHEME_ID_SUBSEQUENT = r'[\w' + RE_SCHEME_ID_SPECIAL_INITIAL + '@.+-]'
+RE_SCHEME_ID_PECULIAR = r'[-+]|\.{3}'
+
+RE_SCHEME_ID = r'(?:' + \
+    RE_SCHEME_ID_PECULIAR + \
+    '|' + RE_SCHEME_ID_INITIAL + '(?:' + RE_SCHEME_ID_SUBSEQUENT + ')*' + \
+    ')' + RE_SCHEME_RIGHT_BOUND
+
+
+
+
+
 RE_SCHEME_NUMBER = (r"(#[eEiI])?(#d)?("             # #e, #i and/or #d prefix
     r"([-+]?(?:(?:\d+(?:\.\d*)|\.\d+)(?:[eE]\d+)?))"# float
     r"|[-+]?\d+(?:(/\d+)|())"                       # fraction, int
