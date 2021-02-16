@@ -251,7 +251,7 @@ def scheme_number(tokens):
                     sign *= -1
             elif t.action is Number.Infinity:
                 return math.inf if t.text[0] == '+' else -math.inf
-            elif t.action is Number.Nan:
+            elif t.action is Number.NaN:
                 return math.nan
             else:
                 break
@@ -273,7 +273,17 @@ def scheme_number(tokens):
 
     def get_complex(tokens):
         """Return a complex value from the tokens."""
-
+        # find the imaginary part
+        i = len(tokens) - 2
+        while i:
+            if tokens[i].action in (Operator.Sign, Number.Infinity, Number.NaN):
+                break
+            i -= 1
+        else:
+            return complex()
+        real = tokens[:i]
+        imag = tokens[i:-1]
+        return complex(get_real(real), get_real(imag))
 
     ### main function body
 
