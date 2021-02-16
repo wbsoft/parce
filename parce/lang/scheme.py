@@ -28,7 +28,7 @@ number syntax. See for more information:
 
 """
 
-__all__ = ('Scheme', 'SchemeLily', 'scheme_number')
+__all__ = ('Scheme', 'SchemeLily', 'scheme_number', 'scheme_number_from_text')
 
 import re
 
@@ -180,6 +180,14 @@ def scheme_number(tokens):
 
     Raises ValueError or ZeroDivisionError on faulty input.
 
+    Usage example::
+
+        >>> from parce import root
+        >>> for n in root(Scheme.root, text):
+        ...     if n == Scheme.number:
+        ...         value = scheme_number(n)
+        ...
+
     """
 
     import cmath, fractions, math
@@ -210,7 +218,7 @@ def scheme_number(tokens):
                 v *= radix * len(t.text)
                 return float(v) if not exact else v
             else:
-                break
+                raise ValueError("unknown token in radix {}: {}".format(radix, repr(t.text)))
         return v
 
     def get_decimal10(tokens):
@@ -239,9 +247,13 @@ def scheme_number(tokens):
                         v.append(t.text)
                         break
                     else:
-                        break
+                        raise ValueError("unknown token in exponent: {}".format(repr(t.text)))
                     i += 1
+                else:
+                    raise ValueError("missing exponent")
                 break
+            else:
+                raise ValueError("unknown token in decimal 10: {}".format(repr(t.text)))
             i += 1
         s = ''.join(v)
         if e:
@@ -324,4 +336,35 @@ def scheme_number(tokens):
     elif tokens and tokens[-1].text.lower() == 'i':
         return get_complex(tokens)
     return get_real(tokens)
+
+
+def scheme_number_from_text(text):
+    """Proof-of-concept/test function parsing Scheme/Guile number syntax.
+
+    Usage::
+
+        >>> from parce.lang.scheme import scheme_number_from_text
+        >>> scheme_number_from_text('123')
+        123
+        >>> scheme_number_from_text('123+3i')
+        (123+3j)
+        >>> scheme_number_from_text('#x123')
+        291
+        >>> scheme_number_from_text('#o13')
+        11
+        >>> scheme_number_from_text('1/3')
+        Fraction(1, 3)
+        >>> scheme_number_from_text('#i1/3')
+        0.3333333333333333
+        >>> scheme_number_from_text('#xdead/beef')
+        Fraction(57005, 48879)
+
+    Raises ValueError or ZeroDivisionError on invalid input.
+
+    """
+    from parce import root
+    for n in root(Scheme.root, text):
+        if n == Scheme.number:
+            return scheme_number(n)
+    raise ValueError("invalid number: {}".format(repr(text)))
 
