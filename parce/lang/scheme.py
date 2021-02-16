@@ -112,7 +112,7 @@ class Scheme(Language):
         yield r'[-+]nan.0', Number.NaN
         yield r'[-+]', Operator.Sign
         yield 'i', Number.Imaginary
-        yield ifarg(None, '[esfdl]'), Number.Exponent
+        yield ifarg(None, '([esfdl])([-+])?'), bygroup(Number.Exponent, Operator.Sign)
         yield ifarg(None, r'\.'), Number.Dot
         yield '@', Separator.Polar
         yield '/', Separator.Fraction
@@ -276,12 +276,12 @@ def scheme_number(tokens):
         # find the imaginary part
         i = len(tokens) - 2
         while i:
-            action = tokens[i].action
-            if action in (Number.Infinity, Number.NaN):
+            t = tokens[i]
+            if t.action in (Number.Infinity, Number.NaN):
                 break
-            elif action is Operator.Sign:
-                if not i or tokens[i-1].action is not Number.Exponent:
-                    break
+            elif t.action is Operator.Sign and t.group is None:
+                # (for a sign after an exponent, t.group is -1)
+                break
             i -= 1
         else:
             return complex()
