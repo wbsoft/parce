@@ -217,6 +217,8 @@ def scheme_number(tokens):
         no exact prefix (``#e``)
 
         """
+        if not tokens:
+            raise ValueError("expecting unsigned integer (radix: {})".format(radix))
         v = 0
         for t in tokens:
             if t.action is mantisse_action:
@@ -263,9 +265,11 @@ def scheme_number(tokens):
                 raise ValueError("unknown token in decimal 10: {}".format(repr(t.text)))
             i += 1
         s = ''.join(v)
-        if e:
-            return float(s) if exact is False else int(s)
-        return fractions.Fraction(s) if exact else float(s)
+        if s:
+            if e:
+                return float(s) if exact is False else int(s)
+            return fractions.Fraction(s) if exact else float(s)
+        raise ValueError("expecting decimal value")
 
     def get_real(tokens):
         """Return a real value from the tokens (can be int, float or Fraction.)."""
@@ -303,19 +307,23 @@ def scheme_number(tokens):
         """Return a complex value from the tokens."""
         # find the imaginary part
         i = len(tokens) - 2
-        while i:
+        while i >= 0:
             t = tokens[i]
             if t.action in (Number.Infinity, Number.NaN):
+                imag = get_real(tokens[i:-1])
                 break
             elif t.action is Operator.Sign and t.group is None:
                 # (for a -/+ sign after an exponent, t.group is -1)
+                if i == len(tokens) - 2:
+                    imag = 1 if t == '+' else -1    # the +i or -i case
+                else:
+                    imag = get_real(tokens[i:-1])
                 break
             i -= 1
         else:
-            return complex()
-        real = tokens[:i]
-        imag = tokens[i:-1]
-        return complex(get_real(real), get_real(imag))
+            raise ValueError("invalid complex number")
+        real = get_real(tokens[:i]) if i else 0
+        return complex(real, imag)
 
     ### main function body
     tokens = list(tokens)

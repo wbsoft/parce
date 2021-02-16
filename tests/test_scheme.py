@@ -65,6 +65,8 @@ def scheme_numbers():
     assert s('+nan.0') is math.nan
 
     # complex numbers
+    assert s('+i') == s('0+1i') == complex(0, 1)
+    assert s('-i') == s('0-1i') == complex(0, -1)
     assert s('23+45i') == complex(23, 45)
     assert s('+inf.0+inf.0i') == complex(math.inf, math.inf)
 
