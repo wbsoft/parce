@@ -276,8 +276,12 @@ def scheme_number(tokens):
         # find the imaginary part
         i = len(tokens) - 2
         while i:
-            if tokens[i].action in (Operator.Sign, Number.Infinity, Number.NaN):
+            action = tokens[i].action
+            if action in (Number.Infinity, Number.NaN):
                 break
+            elif action is Operator.Sign:
+                if not i or tokens[i-1].action is not Number.Exponent:
+                    break
             i -= 1
         else:
             return complex()
