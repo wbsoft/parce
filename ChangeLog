@@ -2,6 +2,21 @@ ChangeLog
 =========
 
 
+current: parce-0.22.0
+
+- general code cleanup and improvements
+- transform: add Items.arg, so a transform can access the lexicon argument
+- lilypond language definition:
+   * fixed whitespace in list separator token
+   * added \fermata markup command
+   * unit now has its own action Name.Builtin.Unit
+- scheme language definition:
+   * better number parsing, now supports all features of Scheme/Guile numbers
+     bin/dec/hex/oct, fraction, +/- inf, nan, complex, polar, exact/inexact
+   * a helper function parsing scheme number tokens into a python value
+   * test suite for scheme numbers
+
+
 2021-02-11: parce-0.21.0
 
 - small change in GroupToken handling: now the last token has a negative index.
@@ -9,8 +24,8 @@ ChangeLog
 - adapt some more places where erroneously Python 3.8 syntax was used (asterisk
   in return or yield statements without parentheses).
 - lilypond language definition:
-  * in lyric word, highlight tie and space separately
-  * added many missing commands/words
+   * in lyric word, highlight tie and space separately
+   * added many missing commands/words
 
 
 2021-02-09: parce-0.20.0

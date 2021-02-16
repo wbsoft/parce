@@ -26,6 +26,12 @@ number syntax. See for more information:
 * https://www.gnu.org/software/guile/manual/r5rs.html#Formal-syntax
 * https://www.scheme.com/tspl4/grammar.html
 
+Besides the :class:`Scheme` language definition and a subclass
+:class:`SchemeLily` that is used for Scheme code embedded into LilyPond, there
+is a helper function :func:`scheme_number` that parses the Scheme number tokens
+into a Python value. This function can be used when transforming/parsing the
+Scheme tokens into some data model that access the Scheme values.
+
 """
 
 __all__ = ('Scheme', 'SchemeLily', 'scheme_number', 'scheme_number_from_text')
@@ -182,6 +188,7 @@ def scheme_number(tokens):
 
     Usage example::
 
+        >>> text = '123'
         >>> from parce import root
         >>> for n in root(Scheme.root, text):
         ...     if n == Scheme.number:
