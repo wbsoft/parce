@@ -34,8 +34,14 @@ import re
 
 
 from parce import Language, lexicon, skip, default_action, default_target
-from parce.action import *
-from parce.rule import *
+from parce.action import (
+    Bracket, Character, Comment, Delimiter, Keyword, Name, Number, Operator,
+    Separator, String,
+)
+from parce.rule import (
+    ARG, MATCH, TEXT, bygroup, call, dselect, findmember, ifarg, ifmember,
+    pattern,
+)
 
 
 RE_SCHEME_RIGHT_BOUND = r"(?=$|[()\s;]|#\()"
@@ -70,11 +76,12 @@ class Scheme(Language):
         yield r"#\\([a-z]+|.)", Character, pop
         yield RE_SCHEME_ID, cls.get_word_action(), pop
 
+        _g = lambda action: bygroup(Number.Prefix, action, skip, Number.Prefix)
         yield r'(#[eEiI])?(#([bBoOxXdD]))(#[eEiI])?', findmember(MATCH[3], (
-            ('bB', (bygroup(Number.Prefix, Number.Prefix.Binary, skip, Number.Prefix), pop, cls.number(2))),
-            ('oO', (bygroup(Number.Prefix, Number.Prefix.Octal, skip, Number.Prefix), pop, cls.number(8))),
-            ('xX', (bygroup(Number.Prefix, Number.Prefix.Hexadecimal, skip, Number.Prefix), pop, cls.number(16)))),
-               (bygroup(Number.Prefix, Number.Prefix.Decimal, skip, Number.Prefix), pop, cls.number))
+            ('bB', (_g(Number.Prefix.Binary), pop, cls.number(2))),
+            ('oO', (_g(Number.Prefix.Octal), pop, cls.number(8))),
+            ('xX', (_g(Number.Prefix.Hexadecimal), pop, cls.number(16)))),
+               (_g(Number.Prefix.Decimal), pop, cls.number))
         yield r'#[eEiI]', Number.Prefix, pop, cls.number
         yield r'[-+]inf.0', Number.Infinity, pop, cls.number
         yield r'[-+]nan.0', Number.NaN, pop, cls.number
@@ -178,13 +185,15 @@ def scheme_number(tokens):
     import cmath, fractions, math
     from parce.util import split_list
 
+    _radix_map = {
+        'b': (2, Number.Binary),
+        'o': (8, Number.Octal),
+        'd': (10, Number.Decimal),
+        'x': (16, Number.Hexadecimal),
+    }
 
-    radix = 10
+    mantisse_action, radix = Number.Decimal, 10
     exact = None
-    tokens = list(tokens)
-
-    _radix_map = {'b': 2, 'o': 8, 'd': 10, 'x': 16}
-
 
     def get_uint(tokens):
         """Get an unsigned integer from the tokens.
@@ -195,7 +204,7 @@ def scheme_number(tokens):
         """
         v = 0
         for t in tokens:
-            if t.action in (Number.Decimal, Number.Binary, Number.Octal, Number.Hexadecimal):
+            if t.action is mantisse_action:
                 v = int(t.text, radix)
             elif t.action is Number.Special.UnknownDigit:
                 v *= radix * len(t.text)
@@ -215,13 +224,12 @@ def scheme_number(tokens):
                 v.append(t.text)
             elif t.action is Number.Special.UnknownDigit:
                 v.append('0' * len(t.text))
-            elif t.action is Number.Dot:
-                if '.' not in v:
-                    v.append('.')
-                    e = False
-            elif t.action is Number.Exponent:
-                v.append('e')
+            elif e and t.action is Number.Dot:
+                v.append('.')
                 e = False
+            elif t.action is Number.Exponent:
+                e = False
+                v.append('e')
                 i += 1
                 while i < z:
                     t = tokens[i]
@@ -233,6 +241,7 @@ def scheme_number(tokens):
                     else:
                         break
                     i += 1
+                break
             i += 1
         s = ''.join(v)
         if e:
@@ -280,7 +289,7 @@ def scheme_number(tokens):
             if t.action in (Number.Infinity, Number.NaN):
                 break
             elif t.action is Operator.Sign and t.group is None:
-                # (for a sign after an exponent, t.group is -1)
+                # (for a -/+ sign after an exponent, t.group is -1)
                 break
             i -= 1
         else:
@@ -290,6 +299,7 @@ def scheme_number(tokens):
         return complex(get_real(real), get_real(imag))
 
     ### main function body
+    tokens = list(tokens)
 
     # get the prefixes
     i, z = 0, len(tokens)
@@ -302,7 +312,7 @@ def scheme_number(tokens):
             elif p == 'e':
                 exact = True
             else:
-                radix = _radix_map[p]
+                radix, mantisse_action = _radix_map[p]
         else:
             break
         i += 1
@@ -311,7 +321,7 @@ def scheme_number(tokens):
 
     if polar:
         return cmath.rect(get_real(tokens), get_real(polar[0]))
-    if tokens and tokens[-1].text.lower() == 'i':
+    elif tokens and tokens[-1].text.lower() == 'i':
         return get_complex(tokens)
     return get_real(tokens)
 
