@@ -37,7 +37,12 @@ sys.path.insert(0, '.')
 def scheme_numbers():
     """Test scheme numbers."""
     from parce.lang.scheme import scheme_number_from_text as s
+
+    # common value
     assert s("123") == 123
+
+    # octal
+    assert s('#o30071') == 12345
 
     # fractions inside hex :-)
     assert s('#xdead/beef') == fractions.Fraction(57005, 48879)
