@@ -2,7 +2,7 @@ ChangeLog
 =========
 
 
-current: parce-0.22.0
+2021-02-16: parce-0.22.0
 
 - general code cleanup and improvements
 - transform: add Items.arg, so a transform can access the lexicon argument
