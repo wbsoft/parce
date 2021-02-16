@@ -28,7 +28,7 @@ number syntax. See for more information:
 
 """
 
-__all__ = ('Scheme', 'SchemeLily')
+__all__ = ('Scheme', 'SchemeLily', 'scheme_number')
 
 import re
 
@@ -70,11 +70,11 @@ class Scheme(Language):
         yield r"#\\([a-z]+|.)", Character, pop
         yield RE_SCHEME_ID, cls.get_word_action(), pop
 
-        yield r'(#[eEiI])?(#([bBoOxXdD]))', findmember(MATCH[3], (
-            ('bB', (bygroup(Number.Prefix, Number.Binary.Prefix), pop, cls.number(2))),
-            ('oO', (bygroup(Number.Prefix, Number.Octal.Prefix), pop, cls.number(8))),
-            ('xX', (bygroup(Number.Prefix, Number.Hexadecimal.Prefix), pop, cls.number(16)))),
-               (bygroup(Number.Prefix, Number.Decimal.Prefix), pop, cls.number))
+        yield r'(#[eEiI])?(#([bBoOxXdD]))(#[eEiI])?', findmember(MATCH[3], (
+            ('bB', (bygroup(Number.Prefix, Number.Prefix.Binary, skip, Number.Prefix), pop, cls.number(2))),
+            ('oO', (bygroup(Number.Prefix, Number.Prefix.Octal, skip, Number.Prefix), pop, cls.number(8))),
+            ('xX', (bygroup(Number.Prefix, Number.Prefix.Hexadecimal, skip, Number.Prefix), pop, cls.number(16)))),
+               (bygroup(Number.Prefix, Number.Prefix.Decimal, skip, Number.Prefix), pop, cls.number))
         yield r'#[eEiI]', Number.Prefix, pop, cls.number
         yield r'[-+]inf.0', Number.Infinity, pop, cls.number
         yield r'[-+]nan.0', Number.NaN, pop, cls.number
@@ -161,4 +161,143 @@ class SchemeLily(Scheme):
         from . import lilypond
         yield r"#{", Bracket.LilyPond.Start, pop, lilypond.LilyPond.schemelily
         yield from super().common(pop)
+
+
+def scheme_number(tokens):
+    """Return the Python value of the Scheme number in the specified tokens
+    iterable.
+
+    All ``tokens`` that can be in the :meth:`Scheme.number` context are
+    supported. Supports all features: nan, +/- inf, fractions, exactness,
+    complex numbers and polar coordinates.
+
+    Raises ValueError or ZeroDivisionError on faulty input.
+
+    """
+
+    import cmath, fractions, math
+    from parce.util import split_list
+
+
+    radix = 10
+    exact = None
+    tokens = list(tokens)
+
+    _radix_map = {'b': 2, 'o': 8, 'd': 10, 'x': 16}
+
+
+    def get_uint(tokens):
+        """Get an unsigned integer from the tokens.
+
+        Returns a float when there were unknown digits (``#``) and there was
+        no exact prefix (``#e``)
+
+        """
+        v = 0
+        for t in tokens:
+            if t.action in (Number.Decimal, Number.Binary, Number.Octal, Number.Hexadecimal):
+                v = int(t.text, radix)
+            elif t.action is Number.Special.UnknownDigit:
+                v *= radix * len(t.text)
+                return float(v) if not exact else v
+            else:
+                break
+        return v
+
+    def get_decimal10(tokens):
+        """Get a decimal10 value from the tokens. Only called in decimal mode."""
+        v = []
+        e = True
+        i, z = 0, len(tokens)
+        while i < z:
+            t = tokens[i]
+            if t.action is Number.Decimal:
+                v.append(t.text)
+            elif t.action is Number.Special.UnknownDigit:
+                v.append('0' * len(t.text))
+            elif t.action is Number.Dot:
+                if '.' not in v:
+                    v.append('.')
+                    e = False
+            elif t.action is Number.Exponent:
+                v.append('e')
+                e = False
+                i += 1
+                while i < z:
+                    t = tokens[i]
+                    if t.action is Operator.Sign:
+                        v.append(t.text)
+                    elif t.action is Number.Decimal:
+                        v.append(t.text)
+                        break
+                    else:
+                        break
+                    i += 1
+            i += 1
+        s = ''.join(v)
+        if e:
+            return float(s) if exact is False else int(s)
+        return fractions.Fraction(s) if exact else float(s)
+
+    def get_real(tokens):
+        """Return a real value from the tokens (can be int, float or Fraction.)."""
+        # get a sign, inf or nan
+        i, z = 0, len(tokens)
+        sign = 1
+        while i < z:
+            t = tokens[i]
+            if t.action is Operator.Sign:
+                if t == '-':
+                    sign *= -1
+            elif t.action is Number.Infinity:
+                return math.inf if t.text[0] == '+' else -math.inf
+            elif t.action is Number.Nan:
+                return math.nan
+            else:
+                break
+            i += 1
+        # now, get either uint, uint/uint or decimal10
+        tokens, *fract = split_list(tokens[i:], '/')
+        if fract:
+            numerator = get_uint(tokens)
+            denominator = get_uint(fract[0])
+            if isinstance(numerator, float) or isinstance(denominator, float) or exact is False:
+                v = numerator / denominator
+            else:
+                v = fractions.Fraction(numerator, denominator)
+        elif radix == 10:
+            v = get_decimal10(tokens)
+        else:
+            v = get_uint(tokens)
+        return sign * v
+
+    def get_complex(tokens):
+        """Return a complex value from the tokens."""
+
+
+    ### main function body
+
+    # get the prefixes
+    i, z = 0, len(tokens)
+    while i < z:
+        t = tokens[i]
+        if t.action in Number.Prefix:
+            p = t.text[1].lower()
+            if p == 'i':
+                exact = False
+            elif p == 'e':
+                exact = True
+            else:
+                radix = _radix_map[p]
+        else:
+            break
+        i += 1
+
+    tokens, *polar = split_list(tokens[i:], '@')
+
+    if polar:
+        return cmath.rect(get_real(tokens), get_real(polar[0]))
+    if tokens and tokens[-1].text.lower() == 'i':
+        return get_complex(tokens)
+    return get_real(tokens)
 
