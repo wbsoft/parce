@@ -596,7 +596,7 @@ class LilyPond(Language):
     @classmethod
     def find_scheme(cls, *extra_target):
         """Find scheme."""
-        yield (r'[#$]', Delimiter.ModeChange.SchemeStart, *extra_target, cls.get_scheme_target())
+        yield (r'[#$]@?', Delimiter.ModeChange.SchemeStart, *extra_target, cls.get_scheme_target())
 
     @classmethod
     def get_scheme_target(cls):
