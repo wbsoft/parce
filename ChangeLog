@@ -2,6 +2,12 @@ ChangeLog
 =========
 
 
+current: parce-0.23.0
+
+- scheme: fixed shorthand complex notations like 0+i, -i etc.
+- lilypond: recognize $@ and #@ as Scheme starters
+
+
 2021-02-16: parce-0.22.0
 
 - general code cleanup and improvements
