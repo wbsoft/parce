@@ -43,7 +43,7 @@ import parce.util
 
 
 class Item(collections.namedtuple("Item", "name obj")):
-    """A named tuple(name, obj) wrapping the return value of a Tranform method.
+    """A named tuple(name, obj) wrapping the return value of a Transform method.
 
     The `name` attribute is the name of the Lexicon and transform method that
     created the object `obj`. To make it easier to distinguish an Item from a

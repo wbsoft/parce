@@ -21,29 +21,27 @@
 """
 This module defines the tree structure a text is parsed into.
 
-A tree consists of Context and Token objects.
+A tree consists of Context and Token objects. (Both inherit from the base
+class Node, which defines the shared methods and properties.)
 
-A Context is a list containing Tokens and other Contexts. A Context is created
-when a lexicon becomes active. A Context knows its parent Context and its
-lexicon.
+A :class:`Context` is a list containing Tokens and other Contexts. A Context is
+created when a lexicon becomes active. A Context knows its parent Context and
+its lexicon.
 
-A Token represents one parsed piece of text. A Token is created when a rule in
-the lexicon matches. A Token knows its parent Context, its position in the text
-and the action that was specified in the rule.
+A :class:`Token` represents one parsed piece of text. A Token is created when a
+rule in the lexicon matches. A Token knows its parent Context, its position in
+the text and the action that was specified in the rule.
 
-The root Context is always one, and it represents the root lexicon. A Context
-is always non-empty, except for the root Context, which is empty if the
-document did not generate a single token.
+A Context is always non-empty, except for the root Context, which represents
+the root lexicon and can be empty if the document did not generate a single
+token.
 
-The tree structure is very easy to navigate, no special objects or iterators
-are necessary for that.
-
-To find a token at a certain position in a context, use find_token() and its
-relatives. From every token you can iterate forward() and backward(). Use the
-methods like left_siblings() and right_siblings() to traverse the current
-context.
-
-See also the documentation for Token and Context.
+The tree structure is easy to navigate, no special objects or iterators are
+necessary for that. To find a token at a certain position in a context, use
+:meth:`Context.find_token` and its relatives. From every node you can iterate
+:meth:`~Node.forward` and :meth:`~Node.backward`. Use the methods like
+:meth:`~Node.left_siblings` and :meth:`~Node.right_siblings` to traverse the
+current context.
 
 """
 
