@@ -821,7 +821,15 @@ class Context(list, Node):
     def find_token_with_trail(self, pos):
         """Return the Token at or to the right of position, and the trail of indices.
 
-        Returns (None, None) if there is no such token.
+        The trail is the list of indices where the token was found. Returns
+        (None, None) if there is no such token. Here is an example::
+
+            >>> import parce
+            >>> tree = parce.root(parce.find('css'), open('parce/themes/default.css').read())
+            >>> tree.find_token_with_trail(600)
+            (<Token ' Selected te...ow has focus ' at 566:607 (Comment)>, [21, 0])
+            >>> tree[21][0]
+            <Token ' Selected te...ow has focus ' at 566:607 (Comment)>
 
         """
         i = self.find(pos)
