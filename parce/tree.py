@@ -1040,7 +1040,7 @@ class Context(list, Node):
 def make_tokens(event, parent=None):
     """Factory returning a tuple of one or more Token instances for the event.
 
-    The event is an Event namedtuple defined in the mod:`~parce.lexer` module.
+    The event is an Event namedtuple defined in the :mod:`~parce.lexer` module.
     If the event contains more than one lexeme, GroupToken instances are
     created.
 
