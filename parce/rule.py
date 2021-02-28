@@ -90,7 +90,7 @@ def select(index, *items):
 
     In most use cases the index will be the result of a predicate function,
     which returns an integer value (or True or False, which evaluate to 1 and 0,
-    repectively).
+    respectively).
 
     The following example rule yield tokens for any word, giving it the Keyword
     action when the matched text could be found in the keywords_list, and

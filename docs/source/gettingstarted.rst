@@ -56,10 +56,12 @@ encapsulates the parsing of text using the rules supplied in the function.
 
 When parsing starts for the first time, the function is called to get the
 rules. Each rule consists of two or more parts: First the *pattern*, then the
-*action*, and optionally one or more *targets*. A target is either a reference
-to another lexicon, or a number like 1 or -1. Another lexicon is pushed onto
-the stack, and a number like -1 is used to pop the lexicon off the stack, so
-that the previous lexicon takes over parsing again.
+*action*, and optionally one or more *targets*. The pattern is a regular
+expression string; the action may be anything, giving a meaning to the matched
+text. A target is either a reference to another lexicon, or a number like 1 or
+-1. Another lexicon is pushed onto the stack, and a number like -1 is used to
+pop the lexicon off the stack, so that the previous lexicon takes over parsing
+again.
 
 Parsing text using our language
 -------------------------------
