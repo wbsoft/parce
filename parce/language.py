@@ -48,6 +48,9 @@ class Language(metaclass=_LanguageType):
     and can be inherited from.
 
     """
+    def __new__(cls):
+        raise RuntimeError('Language should never be instantiated')
+
 
     @classmethod
     def comment_common(cls):

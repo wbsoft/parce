@@ -99,8 +99,6 @@ class LexiconDescriptor:
 
     def __get__(self, instance, owner):
         """Called when accessed as a descriptor, via the Language class."""
-        if instance:
-            raise RuntimeError('Language should never be instantiated')
         return self._lexicons[owner]
 
 
