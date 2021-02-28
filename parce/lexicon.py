@@ -95,23 +95,13 @@ class LexiconDescriptor:
         self.rules_func = rules_func    #: the function yielding the rules
         self._re_flags = re_flags
         self._consume = consume
-        self._lexicons = {}
-        self._lock = threading.Lock()
+        self._lexicons = util.caching_dict(lambda owner: Lexicon(self, owner))
 
     def __get__(self, instance, owner):
         """Called when accessed as a descriptor, via the Language class."""
         if instance:
             raise RuntimeError('Language should never be instantiated')
-        try:
-            return self._lexicons[owner]
-        except KeyError:
-            # prevent instantiating the same Lexicon multiple times
-            with self._lock:
-                try:
-                    lexicon = self._lexicons[owner]
-                except KeyError:
-                    lexicon = self._lexicons[owner] = Lexicon(self, owner)
-                return lexicon
+        return self._lexicons[owner]
 
 
 class Lexicon:
