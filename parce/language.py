@@ -51,7 +51,6 @@ class Language(metaclass=_LanguageType):
     def __new__(cls):
         raise RuntimeError('Language should never be instantiated')
 
-
     @classmethod
     def comment_common(cls):
         """Provides subtle highlighting within comments.
