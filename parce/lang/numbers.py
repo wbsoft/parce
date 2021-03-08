@@ -32,7 +32,7 @@ from parce.rule import words
 from parce.transform import Transform
 
 
-__all__ = ("English", "ENGLISH_TENS", "ENGLISH_TO19")
+__all__ = ("English", "EnglishTransform", "ENGLISH_TENS", "ENGLISH_TO19")
 
 
 ENGLISH_TO19 = (
@@ -138,8 +138,7 @@ class EnglishTransform(Transform):
 
     def n99(self, items):
         """The numerical value of a text string."""
-        for t in items:
-            return _VALUES[t.text.lower()]
+        return _VALUES[items[0].text.lower()]
 
     p1 = n99
 
