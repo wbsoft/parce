@@ -2,10 +2,13 @@ ChangeLog
 =========
 
 
-current: parce-0.23.0
+2021-03-08: parce-0.23.0
 
+- added lang.numbers to parse english numbers
+- lexer: only advance position in circular target when pushing
 - scheme: fixed shorthand complex notations like 0+i, -i etc.
 - lilypond: recognize $@ and #@ as Scheme starters
+- small improvements and documentation improvements
 
 
 2021-02-16: parce-0.22.0
