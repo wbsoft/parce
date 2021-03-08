@@ -155,7 +155,7 @@ class Lexer:
                             del lexicons[target.pop:]
                         state = (pos, len(lexicons), len(target.push))
                         if state in circular:
-                            if pos < len(text):
+                            if target.push and pos < len(text):
                                 pos += 1
                             circular.clear()
                         else:
