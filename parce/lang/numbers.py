@@ -32,22 +32,25 @@ from parce.rule import words
 from parce.transform import Transform
 
 
-EN_TO_19 = (
+__all__ = ("English", "ENGLISH_TENS", "ENGLISH_TO19")
+
+
+ENGLISH_TO19 = (
     'zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight',
     'nine', 'ten', 'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen',
     'sixteen', 'seventeen', 'eighteen', 'nineteen',
 )
 
-EN_TENFOLDS = (
+ENGLISH_TENS = (
     'twenty', 'thirty', 'forty', 'fifty', 'sixty', 'seventy', 'eighty',
     'ninety',
 )
 
-SKIP = r'[\s-]+', skip
+_SKIP = r'[\s-]+', skip
 
-EN_VALUES = {}
-EN_VALUES.update((t, n) for n, t in enumerate(EN_TO_19))
-EN_VALUES.update((t, n * 10) for n, t in enumerate(EN_TENFOLDS, 2))
+_VALUES = {}
+_VALUES.update((t, n) for n, t in enumerate(ENGLISH_TO19))
+_VALUES.update((t, n * 10) for n, t in enumerate(ENGLISH_TENS, 2))
 
 
 class English(Language):
@@ -65,36 +68,36 @@ class English(Language):
     @lexicon(re_flags=re.IGNORECASE)
     def n99(cls):
         """Numerical value below 100."""
-        yield SKIP
-        yield words(EN_TENFOLDS), Number, -1, cls.p1
-        yield words(EN_TO_19), Number, -1
+        yield _SKIP
+        yield words(ENGLISH_TENS), Number, -1, cls.p1
+        yield words(ENGLISH_TO19), Number, -1
         yield default_target, -1
 
     @lexicon(re_flags=re.IGNORECASE)
     def p1(cls):
         """Numerical value after a tenfold (e.g. 'three' after 'eighty')."""
-        yield SKIP
-        yield words(EN_TO_19[1:10]), Number, -1
+        yield _SKIP
+        yield words(ENGLISH_TO19[1:10]), Number, -1
         yield default_target, -1
 
     @lexicon(re_flags=re.IGNORECASE)
     def p2(cls):
         """'Hundred' or values below 100."""
-        yield SKIP
+        yield _SKIP
         yield "hundred", Number, -1, cls.n99
         yield default_target, -1
 
     @lexicon(re_flags=re.IGNORECASE)
     def p3(cls):
         """'Thousand' or values below 1000."""
-        yield SKIP
+        yield _SKIP
         yield "thousand", Number, -1, cls.p2, cls.n99
         yield default_target, -1
 
     @lexicon(re_flags=re.IGNORECASE)
     def p6(cls):
         """'Million' or values below 1000000."""
-        yield SKIP
+        yield _SKIP
         yield "million", Number, -1, cls.p3, cls.p2, cls.n99
         yield default_target, -1
 
@@ -125,14 +128,17 @@ class EnglishTransform(Transform):
 
     """
     def root(self, items):
+        """The list of numbers."""
         return [i.obj for i in items]
 
     def number(self, items):
+        """A number."""
         return sum(i.obj for i in items)
 
     def n99(self, items):
+        """The numerical value of a text string."""
         for t in items:
-            return EN_VALUES[t.text]
+            return _VALUES[t.text.lower()]
 
     p1 = n99
 
@@ -146,6 +152,7 @@ class EnglishTransform(Transform):
                 else:
                     values.append(i.obj)
             return sum(values)
+        p.__doc__ = "The value {0} or the sum of nested values below {0}.".format(factor)
         return p
 
     p2 = _factor_func(100)
