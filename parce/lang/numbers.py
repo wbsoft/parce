@@ -107,22 +107,23 @@ class EnglishTransform(Transform):
 
     The result is a list of the numbers that were found. Whitespace and
     hyphens are skipped; multiple values are automatically detected.
+    Case does not matter.
 
     For example::
 
         >>> from parce.transform import transform_text
         >>> from parce.lang.numbers import English
-        >>> transform_text(English.root, "one two three")
+        >>> transform_text(English.root, "one two THREE")
         [1, 2, 3]
         >>> transform_text(English.root, "fiftysix")
         [56]
-        >>> transform_text(English.root, "fiftysixthousandsevenhundredeightynine")
+        >>> transform_text(English.root, "FiftySixThousandSevenHundredEightyNine")
         [56789]
         >>> transform_text(English.root, "twelve hundred thirty four")
         [1234]
         >>> transform_text(English.root, "twelve hundred thirty four five")
         [1234, 5]
-        >>> transform_text(English.root, "twelve hundred thirty four twenty five")
+        >>> transform_text(English.root, "Twelve Hundred Thirty Four Twenty Five")
         [1234, 25]
 
 
