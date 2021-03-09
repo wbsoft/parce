@@ -38,35 +38,40 @@ __all__ = (
     "Deutsch", "DeutschTransform", "DEUTSCH_TENS", "DEUTSCH_TO19",
 )
 
-
+#: English numerals from 0 to 19
 ENGLISH_TO19 = (
     'zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight',
     'nine', 'ten', 'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen',
     'sixteen', 'seventeen', 'eighteen', 'nineteen',
 )
 
+#: English tens from 20 upto and including 90
 ENGLISH_TENS = (
     'twenty', 'thirty', 'forty', 'fifty', 'sixty', 'seventy', 'eighty',
     'ninety',
 )
 
+#: Dutch numerals from 0 to 19
 NEDERLANDS_TO19 = (
     'nul', 'een', 'twee', 'drie', 'vier', 'vijf', 'zes', 'zeven', 'acht',
     'negen', 'tien', 'elf', 'twaalf', 'dertien', 'veertien', 'vijftien',
     'zestien', 'zeventien', 'achttien', 'negentien',
 )
 
+#: Dutch tens from 20 upto and including 90
 NEDERLANDS_TENS = (
     'twintig', 'dertig', 'veertig', 'vijftig', 'zestig', 'zeventig', 'tachtig',
     'negentig',
 )
 
+#: German numerals from 0 to 19
 DEUTSCH_TO19 = (
     'null', 'ein', 'zwei', 'drei', 'vier', 'fünf', 'sechs', 'sieben', 'acht',
     'neun', 'zehn', 'elf', 'zwölf', 'dreizehn', 'vierzehn', 'fünfzehn',
     'sechzehn', 'siebzehn', 'achtzehn', 'neunzehn',
 )
 
+#: German tens from 20 upto and including 90
 DEUTSCH_TENS = (
     'zwanzig', 'dreißig', 'vierzig', 'fünfzig', 'sechzig', 'siebzig', 'achtzig',
     'neunzig',
@@ -86,9 +91,9 @@ def _values(tens, to19):
 class _Numbers(Language):
     """Parse numbers from text in different languages."""
 
-    TO19 = ()
-    TENS = ()
-    HUNDRED = THOUSAND = MILLION = ''
+    _TO19 = ()
+    _TENS = ()
+    _HUNDRED = _THOUSAND = _MILLION = ''
 
     @lexicon
     def root(cls):
@@ -108,21 +113,21 @@ class _Numbers(Language):
     def p2(cls):
         """'Hundred' or values below 100."""
         yield _SKIP
-        yield cls.HUNDRED, Number, -1, cls.n99
+        yield cls._HUNDRED, Number, -1, cls.n99
         yield default_target, -1
 
     @lexicon(re_flags=re.IGNORECASE)
     def p3(cls):
         """'Thousand' or values below 1000."""
         yield _SKIP
-        yield cls.THOUSAND, Number, -1, cls.p2, cls.n99
+        yield cls._THOUSAND, Number, -1, cls.p2, cls.n99
         yield default_target, -1
 
     @lexicon(re_flags=re.IGNORECASE)
     def p6(cls):
         """'Million' or values below 1000000."""
         yield _SKIP
-        yield cls.MILLION, Number, -1, cls.p3, cls.p2, cls.n99
+        yield cls._MILLION, Number, -1, cls.p3, cls.p2, cls.n99
         yield default_target, -1
 
 
@@ -132,7 +137,7 @@ class _NumbersTransform(Transform):
     Creates a list of the numbers that were found.
 
     """
-    VALUES = {}
+    _VALUES = {}
 
     def root(self, items):
         """The list of numbers."""
@@ -144,7 +149,7 @@ class _NumbersTransform(Transform):
 
     def n99(self, items):
         """The numerical value of a text string."""
-        return self.VALUES[items[0].text.lower()]
+        return self._VALUES[items[0].text.lower()]
 
     def _factor_func(factor):
         """Return the method to use for the specified factor."""
@@ -168,23 +173,23 @@ class _NumbersTransform(Transform):
 
 class English(_Numbers):
     """Parse English numbers."""
-    TENS = ENGLISH_TENS
-    TO19 = ENGLISH_TO19
-    HUNDRED, THOUSAND, MILLION = "hundred", "thousand", "million"
+    _TENS = ENGLISH_TENS
+    _TO19 = ENGLISH_TO19
+    _HUNDRED, _THOUSAND, _MILLION = "hundred", "thousand", "million"
 
     @lexicon(re_flags=re.IGNORECASE)
     def n99(cls):
         """Numerical value below 100."""
         yield _SKIP
-        yield words(cls.TENS), Number, -1, cls.p1
-        yield words(cls.TO19), Number, -1
+        yield words(cls._TENS), Number, -1, cls.p1
+        yield words(cls._TO19), Number, -1
         yield default_target, -1
 
     @lexicon(re_flags=re.IGNORECASE)
     def p1(cls):
         """Numerical value after a tenfold (e.g. 'three' after 'eighty')."""
         yield _SKIP
-        yield words(cls.TO19[1:10]), Number, -1
+        yield words(cls._TO19[1:10]), Number, -1
         yield default_target, -1
 
 
@@ -213,27 +218,27 @@ class EnglishTransform(_NumbersTransform):
         [1234, 25]
 
     """
-    VALUES = _values(ENGLISH_TENS, ENGLISH_TO19)
+    _VALUES = _values(ENGLISH_TENS, ENGLISH_TO19)
 
     p1 = _NumbersTransform.n99
 
 
 class Nederlands(_Numbers):
     """Parse Dutch numbers."""
-    TENS = NEDERLANDS_TENS
-    TO19 = NEDERLANDS_TO19
-    HUNDRED, THOUSAND, MILLION = "honderd", "duizend", "miljoen"
+    _TENS = NEDERLANDS_TENS
+    _TO19 = NEDERLANDS_TO19
+    _HUNDRED, _THOUSAND, _MILLION = "honderd", "duizend", "miljoen"
 
     @lexicon(re_flags=re.IGNORECASE)
     def n99(cls):
         """Numerical value below 100."""
         yield _SKIP
-        yield words(cls.TO19[10:]), Number, -1
+        yield words(cls._TO19[10:]), Number, -1
         yield r'({})(?:\s*[eë]n\s*({}))?'.format(
-            words(cls.TO19[1:10]),
-            words(cls.TENS)), bygroup(Number, Number), -1
-        yield words(cls.TENS), Number, -1
-        yield cls.TO19[0], Number, -1
+            words(cls._TO19[1:10]),
+            words(cls._TENS)), bygroup(Number, Number), -1
+        yield words(cls._TENS), Number, -1
+        yield cls._TO19[0], Number, -1
         yield default_target, -1
 
 
@@ -262,11 +267,11 @@ class NederlandsTransform(_NumbersTransform):
         [1234, 25]
 
     """
-    VALUES = _values(NEDERLANDS_TENS, NEDERLANDS_TO19)
+    _VALUES = _values(NEDERLANDS_TENS, NEDERLANDS_TO19)
 
     def n99(self, items):
         """The numerical value (below 100) of a text string."""
-        return sum(self.VALUES[i.text.lower()] for i in items)
+        return sum(self._VALUES[i.text.lower()] for i in items)
 
 
 class Deutsch(_Numbers):
@@ -276,20 +281,20 @@ class Deutsch(_Numbers):
     ``'dreissig'`` is supported.
 
     """
-    TENS = DEUTSCH_TENS
-    TO19 = DEUTSCH_TO19
-    HUNDRED, THOUSAND, MILLION = "hundert", "tausend", "million"
+    _TENS = DEUTSCH_TENS
+    _TO19 = DEUTSCH_TO19
+    _HUNDRED, _THOUSAND, _MILLION = "hundert", "tausend", "million"
 
     @lexicon(re_flags=re.IGNORECASE)
     def n99(cls):
         """Numerical value below 100."""
         yield _SKIP
-        TENS = cls.TENS + ('dreissig',)
-        yield words(cls.TO19[10:]), Number, -1
+        TENS = cls._TENS + ('dreissig',)
+        yield words(cls._TO19[10:]), Number, -1
         yield r'({})(?:\s*und\s*({}))?'.format(
-            words(cls.TO19[1:10]),
+            words(cls._TO19[1:10]),
             words(TENS)), bygroup(Number, Number), -1
-        yield words(TENS + cls.TO19[:1] + ('eins',)), Number, -1
+        yield words(TENS + cls._TO19[:1] + ('eins',)), Number, -1
         yield default_target, -1
 
 
@@ -305,6 +310,8 @@ class DeutschTransform(_NumbersTransform):
 
     For example::
 
+        >>> from parce.transform import transform_text
+        >>> from parce.lang.numbers import Deutsch
         >>> transform_text(Deutsch.root, "ein zwei DREI")
         [1, 2, 3]
         >>> transform_text(Deutsch.root, "eins zwei DREI")
@@ -321,12 +328,12 @@ class DeutschTransform(_NumbersTransform):
         [1234, 25]
 
     """
-    VALUES = _values(DEUTSCH_TENS, DEUTSCH_TO19)
-    VALUES['eins'] = VALUES['ein']
-    VALUES['dreissig'] = VALUES['dreißig']
+    _VALUES = _values(DEUTSCH_TENS, DEUTSCH_TO19)
+    _VALUES['eins'] = _VALUES['ein']
+    _VALUES['dreissig'] = _VALUES['dreißig']
 
     def n99(self, items):
         """The numerical value (below 100) of a text string."""
-        return sum(self.VALUES[i.text.lower()] for i in items)
+        return sum(self._VALUES[i.text.lower()] for i in items)
 
 
