@@ -352,6 +352,12 @@ class DeutschTransform(_NumbersTransform):
 
 
 class Francais(_Numbers):
+    """Parse French numbers.
+
+    Supports both ``'zéro'`` and ``'zero'``, and allows for the ``'s'`` after
+    ``"quatre-vingt"``, ``"cent"``, ``"million"``.
+
+    """
     _TENS = FRANCAIS_TENS
     _TO19 = FRANCAIS_TO19
     _HUNDRED, _THOUSAND, _MILLION = "cent", "mille", "million"
@@ -388,6 +394,9 @@ class Francais(_Numbers):
 
 class FrancaisTransform(_NumbersTransform):
     """Compute the value for French numbers.
+
+    Supports both ``'zéro'`` and ``'zero'``, and allows for the ``'s'`` after
+    ``"quatre-vingt"``, ``"cent"``, ``"million"``.
 
     The result is a list of the numbers that were found. Whitespace and
     hyphens are skipped; multiple values are automatically detected.
