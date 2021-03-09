@@ -36,7 +36,7 @@ __all__ = (
     "English", "EnglishTransform", "ENGLISH_TENS", "ENGLISH_TO19",
     "Nederlands", "NederlandsTransform", "NEDERLANDS_TENS", "NEDERLANDS_TO19",
     "Deutsch", "DeutschTransform", "DEUTSCH_TENS", "DEUTSCH_TO19",
-    "Francais", "FRANCAIS_TENS", "FRANCAIS_TO19",
+    "Francais", "FrancaisTransform", "FRANCAIS_TENS", "FRANCAIS_TO19",
 )
 
 #: English numerals from 0 to 19
@@ -360,7 +360,7 @@ class Francais(_Numbers):
     """
     _TENS = FRANCAIS_TENS
     _TO19 = FRANCAIS_TO19
-    _HUNDRED, _THOUSAND, _MILLION = "cent", "mille", "million"
+    _HUNDRED, _THOUSAND, _MILLION = "cents?", "mille", "millions?"
 
     @lexicon(re_flags=re.IGNORECASE)
     def n99(cls):
@@ -375,20 +375,6 @@ class Francais(_Numbers):
             words(tens), words(cls._TO19[1:10])), bygroup(Number, Number), -1
         yield words(cls._TO19), Number, -1
         yield words(('quatre-vingts', 'zero')), Number, -1
-        yield default_target, -1
-
-    @lexicon(re_flags=re.IGNORECASE)
-    def p2(cls):
-        """'Cent(s)' or values below 100."""
-        yield _SKIP
-        yield 'cents?', Number, -1, cls.n99
-        yield default_target, -1
-
-    @lexicon(re_flags=re.IGNORECASE)
-    def p6(cls):
-        """'Million(s)' or values below 1000000."""
-        yield _SKIP
-        yield 'millions?', Number, -1, cls.p3, cls.p2, cls.n99
         yield default_target, -1
 
 
