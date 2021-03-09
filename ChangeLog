@@ -2,6 +2,12 @@ ChangeLog
 =========
 
 
+current: parce-0.24.0
+
+- added test module for lang.numbers
+- added Nederlands and Deutch to lang.numbers
+
+
 2021-03-08: parce-0.23.0
 
 - added lang.numbers to parse english numbers
