@@ -36,6 +36,7 @@ __all__ = (
     "English", "EnglishTransform", "ENGLISH_TENS", "ENGLISH_TO19",
     "Nederlands", "NederlandsTransform", "NEDERLANDS_TENS", "NEDERLANDS_TO19",
     "Deutsch", "DeutschTransform", "DEUTSCH_TENS", "DEUTSCH_TO19",
+    "Francais", "FRANCAIS_TENS", "FRANCAIS_TO19",
 )
 
 #: English numerals from 0 to 19
@@ -75,6 +76,19 @@ DEUTSCH_TO19 = (
 DEUTSCH_TENS = (
     'zwanzig', 'dreißig', 'vierzig', 'fünfzig', 'sechzig', 'siebzig', 'achtzig',
     'neunzig',
+)
+
+#: French numerals from 0 to 19
+FRANCAIS_TO19 = (
+    'zéro', 'un', 'deux', 'trois', 'quatre', 'cinq', 'six', 'sept', 'huit',
+    'neuf', 'dix', 'onze', 'douze', 'treize', 'quatorze', 'quinze',
+    'seize', 'dix-sept', 'dix-huit', 'dix-neuf',
+)
+
+#: French tens from 20 upto and including 90
+FRANCAIS_TENS = (
+    'vingt', 'trente', 'quarante', 'cinquante', 'soixante', 'soixante-dix',
+    'quatre-vingt', 'quatre-vingt-dix',
 )
 
 _SKIP = r'[\s-]+', skip
@@ -336,4 +350,72 @@ class DeutschTransform(_NumbersTransform):
         """The numerical value (below 100) of a text string."""
         return sum(self._VALUES[i.text.lower()] for i in items)
 
+
+class Francais(_Numbers):
+    _TENS = FRANCAIS_TENS
+    _TO19 = FRANCAIS_TO19
+    _HUNDRED, _THOUSAND, _MILLION = "cent", "mille", "million"
+
+    @lexicon(re_flags=re.IGNORECASE)
+    def n99(cls):
+        """Numerical value below 100."""
+        yield _SKIP
+        tens = (cls._TENS[4], cls._TENS[6]) # soixante, quatre-vingt + 10-19
+        yield r'({})[\s-]*({})'.format(
+            words(tens), words(cls._TO19[1:10])), bygroup(Number, Number), -1
+        # vingt, treize, quatorze, cinquante, soixante, quatre-vingt (+ 0-9)
+        tens = cls._TENS[:5] + cls._TENS[6:7]
+        yield r'({})(?:[\s-]*(?:et)?[\s-]*({}))?'.format(
+            words(tens), words(cls._TO19[1:10])), bygroup(Number, Number), -1
+        yield words(cls._TO19), Number, -1
+        yield words(('quatre-vingts', 'zero')), Number, -1
+        yield default_target, -1
+
+    @lexicon(re_flags=re.IGNORECASE)
+    def p2(cls):
+        """'Cent(s)' or values below 100."""
+        yield _SKIP
+        yield 'cents?', Number, -1, cls.n99
+        yield default_target, -1
+
+    @lexicon(re_flags=re.IGNORECASE)
+    def p6(cls):
+        """'Million(s)' or values below 1000000."""
+        yield _SKIP
+        yield 'millions?', Number, -1, cls.p3, cls.p2, cls.n99
+        yield default_target, -1
+
+
+class FrancaisTransform(_NumbersTransform):
+    """Compute the value for French numbers.
+
+    The result is a list of the numbers that were found. Whitespace and
+    hyphens are skipped; multiple values are automatically detected.
+    Case does not matter.
+
+    For example::
+
+        >>> from parce.transform import transform_text
+        >>> from parce.lang.numbers import Francais
+        >>> transform_text(Francais.root, 'un deux TROIS')
+        [1, 2, 3]
+        >>> transform_text(Francais.root, 'cinquante-six')
+        [56]
+        >>> transform_text(Francais.root, 'cinquante-six mille sept-cents quatre-vingt neuf')
+        [56789]
+        >>> transform_text(Francais.root, 'mille deux cent trente-quatre')
+        [1234]
+        >>> transform_text(Francais.root, 'mille deux cent trente-quatre cinq')
+        [1234, 5]
+        >>> transform_text(Francais.root, 'mille deux cent trente-quatre vingt-cinq')
+        [1234, 25]
+
+    """
+    _VALUES = _values(FRANCAIS_TENS, FRANCAIS_TO19)
+    _VALUES['zero'] = _VALUES['zéro']
+    _VALUES['quatre-vingts'] = _VALUES['quatre-vingt']
+
+    def n99(self, items):
+        """The numerical value (below 100) of a text string."""
+        return sum(self._VALUES[i.text.lower()] for i in items)
 
