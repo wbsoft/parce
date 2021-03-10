@@ -162,8 +162,8 @@ class _NumbersTransform(Transform):
         return sum(i.obj for i in items)
 
     def n99(self, items):
-        """The numerical value of a text string."""
-        return self._VALUES[items[0].text.lower()]
+        """The numerical value (below 100) of a text string."""
+        return sum(self._VALUES[i.text.lower()] for i in items)
 
     def _factor_func(factor):
         """Return the method to use for the specified factor."""
@@ -283,10 +283,6 @@ class NederlandsTransform(_NumbersTransform):
     """
     _VALUES = _values(NEDERLANDS_TENS, NEDERLANDS_TO19)
 
-    def n99(self, items):
-        """The numerical value (below 100) of a text string."""
-        return sum(self._VALUES[i.text.lower()] for i in items)
-
 
 class Deutsch(_Numbers):
     """Parse German numbers.
@@ -345,10 +341,6 @@ class DeutschTransform(_NumbersTransform):
     _VALUES = _values(DEUTSCH_TENS, DEUTSCH_TO19)
     _VALUES['eins'] = _VALUES['ein']
     _VALUES['dreissig'] = _VALUES['dreißig']
-
-    def n99(self, items):
-        """The numerical value (below 100) of a text string."""
-        return sum(self._VALUES[i.text.lower()] for i in items)
 
 
 class Francais(_Numbers):
@@ -409,8 +401,4 @@ class FrancaisTransform(_NumbersTransform):
     _VALUES = _values(FRANCAIS_TENS, FRANCAIS_TO19)
     _VALUES['zero'] = _VALUES['zéro']
     _VALUES['quatre-vingts'] = _VALUES['quatre-vingt']
-
-    def n99(self, items):
-        """The numerical value (below 100) of a text string."""
-        return sum(self._VALUES[i.text.lower()] for i in items)
 
