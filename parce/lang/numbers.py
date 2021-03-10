@@ -20,7 +20,67 @@
 """
 Parse numerals in different languages.
 
-Use the accompanying Transform to get the parsed result.
+The Language definitions in this module do not make much sense for syntax
+highlighting, but can be used to read numbers from text in various languages,
+and serve as a proof-of-concept that nesting Contexts can be used to give a
+meaning to the contained text, which shows how *parce* can go beyond basic
+tokenizing.
+
+Here is an example, showing the nesting of the matched tokens (that all have
+the :obj:`~parce.action.Number` standard action)::
+
+    >>> from parce.lang.numbers import Deutsch, English, Francais, Nederlands
+    >>> from parce import root
+    >>> root(Nederlands.root, "eenentwintig").dump()
+    <Context Nederlands.root at 0-12 (1 child)>
+     ╰╴<Context Nederlands.number at 0-12 (1 child)>
+        ╰╴<Context Nederlands.p6 at 0-12 (1 child)>
+           ╰╴<Context Nederlands.p3 at 0-12 (1 child)>
+              ╰╴<Context Nederlands.p2 at 0-12 (1 child)>
+                 ╰╴<Context Nederlands.n99 at 0-12 (2 children)>
+                    ├╴<Token 'een' at 0:3 (Literal.Number)>
+                    ╰╴<Token 'twintig' at 5:12 (Literal.Number)>
+    >>> root(Nederlands.root, "twaalfhonderdeenentwintig").dump()
+    <Context Nederlands.root at 0-25 (1 child)>
+     ╰╴<Context Nederlands.number at 0-25 (1 child)>
+        ╰╴<Context Nederlands.p6 at 0-25 (1 child)>
+           ╰╴<Context Nederlands.p3 at 0-25 (2 children)>
+              ├╴<Context Nederlands.p2 at 0-13 (2 children)>
+              │  ├╴<Context Nederlands.n99 at 0-6 (1 child)>
+              │  │  ╰╴<Token 'twaalf' at 0:6 (Literal.Number)>
+              │  ╰╴<Token 'honderd' at 6:13 (Literal.Number)>
+              ╰╴<Context Nederlands.n99 at 13-25 (2 children)>
+                 ├╴<Token 'een' at 13:16 (Literal.Number)>
+                 ╰╴<Token 'twintig' at 18:25 (Literal.Number)>
+    >>> root(English.root, "FiftySixThousandSevenHundredEightyNine").dump()
+    <Context English.root at 0-38 (1 child)>
+     ╰╴<Context English.number at 0-38 (1 child)>
+        ╰╴<Context English.p6 at 0-38 (4 children)>
+           ├╴<Context English.p3 at 0-16 (2 children)>
+           │  ├╴<Context English.p2 at 0-8 (2 children)>
+           │  │  ├╴<Context English.n99 at 0-5 (1 child)>
+           │  │  │  ╰╴<Token 'Fifty' at 0:5 (Literal.Number)>
+           │  │  ╰╴<Context English.p1 at 5-8 (1 child)>
+           │  │     ╰╴<Token 'Six' at 5:8 (Literal.Number)>
+           │  ╰╴<Token 'Thousand' at 8:16 (Literal.Number)>
+           ├╴<Context English.p2 at 16-28 (2 children)>
+           │  ├╴<Context English.n99 at 16-21 (1 child)>
+           │  │  ╰╴<Token 'Seven' at 16:21 (Literal.Number)>
+           │  ╰╴<Token 'Hundred' at 21:28 (Literal.Number)>
+           ├╴<Context English.n99 at 28-34 (1 child)>
+           │  ╰╴<Token 'Eighty' at 28:34 (Literal.Number)>
+           ╰╴<Context English.p1 at 34-38 (1 child)>
+              ╰╴<Token 'Nine' at 34:38 (Literal.Number)>
+
+The accompanying Transform classes are used to get the parsed results. Multiple
+values are automatically detected (the result is always a list), and case does
+not matter. For example::
+
+    >>> from parce.transform import transform_text
+    >>> transform_text(English.root, "one two THREE")
+    [1, 2, 3]
+    >>> transform_text(Nederlands.root, "eenentwintig")
+    [21]
 
 """
 
@@ -36,7 +96,7 @@ __all__ = (
     "English", "EnglishTransform", "ENGLISH_TENS", "ENGLISH_TO19",
     "Nederlands", "NederlandsTransform", "NEDERLANDS_TENS", "NEDERLANDS_TO19",
     "Deutsch", "DeutschTransform", "DEUTSCH_TENS", "DEUTSCH_TO19",
-    "Francais", "FrancaisTransform", "FRANCAIS_TENS", "FRANCAIS_TO19",
+    "Français", "FrançaisTransform", "FRANCAIS_TENS", "FRANCAIS_TO19",
 )
 
 #: English numerals from 0 to 19
@@ -102,8 +162,8 @@ def _values(tens, to19):
     return d
 
 
-class _Numbers(Language):
-    """Parse numbers from text in different languages."""
+class Numbers(Language):
+    """Abstract base class to parse numbers from text in different languages."""
 
     _TO19 = ()
     _TENS = ()
@@ -145,10 +205,10 @@ class _Numbers(Language):
         yield default_target, -1
 
 
-class _NumbersTransform(Transform):
-    """Generic transform for numbers.
+class NumbersTransform(Transform):
+    """Abstract base class for a Transform for numbers.
 
-    Creates a list of the numbers that were found.
+    Creates a list of zero or more numbers that were found.
 
     """
     _VALUES = {}
@@ -185,7 +245,7 @@ class _NumbersTransform(Transform):
     del _factor_func
 
 
-class English(_Numbers):
+class English(Numbers):
     """Parse English numbers."""
     _TENS = ENGLISH_TENS
     _TO19 = ENGLISH_TO19
@@ -207,7 +267,7 @@ class English(_Numbers):
         yield default_target, -1
 
 
-class EnglishTransform(_NumbersTransform):
+class EnglishTransform(NumbersTransform):
     """Compute the value for English numbers.
 
     The result is a list of the numbers that were found. Whitespace and
@@ -234,10 +294,10 @@ class EnglishTransform(_NumbersTransform):
     """
     _VALUES = _values(ENGLISH_TENS, ENGLISH_TO19)
 
-    p1 = _NumbersTransform.n99
+    p1 = NumbersTransform.n99
 
 
-class Nederlands(_Numbers):
+class Nederlands(Numbers):
     """Parse Dutch numbers."""
     _TENS = NEDERLANDS_TENS
     _TO19 = NEDERLANDS_TO19
@@ -256,7 +316,7 @@ class Nederlands(_Numbers):
         yield default_target, -1
 
 
-class NederlandsTransform(_NumbersTransform):
+class NederlandsTransform(NumbersTransform):
     """Compute the value for Dutch numbers.
 
     The result is a list of the numbers that were found. Whitespace and
@@ -284,7 +344,7 @@ class NederlandsTransform(_NumbersTransform):
     _VALUES = _values(NEDERLANDS_TENS, NEDERLANDS_TO19)
 
 
-class Deutsch(_Numbers):
+class Deutsch(Numbers):
     """Parse German numbers.
 
     Both ``'ein'`` and ``eins`` are allowed, and besides ``'dreißig'`` also
@@ -308,7 +368,7 @@ class Deutsch(_Numbers):
         yield default_target, -1
 
 
-class DeutschTransform(_NumbersTransform):
+class DeutschTransform(NumbersTransform):
     """Compute the value for German numbers.
 
     Both ``'ein'`` and ``eins`` are allowed, and besides ``'dreißig'`` also
@@ -343,7 +403,7 @@ class DeutschTransform(_NumbersTransform):
     _VALUES['dreissig'] = _VALUES['dreißig']
 
 
-class Francais(_Numbers):
+class Français(Numbers):
     """Parse French numbers.
 
     Supports both ``'zéro'`` and ``'zero'``, and allows for the ``'s'`` after
@@ -370,7 +430,7 @@ class Francais(_Numbers):
         yield default_target, -1
 
 
-class FrancaisTransform(_NumbersTransform):
+class FrançaisTransform(NumbersTransform):
     """Compute the value for French numbers.
 
     Supports both ``'zéro'`` and ``'zero'``, and allows for the ``'s'`` after

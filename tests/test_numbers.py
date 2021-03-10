@@ -33,7 +33,7 @@ sys.path.insert(0, '.')
 
 def test_main():
     """Write stuff to test here."""
-    from parce.lang.numbers import English, Nederlands, Deutsch, Francais
+    from parce.lang.numbers import English, Nederlands, Deutsch, Français
     from parce.transform import transform_text
 
     assert transform_text(English.root, "one two THREE") == [1, 2, 3]
@@ -58,12 +58,12 @@ def test_main():
     assert transform_text(Deutsch.root, "Zwölfhundert Vierunddreissig Fünf") == [1234, 5]
     assert transform_text(Deutsch.root, "Zwölfhundert Vierunddreißig Fünf und Zwanzig") == [1234, 25]
 
-    assert transform_text(Francais.root, 'un deux TROIS') == [1, 2, 3]
-    assert transform_text(Francais.root, 'cinquante-six') == [56]
-    assert transform_text(Francais.root, 'cinquante-six mille sept-cents quatre-vingt neuf') == [56789]
-    assert transform_text(Francais.root, 'mille deux cent trente-quatre') == [1234]
-    assert transform_text(Francais.root, 'mille deux cent trente-quatre cinq') == [1234, 5]
-    assert transform_text(Francais.root, 'mille deux cent trente-quatre vingt-cinq') == [1234, 25]
+    assert transform_text(Français.root, 'un deux TROIS') == [1, 2, 3]
+    assert transform_text(Français.root, 'cinquante-six') == [56]
+    assert transform_text(Français.root, 'cinquante-six mille sept-cents quatre-vingt neuf') == [56789]
+    assert transform_text(Français.root, 'mille deux cent trente-quatre') == [1234]
+    assert transform_text(Français.root, 'mille deux cent trente-quatre cinq') == [1234, 5]
+    assert transform_text(Français.root, 'mille deux cent trente-quatre vingt-cinq') == [1234, 25]
 
 
 
