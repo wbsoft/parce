@@ -91,9 +91,11 @@ def get_languages(name):
     """
     modname = 'parce.lang.' + name
     mod = importlib.import_module(modname)
+    mod_all = getattr(mod, '__all__', None)
     for name, obj in mod.__dict__.items():
         if (isinstance(obj, type) and issubclass(obj, parce.Language)
                and not obj.__name__.startswith('_')
+               and (mod_all is None or name in mod_all)
                and obj is not parce.Language and obj.__module__ == modname):
             yield obj
 
