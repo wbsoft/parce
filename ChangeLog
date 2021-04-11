@@ -2,7 +2,7 @@ ChangeLog
 =========
 
 
-current: parce-0.24.0
+2021-04-11: parce-0.24.0
 
 - added test module for lang.numbers
 - added Nederlands, Francais and Deutsch to lang.numbers
