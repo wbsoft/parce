@@ -628,6 +628,15 @@ class Context(list, Node):
             return self.lexicon != other
         return other is not self
 
+    def __contains__(self, item):
+        """Reimplemented to test for a str or a Lexicon."""
+        if isinstance(item, str):
+            return any(n.text == item for n in self if isinstance(n, Token))
+        elif isinstance(item, Lexicon):
+            return any(n.lexicon == item for n in self if isinstance(n, Context))
+        else:
+            return list.__contains__(item)
+
     def copy(self, parent=None):
         """Return a copy of the context, but with the specified parent."""
         # a non-recursive implementation due to Python's recursion limits

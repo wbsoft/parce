@@ -643,7 +643,7 @@ class Query:
 
         """
         for n in self:
-            if self._inv ^ (n in what):
+            if self._inv ^ ((n.text if n.is_token else n.lexicon) in what):
                 yield n
 
     @query
