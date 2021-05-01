@@ -629,13 +629,16 @@ class Context(list, Node):
         return other is not self
 
     def __contains__(self, item):
-        """Reimplemented to test for a str or a Lexicon."""
-        if isinstance(item, str):
-            return any(n.text == item for n in self if isinstance(n, Token))
-        elif isinstance(item, Lexicon):
-            return any(n.lexicon == item for n in self if isinstance(n, Context))
-        else:
-            return list.__contains__(item)
+        """Reimplemented to be sure that `__eq__` is called on the Node.
+
+        Python 3.9 `list.__contains__` seems to call `__eq__` on the item, so
+        that searching using a `str` or a `Lexicon` failed.
+
+        """
+        for n in self:
+            if n == item:
+                return True
+        return False
 
     def copy(self, parent=None):
         """Return a copy of the context, but with the specified parent."""
