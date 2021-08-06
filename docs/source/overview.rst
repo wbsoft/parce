@@ -60,12 +60,12 @@ in.
 
 I created the transform module because Frescobaldi needs to provide the user
 also with a *musical* understanding of the LilyPond music text: it should
-convert the text document to a musical structure. Currently, this whole
-structure is invalidated on every single change of the text, and then rebuilt
-when requested. Using *parce*'s transform module, I can arrange it so that only
-the modified part of the text and the tokenized tree structure need to be
-re-transformed, smartly reusing intermediate transformed results from contexts
-that didn't change.
+convert the text document to a musical structure. In current Frescobaldi, this
+whole structure is invalidated on every single change of the text, and then
+rebuilt when requested. Using *parce*'s transform module, I can arrange it so
+that only the modified part of the text and the tokenized tree structure need
+to be re-transformed, smartly reusing intermediate transformed results from
+contexts that didn't change.
 
 Because this realtime, incrementally tokenizing and transforming is such a
 generic process, I decided to make *parce* a separate, generic Python package.
