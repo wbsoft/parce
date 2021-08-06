@@ -382,8 +382,6 @@ it easier in some cases to process the results:
 
 :meth:`~Query.dump`
     for debugging, dumps all resulting nodes to standard output
-:meth:`~Query.list`
-    aggregates the result set in a list.
 :meth:`~Query.count`
     returns the number of nodes in the result set.
 :meth:`~Query.pick`
