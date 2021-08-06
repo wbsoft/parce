@@ -85,11 +85,11 @@ A query is a generator, you can iterate over the results::
             print(atr)
 
 
-For debugging purposes, there are also the ``list()``, ``pick()``, ``count()``
-and ``dump()`` methods::
+For debugging purposes, there are also the ``list()`` construct, and the
+``pick()``, ``count()`` and ``dump()`` methods::
 
     root.query.all.action(Name.Tag)("img").count() # number of "img" tags
-    root.query.all.action(Name.Tag)("img").list()  # list of all "img" tag name tokens
+    list(root.query.all.action(Name.Tag)("img"))   # list of all "img" tag name tokens
 
 
 Note that a (partial) query can be reused, it simply restarts the iteration
@@ -97,7 +97,7 @@ over the results. The above could also be written as::
 
     q = root.query.all.action(Name.Tag)("img")
     q.count()   # number of "img" tags
-    q.list()    # list of all "img" tag name tokens
+    list(q)     # list of all "img" tag name tokens
 
 
 A query resolves to False if there is no single result::
@@ -120,7 +120,6 @@ Endpoint methods (some are mainly for debugging):
 
 :meth:`~Query.count`,
 :meth:`~Query.dump`,
-:meth:`~Query.list`,
 :meth:`~Query.pick`,
 :meth:`~Query.pick_last`,
 :meth:`~Query.range` and
@@ -256,10 +255,6 @@ class Query:
         """Dump the current selection to the console (or to file)."""
         for n in self:
             n.dump(file)
-
-    def list(self):
-        """Return the current selection as a list. Mainly for debugging."""
-        return list(self)
 
     def pick(self, default=None):
         """Pick the first value, or return the default."""
