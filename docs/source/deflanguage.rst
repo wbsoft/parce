@@ -3,9 +3,16 @@ Anatomy of a Language
 
 In this chapter we'll cover all the details of how a language can be defined.
 
-To *parce*, a :class:`~parce.language.Language` is simply a grouping
-container for lexicons, which group rules, and rules consist of a pattern, an
-action and zero or more targets.
+A language definition is a class definition that inherits the
+:class:`~parce.language.Language` class. Such a language class is never used to
+instantiate objects, but rather the class itself is the language definition,
+and acts like a grouping container for lexicons, which group rules, and rules
+consist of a pattern, an action and zero or more targets.
+
+New language definitions can be created by inheriting from existing ones, see
+for example the bundled :class:`~parce.lang.html.Html` language class, which
+extends :class:`~parce.lang.html.XHtml`, which builds upon
+:class:`~parce.lang.xml.Xml`.
 
 Let's look closer again at the example from the :doc:`gettingstarted` section::
 
@@ -120,7 +127,7 @@ processed as follows:
 
 * if a target is a negative integer, that many lexicons are popped
   off the stack, and parsing continues in a previous lexicon, adding tokens
-  to a Context that already exists. The root context is never popped of the
+  to a Context that already exists. The root context is never popped off the
   stack.
 
 * an integer target ``0`` is allowed and is essentially a no-op, it does
