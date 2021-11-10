@@ -20,19 +20,10 @@
 """
 This module provides the Language class, which serves as the base class
 for all language definitions.
-
-Additionally, there are some utility functions to manage and query built-in
-language definitions.
-
 """
 
-import importlib
-import glob
-import os
-
 import parce
-import parce.lang
-from parce.action import Comment
+import parce.action as a
 
 
 class _LanguageType(type):
@@ -61,51 +52,9 @@ class Language(metaclass=_LanguageType):
         languages use this method for their comment lexicons.
 
         """
-        yield r'\b\w+(?:[._%+-]\w+)*@\w+(?:[._-]\w+)*\b', Comment.Email
-        yield r'(?:(?:https?|ftp):/|\bwww\.)(?:[\w_~:/#-]+([.?=][\w_~:/#-]+)*|\([\w._~:?/#-]*\))+', Comment.Url
-        yield r"\b(ALERT|BUG|FIXME|TEMP|TODO|XXX+)\b", Comment.Alert
-        yield parce.default_action, Comment
-
-
-def get_all_modules():
-    """Return the sorted list of module names in ``parce.lang``.
-
-    Modules that start with an underscore are skipped.
-
-    """
-    names = []
-    for filename in glob.glob(os.path.join(parce.lang.__path__[0], "*.py")):
-        name = os.path.splitext(os.path.basename(filename))[0]
-        if not name.startswith('_'):
-            names.append(name)
-    names.sort()
-    return names
-
-
-def get_languages(name):
-    """Yield the Language subclasses defined in the module ``name``.
-
-    The module name must be one of the modules returned by
-    :meth:``get_all_modules``.
-
-    """
-    modname = 'parce.lang.' + name
-    mod = importlib.import_module(modname)
-    mod_all = getattr(mod, '__all__', None)
-    for name, obj in mod.__dict__.items():
-        if (isinstance(obj, type) and issubclass(obj, parce.Language)
-               and not obj.__name__.startswith('_')
-               and (mod_all is None or name in mod_all)
-               and obj is not parce.Language and obj.__module__ == modname):
-            yield obj
-
-
-def get_all_languages():
-    """Import all modules in ``parce.lang`` and yield all defined classes
-    that inherit from :class:`Language`.
-
-    """
-    for name in get_all_modules():
-        yield from get_languages(name)
+        yield r'\b\w+(?:[._%+-]\w+)*@\w+(?:[._-]\w+)*\b', a.Comment.Email
+        yield r'(?:(?:https?|ftp):/|\bwww\.)(?:[\w_~:/#-]+([.?=][\w_~:/#-]+)*|\([\w._~:?/#-]*\))+', a.Comment.Url
+        yield r"\b(ALERT|BUG|FIXME|TEMP|TODO|XXX+)\b", a.Comment.Alert
+        yield parce.default_action, a.Comment
 
 

@@ -35,8 +35,21 @@ sys.path.insert(0, "..")
 
 import parce
 import parce.registry
-from parce.language import get_all_modules, get_languages
 from parce.out.html import HtmlFormatter, escape
+
+
+def get_all_modules():
+    """Return a list of all the modules below parce.lang containing bundled language definitions."""
+    return sorted(set(name.split('.')[-3]
+        for name in parce.registry.registry
+            if name.startswith('parce.lang.')))
+
+
+def get_languages(name):
+     """Yield the Language subclasses defined in the module parce.lang.``name``."""
+     for fullname in parce.registry.registry:
+         if fullname.split('.')[-3] == name:
+             yield parce.registry.root_lexicon(fullname).language
 
 
 STUB = r"""
