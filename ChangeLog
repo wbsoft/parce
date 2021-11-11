@@ -2,6 +2,15 @@ ChangeLog
 =========
 
 
+2021-11-11: parce-0.25.0
+
+- added LilyPond 2.23 syntax
+- remove some cruft to make API cleaner and somewhat smaller
+- make sure ``text in context`` or ``lexicon in context`` works in Python >=3.9
+  (issue #1)
+- documentation improvements
+
+
 2021-04-11: parce-0.24.0
 
 - added test module for lang.numbers
