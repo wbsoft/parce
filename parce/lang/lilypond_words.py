@@ -89,6 +89,7 @@ music_commands = (
     'addChordShape', # since 2.16
     'addInstrumentDefinition',
     'addQuote',
+    'after',         # since 2.23
     'afterGrace',
     #'afterGraceFraction', # this is a parser variable
     'aikenHeads',
@@ -395,6 +396,7 @@ music_commands = (
     'versus',
     'virga',
     'virgula',
+    'vshape',       # since 2.23
     'voiceFour',
     'voiceFourStyle',
     'voiceNeutralStyle',
