@@ -232,6 +232,7 @@ music_commands = (
     'inclinatum',
     'includePageLayoutFile',
     'indent',
+    'inStaffSegno', # since 2.16
     'instrumentSwitch',
     'instrumentTransposition',
     'interscoreline',
@@ -390,6 +391,7 @@ music_commands = (
     'tupletUp',
     'tweak',
     'unaCorda',
+    'unfolded',     # since 2.23
     'unfoldRepeats',
     'unHideNotes',
     'unit',
@@ -406,6 +408,7 @@ music_commands = (
     'voiceThreeStyle',
     'voiceTwo',
     'voiceTwoStyle',
+    'volta',    # since 2.23
     'walkerHeads',
     'walkerHeadsMinor',
     'whiteTriangleMarkup',

@@ -195,7 +195,7 @@ class LilyPond(Language):
                 "figuremode": (Keyword, cls.figuremode),
                 "notemode": (Keyword, cls.notemode),    # \notes doesn't exist anymore
                 # commands that expect some symbols in all input modes
-                "repeat": (Keyword, cls.repeat),
+                "repeat": (Name.Builtin, cls.repeat),
             },
             (findmember(MATCH[2], (
                 (lilypond_words.keywords, (Keyword, list_target)),
