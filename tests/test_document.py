@@ -66,6 +66,25 @@ def test_main():
     # cursor still ok?
     assert c.text() == "RANDOM" + sep
 
+    # document manipulation methods
+    d = Document(None, "abcdefghijklmnopqrstuvwxyz")
+    d.translate({"a": "AA", "o": "OO"})     # manip 1
+    d.set_text('a   \n   b   \n')
+    d.trim()                                # manip 2
+    d.set_text('<xml attr="value"/>')
+    d.re_sub('a', lambda m: m.group()+str(ord(m.group())), 10)  # manip 3
+
+    assert d.text() == '<xml attr="va97lue"/>'  # manip 3
+    d.undo()
+    d.undo()
+    assert d.text() == 'a\n   b\n'              # manip 2
+    d.undo()
+    d.undo()
+    assert d.text() == 'AAbcdefghijklmnOOpqrstuvwxyz'   # manip 1
+    d.undo()
+    assert d.can_undo() == False
+
+
 
 if __name__ == "__main__":
     test_main()
