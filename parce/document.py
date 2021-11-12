@@ -138,6 +138,11 @@ class AbstractDocument:
             self._edit_context = 0
             self._apply_changes()
 
+    def __iadd__(self, text):
+        """Implement the += operator."""
+        self.append(text)
+        return self
+
     def __setitem__(self, key, text):
         """Replace the position or slice with text."""
         start, end = self._parse_key(key)
@@ -242,25 +247,23 @@ class AbstractDocument:
 
     def insert(self, pos, text):
         """Insert text at pos."""
-        if text:
-            self[pos:pos] = text
+        self[pos:pos] = text
 
     def find_start_of_block(self, position):
         """Find the start of the block the position is in."""
         sep = self.block_separator
-        return self[:position].rfind(sep) + len(sep)
+        pos = self.text().rfind(sep, 0, position)
+        return 0 if pos == -1 else pos + len(sep)
 
     def find_end_of_block(self, position):
         """Find the end of the block the position is in."""
-        pos = self[position:].find(self.block_separator)
-        if pos == -1:
-            return len(self)
-        return position + pos
+        pos = self.text().find(self.block_separator, position)
+        return len(self) if pos == -1 else pos
 
     def find_block(self, position):
         """Return a Block representing the text line (block) at position."""
         pos = self.find_start_of_block(position)
-        end = self.find_end_of_block(position)
+        end = self.find_end_of_block(pos)
         return Block(self, pos, end)
 
     def blocks(self, start=0, end=None):
@@ -301,9 +304,10 @@ class AbstractDocument:
                 if count == 0:
                     break
 
-    def re_sub(self, pattern, replacement, start=0, end=None, count=0, flags=0):
+    def re_sub(self, pattern, replacement, start=0, end=None, count=0, re_flags=0):
         """Replace regular expression matches of pattern with replacement.
 
+        The pattern may be a string or a compiled regexp pattern object.
         Backreferences are allowed. The region can be set with start and end.
         If count > 0, specifies the maximum number of occurrences to be
         replaced.
@@ -311,13 +315,19 @@ class AbstractDocument:
         The replacement argument can also be a funtion, which is then called
         with the match object and should return the replacement string.
 
+        With start and end the range can be specified, and, if the pattern was
+        a string it is compiled to a regular expression object using the
+        speficied re_flags.
+
         """
-        text = self[start:end]
+        if isinstance(pattern, str):
+            pattern = re.compile(pattern, re_flags)
         if not callable(replacement):
             replacement = (lambda repl: lambda m: m.expand(repl))(replacement)
+        text = self[start:end]
         with self:
-            for i, m in enumerate(re.finditer(pattern, text, flags), 1):
-                self[m.start():m.end()] = replacement(m)
+            for i, m in enumerate(pattern.finditer(text), 1):
+                self[start+m.start():start+m.end()] = replacement(m)
                 if i == count:
                     break
 
