@@ -47,173 +47,36 @@ import re
 import reprlib
 import weakref
 
+from . import mutablestring
 from . import util
 
 
-class AbstractDocument:
+class AbstractDocument(mutablestring.AbstractMutableString):
     """Base class for a Document.
 
-    A Document is like a mutable string. E.g.:
-
-    .. code-block:: python
-
-        d = Document('some string')
-        with d:
-            d[5:5] = 'different '
-        d.text()  --> 'some different string'
-
-    You can also make modifications outside the a context, they will then
-    be applied immediately, which is slower.
-
-    You can enter a context multiple times, and changes will be applied when the
-    last exits.
-    To make a Document work, you should at least implement:
-
-    * ``text()``
-    * ``_update_contents()``
-
-    The method text() should simply return the entire text string.
-
-    The method `_update_contents()` should read the (start, end, text) tuples
-    from the list in self._changes, which is already sorted. These changes
-    will never overlap. All start/end positions refer to the original state
-    of the text.
-
-    For efficiency reasons, you might want to reimplement:
-
-    * ``set_text()``
-    * ``__len__()``
-    * ``_get_contents()`` (called by ``__getitem__``)
+    A Document is like a mutable string, but understands :class:`Cursor` and
+    :class:`Block`.
 
     """
 
     block_separator = '\n'  #: separator to use for block boundaries (newline)
 
     def __init__(self):
-        super().__init__()
+        mutablestring.AbstractMutableString.__init__(self)
         self._cursors = weakref.WeakSet()
-        self._edit_context = 0
         self._revision = 0
-        self._changes = []
-
-    def text(self):
-        """Should return the text."""
-        raise NotImplementedError
-
-    def set_text(self, text):
-        """Set the text."""
-        assert self._edit_context == 0, "can't use set_text() in edit context."
-        self[:] = text
-
-    def __repr__(self):
-        text = reprlib.repr(self.text())
-        return "<{} {}>".format(type(self).__name__, text)
-
-    def __str__(self):
-        """Return the text."""
-        return self.text()
-
-    def __format__(self, formatstr):
-        """Format our text."""
-        return format(self.text(), formatstr)
-
-    def __len__(self):
-        """Return the length of the text."""
-        return len(self.text())
-
-    def __enter__(self):
-        """Start the context for modifying the document."""
-        self._edit_context += 1
-        return self
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        """Exit the context for modifying."""
-        if exc_type is not None:
-            # cancel all edits when an exception occurred
-            self._edit_context = 0
-            self._changes.clear()
-        elif self._edit_context > 1:
-            self._edit_context -= 1
-        else:
-            self._edit_context = 0
-            self._apply_changes()
-
-    def __iadd__(self, text):
-        """Implement the += operator."""
-        self.append(text)
-        return self
-
-    def __setitem__(self, key, text):
-        """Replace the position or slice with text."""
-        start, end = self._parse_key(key)
-        if ((text or start != end) and
-            (end - start != len(text) or self[start:end] != text)):
-            self._changes.append((start, end, text))
-            if not self._edit_context:
-                self._apply_changes()
-
-    def __delitem__(self, key):
-        """Delete the chracter or slice of text."""
-        self[key] = ""
-
-    def __getitem__(self, key):
-        """Get a character or a slice of text."""
-        start, end = self._parse_key(key)
-        if start == end:
-            return ""
-        elif start == 0 and end == len(self):
-            return self.text()
-        return self._get_contents(start, end)
 
     def _parse_key(self, key):
         """Get start and end values from key. Called by __[gs]etitem__."""
-        total = len(self)
-        if isinstance(key, slice):
-            start, end, _ = key.indices(total)
-        elif isinstance(key, AbstractTextRange):
-            start, end, _ = slice(key.pos, key.end).indices(total)
-        else:
-            # single integer
-            if key < 0:
-                key += total
-            if 0 <= key < total:
-                return key, key + 1
-            raise IndexError("index out of range")
-        if end < start:
-            end = start
-        return start, end
+        if isinstance(key, AbstractTextRange):
+            key = slice(key.pos, key.end)
+        return super()._parse_key(key)
 
-    def _get_contents(self, start, end):
-        """Return the selected range of the text.
-
-        Called by __getitem__(), only if a fragment was requested.
-
-        """
-        return self.text()[start:end]
-
-    def _apply_changes(self):
-        """Apply the changes and update the positions of the cursors."""
-        if self._changes:
-            self._changes.sort()
-            # check for overlaps, find the region
-            head = old = self._changes[0][0]
-            added = 0
-            for start, end, text in self._changes:
-                if start < old:
-                    raise RuntimeError("overlapping changes: {}".format(self._changes))
-                added += start - old + len(text)
-                old = end
-            self._update_cursors()
-            self._update_contents()
-            self._changes.clear()
-            self._revision += 1
-            self.contents_changed(head, end - head, added)
-
-    def _update_cursors(self):
+    def _update_cursors(self, changes):
         """Update the positions of the cursors."""
         i = 0
         cursors = sorted(self._cursors, key = lambda c: c.pos)
-        for start, end, text in self._changes:
+        for start, end, text in changes:
             for c in cursors[i:]:
                 ahead = c.pos > start
                 if ahead:
@@ -229,9 +92,10 @@ class AbstractDocument:
                 elif not ahead:
                     i += 1  # don't consider this cursor any more
 
-    def _update_contents(self):
-        """Should apply the changes (in self._changes) to the text."""
-        raise NotImplementedError
+    def _update_text(self, changes):
+        """Apply the changes to the text, reimplemented here to also update the Cursor positions."""
+        self._update_cursors(changes)
+        self._revision += 1
 
     def revision(self):
         """Return the revision number.
@@ -240,14 +104,6 @@ class AbstractDocument:
 
         """
         return self._revision
-
-    def append(self, text):
-        """Append text at the end of the document."""
-        self.insert(len(self), text)
-
-    def insert(self, pos, text):
-        """Insert text at pos."""
-        self[pos:pos] = text
 
     def find_start_of_block(self, position):
         """Find the start of the block the position is in."""
@@ -353,12 +209,12 @@ class AbstractDocument:
         pass
 
 
-class Document(AbstractDocument, util.Observable):
+class Document(AbstractDocument, mutablestring.MutableString, util.Observable):
     """A basic Document with undo and modified status.
 
-    This Document implements AbstractDocument by holding the text in a hidden
-    _text attribute. It adds support for undo/redo and has a :meth:`modified`
-    state.
+    This Document implements :class:`AbstractDocument` by holding the text in a
+    hidden _text attribute. It adds support for undo/redo and has a
+    :meth:`modified` state.
 
     It also inherits from :class:`~parce.util.Observable` and emits the
     following events:
@@ -387,8 +243,9 @@ class Document(AbstractDocument, util.Observable):
     undo_redo_enabled = True
 
     def __init__(self, text=""):
-        super().__init__()
-        self._text = text
+        AbstractDocument.__init__(self)
+        mutablestring.MutableString.__init__(self, text)
+        util.Observable.__init__(self)
         self._modified = False
         self._undo_stack = []
         self._redo_stack = []
@@ -410,31 +267,27 @@ class Document(AbstractDocument, util.Observable):
         """Return all text."""
         return self._text
 
-    def _update_contents(self):
+    def _update_text(self, changes):
         """Apply the changes to the text."""
-        result = []
-        head = tail = self._changes[0][0]
-        for start, end, text in self._changes:
-            if start > tail:
-                result.append(self._text[tail:start])
-            if text:
-                result.append(text)
-            tail = end
-        text = "".join(result)
-        with self._check_undo_state():
-            if self.undo_redo_enabled:
-                # store start, end, and text needed to undo this change
-                self._handle_undo(head, head + len(text), self._text[head:tail])
-            self._text = self._text[:head] + text + self._text[tail:]
-            if not self._in_undo:
-                self.set_modified(True) # othw this is handled by undo/redo
-
-    def _handle_undo(self, start, end, text):
-        """Store start, end, and text needed to reconstruct the previous state."""
-        if self._in_undo:
-            self._redo_stack.append([start, end, text, self.modified()])
+        if self.undo_redo_enabled:
+            with self._check_undo_state():
+                self._handle_undo()
+                AbstractDocument._update_text(self, changes)
+                mutablestring.MutableString._update_text(self, changes)
+                if not self._in_undo and not self._in_redo:
+                    self.set_modified(True) # othw this is handled by undo/redo
         else:
-            self._undo_stack.append([start, end, text, self.modified()])
+            AbstractDocument._update_text(self, changes)
+            mutablestring.MutableString._update_text(self, changes)
+            self.set_modified(True)
+
+    def _handle_undo(self):
+        """Store changes needed to reconstruct the previous state."""
+        state = [self._get_reverse_changes(), self.modified()]
+        if self._in_undo:
+            self._redo_stack.append(state)
+        else:
+            self._undo_stack.append(state)
             if not self._in_redo:
                 self._redo_stack.clear()
 
@@ -460,15 +313,15 @@ class Document(AbstractDocument, util.Observable):
     def _set_all_undo_redo_modified(self):
         """Called on set_modified(False). Set all undo/redo state to modified."""
         for undo in itertools.chain(self._undo_stack, self._redo_stack):
-            undo[3] = True
+            undo[1] = True
 
     def undo(self):
         """Undo the last modification."""
         assert self._edit_context == 0, "can't undo while in edit context"
         if self._undo_stack:
             with self._in_undo:
-                start, end, text, modified = self._undo_stack.pop()
-                self[start:end] = text
+                self._changes, modified = self._undo_stack.pop()
+                self._apply_changes()
                 self.set_modified(modified)
 
     def redo(self):
@@ -476,8 +329,8 @@ class Document(AbstractDocument, util.Observable):
         assert self._edit_context == 0, "can't redo while in edit context"
         if self._redo_stack:
             with self._in_redo:
-                start, end, text, modified = self._redo_stack.pop()
-                self[start:end] = text
+                self._changes, modified = self._redo_stack.pop()
+                self._apply_changes()
                 self.set_modified(modified)
 
     def clear_undo_redo(self):
@@ -506,7 +359,7 @@ class Document(AbstractDocument, util.Observable):
 
 
 class AbstractTextRange:
-    """Base class for Cursor and Block.
+    """Base class for :class:`Cursor` and :class:`Block`.
 
     The text range is denoted by the ``pos`` and ``end`` attributes.
 
@@ -571,7 +424,7 @@ class AbstractTextRange:
         return self.pos <= other.pos
 
     def token(self):
-        """Convenience method returning the Token at our pos."""
+        """Convenience method returning the :class:`~parce.tree.Token` at our pos."""
         return self.document().token(self.pos)
 
     def tokens(self):
@@ -586,7 +439,7 @@ class AbstractTextRange:
 
 
 class Cursor(AbstractTextRange):
-    """Describes a certain range (selection) in a Document.
+    """Describes a certain range (selection) in a :class:`Document`.
 
     You may change the ``pos`` and ``end`` attributes yourself. Both must be an
     integer, end may also be None, denoting the end of the document.
@@ -619,7 +472,7 @@ class Cursor(AbstractTextRange):
         document._cursors.add(self)
 
     def block(self):
-        """Return the Block our ``pos`` is in."""
+        """Return the :class:`Block` our ``pos`` is in."""
         return self.document().find_block(self.pos)
 
     def blocks(self):
@@ -688,15 +541,15 @@ class Cursor(AbstractTextRange):
 
 
 class Block(AbstractTextRange):
-    r"""Represents a single line (block) of text in the Document.
+    r"""Represents a single line (block) of text in the :class:`Document`.
 
     Block objects are separated by newlines in the Document, and are created
     by Document.find_block() or Cursor.block(), and the blocks() iterator of
     both Cursor and Document.
 
-    Unlike Cursor, Block objects do not update their position when the document
-    is changed. You should use Blocks while iterating but throw them away after
-    applying changes to a Document.
+    Unlike :class:`Cursor`, Block objects do not update their position when the
+    document is changed. You should use Blocks while iterating but throw them
+    away after applying changes to a Document.
 
     Blocks can be compared: blocks originating from the same document compare
     equal when they point to the same position. You can also use the ``<``,

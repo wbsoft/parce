@@ -68,7 +68,9 @@ def test_main():
 
     # document manipulation methods
     d = Document(None, "abcdefghijklmnopqrstuvwxyz")
+    assert d.modified() == False
     d.translate({"a": "AA", "o": "OO"})     # manip 1
+    assert d.modified() == True
     d.set_text('a   \n   b   \n')
     d.trim()                                # manip 2
     d.set_text('<xml attr="value"/>')
@@ -83,6 +85,7 @@ def test_main():
     assert d.text() == 'AAbcdefghijklmnOOpqrstuvwxyz'   # manip 1
     d.undo()
     assert d.can_undo() == False
+    assert d.modified() == False
 
 
 

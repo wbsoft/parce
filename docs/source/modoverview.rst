@@ -14,6 +14,7 @@ Overview of all modules
    language.rst
    lexer.rst
    lexicon.rst
+   mutablestring.rst
    pkginfo.rst
    query.rst
    standardaction.rst
