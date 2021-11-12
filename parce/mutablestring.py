@@ -227,7 +227,7 @@ class MutableString(AbstractMutableString):
     def _update_text(self, changes):
         """Apply the changes to the text."""
         def generate_text():
-            head = tail = 0
+            tail = 0
             for start, end, text in changes:
                 if start > tail:
                     yield self._text[tail:start]

@@ -155,7 +155,7 @@ class AbstractDocument(mutablestring.AbstractMutableString):
             pos = text.find(old)
             while pos >= 0:
                 self[start+pos:start+pos+length] = new
-                pos = text.find(old, pos + 1)
+                pos = text.find(old, pos + length)
                 count -= 1
                 if count == 0:
                     break
@@ -263,25 +263,17 @@ class Document(AbstractDocument, mutablestring.MutableString, util.Observable):
         if changed:
             self.emit("modification_changed", modified)
 
-    def text(self):
-        """Return all text."""
-        return self._text
-
     def _update_text(self, changes):
         """Apply the changes to the text."""
-        if self.undo_redo_enabled:
-            with self._check_undo_state():
-                self._handle_undo()
-                AbstractDocument._update_text(self, changes)
-                mutablestring.MutableString._update_text(self, changes)
-                if not self._in_undo and not self._in_redo:
-                    self.set_modified(True) # othw this is handled by undo/redo
-        else:
+        with self._check_undo_state():
+            if self.undo_redo_enabled:
+                self._store_undo()
             AbstractDocument._update_text(self, changes)
             mutablestring.MutableString._update_text(self, changes)
-            self.set_modified(True)
+        if not (self._in_undo or self._in_redo):
+            self.set_modified(True) # othw this is handled by undo/redo
 
-    def _handle_undo(self):
+    def _store_undo(self):
         """Store changes needed to reconstruct the previous state."""
         state = [self._get_reverse_changes(), self.modified()]
         if self._in_undo:
@@ -290,6 +282,15 @@ class Document(AbstractDocument, mutablestring.MutableString, util.Observable):
             self._undo_stack.append(state)
             if not self._in_redo:
                 self._redo_stack.clear()
+
+    def _apply_undo(self, stack):
+        """Apply changes from the specified stack (undo or redo)."""
+        if self._edit_context > 0:
+            raise RuntimeError("can't redo or redo while in edit context")
+        if stack:
+            self._changes, modified = stack.pop()
+            self._apply_changes()
+            self.set_modified(modified)
 
     @contextlib.contextmanager
     def _check_undo_state(self):
@@ -317,21 +318,13 @@ class Document(AbstractDocument, mutablestring.MutableString, util.Observable):
 
     def undo(self):
         """Undo the last modification."""
-        assert self._edit_context == 0, "can't undo while in edit context"
-        if self._undo_stack:
-            with self._in_undo:
-                self._changes, modified = self._undo_stack.pop()
-                self._apply_changes()
-                self.set_modified(modified)
+        with self._in_undo:
+            self._apply_undo(self._undo_stack)
 
     def redo(self):
         """Redo the last undone modification."""
-        assert self._edit_context == 0, "can't redo while in edit context"
-        if self._redo_stack:
-            with self._in_redo:
-                self._changes, modified = self._redo_stack.pop()
-                self._apply_changes()
-                self.set_modified(modified)
+        with self._in_redo:
+            self._apply_undo(self._redo_stack)
 
     def clear_undo_redo(self):
         """Clear the undo/redo stack."""
