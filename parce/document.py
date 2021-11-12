@@ -333,7 +333,7 @@ class AbstractDocument:
 
     def trim(self, start=0, end=None):
         """Remove trialing whitespace in the specified region."""
-        self.re_sub(r'\s+$', '', start, end, flags=re.MULTILINE)
+        self.re_sub(r'[ \t]+$', '', start, end, re_flags=re.MULTILINE)
 
     def translate(self, mapping, start=0, end=None, count=0, whole_words=False):
         """Replace every occurrence of a key in mapping with its value.
