@@ -48,7 +48,7 @@ RE_LILYPOND_COMMAND = r"\\(" + RE_LILYPOND_ID + ")" + RE_LILYPOND_ID_RIGHT_BOUND
 RE_LILYPOND_MARKUP_TEXT = r'[^%{}"\\\s$#][^{}"\\\s$#]*'
 RE_LILYPOND_LYRIC_TEXT = r'[^%={}"\\\s$#\d][^{}"\\\s$#\d]*'
 
-RE_LILYPOND_REST = r"[rRs](?![^\W\d])"
+RE_LILYPOND_REST = r"[rRs](?![^\W\d_])"
 
 # a string that could be a valid pitch name (or drum name)
 RE_LILYPOND_PITCHWORD = r"(?<![^\W\d])[a-zé]+(?:[_-][a-zé]+)*(?![^\W\d_])"
