@@ -48,8 +48,6 @@ RE_LILYPOND_COMMAND = r"\\(" + RE_LILYPOND_ID + ")" + RE_LILYPOND_ID_RIGHT_BOUND
 RE_LILYPOND_MARKUP_TEXT = r'[^%{}"\\\s$#][^{}"\\\s$#]*'
 RE_LILYPOND_LYRIC_TEXT = r'[^%={}"\\\s$#\d][^{}"\\\s$#\d]*'
 
-RE_LILYPOND_REST = r"[rRs](?![^\W\d_])"
-
 # a string that could be a valid pitch name (or drum name)
 RE_LILYPOND_PITCHWORD = r"(?<![^\W\d])[a-zé]+(?:[_-][a-zé]+)*(?![^\W\d_])"
 
@@ -91,6 +89,7 @@ class LilyPond(Language):
         """Toplevel LilyPond document."""
         yield from cls.blocks()
         yield RE_LILYPOND_SYMBOL, findmember(TEXT, (
+                (lilypond_words.rests, Rest),
                 (lilypond_words.all_pitch_names, (Pitch, cls.pitch)),
                 (lilypond_words.contexts, (Context, cls.list)),
                 (lilypond_words.grobs, (Grob, cls.list)),
@@ -158,6 +157,7 @@ class LilyPond(Language):
         r"""Contents of ``\layout`` or ``\midi { \context { } }`` or ``\with. { }``."""
         yield r'\}', Bracket.End, -1
         yield RE_LILYPOND_SYMBOL, findmember(TEXT, (
+                (lilypond_words.rests, Rest),
                 (lilypond_words.all_pitch_names, (Pitch, cls.pitch)),
                 (lilypond_words.contexts, (Context, cls.list)),
                 (lilypond_words.grobs, (Grob, cls.list)),
@@ -230,9 +230,9 @@ class LilyPond(Language):
         yield r"[-_^]", Direction, cls.script
         yield r"(\\=)\s*(?:(\d+)|({}))?".format(RE_LILYPOND_SYMBOL), \
             bygroup(Spanner.Id, Number, cls.ifpitch(Name.Symbol.Invalid, Name.Symbol))
-        yield r"q(?![^\W\d])", Pitch
-        yield RE_LILYPOND_REST, Rest
         yield RE_LILYPOND_SYMBOL, findmember(TEXT, (
+                ('q', Pitch),
+                (lilypond_words.rests, Rest),
                 (lilypond_words.all_pitch_names, (Pitch, cls.pitch)),
                 (lilypond_words.contexts, (Context, cls.list)),
                 (lilypond_words.grobs, (Grob, cls.list)),
@@ -386,8 +386,8 @@ class LilyPond(Language):
     def drumlist(cls):
         """Drum music between ``{`` ... ``}`` or ``<<`` ... ``>>``."""
         yield from cls.inputmode_list(cls.drumlist)
-        yield RE_LILYPOND_REST, Rest
         yield RE_LILYPOND_SYMBOL, findmember(TEXT, (
+                (lilypond_words.rests, Rest),
                 (lilypond_words.drum_pitch_names_set, Pitch.Drum),
                 (lilypond_words.contexts, (Context, cls.list)),
                 (lilypond_words.grobs, (Grob, cls.list))), (Name.Symbol, cls.list))

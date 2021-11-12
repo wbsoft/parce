@@ -1808,11 +1808,13 @@ pitch_names = {
         "sikk": (6, DOUBLE_SHARP),
     },
 }
-pitch_names["español"] = pitch_names["espanol"]
-#pitch_names["francais"] = pitch_names["français"]
 
 # a set with all the pitch names for fast membership testing
 all_pitch_names = frozenset(name for d in pitch_names.values() for name in d)
+
+# some synonyms
+pitch_names["español"] = pitch_names["espanol"]
+pitch_names["francais"] = pitch_names["français"]
 
 
 drum_pitch_names = (
@@ -1965,6 +1967,9 @@ drum_pitch_names = (
     'de',
 )
 drum_pitch_names_set = frozenset(drum_pitch_names)
+
+
+rests = tuple("Rrs")
 
 
 durations = (
