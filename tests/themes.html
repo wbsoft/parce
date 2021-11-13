@@ -11,6 +11,11 @@
 <link rel="alternate stylesheet" type="text/css" title="terminal" href="../parce/themes/terminal.css"/>
 <link rel="alternate stylesheet" type="text/css" title="debug" href="../parce/themes/debug.css"/>
 
+<style type="text/css">
+pre {
+    margin: 0px;
+}
+</style>
 </head>
 
 <body>
@@ -161,23 +166,39 @@ Select text in this paragraph to see the selection style.
 
 <table style="border: 2px solid lightgray;" border="0" cellspacing="0" cellpadding="0">
 <tr>
-<td><pre class="parce margin-linenumbers"> 1
+<td valign="top"><pre class="parce margin-linenumbers"> 1
  2
  3
  4
  5
  6
  7
- 8 </pre></td>
-<td><pre class="parce margin-folding">|
+ 8
+ 9
+10
+11
+12
+13
+14
+15
+16 </pre></td>
+<td valign="top"><pre class="parce margin-folding">|
+|
+|
 |
 +-
 |
 |
 +-
 
+
+
+
+
+
+
   </pre></td>
-<td><pre contenteditable="true" style="min-width: 400px;" class="parce">First line
+<td valign="top" class="parce"><pre spellcheck="false" contenteditable="true" style="min-width: 600px;">First line
 <span style="display: block; min-width: 300px;" class="parce mark-error">second line
 </span>third line
 <span style="display: block; min-width: 300px;" class="parce current-line">fourth line (current line)

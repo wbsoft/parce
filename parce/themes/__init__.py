@@ -25,7 +25,7 @@ See the :doc:`theme <theme>` module for the supporting code.
 """
 
 
-import glob
+import fnmatch
 import os
 
 
@@ -36,7 +36,7 @@ def filename(name):
     depending on where parce was installed.
 
     """
-    return os.path.join(__path__[0], name + '.css')
+    return __loader__.resource_path(name + '.css')
 
 
 def get_all_themes():
@@ -47,10 +47,9 @@ def get_all_themes():
 
     """
     names = []
-    for filename in glob.glob(os.path.join(__path__[0], "*.css")):
-        name = os.path.splitext(os.path.basename(filename))[0]
-        if not name.startswith('_'):
-            names.append(name)
+    for filename in __loader__.contents():
+        if fnmatch.fnmatch(filename, "*.css") and not filename.startswith('_'):
+            names.append(filename)
     names.sort()
     return names
 
