@@ -49,7 +49,7 @@ def get_all_themes():
     names = []
     for filename in __loader__.contents():
         if fnmatch.fnmatch(filename, "*.css") and not filename.startswith('_'):
-            names.append(filename)
+            names.append(filename[:-4])
     names.sort()
     return names
 
