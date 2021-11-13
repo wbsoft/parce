@@ -26,7 +26,6 @@ See the :doc:`theme <theme>` module for the supporting code.
 
 
 import fnmatch
-import os
 
 
 def filename(name):

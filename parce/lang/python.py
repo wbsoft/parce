@@ -414,22 +414,33 @@ class Python(Language):
         yield r'$', Comment, -1
 
 
+
+RE_PYTHON_PROMPT = r'(?:(?<=\n)|^)(?:>>>|\.\.\.)(?: |$|(?=\n))'
+RE_PYTHON_NO_PROMPT = r'^((?!^(>>>|\.\.\.)).)*$'
+RE_PYTHON_CONTINUATION_PROMPT = r'(?:(?<=\n)|^)\.\.\.(?: |$|(?=\n))'
+
+
 class PythonConsole(Python):
     """Python console input and output with prompt."""
+    @lexicon(re_flags=re.MULTILINE)
+    def root(cls):
+        yield RE_PYTHON_NO_PROMPT, Literal.Output
+        yield from super().root
+
     @classmethod
     def common(cls):
-        yield r'(?:(?<=\n)|^)(?:>>>|\.\.\.) ', Literal.Prompt
+        yield RE_PYTHON_PROMPT, Literal.Prompt
         yield from super().common()
 
     @classmethod
-    def longstring_common(cls):
-        yield r'(?:(?<=\n)|^)\.\.\. ', Literal.Prompt
-        yield from super().longstring_common()
+    def long_string_common(cls):
+        yield RE_PYTHON_CONTINUATION_PROMPT, Literal.Prompt
+        yield from super().long_string_common()
 
     @classmethod
-    def longbytes_common(cls):
-        yield r'(?:(?<=\n)|^)\.\.\. ', Literal.Prompt
-        yield from super().longbytes_common()
+    def long_bytes_common(cls):
+        yield RE_PYTHON_CONTINUATION_PROMPT, Literal.Prompt
+        yield from super().long_bytes_common()
 
 
 def isclassname(text):

@@ -353,7 +353,7 @@ class Formatter(AbstractFormatter):
         if factory is None:
             factory = lambda f: f or None
         self._factory = factory
-        self._themes = {}
+        self._format_caches = {}
         if theme is not None:
             self.add_theme(theme)
 
@@ -364,20 +364,20 @@ class Formatter(AbstractFormatter):
         enable fast formatting.
 
         """
-        return self._themes
+        return self._format_caches
 
     def add_theme(self, theme, language=None, add_baseformat=False):
         """Add a Theme.
 
-        If ``language`` is None, the theme becomes the default theme and the
-        ``add_baseformat`` argument is ignored. If a language is specified (a
-        :class:`~parce.language.Language` subclass), the theme will be used for
-        tokens from that language. If ``add_baseformat`` is True, the theme's
-        baseformat color (window) will be added to all the theme's text
-        formats.
+        If ``language`` is None, the theme becomes the default theme. If a
+        :class:`~parce.language.Language` is specified, the theme will be used
+        for tokens from that language.
+
+        If ``add_baseformat`` is True, the theme's baseformat (window) will be
+        added to all the theme's text formats.
 
         """
-        if language and add_baseformat:
+        if add_baseformat:
             base_ = theme.baseformat()
             base = self._factory(base_)
             @util.cached_func
