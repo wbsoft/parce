@@ -355,7 +355,7 @@ class Formatter(AbstractFormatter):
         self._factory = factory
         self._themes = {}
         if theme is not None:
-            self.add_theme(None, theme)
+            self.add_theme(theme)
 
     def format_caches(self):
         """Reimplemented to return the format caches added by add_theme().
@@ -366,7 +366,7 @@ class Formatter(AbstractFormatter):
         """
         return self._themes
 
-    def add_theme(self, language, theme, add_baseformat=False):
+    def add_theme(self, theme, language=None, add_baseformat=False):
         """Add a Theme.
 
         If ``language`` is None, the theme becomes the default theme and the
@@ -377,7 +377,7 @@ class Formatter(AbstractFormatter):
         formats.
 
         """
-        if add_baseformat:
+        if language and add_baseformat:
             base_ = theme.baseformat()
             base = self._factory(base_)
             @util.cached_func
@@ -417,7 +417,7 @@ class Formatter(AbstractFormatter):
         """Copy all themes from the other formatter."""
         self.format_caches().clear()
         for language, fc in formatter.format_caches().items():
-            self.add_theme(language, fc.theme, fc.base is not None)
+            self.add_theme(fc.theme, language, fc.base is not None)
 
 
 class SimpleFormatter(AbstractFormatter):
@@ -441,7 +441,7 @@ class SimpleFormatter(AbstractFormatter):
 
     """
     def format_caches(self):
-        """Reimplemented to return a FormatCache with a factory that concerts
+        """Reimplemented to return a FormatCache with a factory that converts
         an action to a css class string.
 
         """

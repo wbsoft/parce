@@ -201,7 +201,7 @@ class TextFormat:
 
         >>> import parce
         >>> t = parce.theme_by_name()
-        >>> f = t.window()
+        >>> f = t.baseformat()
         >>> f
         <TextFormat background_color=Color(r=255, g=255, b=240, a=1.0), color=
         Color(r=0, g=0, b=0, a=1.0), font_family=['monospace'], font_size=12,
