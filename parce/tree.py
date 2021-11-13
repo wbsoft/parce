@@ -644,9 +644,8 @@ class Context(list, Node):
         """Return a copy of the context, but with the specified parent."""
         # a non-recursive implementation due to Python's recursion limits
         copy = copy_root = type(self)(self.lexicon, parent)
-        stack = []
-        i = 0
         n = self
+        i = 0
         while True:
             z = len(n)
             while i < z:
@@ -654,29 +653,18 @@ class Context(list, Node):
                 if m.is_context:
                     copy.append(type(m)(m.lexicon, copy))
                     copy = copy[-1]
-                    stack.append(i)
                     i = 0
                     n = m
                     break
-                elif m.group is not None:
-                    for g, j in enumerate(range(i + 1, z), m.group + 1):
-                        if n[j].is_context or n[j].group is None or n[j].group < g:
-                            copy.extend(node.copy(copy) for node in n[i:j])
-                            i = j
-                            break
-                    else:
-                        copy.append(m.copy(copy))
-                        i += 1
                 else:
                     copy.append(m.copy(copy))
                     i += 1
             else:
-                if stack:
-                    copy = copy.parent
-                    n = n.parent
-                    i = stack.pop() + 1
-                else:
+                if copy is copy_root:
                     break
+                n = n.parent
+                copy = copy.parent
+                i = len(copy)
         return copy_root
 
     @property
