@@ -628,18 +628,6 @@ class Context(list, Node):
             return self.lexicon != other
         return other is not self
 
-    def __contains__(self, item):
-        """Reimplemented to be sure that `__eq__` is called on the Node.
-
-        Python 3.9 `list.__contains__` seems to call `__eq__` on the item, so
-        that searching using a `str` or a `Lexicon` failed.
-
-        """
-        for n in self:
-            if n == item:
-                return True
-        return False
-
     def copy(self, parent=None):
         """Return a copy of the context, but with the specified parent."""
         # a non-recursive implementation due to Python's recursion limits

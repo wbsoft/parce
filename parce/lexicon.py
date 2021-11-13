@@ -191,15 +191,15 @@ class Lexicon:
 
     def __eq__(self, other):
         """Return True if we are the same lexicon or a derivate from the same."""
-        return type(other) is type(self) \
-            and self.descriptor is other.descriptor \
-            and self.language is other.language
+        if type(other) is type(self):
+            return self.descriptor is other.descriptor and self.language is other.language
+        return NotImplemented
 
     def __ne__(self, other):
         """Return True if we are the not the same lexicon or a derivate from the same."""
-        return type(other) is not type(self) \
-            or self.descriptor is not other.descriptor \
-            or self.language is not other.language
+        if type(other) is type(self):
+            return self.descriptor is not other.descriptor or self.language is not other.language
+        return NotImplemented
 
     @util.cached_property
     def _rules(self):
