@@ -1031,17 +1031,21 @@ class Context(list, Node):
             yield self, slice(start, None)
 
 
-def make_tokens(event, parent=None):
-    """Factory returning a tuple of one or more Token instances for the event.
+def make_tokens(lexemes, parent=None):
+    """Factory returning a tuple of one or more :class:`Token` instances for
+    the lexemes.
 
-    The event is an Event namedtuple defined in the :mod:`~parce.lexer` module.
-    If the event contains more than one lexeme, GroupToken instances are
-    created.
+    The ``lexemes`` argument is an iterable of three-tuples like the
+    ``lexemes`` in an :class:`~parce.lexer.Event` namedtuple defined in the
+    :mod:`~parce.lexer` module. If there is more than one lexeme,
+    :class:`GroupToken` instances are created.
+
+    The specified ``parent`` context is set as parent, if given.
 
     """
-    if len(event.lexemes) > 1:
-        return GroupToken.make_group(parent, event.lexemes)
+    if len(lexemes) > 1:
+        return GroupToken.make_group(parent, lexemes)
     else:
-        return Token(parent, *event.lexemes[0]),
+        return Token(parent, *lexemes[0]),
 
 

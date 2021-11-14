@@ -220,18 +220,18 @@ class Transformer(parce.util.Observable):
             if meth:
                 return Item(name, meth(items))
 
-        for e in events:
-            if e.target:
-                for _ in range(e.target.pop, 0):
+        for target, lexemes in events:
+            if target:
+                for _ in range(target.pop, 0):
                     item = get_object_item(items)
                     lexicon, items = stack.pop()
                     if item:
                         items.append(item)
-                for l in e.target.push:
+                for l in target.push:
                     stack.append((lexicon, items))
                     items = Items(l.arg)
                     lexicon = l
-            items.extend(make_tokens(e))
+            items.extend(make_tokens(lexemes))
 
         # unwind
         while stack:

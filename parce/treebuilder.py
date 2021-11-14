@@ -62,14 +62,14 @@ def build_tree(root_lexicon, text, pos=0):
     root = context = Context(root_lexicon, None)
     if root_lexicon:
         lexer = Lexer([root_lexicon])
-        for e in lexer.events(text, pos):
-            if e.target:
-                for _ in range(e.target.pop, 0):
+        for target, lexemes in lexer.events(text, pos):
+            if target:
+                for _ in range(target.pop, 0):
                     context = context.parent
-                for lexicon in e.target.push:
+                for lexicon in target.push:
                     context = Context(lexicon, context)
                     context.parent.append(context)
-            context.extend(make_tokens(e, context))
+            context.extend(make_tokens(lexemes, context))
     return root
 
 
@@ -236,7 +236,7 @@ class TreeBuilder(Observable):
         ``added``
             The number of added characters.
 
-        Returns a ``Result`` five-tuple with ``tree``, ``start``, ``end``,
+        Returns a ``BuildResult`` five-tuple with ``tree``, ``start``, ``end``,
         ``offset`` and ``lexicons`` values. The ``start`` and ``end`` are the
         insert positions in the old tree.
 
@@ -315,14 +315,14 @@ class TreeBuilder(Observable):
                     lowest_start = 0
                 peek = self.peek_threshold + lowest_start if self.peek_threshold else 0
             # start parsing
-            for e in events:
-                if e.target:
-                    for _ in range(e.target.pop, 0):
+            for target, lexemes in events:
+                if target:
+                    for _ in range(target.pop, 0):
                         context = context.parent
-                    for lexicon in e.target.push:
+                    for lexicon in target.push:
                         context = Context(lexicon, context)
                         context.parent.append(context)
-                tokens = make_tokens(e, context)
+                tokens = make_tokens(lexemes, context)
                 if tail:
                     # handle tail
                     pos = tokens[0].pos - offset
