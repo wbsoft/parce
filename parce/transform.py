@@ -383,7 +383,8 @@ class Transformer(parce.util.Observable):
         """Add a Transform instance for the specified language."""
         self._transforms[language] = transform
 
-    def find_transform(self, language):
+    @staticmethod
+    def find_transform(language):
         """If no Transform was added, try to find a predefined one.
 
         This is done by looking for a Transform subclass in the language's

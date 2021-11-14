@@ -41,7 +41,7 @@ that represents a text document in a GUI editor. The tokenized tree structure
 can be traversed and queried in many ways, enabling you to quickly provide the
 user with feedback about the type of the text that is entered/edited.
 
-There is already a package `parceqt <https://github.com/wbsoft/parceqt>`_
+There is already a package `parceqt <https://parce.info/parceqt>`_
 that does this for applications based on the Qt5 library (using PyQt5).
 
 Goal

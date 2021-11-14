@@ -200,7 +200,12 @@ def validate_transform(transform, language):
     Prints the missing names to the screen.
 
     """
+    ok = True
     for lexicon in introspect.lexicons(language):
-        if not getattr(transform, lexicon.name, None):
-            print("Missing transform method for lexicon:", lexicon.name)
+        if not hasattr(transform, lexicon.name):
+            tf = "{}.{}".format(transform.__class__.__module__, transform.__class__.__name__)
+            print("Missing transform method in {tf} for lexicon: {name}".format(tf=tf, name=lexicon.fullname))
+            ok = False
+    return ok
+
 

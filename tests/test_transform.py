@@ -25,6 +25,8 @@ import sys
 sys.path.insert(0, '.')
 
 import parce.transform
+from parce.registry import registry, root_lexicon
+from parce.validate import validate_transform
 
 
 JSON_RESULT = \
@@ -51,8 +53,17 @@ def transform_file(filename, root_lexicon=None, transform=None):
 
 def test_main():
 
+    # test a transformation
     result = transform_file('tests/lang/example.json')
     assert result == JSON_RESULT
+
+    # find and validate all bundled transforms
+    for name in registry:
+        lang = root_lexicon(name).language
+        tf = parce.transform.Transformer.find_transform(lang)
+        if tf:
+            print("Validating {transform} with {language}".format(transform=tf, language=lang))
+            assert validate_transform(tf, lang)
 
 
 if __name__ == "__main__":
