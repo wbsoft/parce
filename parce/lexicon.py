@@ -241,11 +241,9 @@ class Lexicon:
         return s
 
     def __getattr__(self, name):
-        """Create certain instance attributes when requested the first time.
+        """Called when ``self.parse(text, pos)`` is requested the first time.
 
-        Calls :meth:`get_instance_attributes` to get instance attributes needed
-        to use the Lexicon. Those attributes then are set in the Lexicon
-        instance, so the do not need to be computed again.
+        Calls :meth:`_get_parse_function` to get the parse function.
 
         """
         if name in ("parse",):
@@ -253,18 +251,11 @@ class Lexicon:
                 try:
                     return object.__getattribute__(self, name)
                 except AttributeError:
-                    self.parse = self._get_instance_attributes()
+                    self.parse = self._get_parse_function()
         return object.__getattribute__(self, name)
 
-    def _get_instance_attributes(self):
-        """Compile the pattern rules and return instance attributes.
-
-        These are:
-
-        ``parse``
-            A ``parse(text, pos)`` function that parses text.
-
-        """
+    def _get_parse_function(self):
+        """Compile the pattern rules and return the parse function."""
         patterns = []
         rules = []
         no_default_action = object()
@@ -295,19 +286,26 @@ class Lexicon:
         if not patterns:
             if dynamic_default_action:
                 def parse(text, pos):
-                    t = text[pos:]
-                    yield pos, t, None, dynamic_default_action(t), None
+                    """Parse text, using a dynamic default action for unknown text."""
+                    if pos < len(text):
+                        t = text[pos:]
+                        yield pos, t, None, dynamic_default_action(t), None
             elif default_action is not no_default_action:
                 def parse(text, pos):
-                    yield pos, text[pos:], None, default_action, None
+                    """Parse text, using a default action for unknown text."""
+                    if pos < len(text):
+                        yield pos, text[pos:], None, default_action, None
             elif default_target:
                 def parse(text, pos):
+                    """Parse text, stopping with the default target at unknown text."""
                     if pos < len(text):
                         yield pos, "", None, None, default_target
             else:
-                # just quits parsing
+                # just quit parsing
                 def parse(text, pos):
-                    yield from ()
+                    """Parse text, skipping unknown text."""
+                    return
+                    yield
             return parse
 
         # if there is only one pattern, and no dynamic action or target,
@@ -321,7 +319,7 @@ class Lexicon:
                 target = make_target(self, rule)
                 if dynamic_default_action:
                     def parse(text, pos):
-                        """Parse text, using a default action for unknown text."""
+                        """Parse text, using a dynamic default action for unknown text."""
                         while True:
                             i = text.find(needle, pos)
                             if i > pos:
@@ -395,7 +393,7 @@ class Lexicon:
         if dynamic_default_action:
             finditer = rx.finditer
             def parse(text, pos):
-                """Parse text, using a default action for unknown text."""
+                """Parse text, using a dynamic default action for unknown text."""
                 for m in finditer(text, pos):
                     if m.start() > pos:
                         t = text[pos:m.start()]

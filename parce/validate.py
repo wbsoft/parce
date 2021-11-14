@@ -23,35 +23,9 @@ import re
 import reprlib
 
 import parce
-from .lexicon import LexiconDescriptor, Lexicon
+from . import introspect
+from .lexicon import Lexicon
 from .ruleitem import variations, a_number
-
-
-def validate_language(lang):
-    """Validate all lexicons in this language.
-
-    Errors and warnings are printed to stdout. If there are errors,
-    this function returns False, otherwise True.
-
-    """
-
-    lexicons = []
-    for key, value in lang.__dict__.items():
-        if isinstance(value, LexiconDescriptor):
-            lexicons.append(getattr(lang, key))
-
-    errors = set()
-    warnings = set()
-    for lexicon in lexicons:
-        v = LexiconValidator(lexicon)
-        v.validate()
-        errors.update(v.errors)
-        warnings.update(v.warnings)
-    for warning in warnings:
-        print(warning)
-    for error in errors:
-        print(error)
-    return not errors
 
 
 class LexiconValidator:
@@ -197,4 +171,36 @@ class LexiconValidator:
                     break
             else:
                 break
+
+
+def validate_language(lang):
+    """Validate all lexicons in this language.
+
+    Errors and warnings are printed to stdout. If there are errors,
+    this function returns False, otherwise True.
+
+    """
+    errors = set()
+    warnings = set()
+    for lexicon in introspect.lexicons(lang):
+        v = LexiconValidator(lexicon)
+        v.validate()
+        errors.update(v.errors)
+        warnings.update(v.warnings)
+    for warning in warnings:
+        print(warning)
+    for error in errors:
+        print(error)
+    return not errors
+
+
+def validate_transform(transform, language):
+    """Check whether the Transform has a method for every lexicon.
+
+    Prints the missing names to the screen.
+
+    """
+    for lexicon in introspect.lexicons(language):
+        if not getattr(transform, lexicon.name, None):
+            print("Missing transform method for lexicon:", lexicon.name)
 

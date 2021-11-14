@@ -685,6 +685,20 @@ def split_list(l, separator):
         i = j + 1
 
 
+def unroll(obj):
+    """Unroll a tuple or list.
+
+    If the object is a tuple or list, yields the unrolled members recursively.
+    Otherwise just the object itself is yielded.
+
+    """
+    if type(obj) in (tuple, list):
+        for i in obj:
+            yield from unroll(i)
+    else:
+        yield obj
+
+
 def tokens(nodes):
     """Helper to yield tokens from the iterable of nodes."""
     for n in nodes:

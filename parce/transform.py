@@ -466,14 +466,3 @@ def transform_text(root_lexicon, text, transform=None, pos=0):
     return t.transform_text(root_lexicon, text, pos)
 
 
-def validate_transform(transform, language):
-    """Check whether the Transform has a method for every lexicon.
-
-    Prints the missing names to the screen.
-
-    """
-    from parce import introspect
-    for lexicon in introspect.lexicons(language):
-        if not getattr(transform, lexicon.name, None):
-            print("Missing transform method for lexicon:", lexicon.name)
-

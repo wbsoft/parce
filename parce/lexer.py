@@ -89,8 +89,9 @@ And here's how the same text would translate to a tree structure::
 
 import collections
 
-from .ruleitem import ActionItem, Item, unroll
+from .ruleitem import ActionItem, Item
 from .target import TargetFactory, Target
+from .util import unroll
 
 
 Event = collections.namedtuple("Event", "target lexemes")

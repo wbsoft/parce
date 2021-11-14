@@ -473,7 +473,7 @@ def evaluate_rule(rule, match):
     def eval_rule_items(objs):
         for obj in objs:
             if isinstance(obj, RuleItem):
-                yield from unroll(obj.evaluate(ns))
+                yield from util.unroll(obj.evaluate(ns))
             elif type(obj) in (list, tuple):
                 yield from eval_rule_items(obj)
             else:
@@ -521,7 +521,7 @@ def pre_evaluate_rule(rule, arg):
     def pre_eval_rule_items(objs):
         for obj in objs:
             if isinstance(obj, RuleItem):
-                yield from unroll(obj.pre_evaluate(ns)[0])
+                yield from util.unroll(obj.pre_evaluate(ns)[0])
             elif type(obj) in (list, tuple):
                 yield from pre_eval_rule_items(obj)
             else:
@@ -557,8 +557,10 @@ def variations_tree(rule):
     items = tuple(rule)
     for i, item in enumerate(items):
         if isinstance(item, Item):
-            branch = frozenset(variations_tree(unroll(v)) for v in item.variations())
-            return (*items[:i], branch, *variations_tree(items[i+1:]))
+            branch = [variations_tree(util.unroll(v)) for v in item.variations()]
+            if branch:
+                branch = branch[0] if len(branch) == 1 else frozenset(branch)
+                return (*items[:i], branch, *variations_tree(items[i+1:]))
     else:
         return items
 
@@ -571,25 +573,11 @@ def variations(rule):
             prefix = items[:i]
             for suffix in variations(items[i+1:]):
                 for v in item.variations():
-                    for l in variations(unroll(v)):
+                    for l in variations(util.unroll(v)):
                         yield prefix + l + suffix
             break
     else:
         yield items
-
-
-def unroll(obj):
-    """Unroll a tuple or list.
-
-    If the object is a tuple or list, yields the unrolled members recursively.
-    Otherwise just the object itself is yielded.
-
-    """
-    if type(obj) in (tuple, list):
-        for i in obj:
-            yield from unroll(i)
-    else:
-        yield obj
 
 
 #: sentinel denoting that a variation is any integer

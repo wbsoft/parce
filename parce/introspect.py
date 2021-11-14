@@ -22,9 +22,10 @@ Helper functions to inspect and document objects.
 """
 
 
+from .language import Language
+from .lexicon import LexiconDescriptor, Lexicon
 from .ruleitem import Item, variations_tree
 from .standardaction import StandardAction
-from .lexicon import LexiconDescriptor, Lexicon
 
 
 def decision_tree(lexicon, build=False):
@@ -43,13 +44,17 @@ def decision_tree(lexicon, build=False):
         yield variations_tree(rule)
 
 
-def lexicons(lang):
-    """Return a list of all the lexicons on the language."""
-    lexicons = []
-    for key, value in lang.__dict__.items():
-        if isinstance(value, LexiconDescriptor):
-            lexicons.append(getattr(lang, key))
-    return lexicons
+def lexicons(language):
+    """Return a list of all the lexicons in the language."""
+    names = set()
+    for lang in language.mro():
+        if lang is Language:
+            break
+        for key, value in lang.__dict__.items():
+            if isinstance(value, LexiconDescriptor):
+                names.add(key)
+
+    return [getattr(language, key) for key in sorted(names)]
 
 
 def rule_items(lang):
