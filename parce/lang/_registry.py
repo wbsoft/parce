@@ -129,6 +129,26 @@ register("parce.lang.lilypond.LilyPond.root",
     guesses = [(r'\\version\s*"\d', .8)],
 )
 
+register("parce.lang.numbers.Deutsch.root",
+    name = "Deutsch",
+    desc = "German Numbers",
+)
+
+register("parce.lang.numbers.English.root",
+    name = "English",
+    desc = "English Numbers",
+)
+
+register("parce.lang.numbers.Français.root",
+    name = "Français",
+    desc = "French Numbers",
+)
+
+register("parce.lang.numbers.Nederlands.root",
+    name = "Nederlands",
+    desc = "Dutch Numbers",
+)
+
 register("parce.lang.python.Python.root",
     name = "Python",
     desc = "Python programming language",
