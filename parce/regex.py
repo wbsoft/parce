@@ -28,7 +28,7 @@ import unicodedata
 
 
 def words2regexp(words):
-    """Convert the word list to an optimized regular expression.
+    """Convert the specified word list to an optimized regular expression.
 
     Example::
 

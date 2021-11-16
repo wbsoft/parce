@@ -329,7 +329,7 @@ def findmember(item, pairs, default=()):
 
 def words(words, prefix="", suffix=""):
     r"""Return an optimized regular expression pattern matching any of the
-    words.
+    words in the specified sequence.
 
     A ``prefix`` or ``suffix`` can be given, which will be added to the regular
     expression. Using the word boundary character ``\b`` as suffix is
@@ -341,6 +341,9 @@ def words(words, prefix="", suffix=""):
         >>> CONSTANTS = ('true', 'false', 'null')
         >>> words(CONSTANTS, r'\b', r'\b')
         '\\b(?:null|(?:fals|tru)e)\\b'
+
+    Note: the specified ``words`` must be a set, list or tuple, not a
+    generator.
 
     """
     expr = regex.words2regexp(words)
