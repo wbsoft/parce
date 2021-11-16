@@ -556,6 +556,7 @@ markup_commands_nargs = (
     'fraction',
     'halign',
     'hcenter-in',
+    'if',       # since 2.23
     'lower',
     'magnify',
     'map-markup-commands',  # since 2.20
@@ -576,6 +577,7 @@ markup_commands_nargs = (
     'table',        # since 2.20
     'translate',
     'translate-scaled',
+    'unless',       # since 2.23
     'with-color',
     'with-dimensions-from', # since 2.20
     'with-link',
