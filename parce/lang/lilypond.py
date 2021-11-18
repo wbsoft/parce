@@ -389,7 +389,7 @@ class LilyPond(Language):
         yield from cls.inputmode_list(cls.drumlist)
         yield RE_LILYPOND_SYMBOL, findmember(TEXT, (
                 (lilypond_words.rests, Rest),
-                (lilypond_words.drum_pitch_names_set, Pitch.Drum),
+                (lilypond_words.drum_pitch_names, Pitch.Drum),
                 (lilypond_words.contexts, (Context, cls.list)),
                 (lilypond_words.grobs, (Grob, cls.list))), (Name.Symbol, cls.list))
         yield from cls.music()
