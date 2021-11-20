@@ -383,3 +383,50 @@ def scheme_number_from_text(text):
             return scheme_number(n)
     raise ValueError("invalid number: {}".format(repr(text)))
 
+
+def scheme_is_indenting_keyword(text):
+    """Return True if the keyword ``text`` should cause the next line to indent
+    normally, instead of aligning with previous line.
+
+    The words in the list below and those that start with "def", like "define",
+    do not follow the standard Scheme indentation patterns.
+
+    The list below and the "def" rule are from GNU Emacs source code,
+    which sets the standard for GNU Guile Scheme indentation.
+
+    See: https://git.savannah.gnu.org/cgit/emacs.git/tree/lisp/progmodes/scheme.el
+    See also: http://community.schemewiki.org/?scheme-style
+
+    """
+    return text.startswith('def') or text in (
+        'begin',
+        'call-with-input-file',
+        'call-with-output-file',
+        'call-with-values',
+        'case',
+        'delay',
+        'do',
+        'dynamic-wind',
+        'lambda',
+        'let',
+        'let*',
+        'letrec',
+        'letrec*',
+        'letrec-syntax',
+        'let-syntax',
+        'let*-values',
+        'let-values',
+        'library',
+        'parameterize',
+        'receive',
+        'sequence',
+        'syntax-case',
+        'syntax-rules',
+        'unless',
+        'when',
+        'with-input-from-file',
+        'with-input-from-port',
+        'with-output-to-file',
+        'with-output-to-port',
+    )
+
