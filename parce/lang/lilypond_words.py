@@ -1987,3 +1987,36 @@ durations = (
     '\\maxima', '\\longa', '\\breve',
     '1', '2', '4', '8', '16', '32', '64', '128', '256', '512', '1024', '2048',
 )
+
+
+# http://lilypond.org/doc/latest/Documentation/usage/music-fragment-options
+lilypond_book_options = (
+  "staffsize",
+  "ragged-right",
+  "noragged-right",
+  "line-width",
+  "papersize",
+  "paper-width",
+  "paper-height",
+  "notime",
+  "fragment",
+  "nofragment",
+  "inline",
+  "indent",
+  "noindent",
+  "quote",
+  "exampleindent",
+  "relative",
+  "verbatim",
+  "texidoc",
+  "doctitle",
+  "nogettext",
+  "printfilename",
+)
+
+lilypond_book_units = (
+  "cm",
+  "mm",
+  "in",
+  "pt",
+)
