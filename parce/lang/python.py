@@ -424,6 +424,7 @@ class PythonConsole(Python):
     """Python console input and output with prompt."""
     @lexicon(re_flags=re.MULTILINE)
     def root(cls):
+        yield r'(?=^Traceback \(most recent call last\):)', Literal.Error, cls.traceback
         yield RE_PYTHON_NO_PROMPT, Literal.Output
         yield from super().root
 
@@ -441,6 +442,11 @@ class PythonConsole(Python):
     def long_bytes_common(cls):
         yield RE_PYTHON_CONTINUATION_PROMPT, Literal.Prompt
         yield from super().long_bytes_common()
+
+    @lexicon(re_flags=re.MULTILINE)
+    def traceback(cls):
+        yield r'(?=^>>>)', Literal.Prompt, -1
+        yield default_action, Literal.Error
 
 
 def isclassname(text):
