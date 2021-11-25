@@ -2,6 +2,14 @@ ChangeLog
 =========
 
 
+2021-11-25: parce-0.26.0
+
+- improvements in Python Console parsing
+- fixes and improvements in LilyPond language parsing
+- MutableString factored out of Document
+- Document: undo/redo uses original changes, better preserves cursor positions
+
+
 2021-11-11: parce-0.25.0
 
 - added LilyPond 2.23 syntax
