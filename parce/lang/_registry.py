@@ -20,7 +20,7 @@
 """
 Registry of built-in language definitions.
 
-This file is imported by the :mod:`parce.registry` module, so that the global
+This file is imported by the :mod:`~parce.registry` module, so that the global
 registry contains all the language definitions listed below.
 
 This file is manually updated.
@@ -118,7 +118,7 @@ register("parce.lang.tex.Latex.root",
     aliases = ["TeX"],
     filenames = [("*.tex", 1), ("*.sty", .8), ("*.cls", .1)],
     mimetypes = [("text/x-latex", .8), ("application/x-latex", .8)],
-    guesses = [(r'\\document(class|style)\{', .8)],
+    guesses = [(r'\\document(class|style)[\{\[]', .8)],
 )
 
 register("parce.lang.lilypond.LilyPond.root",

@@ -43,9 +43,9 @@ class Latex(Language):
 
     @classmethod
     def common(cls):
-        yield r'(\\begin)(?:\s*(\{)(.*?)(\})|(?=[\W\d]))', \
-            bygroup(Name.Builtin, Delimiter, Name.Tag, Delimiter), \
-            cls.get_environment_target()
+        yield r'(\\begin)(?:\s*(?:(\{)(.*?)(\})|(\[))|(?=[\W\d]))', \
+            bygroup(Name.Builtin, Delimiter, Name.Tag, Delimiter, Delimiter.Bracket), \
+            ifgroup(5, cls.environment_option, cls.get_environment_target(MATCH[3]))
         yield r'(\\[^\W\d]+)(?:\s*(\[))?', bygroup(Name.Command, Delimiter.Bracket), \
             ifgroup(2, cls.option)
         yield r'\{\\(oe|OE|ae|AE|aa|AA|o|O|l|L|ss|SS)\}', Escape
@@ -74,9 +74,16 @@ class Latex(Language):
 
     @lexicon
     def option(cls):
-        yield r'\]', Delimiter.Bracket, -1
+        yield r'(\])(?:\s*(\[))?', Delimiter.Bracket, ifgroup(2, 0, -1)
         yield from cls.common()
         yield default_action, Pseudo    # TODO: find better action
+
+    @lexicon
+    def environment_option(cls):
+        yield r'(\])\s*(?:(\{)(.*?)(\})|(\[))?', \
+            bygroup(Delimiter.Bracket, Delimiter, Name.Tag, Delimiter), \
+                ifgroup(5, 0, (-1, ifgroup(4, cls.get_environment_target(MATCH[3]))))
+        yield from list(cls.option())[1:]   # not the first rule
 
     @lexicon
     def environment(cls):
@@ -109,9 +116,13 @@ class Latex(Language):
         yield default_action, Text.Math
 
     @classmethod
-    def get_environment_target(cls):
-        """Return environment target, can be overridden to support special environments."""
-        return ifmember(MATCH[3], MATH_ENVIRONMENTS, cls.environment_math, cls.environment)
+    def get_environment_target(cls, name):
+        """Return environment target for environment ``name``.
+
+        Can be overridden to support special environments.
+
+        """
+        return ifmember(name, MATH_ENVIRONMENTS, cls.environment_math, cls.environment)
 
     # ----------------------------- comments ---------------------------------
     @lexicon(re_flags=re.MULTILINE)
