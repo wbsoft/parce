@@ -151,6 +151,24 @@ class Items(list):
         if lastindex > -1:
             yield result
 
+    def peek(self, index, *values):
+        """Return True if the items from ``index`` compare equal with the
+        ``values``.
+
+        For tokens, the value is their action; for :class:`Item` instances
+        their name.
+
+        """
+        if index < 0:
+            index += len(self)
+        if index + len(values) > len(self):
+            return False
+        for i, v in enumerate(values, index):
+            t = self[i]
+            if (t.action if t.is_token else t.name) != v:
+                return False
+        return True
+
 
 class Transform:
     """This is the base class for a transform class.
