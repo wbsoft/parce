@@ -27,7 +27,7 @@ import re
 
 from parce import Language, lexicon, default_action
 from parce.action import (
-    Comment, Delimiter, Escape, Name, Number, Operator, Pseudo, Text)
+    Character, Comment, Delimiter, Escape, Name, Number, Operator, Pseudo, Text)
 from parce.rule import arg, MATCH, bygroup, ifgroup, ifmember
 
 
@@ -63,11 +63,11 @@ class Latex(Language):
     def base(cls):
         """Basic stuff."""
         yield r'\\[#$&~^%{}_ ]', Escape
-        yield r'[&_^~]', Name.Command
+        yield r'[&_^~]', Character.Special
         yield r'\\\\', Delimiter.Terminator    # line termination TODO: better action?
         yield r'%', Comment, cls.comment
 
-    @lexicon
+    @lexicon(consume=True)
     def brace(cls):
         yield r'\}', Delimiter.Brace, -1
         yield from cls.root
@@ -81,7 +81,7 @@ class Latex(Language):
     @lexicon
     def environment_option(cls):
         yield r'(\])\s*(?:(\{)(.*?)(\})|(\[))?', \
-            bygroup(Delimiter.Bracket, Delimiter, Name.Tag, Delimiter), \
+            bygroup(Delimiter.Bracket, Delimiter, Name.Tag, Delimiter, Delimiter.Bracket), \
                 ifgroup(5, 0, (-1, ifgroup(4, cls.get_environment_target(MATCH[3]))))
         yield from list(cls.option())[1:]   # not the first rule
 
@@ -98,7 +98,7 @@ class Latex(Language):
             bygroup(Name.Builtin, Delimiter, Name.Tag, Delimiter), -1
         yield from cls.math_common()
 
-    @lexicon
+    @lexicon(consume=True)
     def math(cls):
         yield arg(default=r'\}'), Delimiter, -1
         yield from cls.math_common()
@@ -125,7 +125,7 @@ class Latex(Language):
         return ifmember(name, MATH_ENVIRONMENTS, cls.environment_math, cls.environment)
 
     # ----------------------------- comments ---------------------------------
-    @lexicon(re_flags=re.MULTILINE)
+    @lexicon(re_flags=re.MULTILINE, consume=True)
     def comment(cls):
         yield '$', None, -1
         yield from cls.comment_common()
