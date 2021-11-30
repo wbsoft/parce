@@ -156,11 +156,13 @@ class Items(list):
         ``values``.
 
         For tokens, the value is their action; for :class:`Item` instances
-        their name.
+        their name. Negative indices are allowed.
 
         """
         if index < 0:
             index += len(self)
+            if index < 0:
+                return False
         if index + len(values) > len(self):
             return False
         for i, v in enumerate(values, index):
