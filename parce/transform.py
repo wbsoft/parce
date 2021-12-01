@@ -203,6 +203,11 @@ class Transformer(parce.util.Observable):
         with the tree as argument
 
     """
+
+    #: This format string creates the name to look for when searching a suitable
+    #: Transform class in a Language module space (see :meth:`find_transform`).
+    transform_template_name = "{}Transform"
+
     def __init__(self):
         super().__init__()
         self._transforms = parce.util.caching_dict(self.find_transform)
@@ -403,8 +408,7 @@ class Transformer(parce.util.Observable):
         """Add a Transform instance for the specified language."""
         self._transforms[language] = transform
 
-    @staticmethod
-    def find_transform(language):
+    def find_transform(self, language):
         """If no Transform was added, try to find a predefined one.
 
         This is done by looking for a Transform subclass in the language's
@@ -412,9 +416,12 @@ class Transformer(parce.util.Observable):
         So for a language class named "Css", this method tries to find a
         Transform in the same module with the name "CssTransform".
 
+        This naming scheme can be modified by setting the
+        :attr:`transform_template_name` attribute.
+
         """
         module = sys.modules[language.__module__]
-        tfname = language.__name__ + "Transform"
+        tfname = self.transform_template_name.format(language.__name__)
         tf = getattr(module, tfname, None)
         if isinstance(tf, type) and issubclass(tf, Transform):
             return tf()

@@ -58,9 +58,10 @@ def test_main():
     assert result == JSON_RESULT
 
     # find and validate all bundled transforms
+    t = parce.transform.Transformer()
     for name in registry:
         lang = root_lexicon(name).language
-        tf = parce.transform.Transformer.find_transform(lang)
+        tf = t.find_transform(lang)
         if tf:
             print("Validating {transform} with {language}".format(transform=tf, language=lang))
             assert validate_transform(tf, lang)
