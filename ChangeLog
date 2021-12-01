@@ -2,6 +2,13 @@ ChangeLog
 =========
 
 
+current: parce-0.27.0
+
+- added transform.Items.peek()
+- Transform.find_transform() now uses a configurable naming scheme
+- LaTeX parsing improvements
+
+
 2021-11-25: parce-0.26.0
 
 - improvements in Python Console parsing
