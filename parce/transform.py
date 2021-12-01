@@ -206,7 +206,7 @@ class Transformer(parce.util.Observable):
 
     #: This format string creates the name to look for when searching a suitable
     #: Transform class in a Language module space (see :meth:`find_transform`).
-    transform_template_name = "{}Transform"
+    transform_name_template = "{}Transform"
 
     def __init__(self):
         super().__init__()
@@ -417,11 +417,11 @@ class Transformer(parce.util.Observable):
         Transform in the same module with the name "CssTransform".
 
         This naming scheme can be modified by setting the
-        :attr:`transform_template_name` attribute.
+        :attr:`transform_name_template` attribute.
 
         """
         module = sys.modules[language.__module__]
-        tfname = self.transform_template_name.format(language.__name__)
+        tfname = self.transform_name_template.format(language.__name__)
         tf = getattr(module, tfname, None)
         if isinstance(tf, type) and issubclass(tf, Transform):
             return tf()
