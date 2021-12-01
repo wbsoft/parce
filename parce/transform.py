@@ -158,6 +158,7 @@ class Items(list):
         For tokens, the value is their action; for :class:`Item` instances
         their name. Negative indices are allowed.
 
+        .. versionadded:: 0.27.0
         """
         if index < 0:
             index += len(self)
@@ -206,6 +207,8 @@ class Transformer(parce.util.Observable):
 
     #: This format string creates the name to look for when searching a suitable
     #: Transform class in a Language module space (see :meth:`find_transform`).
+    #:
+    #: .. versionadded:: 0.27.0
     transform_name_template = "{}Transform"
 
     def __init__(self):
