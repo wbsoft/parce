@@ -109,7 +109,12 @@ register("parce.lang.html.Html.root",
     desc = "HTML (4 or 5)",
     filenames = [("*.html", 1), ("*.htm", 1)],
     mimetypes = [("text/html", 1)],
-    guesses = [(r'(?i)<!DOCTYPE html', .9), (r'\bXHTML.*?\bTransitional/', .9),(r'(?i)<html\b', .9)],
+    guesses = [
+        (r'(?i)<!DOCTYPE html', .9),
+        (r'\bXHTML.*?\bTransitional/', .9),
+        (r'(?i)<html\b', .9),
+        (r'<[^\W\d]\w*(\s+[^\W\d]\w*(\s*=\s*(".*?"|\S+))?)*\s*/?>', .1),
+    ],
 )
 
 register("parce.lang.tex.Latex.root",
@@ -126,7 +131,10 @@ register("parce.lang.lilypond.LilyPond.root",
     desc = "LilyPond music typesetter",
     filenames = [("*.ly", 1), ("*.ily", .8), ("*.lyi", .5)],
     mimetypes = [("text/x-lilypond", .8)],
-    guesses = [(r'\\version\s*"\d', .8)],
+    guesses = [
+        (r'\\version\s*"\d', .8),
+        (r'\\relative ', .1)
+    ],
 )
 
 register("parce.lang.numbers.Deutsch.root",
@@ -210,7 +218,12 @@ register("parce.lang.html.XHtml.root",
     desc = "HTML that is valid XML",
     filenames = [("*.html", 1), ("*.htm", 1), ("*.xhtml", 1)],
     mimetypes = [("text/html", 1), ("application/xhtml+xml", 1)],
-    guesses = [(r'(?i)<!DOCTYPE html', .8), (r'\bXHTML.*?\bStrict/', .9),(r'(?i)<html\b', .8)],
+    guesses = [
+        (r'(?i)<!DOCTYPE html', .8),
+        (r'\bXHTML.*?\bStrict/', .9),
+        (r'(?i)<html\b', .8),
+        (r'<[^\W\d]\w*(\s+[^\W\d]\w*(\s*=\s*(".*?"|\S+))?)*\s*/?>', .05),
+    ],
 )
 
 register("parce.lang.xml.Xml.root",
