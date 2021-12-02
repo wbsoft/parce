@@ -675,14 +675,13 @@ def split_list(l, separator):
 
     """
     i = 0
-    while True:
-        try:
+    try:
+        while True:
             j = l.index(separator, i)
-        except ValueError:
-            yield l[i:]
-            return
-        yield l[i:j]
-        i = j + 1
+            yield l[i:j]
+            i = j + 1
+    except ValueError:
+        yield l[i:]
 
 
 def unroll(obj):
