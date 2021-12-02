@@ -31,7 +31,7 @@ describing the text range to indent. For example::
     >>> i = Indenter()
     >>> i.indent_string = "    " # use four spaces by default
     >>> d = Document(Css.root, "h1 {\ncolor: red;\n     }\n")
-    >>> c = Cursor(d, 0, None)  # select all
+    >>> c = Cursor(d).select_all()
     >>> i.indent(c)
     >>> d.text()
     'h1 {\n    color: red;\n}\n'

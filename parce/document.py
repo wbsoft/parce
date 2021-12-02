@@ -442,19 +442,27 @@ class Cursor(AbstractTextRange):
     remains the same. But when text is inserted at the end of a cursor, the
     ``end`` position (if not None) moves along with the new text. E.g.::
 
-        d = Document('hi there, folks!')
-        c = Cursor(d, 8, 8)
-        with d:
-            d[8:8] = 'new text'
-        c.pos, c.end --> (8, 16)
+        >>> from parce.document import Document, Cursor
+        >>> d = Document('hi there, folks!')
+        >>> c = Cursor(d, 8, 8)
+        >>> with d:
+        ...     d[8:8] = 'new text'
+        ...
+        >>> c.pos, c.end
+        (8, 16)
 
     You can also use a Cursor as key while editing a document::
 
-        c = Cursor(d, 8, 8)
-        with d:
-            d[c] = 'new text'
+        >>> c = Cursor(d, 8, 8)
+        >>> with d:
+        ...     d[c] = 'new text'
 
-    You cannot alter the document via the Cursor.
+    You cannot alter the document via the Cursor. All move and select methods
+    return the cursor again, so they can be chained::
+
+        >>> c = Cursor(d).select_all()
+        >>> c.pos, c.end
+        (0, None)
 
     """
     __slots__ = ("__weakref__",)
@@ -472,19 +480,32 @@ class Cursor(AbstractTextRange):
         """Yield the Blocks from pos to end."""
         yield from self.document().blocks(self.pos, self.end)
 
+    def move_start_of_block(self):
+        """Move pos and end to the start of the current block. Returns self."""
+        self.pos = self.end = self.document().find_start_of_block(self.pos)
+        return self
+
+    def move_end_of_block(self):
+        """Move pos and end to the end of the current block. Returns self."""
+        self.pos = self.end = self.document().find_end_of_block(self.pos)
+        return self
+
     def select(self, pos, end=-1):
-        """Change pos and end in one go. End defaults to pos."""
+        """Change pos and end in one go. End defaults to pos. Returns self."""
         self.pos = pos
         self.end = pos if end == -1 else end
+        return self
 
     def select_all(self):
-        """Set pos to 0 and end to None; selecting all text."""
+        """Set pos to 0 and end to None; selecting all text. Returns self."""
         self.pos = 0
         self.end = None
+        return self
 
     def select_none(self):
-        """Set end to pos."""
+        """Set end to pos. Returns self."""
         self.end = self.pos
+        return self
 
     def has_selection(self):
         """Return True if text is selected."""
@@ -492,29 +513,42 @@ class Cursor(AbstractTextRange):
         return self.pos < end
 
     def select_start_of_block(self):
-        """Moves the selection pos to the beginning of the current line."""
+        """Moves the selection pos to the beginning of the current line.
+
+        Returns self.
+
+        """
         self.pos = self.document().find_start_of_block(self.pos)
+        return self
 
     def select_end_of_block(self):
-        """Moves the selection end (if not None) to the end of its line."""
+        """Moves the selection end (if not None) to the end of its line.
+
+        Returns self.
+
+        """
         if self.end is not None:
             self.end = self.document().find_end_of_block(self.end)
+        return self
 
     def lstrip(self, chars=None):
         """Move pos to the right, if specified characters can be skipped.
 
         By default whitespace is skipped, like Python's lstrip() string method.
+        Returns self.
 
         """
         text = self.text()
         if text:
             offset = len(text) - len(text.lstrip(chars))
             self.pos += offset
+        return self
 
     def rstrip(self, chars=None):
         """Move end to the left, if specified characters can be skipped.
 
         By default whitespace is skipped, like Python's rstrip() string method.
+        Returns self.
 
         """
         text = self.text()
@@ -525,12 +559,13 @@ class Cursor(AbstractTextRange):
                 if self.end is None or self.end > doc_length:
                     self.end = doc_length
                 self.end -= offset
+        return self
 
     def strip(self, chars=None):
-        """Adjust pos and end, like Python's strip() method."""
+        """Adjust pos and end, like Python's strip() method. Returns self."""
         self.rstrip(chars)
         self.lstrip(chars)
-
+        return self
 
 
 class Block(AbstractTextRange):

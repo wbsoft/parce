@@ -292,7 +292,7 @@ class AbstractFormatter:
             >>> factory = lambda tf: tf.css_properties() or None
             >>> f = Formatter(theme_by_name(), factory)
             >>> d = Document(Css.root, "h1 { color: red; }")
-            >>> c = Cursor(d, 0, None)  # select all
+            >>> c = Cursor(d).select_all()
             >>> list(f.format_document(c))
             [('h1', {'color': '#00008b', 'font-weight': 'bold'}),
              (' ', None),
