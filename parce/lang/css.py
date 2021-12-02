@@ -388,7 +388,7 @@ class CssTransform(Transform):
 
         """
         # skip the { that starts the rule which is normally there
-        if items and items[-1] == '{':
+        if items.peek(-1, Bracket):
             items = items[:-1]
         prelude = []
         result = []
@@ -529,7 +529,7 @@ class CssTransform(Transform):
         """
         name = self.get_ident_token(items)[0]
         selector_list = None
-        if items and not items[-1].is_token and items[-1].name == "selector_list":
+        if items.peek(-1, "selector_list"):
             selector_list = items[-1].obj
         return name, selector_list
 
@@ -539,7 +539,7 @@ class CssTransform(Transform):
 
     def atrule(self, items):
         """Return a Atrule named tuple."""
-        if items and not items[0].is_token and items[0].name == "atrule_keyword":
+        if items.peek(0, "atrule_keyword"):
             keyword = items.pop(0).obj
         else:
             keyword = None
@@ -563,7 +563,7 @@ class CssTransform(Transform):
     def atrule_nested(self, items):
         """Return a two-tuple: the stuff before the nested block and the nested block."""
         nested = None
-        if items and not items[-1].is_token and items[-1].name == "atrule_nested_block":
+        if items.peek(-1, "atrule_nested_block"):
             nested = items.pop().obj
             items.pop() # skip {
         return tuple(self.common(items)), nested
@@ -597,7 +597,7 @@ class CssTransform(Transform):
 
         """
         text, action = self.get_ident_token(items)
-        if items and not items[-1].is_token and items[-1].name == "function":
+        if items.peek(-1, "function"):
             funcargs = items[-1].obj
             return self.get_css_function_call(text, funcargs)
         from .css_words import CSS3_NAMED_COLORS
