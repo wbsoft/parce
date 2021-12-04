@@ -28,9 +28,9 @@ completely or partially.
 The whole process is divided in certain stages, performed by exhausting the
 :meth:`Worker.process` generator fully.
 
-The Worker is intended to be used as the compagnon for the :class:`.Document`
-class and cause the TreeBuilder and (if set) the Transformer to do their jobs
-in a configurable and flexible manner.
+The Worker is intended to be used as the compagnon for the
+:class:`~parce.Document` class and cause the TreeBuilder and (if set) the
+Transformer to do their jobs in a configurable and flexible manner.
 
 It is possible to wait for the parce tree of the transform result, or to
 arrange for a callback to be called when the work is done.
@@ -117,8 +117,8 @@ class Worker(util.Observable):
     def start(self):
         """Start the update process.
 
-        This method should always be called from the main thread, but may be
-        reimplemented to do (parts of the) work in a background thread.
+        Sets the initial state and then calls meth:`run_process`. This method
+        should always be called from the main thread.
 
         """
         with self._condition:
@@ -128,7 +128,15 @@ class Worker(util.Observable):
         self.run_process()
 
     def run_process(self):
-        """Called by :meth:`start`; performs the work after setting the initial state."""
+        """Exhaust the :meth:`process` generator.
+
+        Called by :meth:`start`; performs the work after initial state has been
+        set up.
+
+        This method should always be called from the main thread, but may be
+        reimplemented to do (parts of the) work in a background thread.
+
+        """
         for stage in self.process():
             pass
 

@@ -33,4 +33,4 @@ Overview of all modules
    unicharclass.rst
    util.rst
    validate.rst
-
+   work.rst
