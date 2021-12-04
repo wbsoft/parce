@@ -71,6 +71,7 @@ class Worker(util.Observable):
         self._transformer = transformer
 
         self._condition = threading.Condition()
+        self._transform_lock = threading.Lock() # prevent setting Transformer without noticing
         self._tree_state = IDLE
         self._transform_state = IDLE
 
@@ -92,10 +93,12 @@ class Worker(util.Observable):
 
         """
         if transformer is not self._transformer:
-            self._transformer = transformer
-            with self._condition:
-                if self._transform_state & REPLACE == 0:
-                    self.start()
+            with self._transform_lock:
+                self._transformer = transformer
+                with self._condition:
+                    start = self._transform_state & REPLACE == 0
+            if start:
+                self.start()
 
     def transformer(self):
         """Return the current Transformer, if set."""
@@ -158,19 +161,25 @@ class Worker(util.Observable):
             c.notify_all()
 
         ## run the transformer
+        self._transform_lock.acquire()
         t, old = self._transformer, None
         if t:
             while t and t is not old:
+                self._transform_lock.release()
                 for stage in t.process(self._builder.root):
                     yield "transform " + stage
                     if stage == "replace":
                         with c:
                             self._transform_state = REPLACE
+                self._transform_lock.acquire()
                 # if the transformer was replaced while running, start again
                 t, old = self._transformer, t
             with c:
                 self._transform_state = DONE
+            self._transform_lock.release()
             self.finish_transform()
+        else:
+            self._transform_lock.release()
         with c:
             self._transform_state = IDLE
             c.notify_all()
