@@ -134,7 +134,7 @@ class Worker(util.Observable):
     def start(self):
         """Start the update process.
 
-        Sets the initial state and then calls meth:`run_process`. This method
+        Sets the initial state and then calls :meth:`run_process`. This method
         should always be called from the main thread.
 
         """
@@ -199,9 +199,9 @@ class Worker(util.Observable):
             c.notify_all()
 
     def wait_build(self):
-        """Implement to wait for the build job to be completed.
+        """Wait for the build job to be completed.
 
-        The default implementation immediately returns.
+        Immediately returns if there is no build job active.
 
         """
         with self._condition:
@@ -209,9 +209,9 @@ class Worker(util.Observable):
                 self._condition.wait()
 
     def wait_transform(self):
-        """Implement to wait for the transform job to be completed.
+        """Wait for the transform job to be completed.
 
-        The default implementation immediately returns.
+        Immediately returns if there is no transform job active.
 
         """
         with self._condition:
