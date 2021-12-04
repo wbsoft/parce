@@ -19,6 +19,8 @@
 
 
 """
+DEPRECATED.
+
 A Document mixin that keeps all text tokenized.
 
 When the text is modified, retokenizes only the modified part.

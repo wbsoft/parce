@@ -22,10 +22,9 @@
 This module defines the :class:`Worker` class.
 
 A Worker is designed to run a TreeBuilder and a Transformer as soon as source
-text is updated. It is possible to run those jobs in a background thread,
-completely or partially.
+text is updated. It is possible to run those jobs in a background thread.
 
-The whole process is divided in certain stages, performed by exhausting the
+The whole process is divided in certain stages, and performed by exhausting the
 :meth:`Worker.process` generator fully.
 
 The Worker is intended to be used as the compagnon for the
@@ -33,10 +32,12 @@ The Worker is intended to be used as the compagnon for the
 Transformer to do their jobs in a configurable and flexible manner.
 
 It is possible to wait for the parce tree of the transform result, or to
-arrange for a callback to be called when the work is done.
+arrange for a callback to be called when the work is done. As Worker inherits
+:class:`~.util.Observable`, you can connect to its events to get notified when
+a tree or transform is updated.
 
-Inherit Worker to implement other features or another way to use a background
-thread for (parts of) the job.
+Inherit of Worker to implement other features or another way to use a
+background thread for (parts of) the job.
 
 """
 
@@ -54,15 +55,28 @@ DONE      = 4       # result is ready but finished callbacks still to be done
 class Worker(util.Observable):
     """Runs the TreeBuilder and the Transformer.
 
-    Initialize with a TreeBuilder and optionally a transformer. It is not
-    possible to change the TreeBuilder later; but you can set another
-    transformer, or use no transformer at all.
+    Initialize with a :class:`~.treebuilder.TreeBuilder` and optionally a
+    :class:`~.transform.Transformer`. It is not possible to change the
+    treebuilder later; but you can set another transformer, or use no
+    transformer at all.
 
     Call :meth:`update` to re-run the treebuilder on changed text, or new text,
-    or to use a new root lexicon.
+    or to use a new root lexicon. Call :meth:`set_transformer` to set another
+    Transformer, which triggers a re-run of the transformer alone.
 
-    Call :meth:`set_transformer` to set another Transformer, which triggers
-    a re-run of the transformer alone.
+    You can connect to the following signals:
+
+    ``"tree_updated"``:
+        emitted when a tree (re)build has finished; the handler is called with
+        two arguments: ``start``, ``end``, that denote the updated text range.
+
+    ``"tree_finished"``:
+        emitted when a (re)build has finished; the handler is called without
+        arguments
+
+    ``"transform_finished"``:
+        emitted when a transform rebuild has finished; the handler is called
+        without arguments.
 
     """
     def __init__(self, treebuilder, transformer=None):
@@ -83,7 +97,7 @@ class Worker(util.Observable):
         return self._builder
 
     def set_transformer(self, transformer):
-        """Set the :class:`~.transform.Transformer` to use.
+        """Set the Transformer to use.
 
         You may use one Transformer for multiple Workers.  Use None to
         remove the current transformer.
@@ -108,7 +122,7 @@ class Worker(util.Observable):
         """Start a process to update the tree and the transform.
 
         For the meaning of the arguments, see
-        :meth:`.treebuilder.TreeBuilder.add_changes`.
+        :meth:`.treebuilder.TreeBuilder.rebuild`.
 
         This method should always be called from the main thread.
 
@@ -278,7 +292,7 @@ class Worker(util.Observable):
     def finish_build(self):
         """Called when the treebuilder is done.
 
-        Emits ``'tree_updated', (start, end)`` and then ``'tree_finished'``,
+        Emits ``'tree_updated', start, end`` and then ``'tree_finished'``,
         when the tree has been updated.
 
         """
@@ -300,4 +314,102 @@ class BackgroundWorker(Worker):
         """Run the update process in a background thread."""
         threading.Thread(target=super().run_process).start()
 
+
+class WorkerDocumentMixin:
+    """Adds a Worker to a Document to automatically update the tokenized
+    tree and the transformed result.
+
+    Combine this class with a subclass of AbstractDocument (see the
+    :mod:`.document` module).
+
+    Everytime the text is modified, only the modified part is retokenized. If
+    that changes the lexicon in which the last part (after the modified part)
+    starts, that part is also retokenized, until the state (the list of active
+    lexicons) matches the state of existing tokens.
+
+    Also the transformed result, if a transformer is set, is updated.
+
+    """
+    def __init__(self, worker):
+        """Initialize with a :class:`Worker` instance, which is doing the work."""
+        self._worker = worker
+
+    def worker(self):
+        """Return the Worker we were instantiated with."""
+        return self._worker
+
+    def builder(self):
+        """Return the worker's TreeBuilder."""
+        return self._worker._builder
+
+    def root_lexicon(self):
+        """Return the currently set root lexicon."""
+        return self.builder().root.lexicon
+
+    def set_root_lexicon(self, root_lexicon):
+        """Set the root lexicon to use to tokenize the text.
+
+        Triggers an update of the tokenized tree.
+
+        """
+        self._worker.update(self.text(), root_lexicon)
+
+    def get_root(self, wait=False, callback=None):
+        """Get the root element of the completed tree.
+
+        See :meth:`Worker.get_root` for more information.
+
+        """
+        return self._worker.get_root(wait, callback)
+
+    def open_lexicons(self):
+        """Return the list of lexicons that were left open at the end of the text.
+
+        The root lexicon is not included; if parsing ended in the root lexicon,
+        this list is empty, and the text can be considered "complete."
+
+        """
+        return self.builder().lexicons
+
+    def modified_range(self):
+        """Return a two-tuple(start, end) describing the range that was re-tokenized."""
+        b = self.builder()
+        return b.start, b.end
+
+    def get_transform(self, wait=False, callback=None):
+        """Return the transformed result (if a Transformer is active in the Worker).
+
+        See :meth:`Worker.get_transform` for more information.
+
+        """
+        return self._worker.get_transform(wait, callback)
+
+    def contents_changed(self, start, removed, added):
+        """Called after modification of the text.
+
+        Retokenizes the modified part and updates the transformation.
+
+        """
+        self._worker.update(self.text(), False, start, removed, added)
+        super().contents_changed(start, removed, added)
+
+    def token(self, pos):
+        """Returns the token at the specified position, in an intuitive way.
+
+        If a token starts at position, it is returned. Otherwise, if a token
+        ends at position, it is returned. Will not return a token that is in a
+        different block. Returns None if there are no tokens in the block.
+
+        """
+        token = self.get_root(True).find_token(pos)
+        if token:
+            if token.pos <= pos:
+                return token
+            # token is to the right, see if left token touches pos
+            left_token = token.previous_token()
+            if left_token and left_token.end == pos:
+                return left_token
+            # see if token (to the right) is on the same line
+            if self.block_separator not in self[pos:token.pos]:
+                return token
 

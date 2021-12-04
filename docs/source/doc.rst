@@ -171,20 +171,22 @@ tokens at that line::
 More goodies
 ------------
 
-The :class:`parce.Document` class is in fact built from two base classes:
+The :class:`parce.Document` class is in fact built from three base classes:
+:class:`~parce.mutablestring.AbstractMutableString`/:class:`~parce.mutablestring.MutableString`
+from the :mod:`~parce.mutablestring` module,
 :class:`~parce.document.AbstractDocument`/:class:`~parce.document.Document`
 from the :mod:`~parce.document` module and
-:class:`~parce.treedocument.TreeDocumentMixin` from the
-:mod:`~parce.treedocument` module.
+:class:`~parce.work.WorkerDocumentMixin` from the
+:mod:`~parce.work` module.
 
-Using both base classes, it is not difficult to design a class that wraps an
+Using those base classes, it is not difficult to design a class that wraps an
 object representing a text document in a GUI editor. You need only to provide
 two methods in your wrapper: :meth:`~parce.document.AbstractDocument.text` to
 get all text, and :meth:`~parce.document.AbstractDocument._update_contents` to
 change the text programmatically. When the text is changed,
 ``AbstractDocument`` calls
 :meth:`~parce.document.AbstractDocument.contents_changed`, which in
-``TreeDocumentMixin`` is implemented to inform the TreeBuilder about a part of
+``WorkerDocumentMixin`` is implemented to inform the TreeBuilder about a part of
 text that needs to be retokenized. Also your wrapper class should call
 ``contents_changed`` whenever the user has typed in the editor.
 

@@ -74,30 +74,67 @@ __all__ = (
     'tokens',
 )
 
-from . import document, lexer, rule, ruleitem, treebuilder, treedocument, util
+from . import document, lexer, rule, ruleitem, treebuilder, work, util
 from .lexicon import lexicon
 from .language import Language
 from .document import Cursor
 from .pkginfo import version, version_string
 
 
-class Document(treedocument.TreeDocumentMixin, document.Document):
+class Document(work.WorkerDocumentMixin, document.Document):
     """A Document that automatically keeps its contents tokenized.
 
-    You can specify your own TreeBuilder. By default, a BackgroundTreeBuilder
-    is used.
+    You can specify your own :class:`~.work.Worker`. By default, a
+    :class:`~.work.BackgroundWorker` is used. With the
+    :meth:`~.work.WorkerDocumentMixin.get_root` method you get the parsed tree.
+    An example::
+
+        >>> d = parce.Document(parce.find('xml'), '<xml>Hi!</xml>')
+        >>> d.get_root(True).dump()
+        <Context Xml.root at 0-14 (4 children)>
+         ├╴<Token '<' at 0:1 (Delimiter)>
+         ├╴<Token 'xml' at 1:4 (Name.Tag)>
+         ├╴<Token '>' at 4:5 (Delimiter)>
+         ╰╴<Context Xml.tag at 5-14 (4 children)>
+            ├╴<Token 'Hi!' at 5:8 (Text)>
+            ├╴<Token '</' at 8:10 (Delimiter)>
+            ├╴<Token 'xml' at 10:13 (Name.Tag)>
+            ╰╴<Token '>' at 13:14 (Delimiter)>
+        >>> d[5:8] = "hello there!"             # replace the text "Hi!"
+        >>> d.get_root(True).dump()
+        <Context Xml.root at 0-23 (4 children)>
+         ├╴<Token '<' at 0:1 (Delimiter)>
+         ├╴<Token 'xml' at 1:4 (Name.Tag)>
+         ├╴<Token '>' at 4:5 (Delimiter)>
+         ╰╴<Context Xml.tag at 5-23 (4 children)>
+            ├╴<Token 'hello there!' at 5:17 (Text)>
+            ├╴<Token '</' at 17:19 (Delimiter)>
+            ├╴<Token 'xml' at 19:22 (Name.Tag)>
+            ╰╴<Token '>' at 22:23 (Delimiter)>
+
+    If you set a :class:`~.transform.Transformer` to the Worker, the
+    transformed result is also kept up to date. The
+    :meth:`~.work.WorkerDocumentMixin.get_transform` method gives you the
+    transformed result. For example::
+
+        >>> import parce.transform
+        >>> d = parce.Document(parce.find('json'), '{"key": [1, 2, 3, 4, 5, 6, 7, 8, 9]}')
+        >>> d.worker().set_transformer(parce.transform.Transformer())
+        >>> d.get_transform(True)
+        {'key': [1, 2, 3, 4, 5, 6, 7, 8, 9]}
 
     """
-    def __init__(self, root_lexicon=None, text="", builder=None):
+    def __init__(self, root_lexicon=None, text="", worker=None):
         document.Document.__init__(self, text)
-        if builder is None:
-            builder = treebuilder.BackgroundTreeBuilder(root_lexicon)
+        if worker is None:
+            worker = work.BackgroundWorker(treebuilder.TreeBuilder(root_lexicon))
         else:
-            builder.root.clear()
-            builder.root.lexicon = root_lexicon
-        treedocument.TreeDocumentMixin.__init__(self, builder)
+            root = worker.builder().root
+            root.clear()
+            root.lexicon = root_lexicon
+        work.WorkerDocumentMixin.__init__(self, worker)
         if text:
-            builder.rebuild(text)
+            worker.update(text)
 
 
 def find(name=None, *, filename=None, mimetype=None, contents=None):

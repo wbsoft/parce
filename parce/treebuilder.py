@@ -163,14 +163,10 @@ class TreeBuilder(Observable):
 
     def __init__(self, root_lexicon=None):
         super().__init__()
+        self._lock = threading.Lock()
         self.root = Context(root_lexicon, None)
         self.busy = False
         self.changes = []
-
-    def tree(self, text):
-        """Convenience method to build a tree and return the root node."""
-        self.rebuild(text)
-        return self.get_root(True)
 
     def rebuild(self, text, root_lexicon=False, start=0, removed=0, added=None):
         """Tokenize the modified part of the text again and update the tree.
@@ -201,48 +197,33 @@ class TreeBuilder(Observable):
         Calls :meth:`build_new_tree` and :meth:`replace_tree` to do the actual work.
 
         """
-        if added is None:
-            added = len(text) - start
         self.add_changes(text, root_lexicon, start, removed, added)
         if not self.busy:
             self.busy = True
             self.start_processing()
 
     def add_changes(self, text, root_lexicon, start, removed, added):
-        """Add the changes to our changes list."""
-        self.lock(True)
-        self.changes.append((text, root_lexicon, start, removed, added))
-        self.lock(False)
+        """Add the changes to our changes list, but do not rebuild immediately.
+
+        The arguments are the same as for :meth:`rebuild`.
+
+        """
+        if added is None:
+            added = len(text) - start
+        with self._lock:
+            self.changes.append((text, root_lexicon, start, removed, added))
 
     def build_new_tree(self, text, root_lexicon, start, removed, added):
         """Build a new tree without yet modifying the current tree.
 
+        This method is called by :meth:`process`. Returns a ``BuildResult``
+        five-tuple with ``tree``, ``start``, ``end``, ``offset`` and
+        ``lexicons`` values. The ``start`` and ``end`` are the insert positions
+        in the old tree.
+
         Tokens from the current tree are reused as much as possible. From
         tokens at the tail (after the end of the modified region) the pos
         attribute is updated if necessary.
-
-        The arguments:
-
-        ``text``
-            The text to parse. Always the entire text, also when only a small
-            portion was changed.
-
-        ``root_lexicon``
-            The root lexicon to use. False means no change; can be None or any
-            Lexicon. If not False, the tree is always rebuilt completely.
-
-        ``start``
-            Position of the change.
-
-        ``removed``
-            The number of removed characters.
-
-        ``added``
-            The number of added characters.
-
-        Returns a ``BuildResult`` five-tuple with ``tree``, ``start``, ``end``,
-        ``offset`` and ``lexicons`` values. The ``start`` and ``end`` are the
-        insert positions in the old tree.
 
         The new ``tree`` is intended to replace a part of, or the whole old
         tree. If ``start`` == 0 and ``lexicons`` is not None; the whole tree
@@ -533,42 +514,11 @@ class TreeBuilder(Observable):
         """
         self.emit("invalidate", context)
 
-    def get_root(self, wait=False, callback=None, args=(), kwargs={}):
-        """Return the root element of the completed tree.
-
-        This is simply the ``root`` instance attribute, but this method only
-        returns the tree when the ``busy`` attribute is False.
-
-        If wait is True, this call blocks until tokenizing is done, and the
-        full tree is returned. If wait is False, None is returned if the tree
-        is still busy being built.
-
-        If a callback is given and tokenizing is still busy, that callback is
-        called once when tokenizing is ready. If given, args and kwargs are the
-        arguments the callback is called with, defaulting to () and {},
-        respectively.
-
-        Note that, for the lifetime of a TreeBuilder, the root element is always
-        the same. The root element is also accessible in the `root` attribute.
-        But using this method you can be sure that you are dealing with a
-        complete and fully intact tree.
-
-        """
-        if self.busy:
-            if callback:
-                if args or kwargs:
-                    callback = lambda: callback(*args, **kwargs)
-                self.connect("finished", callback, True)
-            if not wait:
-                return
-            self.wait()
-        return self.root
-
     def get_changes(self):
         """Get and combine the stored change requests in a Changes object.
 
         This may only be called from the same thread that also performs the
-        :meth:`rebuild()`.
+        :meth:`rebuild`.
 
         """
         c = Changes()
@@ -608,10 +558,10 @@ class TreeBuilder(Observable):
         self.process_started()
         start = end = -1
         lexicons = False    # no change
-        self.lock(True)
+        self._lock.acquire()
         c = self.get_changes()
         while c and c.has_changes():
-            self.lock(False)
+            self._lock.release()
             yield "build"
             result = self.build_new_tree(c.text, c.root_lexicon, c.start, c.removed, c.added)
             yield "replace"
@@ -621,7 +571,7 @@ class TreeBuilder(Observable):
             end = r.end if end == -1 else max(c.new_position(end), r.end)
             if r.lexicons is not None:
                 lexicons = r.lexicons
-            self.lock(True)
+            self._lock.acquire()
             c = self.get_changes()
         yield "finish"
         if start != -1:
@@ -631,17 +581,9 @@ class TreeBuilder(Observable):
         if lexicons is not False:
             self.lexicons = lexicons
         self.busy = False
-        self.lock(False)
+        self._lock.release()
         self.process_finished()
         yield "done"
-
-    def wait(self):
-        """Implement to wait for completion if a background job is running.
-
-        The default implementation does nothing, and immediately returns.
-
-        """
-        pass
 
     def peek(self, start, tree):
         """This is called from :meth:`build_new_tree` with a sneak preview tree.
@@ -671,15 +613,6 @@ class TreeBuilder(Observable):
         """
         self.emit("peek", start, tree)
 
-    def lock(self, acquire):
-        """Acquire lock (True) or release lock (False). Does nothing by default.
-
-        If you want to run the full update and replace jobs in a background
-        thread, you may need locking, to prevent changes from going unnoticed.
-
-        """
-        pass
-
     def process_started(self):
         """Called at the start ot the tree building process.
 
@@ -699,44 +632,5 @@ class TreeBuilder(Observable):
         """
         self.emit("updated", self.start, self.end)
         self.emit("finished")
-
-
-class BackgroundTreeBuilder(TreeBuilder):
-    """A TreeBuilder that can tokenize a text in a Python thread.
-
-    In BackgroundTreeBuilder, :meth:`rebuild()` returns immediately, because
-    :meth:`start_processing()` has been reimplemented to call itself in a
-    background thread.
-
-    You can continue adding changes while previous changes are processed;
-    the tree builder will immediately adapt to the new changes.
-
-    To be sure you get a completed tree, call ``get_root(True)``.
-
-    """
-    def __init__(self, root_lexicon=None):
-        super().__init__(root_lexicon)
-        self.job = None
-        self._lock = threading.Lock()
-
-    def lock(self, acquire):
-        """Reimplemented to actually lock/unlock."""
-        self._lock.acquire() if acquire else self._lock.release()
-
-    def start_processing(self):
-        """Reimplemented to call start_processing in a background thread."""
-        self.job = threading.Thread(target=super().start_processing)
-        self.job.start()
-
-    def wait(self):
-        """Reimplemented to await our background thread if active."""
-        job = self.job
-        if job:
-            job.join()
-
-    def process_finished(self):
-        """Reimplemented to clear the job attribute."""
-        self.job = None
-        super().process_finished()
 
 

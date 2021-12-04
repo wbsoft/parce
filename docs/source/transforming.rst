@@ -156,7 +156,7 @@ Test it with::
     9
 
 
-Integration with TreeBuilder and Document
+Integration with Document and TreeBuilder
 -----------------------------------------
 
 It is very easy to keep a transformed structure up-to-date when a tree changes.
@@ -176,26 +176,25 @@ tokens in your structure. The ``pos`` attribute of the Tokens that move is
 adjusted by the tree builder, so they still point to the right position after
 an update of the tree.
 
+All of the above is taken care of by the :class:`~parce.Document` class, which
+uses a :class:`~.work.Worker` to run the TreeBuilder and the Transformer.
+
 Here is an example::
 
     >>> from parce.lang.json import Json
     >>> from parce import Document
     >>> from parce.transform import Transformer
-    >>>
     >>> d = Document(Json.root)
-    >>> t = Transformer()
-    >>> t.connect_treebuilder(d.builder())
-    >>>
+    >>> d.worker().set_transformer(Transformer())
     >>> d.set_text('{"key": [1, 2, 3, 4, 5]}')
-    >>> t.result(d.get_root())
+    >>> d.get_transform(True)
     {'key': [1, 2, 3, 4, 5]}
     >>> d.insert(22, ", 6, 7, 8")
-    >>> t.result(d.get_root())
+    >>> d.get_transform(True)
     {'key': [1, 2, 3, 4, 5, 6, 7, 8]}
 
 Note that after inserting some text the transformed result automatically gets
-updated, because we called the :meth:`~Transformer.connect_treebuilder`
-method.
+updated.
 
 When the tree builder is about to inject the modified tree part in the
 Document's tree, it emits the ``"replace"`` event. The transformer reacts by
@@ -212,9 +211,3 @@ Transform instances between multiple jobs and documents. If your Transform
 classes keep internal state that might not be desirable; in that case you can
 use a Transformer for every document or tree.
 
-If you were using a :class:`~parce.treebuilder.BackgroundTreeBuilder`, the
-transformed result is automatically computed in a background thread as well
-(during the ``self.emit("finished")`` call in the tree builder's method
-:meth:`~parce.treebuilder.TreeBuilder.process_finished`). But you can also use
-a :class:`BackgroundTransformer` or inherit from Transformer to add your own
-implementation for running in the background.

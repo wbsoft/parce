@@ -7,7 +7,7 @@ Earlier we saw the simple function::
     tree = parce.root(lexicon, text)
 
 to get the tree with all tokens read from the text using the specified root
-lexicon. This work is done by a :py:mod:`TreeBuilder <parce.treebuilder>`.
+lexicon. This work is done by a :class:`~parce.treebuilder.TreeBuilder`.
 
 There are many ways to use TreeBuilder, but first we will look at using it
 directly.
@@ -105,53 +105,7 @@ have exactly the same ancestry. Typing a character that opens a new context of
 course changes the meaning of the following text, and also that is handled
 correctly.
 
-If you manually change the root lexicon, you need to call ``rebuild()`` in
-order to rebuild the tree with the new root lexicon.
-
-
-Using BackgroundTreeBuilder
----------------------------
-
-The :py:class:`BackgroundTreeBuilder <parce.treebuilder.BackgroundTreeBuilder>`
-builds upon the TreeBuilder, adding functionality to perform the tokenization
-of text in a background thread, which can be important when using parce in
-GUI applications.
-
-A BackgroundTreeBuilder is instantiated the same as a TreeBuilder, preferably
-with a root lexicon, but updates are managed differently.
-
-You can just call ``rebuild()`` like before, but it returns immediately, and the
-(re)building of the tree happens in the background.
-
-The :meth:`~parce.treebuilder.BackgroundTreeBuilder.get_root`
-method is used to be notified when parsing is ready. It can be used for three
-things:
-
-* just knowing parsing is ready: when ``get_root()`` returns None you know
-  parsing is not yet finished. Otherwise the tree is returned.
-
-* get called back when parsing is done: ``get_root(callback=func)`` calls ``func``
-  when parsing is finished
-
-* just hang on waiting...: ``get_root(True)`` awaits the process if needed and
-  returns the finished tree.
-
-You can also connect to emitted events, for example using::
-
-    builder.connect("updated", func)
-
-The supplied ``func`` will then be called with two arguments ``start`` and
-``end`` that denote the range that was re-tokenized.
-
-Finally you can also inherit from BackgroundTreeBuilder and reimplement
-the ``process_finished()`` method to do anything you like.
-
-Of course you can also access the tree directly via the root element, but it is
-not recommended to do so while parsing is busy, because you won't get reliable
-results.
-
-For more information, study the documentation and source code of the
-:mod:`~parce.treebuilder` module.
-
-
+If you manually change the root lexicon, you need to call
+:meth:`~parce.treebuilder.TreeBuilder.rebuild` in order to rebuild the tree
+with the new root lexicon.
 
