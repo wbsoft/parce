@@ -181,16 +181,19 @@ from the :mod:`~parce.document` module and
 
 Using those base classes, it is not difficult to design a class that wraps an
 object representing a text document in a GUI editor. You need only to provide
-two methods in your wrapper: :meth:`~parce.document.AbstractDocument.text` to
-get all text, and :meth:`~parce.document.AbstractDocument._update_contents` to
-change the text programmatically. When the text is changed,
-``AbstractDocument`` calls
-:meth:`~parce.document.AbstractDocument.contents_changed`, which in
-``WorkerDocumentMixin`` is implemented to inform the TreeBuilder about a part of
-text that needs to be retokenized. Also your wrapper class should call
-``contents_changed`` whenever the user has typed in the editor.
+two methods in your wrapper:
+:meth:`~parce.mutablestring.AbstractMutableString.text` to get all text, and
+:meth:`~parce.mutablestring.AbstractMutableString._update_text` to change the
+text programmatically. When the text is changed,
+:class:`~parce.document.AbstractDocument` calls
+:meth:`~parce.mutablestring.AbstractMutableString.contents_changed`, which in
+:class:`~parce.work.WorkerDocumentMixin` is implemented to inform the
+TreeBuilder about a part of text that needs to be retokenized. Also your
+wrapper class should call
+:meth:`~parce.mutablestring.AbstractMutableString.contents_changed` whenever
+the user has typed in the editor.
 
-Because a Document is basically a mutable string, we added some more nice
+Because a Document *is* basically a mutable string, we added some more nice
 methods to perform certain actions like search, replace, and substitution using
 regular expressions. And even undo/redo! See the :doc:`document module's
 documentation <document>`.
