@@ -203,12 +203,16 @@ class TreeBuilder(Observable):
         """
         if added is None:
             added = len(text) - start
-        self.lock(True)
-        self.changes.append((text, root_lexicon, start, removed, added))
-        self.lock(False)
+        self.add_changes(text, root_lexicon, start, removed, added)
         if not self.busy:
             self.busy = True
             self.start_processing()
+
+    def add_changes(self, text, root_lexicon, start, removed, added):
+        """Add the changes to our changes list."""
+        self.lock(True)
+        self.changes.append((text, root_lexicon, start, removed, added))
+        self.lock(False)
 
     def build_new_tree(self, text, root_lexicon, start, removed, added):
         """Build a new tree without yet modifying the current tree.
