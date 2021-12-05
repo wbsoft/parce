@@ -164,10 +164,13 @@ class Worker(util.Observable):
 
         ## run the treebuilder
         for stage in self._builder.process():
-            yield "tree " + stage
+            yield "tree_" + stage
             if stage == "replace":
                 with c:
                     self._tree_state = REPLACE
+            elif stage == "done":
+                with c:
+                    self._tree_state = DONE
         with c:
             self._tree_state = DONE
         self.finish_build()
@@ -182,10 +185,13 @@ class Worker(util.Observable):
             while t and t is not old:
                 self._transform_lock.release()
                 for stage in t.process(self._builder.root):
-                    yield "transform " + stage
+                    yield "transform_" + stage
                     if stage == "replace":
                         with c:
                             self._transform_state = REPLACE
+                    elif stage == "done":
+                        with c:
+                            self._tree_state = DONE
                 self._transform_lock.acquire()
                 # if the transformer was replaced while running, start again
                 t, old = self._transformer, t

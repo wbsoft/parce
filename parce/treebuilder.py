@@ -582,8 +582,8 @@ class TreeBuilder(Observable):
             self.lexicons = lexicons
         self.busy = False
         self._lock.release()
-        self.process_finished()
         yield "done"
+        self.process_finished()
 
     def peek(self, start, tree):
         """This is called from :meth:`build_new_tree` with a sneak preview tree.
