@@ -207,6 +207,9 @@ class _Observer:
         self.once = once
         self.priority = priority
 
+    def __repr__(self):
+        return "<Observer for {}>".format(self.func)
+
     def __eq__(self, other):
         if type(other) is _Observer:
             return self.func == other.func

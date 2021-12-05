@@ -184,8 +184,7 @@ Here is an example::
     >>> from parce.lang.json import Json
     >>> from parce import Document
     >>> from parce.transform import Transformer
-    >>> d = Document(Json.root)
-    >>> d.worker().set_transformer(Transformer())
+    >>> d = Document(Json.root, transformer=Transformer())
     >>> d.set_text('{"key": [1, 2, 3, 4, 5]}')
     >>> d.get_transform(True)
     {'key': [1, 2, 3, 4, 5]}

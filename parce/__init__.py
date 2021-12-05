@@ -84,10 +84,46 @@ from .pkginfo import version, version_string
 class Document(work.WorkerDocumentMixin, document.Document):
     """A Document that automatically keeps its contents tokenized.
 
-    You can specify your own :class:`~.work.Worker`. By default, a
-    :class:`~.work.BackgroundWorker` is used. With the
-    :meth:`~.work.WorkerDocumentMixin.get_root` method you get the parsed tree.
-    An example::
+    A Document holds an editable text string and keeps the tokenized tree and
+    (if a Transformer is used) the transformed result up to date on every text
+    change. Arguments:
+
+    ``root_lexicon``:
+        The root lexicon to use (default None)
+
+    ``text``:
+        The initial text (default the empty string)
+
+    ``worker``:
+        Use the specified :class:`~.work.Worker`. By default, a
+        :class:`~.work.BackgroundWorker` is used
+
+    ``transformer``:
+        Use the specified :class:`~.transform.Transformer`. By default, no
+        Transformer is installed. As a convenience, you can specify ``True``,
+        in which case a default Transformer is installed
+
+    In addition to the events mentioned in the :class:`.document.Document` base
+    class, the following events are emitted:
+
+    ``"tree_updated" (start, end)``:
+        emitted when the tokenized tree has been updated; the handler is called
+        with two arguments: ``start``, ``end``, that denote the updated text
+        range
+
+    ``"tree_finished"``:
+        emitted when the tokenized tree has been updated; the handler is called
+        without arguments
+
+    ``"transform_finished"``:
+        emitted when a transform rebuild has finished; the handler is called
+        without arguments
+
+    Using the :meth:`~.util.Observable.connect` method you can connect to these
+    events.
+
+    With the :meth:`~.work.WorkerDocumentMixin.get_root` method you get the
+    parsed tree. An example::
 
         >>> d = parce.Document(parce.find('xml'), '<xml>Hi!</xml>')
         >>> d.get_root(True).dump()
@@ -112,29 +148,42 @@ class Document(work.WorkerDocumentMixin, document.Document):
             ├╴<Token 'xml' at 19:22 (Name.Tag)>
             ╰╴<Token '>' at 22:23 (Delimiter)>
 
-    If you set a :class:`~.transform.Transformer` to the Worker, the
-    transformed result is also kept up to date. The
-    :meth:`~.work.WorkerDocumentMixin.get_transform` method gives you the
+    If you use a Transformer, the transformed result is also kept up to date.
+    The :meth:`~.work.WorkerDocumentMixin.get_transform` method gives you the
     transformed result. For example::
 
-        >>> import parce.transform
-        >>> d = parce.Document(parce.find('json'), '{"key": [1, 2, 3, 4, 5, 6, 7, 8, 9]}')
-        >>> d.worker().set_transformer(parce.transform.Transformer())
+        >>> import parce
+        >>> d = parce.Document(parce.find('json'), '{"key": [1, 2, 3, 4, 5, 6, 7, 8, 9]}', transformer=True)
         >>> d.get_transform(True)
         {'key': [1, 2, 3, 4, 5, 6, 7, 8, 9]}
 
     """
-    def __init__(self, root_lexicon=None, text="", worker=None):
+    def __init__(self, root_lexicon=None, text="", worker=None, transformer=None):
         document.Document.__init__(self, text)
+        if transformer is True:
+            from . import transform
+            transformer = transform.Transformer()
         if worker is None:
-            worker = work.BackgroundWorker(treebuilder.TreeBuilder(root_lexicon))
+            worker = work.BackgroundWorker(treebuilder.TreeBuilder(root_lexicon), transformer)
         else:
             root = worker.builder().root
             root.clear()
             root.lexicon = root_lexicon
+            if transformer:
+                worker.set_transformer(transformer)
         work.WorkerDocumentMixin.__init__(self, worker)
         if text:
             worker.update(text)
+        worker.connect("tree_finished", self._slot_tree_finished)
+        worker.connect("transform_finished", self._slot_transform_finished)
+
+    def _slot_tree_finished(self):
+        b = self.builder()
+        self.emit("tree_updated", b.start, b.end)
+        self.emit("tree_finished")
+
+    def _slot_transform_finished(self):
+        self.emit("transform_finished")
 
 
 def find(name=None, *, filename=None, mimetype=None, contents=None):

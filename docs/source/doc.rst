@@ -1,9 +1,9 @@
 The Document class
 ==================
 
-*parce* provides a ``Document`` which can keep the text, collect changes
-to the text and internally call the TreeBuilder to process the changes. The
-Document simply behaves as a *mutable string* with some extra features.
+*parce* provides a :class:`~parce.Document` which can keep the text, collect
+changes to the text and internally call the TreeBuilder to process the changes.
+The Document simply behaves as a *mutable string* with some extra features.
 
 To instantiate a Document::
 

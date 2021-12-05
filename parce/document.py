@@ -234,7 +234,7 @@ class Document(AbstractDocument, mutablestring.MutableString, util.Observable):
         emitted when the availability of :meth:`undo` changes
 
     ``"redo_available" (bool)``:
-        emitted when the availability of :meth:`redo` changes
+        emitted when the availability of :meth:`redo` changes.
 
     """
     _in_undo = util.Switch()

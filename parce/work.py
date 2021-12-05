@@ -42,6 +42,7 @@ background thread for (parts of) the job.
 """
 
 import threading
+import weakref
 
 from . import util
 
@@ -68,7 +69,7 @@ class Worker(util.Observable):
 
     ``"tree_updated"``:
         emitted when a tree (re)build has finished; the handler is called with
-        two arguments: ``start``, ``end``, that denote the updated text range.
+        two arguments: ``start``, ``end``, that denote the updated text range
 
     ``"tree_finished"``:
         emitted when a (re)build has finished; the handler is called without
@@ -342,6 +343,20 @@ class WorkerDocumentMixin:
         """Return the worker's TreeBuilder."""
         return self._worker._builder
 
+    def transformer(self):
+        """Return the worker's Transformer, if set."""
+        return self._worker._transformer
+
+    def set_transformer(self, transformer):
+        """Set a new Transformer in the worker.
+
+        Specify None to remove the current transformer.
+
+        .. seealso:: :meth:`Worker.set_transformer`
+
+        """
+        self._worker.set_transformer(transformer)
+
     def root_lexicon(self):
         """Return the currently set root lexicon."""
         return self.builder().root.lexicon
@@ -357,9 +372,18 @@ class WorkerDocumentMixin:
     def get_root(self, wait=False, callback=None):
         """Get the root element of the completed tree.
 
-        See :meth:`Worker.get_root` for more information.
+        If wait is True, this call blocks until tokenizing is done, and the
+        full tree is returned. If wait is False, None is returned if the tree
+        is still busy being built.
 
+        If a callback is given and tokenizing is still busy, that callback is
+        called once when tokenizing is ready, with this Document as the
+        sole argument.
+
+        .. seealso:: :meth:`Worker.get_root`
         """
+        if callback:
+            callback = self._callback_to_self(callback)
         return self._worker.get_root(wait, callback)
 
     def open_lexicons(self):
@@ -379,9 +403,18 @@ class WorkerDocumentMixin:
     def get_transform(self, wait=False, callback=None):
         """Return the transformed result (if a Transformer is active in the Worker).
 
-        See :meth:`Worker.get_transform` for more information.
+        If wait is True, the call blocks until (tokenizing and) transforming is
+        finished. If wait is False, None is returned if the transform is not
+        yet ready.
 
+        If a callback is given and transformation is not finished yet, that
+        callback is called once when transforming is ready, with this
+        Document as the sole argument.
+
+        .. seealso:: :meth:`Worker.get_transform`
         """
+        if callback:
+            callback = self._callback_to_self(callback)
         return self._worker.get_transform(wait, callback)
 
     def contents_changed(self, start, removed, added):
@@ -412,4 +445,18 @@ class WorkerDocumentMixin:
             # see if token (to the right) is on the same line
             if self.block_separator not in self[pos:token.pos]:
                 return token
+
+    def _callback_to_self(self, callback):
+        """Return a callable that calls callback with self as first argument.
+
+        The original first argument is ignored (that's the Worker). Does not
+        store a reference to self.
+
+        """
+        selfref = weakref.ref(self)
+        def cb(worker):
+            self = selfref()
+            if self:
+                callback(self)
+        return cb
 
