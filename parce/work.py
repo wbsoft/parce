@@ -133,6 +133,7 @@ class Worker(util.Observable):
         """
         self._builder.add_changes(text, root_lexicon, start, removed, added)
         if not self._builder.busy:
+            self._builder.busy = True
             self.start()
 
     def start(self):
