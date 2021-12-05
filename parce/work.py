@@ -53,6 +53,13 @@ REPLACE   = 3       # result is invalid, in process of being replaced
 DONE      = 4       # result is ready but finished callbacks still to be done
 
 
+_STATES = {
+    "build": BUILD,
+    "replace": REPLACE,
+    "done": DONE,
+}
+
+
 class Worker(util.Observable):
     """Runs the TreeBuilder and the Transformer.
 
@@ -169,14 +176,10 @@ class Worker(util.Observable):
         self.start_build()
         for stage in self._builder.process():
             yield "tree_" + stage
-            if stage == "replace":
+            state = _STATES.get(stage)
+            if state:
                 with c:
-                    self._tree_state = REPLACE
-            elif stage == "done":
-                with c:
-                    self._tree_state = DONE
-        with c:
-            self._tree_state = DONE
+                    self._tree_state = state
         self.finish_build()
         with c:
             self._tree_state = IDLE
@@ -190,17 +193,13 @@ class Worker(util.Observable):
                 self._transform_lock.release()
                 for stage in t.process(self._builder.root):
                     yield "transform_" + stage
-                    if stage == "replace":
+                    state = _STATES.get(stage)
+                    if state is not None:
                         with c:
-                            self._transform_state = REPLACE
-                    elif stage == "done":
-                        with c:
-                            self._tree_state = DONE
+                            self._transform_state = state
                 self._transform_lock.acquire()
                 # if the transformer was replaced while running, start again
                 t, old = self._transformer, t
-            with c:
-                self._transform_state = DONE
             self._transform_lock.release()
             self.finish_transform()
         else:
