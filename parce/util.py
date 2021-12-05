@@ -30,6 +30,7 @@ import codecs
 import contextlib
 import functools
 import threading
+import types
 import weakref
 
 
@@ -197,33 +198,49 @@ class _Observer:
     """
     __slots__ = ('func', 'once', 'priority', 'call')
     def __init__(self, func, once=None, prepend_self=False, priority=0):
+        if isinstance(func, types.MethodType):
+            func = weakref.WeakMethod(func)
+            self.call = self.call_weakmethod_with_self if prepend_self else self.call_weakmethod
+        else:
+            self.call = func if prepend_self else self.call_func
         self.func = func
         self.once = once
         self.priority = priority
-        if prepend_self:
-            self.call = func    # Observable calls with self prepended
-        else:
-            self.call = lambda self, *args, **kwargs: func(*args, **kwargs)
 
     def __eq__(self, other):
-        if type(other) == type(self):
+        if type(other) is _Observer:
             return self.func == other.func
-        return super().__eq__(other)
+        return NotImplemented
 
     def __ne__(self, other):
-        if type(other) == type(self):
+        if type(other) is _Observer:
             return self.func != other.func
-        return super().__ne__(other)
+        return NotImplemented
 
     def __lt__(self, other):
-        if type(other) == type(self):
+        if type(other) is _Observer:
             return self.priority < other.priority
-        return super().__lt__(other)
+        return NotImplemented
 
     def __gt__(self, other):
-        if type(other) == type(self):
+        if type(other) is _Observer:
             return self.priority > other.priority
-        return super().__gt__(other)
+        return NotImplemented
+
+    def call_func(self, observable, *args, **kwargs):
+        return self.func(*args, **kwargs)
+
+    def call_weakmethod(self, observable, *args, **kwargs):
+        func = self.func()
+        if func:
+            return func(*args, **kwargs)
+        self.once = True
+
+    def call_weakmethod_with_self(self, observable, *args, **kwargs):
+        func = self.func()
+        if func:
+            return func(observable, *args, **kwargs)
+        self.once = True
 
 
 class Observable:
@@ -290,14 +307,13 @@ class Observable:
         ``prepend_self`` is True, the callback is called with the observable
         itself as first argument.
 
+        If the ``func`` is a method, it is stored using a weak reference.
+
         """
         observer = _Observer(func, once, prepend_self, priority)
         slots = self._callbacks.setdefault(event, [])
-        try:
-            slots.remove(observer)
-        except ValueError:
-            pass
-        bisect.insort_right(slots, observer)
+        if observer not in slots:
+            bisect.insort_right(slots, observer)
 
     def disconnect(self, event, func):
         """Remove a previously registered callback function."""
@@ -347,7 +363,7 @@ class Observable:
     def emit(self, event, *args, **kwargs):
         """Call all callbacks for the event.
 
-        Returns a :py:class:`contextlib.ExitStack` instance. When any of the
+        Returns a :class:`contextlib.ExitStack` instance. When any of the
         connected callbacks returns a context manager, that context is entered,
         and added to the exit stack, so it is exited when the exit stack is
         exited.
