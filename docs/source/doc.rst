@@ -7,20 +7,19 @@ The Document simply behaves as a *mutable string* with some extra features.
 
 To instantiate a Document::
 
-    import parce
-    from parce.lang.xml import Xml   # just for example
-
-    d = parce.Document()
-    d.set_root_lexicon(Xml.root)
-    d.set_text(r'<xml attr="value">')
+    >>> import parce
+    >>> from parce.lang.xml import Xml   # just for example
+    >>> d = parce.Document()
+    >>> d.set_root_lexicon(Xml.root)
+    >>> d.set_text(r'<xml attr="value">')
 
 You can also give root lexicon and text on instantiation::
 
-    d = parce.Document(Xml.root, r'<xml attr="value">')
+    >>> d = parce.Document(Xml.root, r'<xml attr="value">')
 
 To get the tree::
 
-    >>> tree = d.get_root(True) # same args as TreeBuilder.get_root()
+    >>> tree = d.get_root(True)
     >>> tree.dump()
     <Context Xml.root at 0-18 (3 children)>
      ├╴<Token '<' at 0:1 (Delimiter)>
