@@ -67,6 +67,9 @@ class Worker(util.Observable):
 
     You can connect to the following signals:
 
+    ``"started"``:
+        emitted when a build process has started
+
     ``"tree_updated"``:
         emitted when a tree (re)build has finished; the handler is called with
         two arguments: ``start``, ``end``, that denote the updated text range
@@ -163,6 +166,7 @@ class Worker(util.Observable):
         c = self._condition
 
         ## run the treebuilder
+        self.start_build()
         for stage in self._builder.process():
             yield "tree_" + stage
             if stage == "replace":
@@ -295,6 +299,14 @@ class Worker(util.Observable):
         """
         if self._transformer:
             self._transformer.interrupt(self._builder.root)
+
+    def start_build(self):
+        """Called when the build process starts.
+
+        Emits the ``'started'`` event.
+
+        """
+        self.emit("started")
 
     def finish_build(self):
         """Called when the treebuilder is done.
