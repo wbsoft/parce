@@ -53,7 +53,8 @@ from parce.util import Observable, tokens
 from parce.target import TargetFactory
 from parce.tree import Context, make_tokens
 from parce.treebuilderutil import (
-    BuildResult, ReplaceResult, Changes, get_prepared_lexer, new_tree)
+    BuildResult, ReplaceResult, Changes, ancestors_with_index,
+    get_prepared_lexer, new_tree)
 
 
 def build_tree(root_lexicon, text, pos=0):
@@ -278,12 +279,12 @@ class TreeBuilder(Observable):
         while True:
             # when restarting, see if we can reuse (part of) the new tree
             if tree:
-                result = get_prepared_lexer(tree, text, start)
+                result = get_prepared_lexer(tree, text, start, True)
                 if result:
                     lexer, events, tokens = result
                     t = tokens[0]
                     context = t.parent
-                    for p, i in t.ancestors_with_index():
+                    for p, i in ancestors_with_index(t):
                         del p[i+1:]
                     del context[-1]
                 else:

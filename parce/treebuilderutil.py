@@ -27,9 +27,10 @@ Helper functions and classes for the :mod:`~parce.treebuilder` module.
 import collections
 import itertools
 
-from parce.lexer import Event, Lexer
-from parce.tree import Context
-from parce.target import TargetFactory
+from . import util
+from .lexer import Event, Lexer
+from .tree import Context
+from .target import TargetFactory
 
 
 #: encapsulates the return values of :meth:`TreeBuilder.build_new_tree`
@@ -115,7 +116,7 @@ class Changes:
         return pos - self.removed + self.added
 
 
-def get_prepared_lexer(tree, text, start):
+def get_prepared_lexer(tree, text, start, new_tree=False):
     """Get a prepared lexer reading from text, positioned at (or before) start.
 
     Returns the three-tuple (lexer, events, tokens). The events stream is
@@ -125,33 +126,44 @@ def get_prepared_lexer(tree, text, start):
     Returns None when no position to start can be found, just start from the
     beginning in this case.
 
+    If new_tree is True, does not find a start position if there would no
+    tokens remain left of it. This is useful when restarting a tree build; it
+    avoids leaving empty contexts in the build tree that should not be there.
+
     """
-    while start:
-        last_token = start_token = find_token_before(tree, start)
-        while last_token and last_token.group is not None:
-            group = last_token.get_group()
-            if group[-1].end <= start:
+    last_token = start_token = find_token_before(tree, start)
+    if not last_token:
+        return
+    go_back = backward(last_token)
+    if last_token.group is not None and last_token.group >= 0:
+        # we are in the middle of a group
+        for last_token in go_back:
+            if last_token.group is None or last_token.group < 0:
                 break
-            last_token = group[0].previous_token()
-        if not last_token:
+        else:
             return
-        # go back at most 10 tokens, to the beginning of a group; if we
-        # are at the first token just return 0.
-        for start_token in itertools.islice(last_token.backward(), 10):
-            pass
-        while True:
-            if start_token.group:
-                start_token = start_token.get_group_start()
-            # go back further if this is the first token in a context whose
-            # lexicon has consume == True
-            if start_token.is_first() and start_token.parent.lexicon.consume:
-                prev_token = start_token.previous_token()
-                if prev_token:
-                    start_token = prev_token
-                    continue
+
+    while start:
+        # go back at least 10 tokens, to the beginning of a group; and don't
+        # stop at the first token(group) of a context whose lexicon has
+        # consume == True
+        start = 0
+        count = 10
+        for start_token in go_back:
+            for next_token in go_back:
+                if start_token.group is None and not (start_token.is_first() and start_token.parent.lexicon.consume):
+                    count -= 1
+                    if count == 0:
+                        start = start_token.pos
+                        break
+                start_token = next_token
             break
-        start = start_token.pos if start_token.previous_token() else 0
-        lexer = get_lexer(start_token) if start else Lexer([tree.lexicon])
+        if start:
+            lexer = get_lexer(start_token)
+        elif new_tree:
+            return
+        else:
+            lexer = Lexer([tree.lexicon])
         events = lexer.events(text, start)
         # compare the new events with the old tokens; at least one
         # should be the same; if not, go back further if possible
@@ -184,7 +196,7 @@ def events_with_tokens(start_token, last_token):
     case is handled gracefully.
 
     """
-    context, start_trail, end_trail = start_token.common_ancestor_with_trail(last_token)
+    context, start_trail, end_trail = common_ancestor_with_trail(start_token, last_token)
     if context:
 
         target = TargetFactory()
@@ -224,7 +236,7 @@ def events_with_tokens(start_token, last_token):
                         break
 
         if start_token.is_first() and not start_token.parent.is_root() \
-                and not start_token.previous_token():
+                and not previous_token(start_token):
             # start token is the very first token, but it is not in the root
             # context. So it is a child of a lexicon with consume, or a context
             # that was jumped to via a default target. Build a target from root.
@@ -280,6 +292,57 @@ def find_token_before(node, pos):
         node = node[i-1]
         if node.is_token:
             return node
+
+
+def ancestors_with_index(node):
+    """A version of :meth:`~parce.tree.Node.ancestors_with_index` that can
+    handle empty contexts.
+
+    """
+    while node.parent:
+        index = node.parent.index(node)
+        node = node.parent
+        yield node, index
+
+
+def backward(node):
+    """A version of :meth:`~parce.tree.Node.backward` that can handle empty
+    contexts.
+
+    """
+    for node, index in ancestors_with_index(node):
+        if index > 0:
+            yield from util.tokens_bw(node[index-1::-1])
+
+
+def previous_token(node):
+    """A version of :meth:`~parce.tree.Node.previous_token` that can handle
+    empty contexts.
+
+    """
+    for token in backward(node):
+        return token
+
+
+def common_ancestor_with_trail(node, other):
+    """A version of :meth:`~parce.tree.Node.common_ancestor_with_trail` that
+    can handle empty contexts.
+
+    """
+    if other is node:
+        i = node.parent.index(node)
+        return node.parent, (i,), (i,)
+    if other.pos > node.pos:
+        s_ancestors, s_indices = zip(*ancestors_with_index(node))
+        o_indices = []
+        for n, i in ancestors_with_index(other):
+            o_indices.append(i)
+            try:
+                s_i = s_ancestors.index(n)
+            except ValueError:
+                continue
+            return n, s_indices[s_i::-1], o_indices[::-1]
+    return None, None, None
 
 
 def same_events(e1, e2):
