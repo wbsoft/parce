@@ -266,8 +266,8 @@ def new_tree(token):
 
 
 def find_token_before(node, pos):
-    """A version of :meth:`~parce.tree.Context.find_token_before` that can handle
-    empty contexts.
+    """A version of :meth:`Context.find_token_before()
+    <parce.tree.Context.find_token_before>` that can handle empty contexts.
 
     The new tree built inside :meth:`TreeBuilder.build_new_tree()
     <parce.treebuilder.TreeBuilder.build_new_tree>` can have an empty context
@@ -295,8 +295,8 @@ def find_token_before(node, pos):
 
 
 def ancestors_with_index(node):
-    """A version of :meth:`~parce.tree.Node.ancestors_with_index` that can
-    handle empty contexts.
+    """A version of :meth:`Node.ancestors_with_index()
+    <parce.tree.Node.ancestors_with_index>` that can handle empty contexts.
 
     """
     while node.parent:
@@ -306,18 +306,18 @@ def ancestors_with_index(node):
 
 
 def backward(node):
-    """A version of :meth:`~parce.tree.Node.backward` that can handle empty
-    contexts.
+    """A version of :meth:`Node.backward() <parce.tree.Node.backward>` that can
+    handle empty contexts.
 
     """
     for node, index in ancestors_with_index(node):
-        if index > 0:
+        if index:
             yield from util.tokens_bw(node[index-1::-1])
 
 
 def previous_token(node):
-    """A version of :meth:`~parce.tree.Node.previous_token` that can handle
-    empty contexts.
+    """A version of :meth:`Node.previous_token()
+    <parce.tree.Node.previous_token>` that can handle empty contexts.
 
     """
     for token in backward(node):
@@ -325,8 +325,9 @@ def previous_token(node):
 
 
 def common_ancestor_with_trail(node, other):
-    """A version of :meth:`~parce.tree.Node.common_ancestor_with_trail` that
-    can handle empty contexts.
+    """A version of :meth:`Token.common_ancestor_with_trail()
+    <parce.tree.Token.common_ancestor_with_trail>` that can handle empty
+    contexts.
 
     """
     if other is node:
