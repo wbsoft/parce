@@ -109,6 +109,21 @@ class Node:
             for n in self:
                 n.dump(file, style, depth + 1)
 
+    @property
+    def pwd(self):
+        """Show the ancestry, for debugging purposes."""
+        nodes = [self]
+        nodes.extend(self.ancestors())
+        nodes.reverse()
+        d = DUMP_STYLES[DUMP_STYLE_DEFAULT]
+        for n, node in enumerate(nodes):
+            print(''.join((
+                d[1] * max(0, n-1),
+                d[3] if n else '',
+                repr(node),
+                " [{}]".format(nodes[n-1].index(node)) if n else '',
+            )))
+
     def parent_index(self):
         """Return our index in the parent.
 
