@@ -29,7 +29,7 @@ manager protocol), the modifications are only applied when the context
 exits for the last time.
 
 For tokenized documents (see :class:`parce.Document`), parce inherits from this
-base class (see the :mod:`~parce.treedocument` module).
+base class (see the :mod:`~parce.work` module).
 
 You can use a Cursor to keep track of positions in a document. The position
 (and selection) of a Cursor is adjusted when the text in the document is
@@ -417,15 +417,22 @@ class AbstractTextRange:
         return self.pos <= other.pos
 
     def token(self):
-        """Convenience method returning the :class:`~parce.tree.Token` at our pos."""
+        """Convenience method returning the :class:`~parce.tree.Token` at our pos.
+
+        The Document must have the :class:`~.work.WorkerDocumentMixin` class
+        mixed in (i.e. have the :meth:`~.work.WorkerDocumentMixin.token`
+        method.
+
+        """
         return self.document().token(self.pos)
 
     def tokens(self):
         """Convenience method yielding all Tokens that are in or overlap this
         text range.
 
-        The Document must have the :class:`~parce.treedocument.TreeDocument`
-        class mixed in (i.e. have the ``get_root()`` method.
+        The Document must have the :class:`~.work.WorkerDocumentMixin` class
+        mixed in (i.e. have the :meth:`~.work.WorkerDocumentMixin.get_root`
+        method.
 
         """
         return self.document().get_root(True).tokens_range(self.pos, self.end)
@@ -615,8 +622,9 @@ class Block(AbstractTextRange):
         """Convenience method returning a tuple with all Tokens that are in
         or overlap this block.
 
-        The Document must have the :class:`~parce.treedocument.TreeDocument`
-        class mixed in (i.e. have the ``get_root()`` method.
+        The Document must have the :class:`~.work.WorkerDocumentMixin` class
+        mixed in (i.e. have the :meth:`~.work.WorkerDocumentMixin.get_root`
+        method.
 
         """
         return tuple(super().tokens())
