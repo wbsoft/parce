@@ -24,6 +24,8 @@ Testing parce.document.
 import os
 import sys
 
+import pytest
+
 sys.path.insert(0, ".")
 
 from parce import Document, Cursor
@@ -87,6 +89,20 @@ def test_main():
     assert d.can_undo() == False
     assert d.modified() == False
 
+    # changes on same spot
+    d = Document(None, "abcd")
+    with d:
+        d[0:0] = 'A'
+        d[0:1] = 'B'
+        d[0:2] = 'C'
+    assert d.text() == "ABCcd"
+
+    # overlapping changes
+    d = Document(None, "abcd")
+    with pytest.raises(RuntimeError):
+        with d:
+            d[0:3] = "ABCD"
+            d[1:2] = "bc"
 
 
 if __name__ == "__main__":
