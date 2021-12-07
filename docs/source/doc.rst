@@ -100,10 +100,9 @@ Instead of ``insert()``, we could also have written ``d[39:39]='/'``.
 Performing multiple edits in once
 ---------------------------------
 
-When you want to perform multiple edits in one go, start a ``with`` context and
-apply changes using the slice syntax. Those changes may not overlap. The
-document does not change during these edits, so all ranges remain valid during
-the process.
+When you want to perform multiple edits in one go, start a :python:ref:`with
+<with>` context and apply all desired changes. The document does not change
+during these edits, so all ranges remain valid during the process.
 
 Only when the ``with`` block is exited, the changes are applied and the tree
 of tokens is updated::
@@ -118,6 +117,33 @@ of tokens is updated::
 
 This incantation replaces all XML tag names with the same name in upper case
 and with ``"yo:"`` prepended.
+
+When editing a document in a ``with`` context, it is an error if your changes
+overlap. Because it is then not clear how the text would look like after
+applying the changes. For example::
+
+    >>> d = parce.Document(Xml.root, r'<xml attr="value">')
+    >>> with d:
+    ...     d[1:4] = 'XML'
+    ...     d[5:9] = 'attribute'
+    ...     d[6:16] = 'blabla'
+    ...
+    Traceback (most recent call last):
+      File "<stdin>", line 4, in <module>
+      (...)
+    RuntimeError: overlapping changes: 6 before 9; text='blabla'
+
+When inserting multiple pieces on the same position, the order in which the
+changes are applied is always respected::
+
+    >>> d = parce.Document(Xml.root, r'<xml attr="value">')
+    >>> with d:
+    ...     d[16:16] = ' value1'
+    ...     d[16:16] = ' value2'
+    ...     d[16:16] = ' value3'
+    ...
+    >>> d.text()
+    '<xml attr="value value1 value2 value3">'
 
 
 Cursor and Block
