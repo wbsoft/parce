@@ -178,7 +178,7 @@ class AbstractMutableString:
                 old = end
             self._update_text(changes)
             self._changes.clear()
-            self.contents_changed(head, end - head, added)
+            self.text_changed(head, end - head, added)
 
     def _get_changes(self):
         """(Internal.) Yield the changes.
@@ -198,7 +198,7 @@ class AbstractMutableString:
             yield start, end, text
 
     def _update_text(self, changes):
-        """Called by ``_apply_changes()`` to actually apply the changes to the text.
+        """Called to apply the changes to the text.
 
         The changes is a sorted list of (start, end, text) tuples.
 
@@ -213,8 +213,8 @@ class AbstractMutableString:
         """Insert text at pos."""
         self[pos:pos] = text
 
-    def contents_changed(self, position, removed, added):
-        """Called by ``_apply_changes()``. The default implementation does nothing."""
+    def text_changed(self, position, removed, added):
+        """Called after ``_update_text()``. The default implementation does nothing."""
         pass
 
 

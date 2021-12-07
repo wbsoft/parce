@@ -156,51 +156,36 @@ Test it with::
     9
 
 
-Integration with Document and TreeBuilder
------------------------------------------
+Integration with TreeBuilder
+----------------------------
 
-It is very easy to keep a transformed structure up-to-date when a tree changes.
-The Transformer caches the result of every transform method using a weak
-reference to the Context that yielded that result.
+It is easy to keep a transformed structure up-to-date when a tree changes. The
+Transformer caches the result of every transform method using a weak reference
+to the Context that yielded that result. So when modifications to a text are
+small, in many cases the Transformer is very quick with applying the necessary
+changes to the transformed result.
 
 When the TreeBuilder changes the tree, it emits the event ``"invalidate"``
 with the youngest node that has its children changed (i.e. tokens or contexts
 were added or removed).
 
 The Transformer then knows that that context and all its ancestors need to be
-recomputed. In the process all newly added contexts are evaluated as well,
-because their transformations can't be found in the cache. Contexts that only
-changed position are not recomputed. If you want your transformed structure to
-know the position in the text, you should store references to the corresponding
-tokens in your structure. The ``pos`` attribute of the Tokens that move is
-adjusted by the tree builder, so they still point to the right position after
-an update of the tree.
+recomputed, and removes them from its cache. During transformation all newly
+added contexts are evaluated as well, because their transformations can't be
+found in the cache.
 
-All of the above is taken care of by the :class:`~parce.Document` class, which
-uses a :class:`~.work.Worker` to run the TreeBuilder and the Transformer.
+.. note::
 
-Here is an example::
-
-    >>> from parce.lang.json import Json
-    >>> from parce import Document
-    >>> from parce.transform import Transformer
-    >>> d = Document(Json.root, transformer=Transformer())
-    >>> d.set_text('{"key": [1, 2, 3, 4, 5]}')
-    >>> d.get_transform(True)
-    {'key': [1, 2, 3, 4, 5]}
-    >>> d.insert(22, ", 6, 7, 8")
-    >>> d.get_transform(True)
-    {'key': [1, 2, 3, 4, 5, 6, 7, 8]}
-
-Note that after inserting some text the transformed result automatically gets
-updated.
+   Contexts that only changed position are not recomputed. If you want your
+   transformed structure to know the position in the text, you should store
+   references to the corresponding tokens in your structure. The ``pos``
+   attribute of the Tokens that move is adjusted by the tree builder, so they
+   still point to the right position after an update of the tree.
 
 When the tree builder is about to inject the modified tree part in the
 Document's tree, it emits the ``"replace"`` event. The transformer reacts by
 interrupting any current job that might be busy computing the transformed
-result. When the tree builder is replacing, it emits the ``"invalidate"``
-event, so the transformer knows which contexts need to be deleted from the
-cache. Finally, when the tree builder emits ``"finished"`` the transformer
+result. Finally, when the tree builder emits ``"finished"`` the transformer
 rebuilds our transformed result, using as much as possible the previously
 cached transform results for Contexts that did not change.
 
@@ -210,3 +195,27 @@ Transform instances between multiple jobs and documents. If your Transform
 classes keep internal state that might not be desirable; in that case you can
 use a Transformer for every document or tree.
 
+One way to automatically run a Transformer from a TreeBuilder is using the
+:meth:`Transformer.connect_treebuilder` method, to setup all needed
+connections. Here is an example::
+
+    >>> from parce.lang.json import Json
+    >>> from parce.treebuilder import TreeBuilder
+    >>> from parce.transform import Transformer
+    >>>
+    >>> b = TreeBuilder(Json.root)
+    >>> t = Transformer()
+    >>> t.connect_treebuilder(b)
+    >>>
+    >>> b.rebuild('{"key": [1, 2, 3, 4, 5]}')
+    >>> t.result(b.root)
+    {'key': [1, 2, 3, 4, 5]}
+    >>> b.rebuild('{"key": [1, 2, 3, 4, 5, 6, 7, 8]}', False, 22, 9, 0)
+    >>> t.result(b.root)
+    {'key': [1, 2, 3, 4, 5, 6, 7, 8]}
+
+But it is much easier to use the ``Document`` feature provided by *parce*,
+because that keeps track of the text and its modifications, and can
+automatically keep the tokenized tree and the transformed result up to date.
+
+So head on to the next chapter!

@@ -204,8 +204,12 @@ class AbstractDocument(mutablestring.AbstractMutableString):
         repl = lambda m: mapping[m.group()]
         self.re_sub(expr, repl, start, end, count)
 
-    def contents_changed(self, position, removed, added):
-        """Called by _apply(). The default implementation does nothing."""
+    def text_changed(self, position, removed, added):
+        """Called after ``_update_text()``.
+
+        The default implementation does nothing.
+
+        """
         pass
 
 
@@ -219,11 +223,11 @@ class Document(AbstractDocument, mutablestring.MutableString, util.Observable):
     It also inherits from :class:`~parce.util.Observable` and emits the
     following events:
 
-    ``"contents_change" (position, removed, added)``:
+    ``"text_change" (position, removed, added)``:
         emitted with ``position``, ``removed``, ``added`` arguments whenever the
         text changes
 
-    ``"contents_changed"``:
+    ``"text_changed"``:
         emitted directly afther the previous event, but without arguments
 
     ``"modification_changed" (bool)``:
@@ -294,10 +298,10 @@ class Document(AbstractDocument, mutablestring.MutableString, util.Observable):
             if not self._in_redo:
                 self._redo_stack.clear()
 
-    def _apply_undo(self, stack):
+    def _apply_undo_redo(self, stack):
         """Apply changes from the specified stack (undo or redo)."""
         if self._edit_context > 0:
-            raise RuntimeError("can't redo or redo while in edit context")
+            raise RuntimeError("can't undo or redo while in edit context")
         if stack:
             changes, modified = stack.pop()
             with self:
@@ -332,12 +336,12 @@ class Document(AbstractDocument, mutablestring.MutableString, util.Observable):
     def undo(self):
         """Undo the last modification."""
         with self._in_undo:
-            self._apply_undo(self._undo_stack)
+            self._apply_undo_redo(self._undo_stack)
 
     def redo(self):
         """Redo the last undone modification."""
         with self._in_redo:
-            self._apply_undo(self._redo_stack)
+            self._apply_undo_redo(self._redo_stack)
 
     def clear_undo_redo(self):
         """Clear the undo/redo stack."""
@@ -353,15 +357,15 @@ class Document(AbstractDocument, mutablestring.MutableString, util.Observable):
         """Return True if redo is possible."""
         return bool(self._redo_stack)
 
-    def contents_changed(self, position, removed, added):
-        """Called by ``_apply_changes()``.
+    def text_changed(self, position, removed, added):
+        """Called after ``_update_text()`` has been called.
 
-        The default implementation emits the ``"contents_change"`` and
-        ``"contents_changed"`` events.
+        The default implementation emits the ``"text_change"`` and
+        ``"text_changed"`` events.
 
         """
-        self.emit("contents_change", position, removed, added)
-        self.emit("contents_changed")
+        self.emit("text_change", position, removed, added)
+        self.emit("text_changed")
 
 
 class AbstractTextRange:

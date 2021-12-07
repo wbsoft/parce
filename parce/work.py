@@ -435,14 +435,14 @@ class WorkerDocumentMixin:
             callback = self._callback_to_self(callback)
         return self._worker.get_transform(wait, callback)
 
-    def contents_changed(self, start, removed, added):
+    def text_changed(self, start, removed, added):
         """Called after modification of the text.
 
         Retokenizes the modified part and updates the transformation.
 
         """
         self._worker.update(self.text(), False, start, removed, added)
-        super().contents_changed(start, removed, added)
+        super().text_changed(start, removed, added)
 
     def token(self, pos):
         """Returns the token at the specified position, in an intuitive way.

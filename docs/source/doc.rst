@@ -167,6 +167,38 @@ tokens at that line::
     <Token 'ivory' at 215:220 (Literal.Color)>, <Token ';' at 220:221 (Delimiter)>)
 
 
+Maintaining a transformation
+----------------------------
+
+Behind the scenes, a special :class:`~parce.work.Worker` object is responsible
+for updating the tokenized tree (i.e. running the tree builder), but this same
+worker can also update the transformed result of the tokenized tree.
+
+To enable this, all that's needed is to add a Transformer to the document's
+Worker. You can specify a Transformer (and/or a Worker) on Document
+construction. Here is an example::
+
+    >>> from parce.lang.json import Json
+    >>> from parce import Document
+    >>> from parce.transform import Transformer
+    >>> d = Document(Json.root, transformer=Transformer())
+    >>> d.set_text('{"key": [1, 2, 3, 4, 5]}')
+    >>> d.get_transform(True)
+    {'key': [1, 2, 3, 4, 5]}
+    >>> d.insert(22, ", 6, 7, 8")
+    >>> d.get_transform(True)
+    {'key': [1, 2, 3, 4, 5, 6, 7, 8]}
+
+Note that after inserting some text the transformed result automatically gets
+updated. If all you need is simply the default transformer, construction of
+a document is even simpler::
+
+    >>> import parce
+    >>> d = parce.Document(parce.find('json'), '{"key": [1, 2, 3]}', transformer=True)
+    >>> d.get_transform(True)
+    {'key': [1, 2, 3]}
+
+
 More goodies
 ------------
 
@@ -185,11 +217,11 @@ two methods in your wrapper:
 :meth:`~parce.mutablestring.AbstractMutableString._update_text` to change the
 text programmatically. When the text is changed,
 :class:`~parce.document.AbstractDocument` calls
-:meth:`~parce.mutablestring.AbstractMutableString.contents_changed`, which in
+:meth:`~parce.mutablestring.AbstractMutableString.text_changed`, which in
 :class:`~parce.work.WorkerDocumentMixin` is implemented to inform the
 TreeBuilder about a part of text that needs to be retokenized. Also your
 wrapper class should call
-:meth:`~parce.mutablestring.AbstractMutableString.contents_changed` whenever
+:meth:`~parce.mutablestring.AbstractMutableString.text_changed` whenever
 the user has typed in the editor.
 
 Because a Document *is* basically a mutable string, we added some more nice

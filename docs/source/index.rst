@@ -16,8 +16,8 @@ Last update: |today|.
    deflanguage.rst
    treestructure.rst
    building.rst
-   doc.rst
    transforming.rst
+   doc.rst
    highlighting.rst
 
 .. toctree::
