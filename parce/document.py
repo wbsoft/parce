@@ -267,15 +267,26 @@ class Document(AbstractDocument, mutablestring.MutableString, util.Observable):
         """Apply the changes to the text."""
         with self._check_undo_state():
             if self.undo_redo_enabled:
-                self._store_undo()
+                self._store_undo(self._reverse_changes(changes))
             AbstractDocument._update_text(self, changes)
             mutablestring.MutableString._update_text(self, changes)
         if not (self._in_undo or self._in_redo):
             self.set_modified(True) # othw this is handled by undo/redo
 
-    def _store_undo(self):
+    def _reverse_changes(self, changes):
+        """Return the changes that would be needed to undo the given list of changes."""
+        def reverse_changes():
+            head = 0
+            current_text = self.text()
+            for start, end, text in changes:
+                head += start
+                yield (head, head + len(text), current_text[start:end])
+                head += len(text) - end
+        return list(reverse_changes())
+
+    def _store_undo(self, changes):
         """Store changes needed to reconstruct the previous state."""
-        state = [self._get_reverse_changes(), self.modified()]
+        state = [changes, self.modified()]
         if self._in_undo:
             self._redo_stack.append(state)
         else:
@@ -288,8 +299,10 @@ class Document(AbstractDocument, mutablestring.MutableString, util.Observable):
         if self._edit_context > 0:
             raise RuntimeError("can't redo or redo while in edit context")
         if stack:
-            self._changes, modified = stack.pop()
-            self._apply_changes()
+            changes, modified = stack.pop()
+            with self:
+                for start, end, text in changes:
+                    self[start:end] = text
             self.set_modified(modified)
 
     @contextlib.contextmanager

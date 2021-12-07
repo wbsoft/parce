@@ -31,6 +31,7 @@ applied when the context exits for the last time.
 """
 
 
+import collections
 import reprlib
 
 
@@ -62,7 +63,7 @@ class AbstractMutableString:
     """
     def __init__(self):
         self._edit_context = 0
-        self._changes = []
+        self._changes = collections.defaultdict(list)
 
     def text(self):
         """Should return the text contents."""
@@ -125,7 +126,7 @@ class AbstractMutableString:
         start, end = self._parse_key(key)
         if ((text or start != end) and
             (end - start != len(text) or self[start:end] != text)):
-            self._changes.append((start, end, text))
+            self._changes[start].append((end, text))
             if not self._edit_context:
                 self._apply_changes()
 
@@ -167,31 +168,34 @@ class AbstractMutableString:
         return self.text()[start:end]
 
     def _apply_changes(self):
-        """Check, sort and apply the changes."""
+        """(Internal.) Check, sort and apply the changes."""
         if self._changes:
-            self._changes.sort()
-            # check for overlaps, find the region
-            head = old = self._changes[0][0]
+            changes = list(self._get_changes())
+            head = old = changes[0][0]
             added = 0
-            for start, end, text in self._changes:
-                if start < old:
-                    raise RuntimeError("overlapping changes: {}".format(self._changes))
+            for start, end, text in changes:
                 added += start - old + len(text)
                 old = end
-            self._update_text(self._changes)
+            self._update_text(changes)
             self._changes.clear()
             self.contents_changed(head, end - head, added)
 
-    def _get_reverse_changes(self):
-        """Return the changes that would be needed to undo the current set of changes."""
-        def changes():
-            head = 0
-            current_text = self.text()
-            for start, end, text in self._changes:
-                head += start
-                yield (head, head + len(text), current_text[start:end])
-                head += len(text) - end
-        return list(changes())
+    def _get_changes(self):
+        """(Internal.) Yield the changes.
+
+        Every change is a three-tuple(start, end, text).
+        Overlapping changes are signalled and raise a RuntimeError.
+
+        """
+        positions = sorted(self._changes)
+        end = positions[0]
+        for start in positions:
+            c = self._changes[start]
+            text = ''.join(text for end, text in c)
+            if start < end:
+                raise RuntimeError("overlapping changes: {} before {}; text={}".format(start, end, reprlib.repr(text)))
+            end = max(end for end, text in c)
+            yield start, end, text
 
     def _update_text(self, changes):
         """Called by ``_apply_changes()`` to actually apply the changes to the text.

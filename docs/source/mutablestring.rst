@@ -9,6 +9,6 @@ The mutablestring module
         __eq__, __ne__, __lt__, __gt__, __le__, __ge__,
     :undoc-members:
     :private-members:
-        _update_text, _apply_changes
+        _update_text
     :show-inheritance:
 
