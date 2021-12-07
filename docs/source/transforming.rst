@@ -162,7 +162,7 @@ Integration with TreeBuilder
 It is easy to keep a transformed structure up-to-date when a tree changes. The
 Transformer caches the result of every transform method using a weak reference
 to the Context that yielded that result. So when modifications to a text are
-small, in many cases the Transformer is very quick with applying the necessary
+small, in most cases the Transformer is very quick with applying the necessary
 changes to the transformed result.
 
 When the TreeBuilder changes the tree, it emits the event ``"invalidate"``
@@ -210,11 +210,16 @@ connections. Here is an example::
     >>> b.rebuild('{"key": [1, 2, 3, 4, 5]}')
     >>> t.result(b.root)
     {'key': [1, 2, 3, 4, 5]}
-    >>> b.rebuild('{"key": [1, 2, 3, 4, 5, 6, 7, 8]}', False, 22, 9, 0)
+    >>> b.rebuild('{"key": [1, 2, 3, 4, 5, 6, 7, 8]}', False, 22, 0, 9)
     >>> t.result(b.root)
     {'key': [1, 2, 3, 4, 5, 6, 7, 8]}
 
-But it is much easier to use the ``Document`` feature provided by *parce*,
+The call to :meth:`TreeBuilder.rebuild() <.treebuilder.TreeBuilder.rebuild>`
+might seem overwhelming: we instruct to re-parse the text, starting at position
+22 with 0 characters removed and 9 added. And now the transform is
+automatically updated.
+
+But, it is *much* easier to use the ``Document`` feature provided by *parce*,
 because that keeps track of the text and its modifications, and can
 automatically keep the tokenized tree and the transformed result up to date.
 
