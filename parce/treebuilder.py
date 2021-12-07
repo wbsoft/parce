@@ -358,19 +358,18 @@ class TreeBuilder(Observable):
                                     else:
                                         tail = False
                         break # break the for loop to restart at new start pos
-                if peek:
-                    if tokens[-1].pos > peek:
-                        # call peek with a copy of the current tree.
-                        copied_tree = tree.copy()
-                        # remove the first empty context
-                        t = copied_tree[0]
-                        while t and t.is_context:
-                            t = t[0]
-                        while t.is_context and not t:
-                            t = t.parent
-                            del t[0]
-                        self.peek(lowest_start, copied_tree)
-                        peek = 0
+                if peek and tokens[-1].pos > peek:
+                    # call peek with a copy of the current tree.
+                    copied_tree = tree.copy()
+                    # remove the first empty context
+                    t = copied_tree[0]
+                    while t and t.is_context:
+                        t = t[0]
+                    while t.is_context and not t:
+                        t = t.parent
+                        del t[0]
+                    self.peek(lowest_start, copied_tree)
+                    peek = 0
             else:
                 # we ran till the end, also return the open lexicons
                 return BuildResult(tree, lowest_start, len(text), 0, lexer.lexicons[1:])
@@ -410,7 +409,7 @@ class TreeBuilder(Observable):
             # find the context that really changes, adjust trails
             i = 0
             for i, (s, e) in enumerate(zip(start_trail, end_trail)):
-                if s == e and tree.is_context and len(tree) == 1:
+                if s == e and len(tree) == 1 and tree[0].is_context:
                     context = context[s]
                     tree = tree[0]
                 else:
@@ -579,7 +578,6 @@ class TreeBuilder(Observable):
                 lexicons = r.lexicons
             self._lock.acquire()
             c = self.get_changes()
-        yield "finish"
         if start != -1:
             self.start = start
         if end != -1:

@@ -236,7 +236,7 @@ def events_with_tokens(start_token, last_token):
                         break
 
         if start_token.is_first() and not start_token.parent.is_root() \
-                and not previous_token(start_token):
+                and not any(backward(start_token)):
             # start token is the very first token, but it is not in the root
             # context. So it is a child of a lexicon with consume, or a context
             # that was jumped to via a default target. Build a target from root.
@@ -313,15 +313,6 @@ def backward(node):
     for node, index in ancestors_with_index(node):
         if index:
             yield from util.tokens_bw(node[index-1::-1])
-
-
-def previous_token(node):
-    """A version of :meth:`Node.previous_token()
-    <parce.tree.Node.previous_token>` that can handle empty contexts.
-
-    """
-    for token in backward(node):
-        return token
 
 
 def common_ancestor_with_trail(node, other):
