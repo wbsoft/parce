@@ -175,7 +175,7 @@ Getting at the tokens
 
 Of course, you can get to the tokens by examining the tree, but there are a few
 convenience methods. :meth:`Document.token(pos)
-<parce.treedocument.TreeDocumentMixin.token>` returns the token closest at the
+<parce.work.WorkerDocumentMixin.token>` returns the token closest at the
 specified position (and on the same line), and :meth:`Cursor.token()
 <parce.document.AbstractTextRange.token>` does the same. :meth:`Cursor.tokens()
 <parce.document.AbstractTextRange.tokens>` yields the tokens in the selected

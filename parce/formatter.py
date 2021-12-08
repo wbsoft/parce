@@ -43,10 +43,6 @@ FormatContext.
 
 
 import collections
-import contextlib
-import functools
-import threading
-import weakref
 
 
 from . import util
