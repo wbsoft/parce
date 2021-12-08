@@ -70,12 +70,12 @@ Find all "\\version" tokens in the root context, that have a "2" in the version
 string after it::
 
     (t for t in root.query.children('\\version')
-        if any(t.query.next.target.children.containing('2')))
+        if any(t.query.next.next.containing('2')))
 
 Which could also be written as::
 
     root.query.children('\\version').filter(
-        lambda t: any(t.query.next.target.children.containing('2')))
+        lambda t: any(t.query.next.next.containing('2')))
 
 
 A query is a generator, you can iterate over the results::
@@ -118,6 +118,7 @@ Summary of the query methods:
 
 Endpoint methods (some are mainly for debugging):
 
+:attr:`~Query.ls`,
 :meth:`~Query.count`,
 :meth:`~Query.dump`,
 :meth:`~Query.pick`,
@@ -247,14 +248,20 @@ class Query:
             return True
         return False
 
+    @property
+    def ls(self):
+        """List current selection of this Query, for debugging purposes."""
+        for i, n in enumerate(self):
+            print("[{}] {}".format(i, repr(n)))
+
     def count(self):
         """Compute the length of the iterable."""
         return sum(1 for _ in self)
 
-    def dump(self, file=None):
-        """Dump the current selection to the console (or to file)."""
+    def dump(self, file=None, style=None):
+        """Dump all selected nodes to the console (or to file)."""
         for n in self:
-            n.dump(file)
+            n.dump(file, style)
 
     def pick(self, default=None):
         """Pick the first value, or return the default."""
@@ -355,10 +362,9 @@ class Query:
         else:
             for n in self:
                 if n.is_context:
-                    if key < 0:
-                        key += len(n)
-                    if 0 <= key < len(n):
-                        yield n[key]
+                    k = key + len(n) if key < 0 else key
+                    if 0 <= k < len(n):
+                        yield n[k]
 
     @pquery
     def children(self):

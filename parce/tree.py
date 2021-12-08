@@ -643,6 +643,12 @@ class Context(list, Node):
             return self.lexicon != other
         return other is not self
 
+    @property
+    def ls(self):
+        """List the contents of this Context, for debugging purposes."""
+        for i, n in enumerate(self):
+            print("[{}] {}".format(i, repr(n)))
+
     def copy(self, parent=None):
         """Return a copy of the context, but with the specified parent."""
         # a non-recursive implementation due to Python's recursion limits
