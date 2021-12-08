@@ -62,6 +62,14 @@ register("parce.lang.css.Css.root",
     guesses = [(r'\b@media\b', 0.5), (r'\bdiv\b', 0.1), (r'\bbody\s*\{', 0.4)],
 )
 
+register("parce.lang.csv.Csv.root",
+    name = "CSV",
+    desc = "Comma-separated values",
+    filenames = [("*.csv", 1)],
+    mimetypes = [("text/csv", 1)],
+    guesses = [(r'([^\n,"]+|[ \t]*"(""|[^"])*"[ \t]*)(,([^\n,"]+|[ \t]*"(""|[^"])*"[ \t]*))+(\n|$)', 0.1)],
+)
+
 register("parce.lang.docbook.DocBook.root",
     name = "DocBook",
     desc = "DocBook XMl/SGML computer documentation schema",

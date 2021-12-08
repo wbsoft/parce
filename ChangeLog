@@ -11,6 +11,7 @@ current: parce-0.27.0
 - added transform.Items.peek()
 - Transform.find_transform() now uses a configurable naming scheme
 - LaTeX parsing improvements
+- added CSV language definition and transform
 
 
 2021-11-25: parce-0.26.0

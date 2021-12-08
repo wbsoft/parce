@@ -131,8 +131,8 @@ Using the same Transform class, you can also transform a tree structure::
    and finding there a Transform subclass with the same name with
    ``"Transform"`` appended (see :meth:`Transformer.find_transform`).
 
-Examples of Transform classes can be found in the :mod:`~parce.lang.css` and
-the :mod:`~parce.lang.json` modules.
+Examples of Transform classes can be found in the :mod:`~parce.lang.css`,
+:mod:`~parce.lang.csv` and the :mod:`~parce.lang.json` modules.
 
 Calculator example
 ------------------
