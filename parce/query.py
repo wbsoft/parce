@@ -70,12 +70,12 @@ Find all "\\version" tokens in the root context, that have a "2" in the version
 string after it::
 
     (t for t in root.query.children('\\version')
-        if any(t.query.next.next.containing('2')))
+        if t.query.next.next.containing('2'))
 
 Which could also be written as::
 
     root.query.children('\\version').filter(
-        lambda t: any(t.query.next.next.containing('2')))
+        lambda t: t.query.next.next.containing('2'))
 
 
 A query is a generator, you can iterate over the results::
@@ -259,7 +259,11 @@ class Query:
         return sum(1 for _ in self)
 
     def dump(self, file=None, style=None):
-        """Dump all selected nodes to the console (or to file)."""
+        """Dump all selected nodes to the console (or to file).
+
+        .. seealso:: :meth:`.tree.Node.dump`
+
+        """
         for n in self:
             n.dump(file, style)
 
@@ -301,8 +305,10 @@ class Query:
         context itself is deleted instead of all its children (except for the
         root of course). Returns the number of nodes that were deleted.
 
-        (Note that if you delete tokens from a tree which belong to a group, the
-        tree cannot reliably be used by a treebuilder for a partial rebuild.)
+        .. note::
+
+           If you delete tokens from a tree which belong to a group, the tree
+           cannot reliably be used by a treebuilder for a partial rebuild.
 
         """
         d = collections.defaultdict(list)
