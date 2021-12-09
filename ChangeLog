@@ -2,7 +2,7 @@ ChangeLog
 =========
 
 
-current: parce-0.27.0
+2021-12-09: parce-0.27.0
 
 - added parce.Document.get_transform(), closes issue #4
 - new work module, replacing BackgroundTreeBuilder and treedocument module
