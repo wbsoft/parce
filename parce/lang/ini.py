@@ -24,7 +24,7 @@ The base parser supports escaped characters and line continuations for values.
 
 """
 
-__all__ = ('Ini',)
+__all__ = ('Ini', 'IniTransform')
 
 import re
 
