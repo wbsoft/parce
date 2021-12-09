@@ -32,6 +32,7 @@ from parce import Language, lexicon, default_action, default_target
 from parce.action import (
     Bracket, Comment, Data, Delimiter, Escape, Name, Operator,
 )
+from parce.transform import Transform
 
 
 class Ini(Language):
@@ -61,7 +62,7 @@ class Ini(Language):
     @classmethod
     def values(cls, action):
         """Yield name or value contents and give it the specified action."""
-        yield r"""\\(?:[\n\\'"0abtrn;#=:]|x[0-9a-fA-F]{4})""", Escape
+        yield r"""\\(?:[\n\\'"0abtrn;#=:]|[xX][0-9a-fA-F]{4})""", Escape
         yield r"[^\[\\\n;=#:]+", action
         yield default_target, -1
 
@@ -70,5 +71,73 @@ class Ini(Language):
         """Yield a Comment til the end of the line."""
         yield r'$', Comment, -1
         yield from cls.comment_common()
+
+
+class IniTransform(Transform):
+    """Transform for the Ini language definition.
+
+    Strips whitespace around keys and values, and handles escaped characters.
+    If a value is absent, None is stored.
+
+    """
+    def root(self, items):
+        """Return a dict, section names are the keys.
+
+        Toplevel keys are in the ``None`` entry.
+
+        """
+        result = {}
+        d = result[None] = {}
+        i, z = 0, len(items)
+        while i < z:
+            if items.peek(i, "section"):
+                result[items[i].obj] = d = {}
+            elif items.peek(i, "key", Operator.Assignment):
+                key = items[i].obj
+                value = None
+                if items.peek(i + 2, "value"):
+                    value = items[i+2].obj
+                    i += 1
+                d[key] = value
+                i += 1
+            i += 1
+        # delete toplevel dict if empty
+        if not result[None]:
+            del result[None]
+        return result
+
+    def section(self, items):
+        """Return the name of the section."""
+        if items.peek(-1, Bracket.End):
+            items.pop()
+        return self.values(items)
+
+    def key(self, items):
+        """Return the key name."""
+        return self.values(items)
+
+    def value(self, items):
+        """Return the value."""
+        return self.values(items)
+
+    def values(self, items):
+        """Return a string, handling escaped characters, stripping spaces."""
+        result = []
+        if items:
+            # de-tokenize
+            items = [t.text for t in items]
+            # strip whitespace, but not from escapes
+            if not items[0].startswith('\\'):
+                items[0] = items[0].lstrip(' \t')
+            if not items[-1].startswith('\\'):
+                items[-1] = items[-1].rstrip(' \t')
+            # unescape
+            for t in items:
+                if t.startswith('\\'):
+                    t = chr(int(t[2:], 16)) if t[1] in ('x', 'X') else t[1]
+                result.append(t)
+        return ''.join(result)
+
+    comment = None
 
 

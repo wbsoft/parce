@@ -33,7 +33,7 @@ import sys
 
 sys.path.insert(0, "..")
 
-import parce
+import parce.transform
 import parce.registry
 from parce.out.html import HtmlFormatter, escape
 
@@ -295,8 +295,13 @@ def write_langs_and_module_stubs():
         for name in get_all_modules():
             langs = list(get_languages(name))
             if langs:
-                clss = ", ".join(":class:`~parce.lang.{0}.{1}`".format(name, lang.__name__)
-                    for lang in langs)
+                def class_link(lang):
+                    """Return a class link to the lang, with * if there is also a transform."""
+                    txt = ":class:`~parce.lang.{0}.{1}`".format(name, lang.__name__)
+                    if parce.transform.Transformer().find_transform(lang):
+                        txt += ":class:`\* <parce.lang.{0}.{1}Transform>`".format(name, lang.__name__)
+                    return txt
+                clss = ", ".join(class_link(lang) for lang in langs)
                 make_stub(name)
                 f.write("   * - :mod:`~parce.lang.{0}`\n".format(name))
                 f.write("     - {0}\n\n".format(clss))

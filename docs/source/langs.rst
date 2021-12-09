@@ -23,3 +23,6 @@ This is a listing of the modules in ``parce.lang`` and the Language classes
 they define:
 
 .. include:: langs.inc
+
+The asterisk means that for that language definition also a Transform
+is available.
