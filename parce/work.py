@@ -72,7 +72,7 @@ class Worker(util.Observable):
     or to use a new root lexicon. Call :meth:`set_transformer` to set another
     Transformer, which triggers a re-run of the transformer alone.
 
-    You can connect to the following signals:
+    You can :meth:`~.util.Observable.connect` to the following signals:
 
     ``"started"``:
         emitted when a build process has started

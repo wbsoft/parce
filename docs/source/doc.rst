@@ -196,8 +196,8 @@ tokens at that line::
 Maintaining a transformation
 ----------------------------
 
-Behind the scenes, a special :class:`~parce.work.Worker` object is responsible
-for updating the tokenized tree (i.e. running the tree builder), but this same
+Behind the scenes of Document, a :class:`~parce.work.Worker` is responsible for
+updating the tokenized tree (i.e. running the tree builder), but this same
 worker can also update the transformed result of the tokenized tree.
 
 To enable this, all that's needed is to add a Transformer to the document's

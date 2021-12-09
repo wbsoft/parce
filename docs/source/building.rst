@@ -109,3 +109,43 @@ If you manually change the root lexicon, you need to call
 :meth:`~parce.treebuilder.TreeBuilder.rebuild` in order to rebuild the tree
 with the new root lexicon.
 
+
+Using Worker
+------------
+
+.. currentmodule:: parce.work
+
+When using the TreeBuilder directly, we can't take advantage of all the power
+it provides; but using a :class:`Worker` we can for example run the
+TreeBuilder in a background thread, and then it is even possible to modify the
+text while a tree is being built. The Worker adds the text changes and the
+TreeBuilder immediately adapts the build procedure, going back as far as
+necessary, and resumes the parsing process.
+
+You will need the Worker when you want to use parce for e.g. a GUI text editor,
+that needs to stay responsive while tokenizing the text continuously.
+
+An example::
+
+    >>> import parce.work, parce.treebuilder
+    >>> w = parce.work.BackgroundWorker(parce.treebuilder.TreeBuilder())
+    >>> def func(worker):
+    ...     print("Worker finished!")
+    ...     print(worker.get_root())
+    ...
+    >>> text = open('parce/themes/default.css').read()
+    >>> w.update(text, parce.find('css'));w.get_root(callback=func)
+    >>> Worker finished!
+    <Context Css.root at 0-4625 (208 children)>
+
+Note that, for a :class:`BackgroundWorker`, :meth:`Worker.update` immediately
+returns. Then :meth:`Worker.get_root` gets the root context if building already
+has finished. But if not, it returns None and calls the callback when done, if
+a callback was given. In this case, ``func`` got called in the background
+thread.
+
+When you really want to have the root context at a certain moment, and don't
+mind having to wait a (very short) while, simply call
+:meth:`Worker.get_root(True) <Worker.get_root>`. When you want to be updated on
+*every* change to the tokenized tree, you can connect to one of the events that
+is emitted by the Worker on certain moments.
