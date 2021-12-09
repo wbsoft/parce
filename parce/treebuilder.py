@@ -40,16 +40,12 @@ The TreeBuilder is designed so that it is possible to perform tokenizing in a
 background thread, and even interrupt tokenizing when changes are to be applied
 while processing previous changes.
 
-The :class:`BackgroundTreeBuilder` provides an implementation using Python
-threads.
-
 """
 
-import operator
 import threading
 
+from parce import util
 from parce.lexer import Lexer
-from parce.util import Observable, tokens
 from parce.target import TargetFactory
 from parce.tree import Context, make_tokens
 from parce.treebuilderutil import (
@@ -74,7 +70,7 @@ def build_tree(root_lexicon, text, pos=0):
     return root
 
 
-class TreeBuilder(Observable):
+class TreeBuilder(util.Observable):
     """Build a tree from parsing the text.
 
     The root node of the tree is in the ``root`` instance attribute.
@@ -435,7 +431,7 @@ class TreeBuilder(Observable):
                         for n in s:
                             n.parent = t
                         if offset:
-                            for n in tokens(s):
+                            for n in util.tokens(s):
                                 n.pos += offset
                     if t:
                         t = t[l]    # t can be empty if len(end_trail) == 1, is last iteration anyway
@@ -502,7 +498,7 @@ class TreeBuilder(Observable):
         You can reimplement this method to notify others of the change.
 
         """
-        for t in tokens(context[index:]):
+        for t in util.tokens(context[index:]):
             t.pos += offset
 
     def invalidate_context(self, context):
