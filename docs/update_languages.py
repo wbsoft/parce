@@ -27,6 +27,7 @@ EXAMPLES_DIRECTORY = "../tests/lang/"
 
 import collections
 import glob
+import pprint
 import io
 import os
 import sys
@@ -104,6 +105,12 @@ Result tree:
 
 .. code-block:: none
    :class: token-tree
+
+{result}
+"""
+
+TRANSFORM_STUB = r"""
+Transformed result (pretty-printed)::
 
 {result}
 """
@@ -220,7 +227,7 @@ def make_html(doc, formatter=None):
 
     """
     f = default_formatter if formatter is None else formatter
-    cursor = parce.Cursor(doc, 0, None)
+    cursor = parce.Cursor(doc).select_all()
     return HTML_STUB.format(
                 baseformat=f.baseformat() or "",
                 html=f.html(cursor))
@@ -253,15 +260,23 @@ def make_stub(module):
     examples = sum((all_examples.get(lang, []) for lang in langs), [])
     example = []
     if examples:
+
         example.append(title("Examples:" if len(examples) > 1 else "Example:"))
 
         for root_lexicon, text in examples:
-            doc = parce.Document(root_lexicon, text)
+            doc = parce.Document(root_lexicon, text, transformer=True)
             buf = io.StringIO()
             doc.get_root(True).dump(buf)
             html = make_html(doc)
-            example.append(EXAMPLE_STUB.format(root=root_lexicon, language=module,
-                code=indent(html, 6), result=indent(buf.getvalue())))
+
+            text = EXAMPLE_STUB.format(root=root_lexicon, language=module,
+                        code=indent(html, 6), result=indent(buf.getvalue()))
+
+            tf_result = doc.get_transform(True)
+            if tf_result is not None:
+                text += TRANSFORM_STUB.format(result=indent(pprint.pformat(tf_result)))
+
+            example.append(text)
 
     text = STUB.format(
         title=module + '\n' + '=' * len(module),
