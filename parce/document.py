@@ -105,6 +105,21 @@ class AbstractDocument(mutablestring.AbstractMutableString):
         """
         return self._revision
 
+    @contextlib.contextmanager
+    def combine_undo(self, join_previous=False):
+        """Return a context manager that combines multiple changes in one
+        "undo" item.
+
+        The default implementation does nothing, but you may implement it to
+        actually support the feature, for example if this document wraps a GUI
+        text editor document.
+
+        If ``join_previous`` is set to True, the changes will be appended to
+        the previously stored "undo" item.
+
+        """
+        yield
+
     def find_start_of_block(self, position):
         """Find the start of the block the position is in."""
         sep = self.block_separator
@@ -251,6 +266,8 @@ class Document(AbstractDocument, mutablestring.MutableString, util.Observable):
         mutablestring.MutableString.__init__(self, text)
         util.Observable.__init__(self)
         self._modified = False
+        self._combine_undo = 0
+        self._undo_join_previous = False
         self._undo_stack = []
         self._redo_stack = []
 
@@ -266,6 +283,19 @@ class Document(AbstractDocument, mutablestring.MutableString, util.Observable):
             self._set_all_undo_redo_modified()
         if changed:
             self.emit("modification_changed", modified)
+
+    @contextlib.contextmanager
+    def combine_undo(self, join_previous=False):
+        """Implemented (see :meth:`AbstractDocument.combine_undo`)."""
+        if self._combine_undo == 0:
+            self._undo_join_previous = join_previous
+        self._combine_undo += 1
+        try:
+            yield
+        finally:
+            self._combine_undo -= 1
+            if self._combine_undo == 0:
+                self._undo_join_previous = False
 
     def _update_text(self, changes):
         """Apply the changes to the text."""
@@ -290,24 +320,29 @@ class Document(AbstractDocument, mutablestring.MutableString, util.Observable):
 
     def _store_undo(self, changes):
         """Store changes needed to reconstruct the previous state."""
-        state = [changes, self.modified()]
-        if self._in_undo:
-            self._redo_stack.append(state)
+        stack = self._redo_stack if self._in_undo else self._undo_stack
+        if stack and self._undo_join_previous:
+            stack[-1].changesets.append(changes)
         else:
-            self._undo_stack.append(state)
-            if not self._in_redo:
-                self._redo_stack.clear()
+            stack.append(_UndoLevel(changes, self.modified()))
+        self._undo_join_previous = bool(self._combine_undo)
+        if not self._in_redo and not self._in_undo:
+            self._redo_stack.clear()
 
     def _apply_undo_redo(self, stack):
         """Apply changes from the specified stack (undo or redo)."""
+        if self._combine_undo > 0:
+            raise RuntimeError("can't undo or redo while in combine_undo context")
         if self._edit_context > 0:
             raise RuntimeError("can't undo or redo while in edit context")
         if stack:
-            changes, modified = stack.pop()
-            with self:
-                for start, end, text in changes:
-                    self[start:end] = text
-            self.set_modified(modified)
+            level = stack.pop()
+            with self.combine_undo():
+                for changes in reversed(level.changesets):
+                    with self:
+                        for start, end, text in changes:
+                            self[start:end] = text
+            self.set_modified(level.modified)
 
     @contextlib.contextmanager
     def _check_undo_state(self):
@@ -330,8 +365,8 @@ class Document(AbstractDocument, mutablestring.MutableString, util.Observable):
 
     def _set_all_undo_redo_modified(self):
         """Called on set_modified(False). Set all undo/redo state to modified."""
-        for undo in itertools.chain(self._undo_stack, self._redo_stack):
-            undo[1] = True
+        for level in itertools.chain(self._undo_stack, self._redo_stack):
+            level.modified = True
 
     def undo(self):
         """Undo the last modification."""
@@ -366,6 +401,13 @@ class Document(AbstractDocument, mutablestring.MutableString, util.Observable):
         """
         self.emit("text_change", position, removed, added)
         self.emit("text_changed")
+
+
+class _UndoLevel:
+    """Simple container for undo- and redoable changesets."""
+    def __init__(self, changes, modified):
+        self.changesets = [changes]
+        self.modified = modified
 
 
 class AbstractTextRange:
