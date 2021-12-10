@@ -22,7 +22,7 @@
 Parser for LilyPond syntax.
 """
 
-__all__ = ('LilyPond',)
+__all__ = ('LilyPond', 'LilyPondIndent')
 
 import re
 
@@ -33,6 +33,7 @@ from parce.action import (
 from parce.rule import (
     MATCH, TEXT, arg, bygroup, call, dselect, findmember, ifarg, ifeq, ifgroup,
     ifmember, select, using, words)
+from parce.indent import Indent, ALIGN, INDENT, DEDENT, NO_DEDENT
 
 from . import lilypond_words
 
@@ -643,4 +644,20 @@ class LilyPond(Language):
         yield from cls.comment_common()
         yield r'$', Comment, -1
 
+
+class LilyPondIndent(Indent):
+    """Indenter for LilyPond."""
+
+    def events(self, block, tokens, prev_indents):
+        """Yield indent events."""
+        for t in tokens:
+            if t.action in Delimiter:
+                if t in ('{', '<<'):
+                    yield INDENT
+                elif t in ('}', '>>'):
+                    yield DEDENT
+                else:
+                    yield NO_DEDENT
+            else:
+                yield NO_DEDENT
 

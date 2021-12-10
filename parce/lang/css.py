@@ -893,7 +893,7 @@ class Value:
 
 class CssIndent(Indent):
     """Indenter for Css."""
-    def indent_events(self, block, tokens, is_first, prev_indents):
+    def indent_events(self, block, tokens, prev_indents):
         for t in tokens:
             if t.action is Bracket:
                 if t == "{":

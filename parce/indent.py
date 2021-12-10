@@ -171,7 +171,8 @@ class AbstractIndenter:
                 if prev_info and prev_info.indents:
                     current_indent = indents[-1]
                     for indent in prev_info.indents:
-                        indents.append(current_indent + (indent or self.indent_string))
+                        current_indent += indent or self.indent_string
+                        indents.append(current_indent)
 
                 # dedents at start of current line
                 del indents[max(1, len(indents) - info.dedents_start):]
@@ -322,11 +323,17 @@ class Indenter(AbstractIndenter):
     have a tree available.
 
     """
+    #: This format string creates the name to look for when searching a suitable
+    #: Indent class in a Language module space (see :meth:`find_indent`).
+    #:
+    #: .. versionadded:: 0.28.0
+    indent_name_template = "{}Indent"
+
     def __init__(self):
         self._indents = parce.util.caching_dict(self.find_indent)
 
     def indent_events(self, block, prev_indents=()):
-        """Reimplemented to use Indent subclasses for the specified language."""
+        """Implemented to use Indent subclasses for the specified language."""
         tokens = block.tokens()
         if tokens:
             curlang = tokens[0].parent.lexicon.language
@@ -336,14 +343,12 @@ class Indenter(AbstractIndenter):
                 if newlang is not curlang:
                     indenter = self.get_indent(curlang)
                     if indenter:
-                        yield from indenter.indent_events(
-                            block, tokens[i:j], i == 0, prev_indents)
+                        yield from indenter.events(block, tokens[i:j], prev_indents)
                     i = j
                     curlang = newlang
             indenter = self.get_indent(curlang)
             if indenter:
-                yield from indenter.indent_events(
-                    block, tokens[i:], i == 0, prev_indents)
+                yield from indenter.events(block, tokens[i:], prev_indents)
 
     def get_indent(self, language):
         """Return a Indent class instance for the specified language."""
@@ -361,13 +366,13 @@ class Indenter(AbstractIndenter):
         So for a language class named "Css", this method tries to find a
         Indent in the same module with the name "CssIndent".
 
-        If no Indent is found, for the language, the language's base classes
+        If no Indent is found for the language, the language's base classes
         are also tried.
 
         """
         for lang in language.mro():
             module = sys.modules[lang.__module__]
-            name = lang.__name__ + "Indent"
+            name = self.indent_name_template.format(lang.__name__)
             indent = getattr(module, name, None)
             if isinstance(indent, type) and issubclass(indent, Indent):
                 return indent()
@@ -375,7 +380,7 @@ class Indenter(AbstractIndenter):
 
 class Indent:
     """The base class for language-specific indenters."""
-    def indent_events(self, block, tokens, is_first, prev_indents):
+    def events(self, block, tokens, prev_indents):
         """Implement this to yield indent events for the tokens.
 
 
