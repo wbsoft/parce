@@ -104,57 +104,6 @@ def test_main():
             d[0:3] = "ABCD"
             d[1:2] = "bc"
 
-    # combine undo
-    d = Document(None, "abcd")
-    d[0] = 'A'
-    with d.combine_undo(True):
-        d[0] = 'B'
-        d[0] = 'C'
-    d.undo()
-    assert d[0] == 'a'
-
-    d = Document(None, "abcd")
-    d[0] = 'A'
-    with d.combine_undo():
-        d[0] = 'B'
-        d[0] = 'C'
-    d.undo()
-    assert d[0] == 'A'
-    d.undo()
-    assert d[0] == 'a'
-
-    d = Document(None, "abcd")
-    d[0] = 'A'
-    with d.combine_undo(True):
-        d[0] = 'B'
-    with d.combine_undo(True):
-        d[0] = 'C'
-    d.undo()
-    assert d[0] == 'a'
-
-    # errors in combine and undo
-    with pytest.raises(RuntimeError):
-        d = Document(None, "abcd")
-        with d.combine_undo():
-            d.undo()
-
-    with pytest.raises(RuntimeError):
-        d = Document(None, "abcd")
-        with d:
-            d.undo()
-
-    # can undo/redo?
-    d = Document(None, "abcd")
-    d[0] = 'A'
-    assert d.can_undo()
-    assert not d.can_redo()
-    d.undo()
-    assert not d.can_undo()
-    assert d.can_redo()
-    d[0] = 'B'
-    assert d.can_undo()
-    assert not d.can_redo()
-
 
 if __name__ == "__main__":
     test_main()
