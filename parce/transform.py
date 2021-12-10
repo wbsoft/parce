@@ -404,15 +404,24 @@ class Transformer(parce.util.Observable):
         self.build(builder.root)
 
     def get_transform(self, language):
-        """Return a Transform class instance for the specified language."""
+        """Return a Transform class instance for the specified language.
+
+        May return None, if no Transform was added and none could be found.
+
+        """
         return self._transforms[language]
 
     def add_transform(self, language, transform):
-        """Add a Transform instance for the specified language."""
+        """Add a Transform instance for the specified language.
+
+        You may also specify None, to disable transformation for that language
+        even if a transform could automatically be found.
+
+        """
         self._transforms[language] = transform
 
     def find_transform(self, language):
-        """If no Transform was added, try to find a predefined one.
+        """Try to find a Transform for the specified language definition.
 
         This is done by looking for a Transform subclass in the language's
         module, with the same name as the language with "Transform" appended.
@@ -421,6 +430,9 @@ class Transformer(parce.util.Observable):
 
         This naming scheme can be modified by setting the
         :attr:`transform_name_template` attribute.
+
+        This method is called by :meth:`get_transform` if no Transform was
+        added for the language.
 
         """
         module = sys.modules[language.__module__]

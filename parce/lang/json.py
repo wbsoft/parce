@@ -65,7 +65,7 @@ class Json(Language):
     def values(cls):
         yield r"\{", Delimiter, cls.object
         yield r"\[", Delimiter, cls.array
-        yield '"', String, cls.string
+        yield '"', String.Start, cls.string
         yield r"-?\d+(?:\.\d+)?(?:[Ee][+-]?\d+)?", Number
         yield words(JSON_CONSTANTS, r'\b', r'\b'), Name.Constant
 
@@ -77,7 +77,7 @@ class Json(Language):
 
     @lexicon
     def key(cls):
-        yield '"', String, cls.string
+        yield '"', String.Start, cls.string
         yield ":", Delimiter, -1, cls.value
 
     @lexicon
@@ -94,7 +94,7 @@ class Json(Language):
 
     @lexicon
     def string(cls):
-        yield '"', String, -1
+        yield '"', String.End, -1
         yield r'\\(?:'+ chars(JSON_ESCAPE_CHARS) + '|u[0-9a-fA-F]{4})', String.Escape
         yield default_action, String
 
@@ -109,12 +109,12 @@ class JsonTransform(Transform):
         """Yield values like the Json.values() classmethod generates."""
         for i in items:
             if i.is_token:
-                if i.action == Number:
+                if i.action is Number:
                     n = float(i.text)
                     if n.is_integer():
                         n = int(n)
                     yield n
-                elif i.action == Name.Constant:
+                elif i.action is Name.Constant:
                     yield JSON_CONSTANTS[i.text]
             else:
                 yield i.obj
@@ -134,10 +134,10 @@ class JsonTransform(Transform):
         return list(self.values(items))
 
     def string(self, items):
-        if items and items[-1] == '"':
+        if items.peek(-1, String.End):
             del items[-1]   # strip closing quote
         def gen():
-            for t in items.tokens():
+            for t in items:
                 if t.action is String.Escape:
                     if t.text[1] == 'u':
                         yield chr(int(t.text[2:], 16))
