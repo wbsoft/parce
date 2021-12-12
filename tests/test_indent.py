@@ -26,13 +26,12 @@ import sys
 
 sys.path.insert(0, ".")
 
-from parce import Document, Cursor
+from parce import find, Document, Cursor
 from parce.indent import Indenter
 
 
 def text_fragments():
-    from parce.lang.css import Css
-    yield (Css.root,
+    yield ('css',
 """
 h1 {
 color: red;
@@ -44,13 +43,62 @@ h1 {
 }
 """)
 
+    yield ('lilypond',
+r"""
+% example 1
+music = \relative {
+c d e f g
+  }
+% example 2
+music = \relative { {
+    c d e f g
+} }
+% example 3
+music = \relative { {
+c d e f g
+}
+}
+% example 4
+music = <<
+    \relative {
+   c d e f g
+    }
+    >>
+% example 5
+music = \relative { c d e f g
+}
+""",
+r"""
+% example 1
+music = \relative {
+    c d e f g
+}
+% example 2
+music = \relative { {
+        c d e f g
+} }
+% example 3
+music = \relative { {
+        c d e f g
+    }
+}
+% example 4
+music = <<
+    \relative {
+        c d e f g
+    }
+>>
+% example 5
+music = \relative { c d e f g
+}
+""")
 
 def test_main():
     i = Indenter()
     i.indent_string = "    "
-    for root_lexicon, text, indented in text_fragments():
-        d = Document(root_lexicon, text)
-        c = Cursor(d, 0, None)      # select all
+    for lang, text, indented in text_fragments():
+        d = Document(find(lang), text)
+        c = Cursor(d).select_all()
         i.indent(c)
         assert d.text() == indented
 
