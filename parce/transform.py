@@ -27,10 +27,6 @@ context, and some toplevel convenience functions.
 
 See also the documentation: :doc:`transforming`.
 
-TODO: it would be nice to be able to specify the Transform for another Language
-inside a Transform, just like a lexicon can target a lexicon from a different
-language. But I'm not yet sure how it would be specified.
-
 """
 
 import collections
@@ -217,6 +213,13 @@ class Transformer(parce.util.Observable):
         self._cache = weakref.WeakKeyDictionary()
         self._interrupt = weakref.WeakKeyDictionary()
 
+    #: If you implement a method ``missing(self, context)`` in a subclass, it
+    #: will be called with a :class:`~parce.tree.Context` if no transform
+    #: (method) for that context is available. The return value of the call to
+    #: that method, if not None, will then be added to the transform result in
+    #: an Item with name ``<unknown>`` (including the angle brackets).
+    missing = None
+
     def transform_text(self, root_lexicon, text, pos=0):
         """Directly create an evaluated object from text using root_lexicon.
 
@@ -227,49 +230,102 @@ class Transformer(parce.util.Observable):
         if not root_lexicon:
             return  # a root lexicon can be None, but then there are no children
 
-        from parce.tree import make_tokens  # local lookup is faster
+        from parce.tree import Context, make_tokens  # local lookup is faster
+        from parce.lexer import Event
+        from parce.target import Target
+
+        def make_target(pop, push):
+            """Return a Target if pop < 0 or push is not empty."""
+            if pop or push:
+                return Target(pop, push)
+
+        def build_tree(lexicons, events):
+            """Build a tree in case missing lexicons need to be handled.
+
+            Returns the tree and the next event (if any), with adapted pop
+            value.
+
+            """
+            tree = context = Context(lexicons[0], None)
+            for lexicon in lexicons[1:]:
+                context = Context(lexicon, context)
+                context.parent.append(context)
+            for target, lexemes in events:
+                if target:
+                    for pop in range(target.pop, 0):
+                        if context is tree:
+                            return tree, Event(make_target(pop, target.push), lexemes)
+                        context = context.parent
+                    for lexicon in target.push:
+                        context = Context(lexicon, context)
+                        context.parent.append(context)
+                context.extend(make_tokens(lexemes, context))
+            return tree, None
+
+        def consume_events(lexicons, events):
+            """Simply consume events until the first of the specified lexicons ends.
+
+            Returns the next event, if any, with adapted pop value.
+
+            """
+            pop = len(lexicons)
+            for target, lexemes in events:
+                if target:
+                    pop += target.pop
+                    if pop <= 0:
+                        return Event(make_target(pop, target.push), lexemes)
+                    pop += len(target.push)
 
         curlang = root_lexicon.language
         transform = self.get_transform(curlang)
 
-        items = Items(root_lexicon.arg)
-        stack = []
         events = parce.lexer.Lexer([root_lexicon]).events(text, pos)
-        lexicon = root_lexicon
+        root_meth = getattr(transform, root_lexicon.name, None)
+        if root_meth:
 
-        def get_object_item(items):
-            """Get the object item, may update curlang and transform variables."""
-            nonlocal curlang, transform
-            if curlang is not lexicon.language:
-                curlang = lexicon.language
-                transform = self.get_transform(curlang)
-            name = lexicon.name
-            meth = getattr(transform, name, None)
-            if meth:
-                return Item(name, meth(items))
+            items = Items(root_lexicon.arg)
+            stack = []
+            lexicon = root_lexicon
 
-        for target, lexemes in events:
-            if target:
-                for _ in range(target.pop, 0):
-                    item = get_object_item(items)
-                    lexicon, items = stack.pop()
-                    if item:
-                        items.append(item)
-                for l in target.push:
-                    stack.append((lexicon, items))
-                    items = Items(l.arg)
-                    lexicon = l
-            items.extend(make_tokens(lexemes))
+            for target, lexemes in events:
+                while target:
+                    for _ in range(target.pop, 0):
+                        lexicon, olditems, meth, name = stack.pop()
+                        olditems.append(Item(name, meth(items)))
+                        items = olditems
+                    for i, l in enumerate(target.push):
+                        if l.language is not curlang:
+                            curlang = l.language
+                            transform = self.get_transform(curlang)
+                        meth = getattr(transform, l.name, None)
+                        if meth:
+                            stack.append((lexicon, items, meth, l.name))
+                            items = Items(l.arg)
+                            lexicon = l
+                        else:
+                            if self.missing:
+                                context, event = build_tree(target.push[i:], events)
+                                obj = self.missing(context)
+                                if obj is not None:
+                                    items.append(Item("<unknown>", obj))
+                            else:
+                                event = consume_events(target.push[i:], events)
+                            target, lexemes = event if event else (None, ())
+                            break
+                    else:
+                        break
+                items.extend(make_tokens(lexemes))
 
-        # unwind
-        while stack:
-            item = get_object_item(items)
-            lexicon, items = stack.pop()
-            if item:
-                items.append(item)
-        item = get_object_item(items)
-        if item:
-            return item.obj
+            # unwind
+            while stack:
+                lexicon, olditems, meth, name = stack.pop()
+                olditems.append(Item(name, meth(items)))
+                items = olditems
+            return root_meth(items)
+
+        elif self.missing:
+            context = build_tree([root_lexicon], events)[0]
+            return self.missing(context)
 
     def transform_tree(self, tree):
         """Evaluate a tree structure."""
@@ -304,6 +360,10 @@ class Transformer(parce.util.Observable):
                                 stack.append((items, i + 1, meth))
                                 node, items, i = n, Items(n.lexicon.arg), 0
                                 break
+                        elif self.missing:
+                            obj = self.missing(n)
+                            if obj is not None:
+                                items.append(Item("<unknown>", obj))
                 else:
                     if stack:
                         name = node.lexicon.name
@@ -314,6 +374,8 @@ class Transformer(parce.util.Observable):
                         node = node.parent
                     else:
                         return root_meth(items)
+        elif self.missing:
+            return self.missing(tree)
 
     def build(self, tree):
         """Called when a tree needs to be transformed.
