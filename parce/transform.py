@@ -201,11 +201,14 @@ class Transformer(parce.util.Observable):
 
     """
 
-    #: This format string creates the name to look for when searching a suitable
-    #: Transform class in a Language module space (see :meth:`find_transform`).
-    #:
-    #: .. versionadded:: 0.27.0
     transform_name_template = "{}Transform"
+    """This format string creates the name to look for when searching a
+    suitable Transform class in a Language module space (see
+    :meth:`find_transform`).
+
+    .. versionadded:: 0.27.0
+
+    """
 
     def __init__(self):
         super().__init__()
@@ -213,12 +216,15 @@ class Transformer(parce.util.Observable):
         self._cache = weakref.WeakKeyDictionary()
         self._interrupt = weakref.WeakKeyDictionary()
 
-    #: If you implement a method ``missing(self, context)`` in a subclass, it
-    #: will be called with a :class:`~parce.tree.Context` if no transform
-    #: (method) for that context is available. The return value of the call to
-    #: that method, if not None, will then be added to the transform result in
-    #: an Item with name ``<unknown>`` (including the angle brackets).
     missing = None
+    """If you implement a method ``missing(self, context)`` in a subclass, it
+    will be called with a :class:`~parce.tree.Context` if no transform (method)
+    for that context is available. The return value of the call to that method,
+    if not None, will then be added to the transform result in an Item with
+    name ``<unknown>`` (including the angle brackets).
+
+    .. versionadded:: 0.28.0
+    """
 
     def transform_text(self, root_lexicon, text, pos=0):
         """Directly create an evaluated object from text using root_lexicon.
