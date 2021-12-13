@@ -173,41 +173,45 @@ class Worker(util.Observable):
         """Generator performing the actual process, exhausted by :meth:`run_process`."""
         c = self._condition
 
-        ## run the treebuilder
-        self.start_build()
-        for stage in self._builder.process():
-            yield "tree_" + stage
-            state = _STATES.get(stage)
-            if state:
-                with c:
-                    self._tree_state = state
-        self.finish_build()
-        with c:
-            self._tree_state = IDLE
-            c.notify_all()
+        try:
+            ## run the treebuilder
+            self.start_build()
+            for stage in self._builder.process():
+                yield "tree_" + stage
+                state = _STATES.get(stage)
+                if state:
+                    with c:
+                        self._tree_state = state
+            self.finish_build()
+            with c:
+                self._tree_state = IDLE
+                c.notify_all()
 
-        ## run the transformer
-        self._transform_lock.acquire()
-        t, old = self._transformer, None
-        if t:
-            while t and t is not old:
+            ## run the transformer
+            self._transform_lock.acquire()
+            t, old = self._transformer, None
+            if t:
+                while t and t is not old:
+                    self._transform_lock.release()
+                    for stage in t.process(self._builder.root):
+                        yield "transform_" + stage
+                        state = _STATES.get(stage)
+                        if state is not None:
+                            with c:
+                                self._transform_state = state
+                    self._transform_lock.acquire()
+                    # if the transformer was replaced while running, start again
+                    t, old = self._transformer, t
                 self._transform_lock.release()
-                for stage in t.process(self._builder.root):
-                    yield "transform_" + stage
-                    state = _STATES.get(stage)
-                    if state is not None:
-                        with c:
-                            self._transform_state = state
-                self._transform_lock.acquire()
-                # if the transformer was replaced while running, start again
-                t, old = self._transformer, t
-            self._transform_lock.release()
-            self.finish_transform()
-        else:
-            self._transform_lock.release()
-        with c:
-            self._transform_state = IDLE
-            c.notify_all()
+                self.finish_transform()
+            else:
+                self._transform_lock.release()
+
+        finally:
+            with c:
+                self._tree_state = IDLE
+                self._transform_state = IDLE
+                c.notify_all()
 
     def wait_build(self):
         """Wait for the build job to be completed.
