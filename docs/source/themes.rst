@@ -6,3 +6,4 @@ The themes module
     :undoc-members:
     :show-inheritance:
 
+.. seealso:: :doc:`Examples of all bundled themes <examples>`

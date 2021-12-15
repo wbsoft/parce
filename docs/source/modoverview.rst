@@ -1,6 +1,26 @@
 Overview of all modules
 =======================
 
+.. currentmodule:: parce
+
+The most used functions and classes are in the main :mod:`parce` module:
+:class:`Cursor`, :class:`Document`,
+the functions :func:`find`, :func:`root`, :func:`events`,
+:func:`theme_by_name`, :func:`theme_from_file`,
+and the most needed objects to make a language definition:
+:class:`Language`, :obj:`default_action`, :obj:`default_target`,
+:obj:`lexicon`, and :obj:`skip`.
+
+Other important modules are: :mod:`.action` for the standard actions,
+:mod:`.rule` for all dynamic rule items, :mod:`.transform` for the transforming
+functionality and :mod:`.indent` for indenting functionality that some languages
+support.
+
+For syntax highlighting see :mod:`.out` and its submodules, :mod:`.theme`,
+:mod:`.formatter` and :mod:`.themes` which contains the builtin themes.
+
+Below is the full module list:
+
 .. toctree::
    :maxdepth: 1
 
@@ -33,3 +53,5 @@ Overview of all modules
    util.rst
    validate.rst
    work.rst
+
+.. seealso:: :ref:`modindex` and :ref:`genindex`

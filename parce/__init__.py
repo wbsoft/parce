@@ -233,11 +233,6 @@ def root(root_lexicon, text):
     return treebuilder.build_tree(root_lexicon, text)
 
 
-def tokens(root_lexicon, text):
-    """Convenience function that yields all the tokens from the text."""
-    return root(root_lexicon, text).tokens()
-
-
 def events(root_lexicon, text):
     """Convenience function that yields all the events from the text."""
     return lexer.Lexer([root_lexicon]).events(text)
