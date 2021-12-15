@@ -216,16 +216,6 @@ class Transformer(parce.util.Observable):
         self._cache = weakref.WeakKeyDictionary()
         self._interrupt = weakref.WeakKeyDictionary()
 
-    missing = None
-    """If you implement a method ``missing(self, context)`` in a subclass, it
-    will be called with a :class:`~parce.tree.Context` if no transform (method)
-    for that context is available. The return value of the call to that method,
-    if not None, will then be added to the transform result in an Item with
-    name ``<unknown>`` (including the angle brackets).
-
-    .. versionadded:: 0.28.0
-    """
-
     def transform_text(self, root_lexicon, text, pos=0):
         """Directly create an evaluated object from text using root_lexicon.
 
@@ -288,7 +278,7 @@ class Transformer(parce.util.Observable):
         events = parce.lexer.Lexer([root_lexicon]).events(text, pos)
         root_meth = getattr(transform, root_lexicon.name, None)
         if root_meth:
-
+            add_untransformed = _allow_untransformed(root_meth)
             items = Items(root_lexicon.arg)
             stack = []
             lexicon = root_lexicon
@@ -296,7 +286,7 @@ class Transformer(parce.util.Observable):
             for target, lexemes in events:
                 while target:
                     for _ in range(target.pop, 0):
-                        lexicon, olditems, meth, name = stack.pop()
+                        lexicon, olditems, meth, name, add_untransformed = stack.pop()
                         olditems.append(Item(name, meth(items)))
                         items = olditems
                     for i, l in enumerate(target.push):
@@ -305,15 +295,14 @@ class Transformer(parce.util.Observable):
                             transform = self.get_transform(curlang)
                         meth = getattr(transform, l.name, None)
                         if meth:
-                            stack.append((lexicon, items, meth, l.name))
+                            stack.append((lexicon, items, meth, l.name, add_untransformed))
+                            add_untransformed = _allow_untransformed(meth)
                             items = Items(l.arg)
                             lexicon = l
                         else:
-                            if self.missing:
+                            if add_untransformed:
                                 context, event = build_tree(target.push[i:], events)
-                                obj = self.missing(context)
-                                if obj is not None:
-                                    items.append(Item("<unknown>", obj))
+                                items.append(Item("<untransformed>", context))
                             else:
                                 event = consume_events(target.push[i:], events)
                             target, lexemes = event if event else (None, ())
@@ -324,14 +313,10 @@ class Transformer(parce.util.Observable):
 
             # unwind
             while stack:
-                lexicon, olditems, meth, name = stack.pop()
+                lexicon, olditems, meth, name, add_untransformed = stack.pop()
                 olditems.append(Item(name, meth(items)))
                 items = olditems
             return root_meth(items)
-
-        elif self.missing:
-            context = build_tree([root_lexicon], events)[0]
-            return self.missing(context)
 
     def transform_tree(self, tree):
         """Evaluate a tree structure."""
@@ -344,6 +329,7 @@ class Transformer(parce.util.Observable):
         transform = self.get_transform(curlang)
         root_meth = getattr(transform, tree.lexicon.name, None)
         if root_meth:
+            add_untransformed = _allow_untransformed(root_meth)
             stack = []
             node, items, i = tree, Items(tree.lexicon.arg), 0
             while not self._interrupt[tree]:
@@ -363,25 +349,22 @@ class Transformer(parce.util.Observable):
                             try:
                                 items.append(Item(name, self._cache[n]))
                             except KeyError:
-                                stack.append((items, i + 1, meth))
+                                stack.append((items, i + 1, meth, add_untransformed))
                                 node, items, i = n, Items(n.lexicon.arg), 0
+                                add_untransformed = _allow_untransformed(meth)
                                 break
-                        elif self.missing:
-                            obj = self.missing(n)
-                            if obj is not None:
-                                items.append(Item("<unknown>", obj))
+                        elif add_untransformed:
+                            items.append(Item("<untransformed>", n))
                 else:
                     if stack:
                         name = node.lexicon.name
-                        olditems, i, meth = stack.pop()
+                        olditems, i, meth, add_untransformed = stack.pop()
                         obj = self._cache[node] = meth(items)
                         items = olditems
                         items.append(Item(name, obj))
                         node = node.parent
                     else:
                         return root_meth(items)
-        elif self.missing:
-            return self.missing(tree)
 
     def build(self, tree):
         """Called when a tree needs to be transformed.
@@ -544,5 +527,34 @@ def transform_text(root_lexicon, text, transform=None, pos=0):
     if transform:
         t.add_transform(root_lexicon.language, transform)
     return t.transform_text(root_lexicon, text, pos)
+
+
+def add_untransformed(func):
+    """Decorator to mark a Transform method with the 'add_untransformed' flag.
+
+    When a :class:`Transform` method has this flag, child contexts of this
+    method's context that have no transform method are not silently ignored,
+    but added in an :class:`Item` with ``name`` ``<untransformed>`` (including
+    the angle brackets).
+
+    For example::
+
+        class MyLangTransform(Transform):
+            @add_untransformed
+            def root(self, items):
+                "This method also gets the untransformed Contexts"
+                for item in items:
+                    if not item.is_token and item.name == "<untransformed>":
+                        context = item.obj
+                        # do something with the parce context....
+
+    """
+    func.add_untransformed = True
+    return func
+
+
+def _allow_untransformed(meth):
+    """Return True when the method wants the untransformed stuff."""
+    return getattr(meth.__func__, "add_untransformed", False)
 
 
