@@ -19,15 +19,16 @@
 
 
 r"""
-Query the tree using the `query` property.
+Query the tree using the `query` property of Context and Token.
 
-Using this module you can query the token tree to find tokens and contexts,
-based on lexicons and/or actions and text contents. You can chain calls
-in an XPath-like fashion.
+Normally you need not to import this module in order to use it. Using the
+:attr:`~.tree.Node.query` property of any Token or (in most cases) Context, you
+can query the token tree to find tokens and contexts, based on lexicons and/or
+actions and text contents. You can chain calls in an XPath-like fashion.
 
-This module supplements the various find_xxx methods of every Context object.
-A query starts at the `query` property of a Context or Token object, and
-initially yields just that object.
+This module supplements the various find_xxx methods of every Context object. A
+query is a generator, starts at the `query` property of a Context or Token
+object, and initially yields just that object.
 
 You can navigate using `children`, `all`, `first`, `last`, `[n]`, `[n:n]`,
 `[n:n:n]`, `next`, `previous`, `right`, `left`, `right_siblings`,
