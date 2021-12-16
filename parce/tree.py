@@ -618,7 +618,7 @@ class Context(list, Node):
         return list.__new__(cls)
 
     def __init__(self, lexicon, parent):
-        self.lexicon = lexicon
+        self.lexicon = lexicon  #: The lexicon this context was instantiated with.
         self.parent = parent
 
     def __repr__(self):

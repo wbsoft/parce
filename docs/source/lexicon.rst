@@ -6,4 +6,3 @@ The lexicon module
     :undoc-members:
     :show-inheritance:
     :special-members: __iter__, __call__
-
