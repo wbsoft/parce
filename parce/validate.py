@@ -197,15 +197,26 @@ def validate_language(lang):
 def validate_transform(transform, language):
     """Check whether the Transform has a method for every lexicon.
 
-    Prints the missing names to the screen.
+    Returns False when method names are not defined. Prints the missing names to
+    the console.
+
+    Prints a notice to the console when lexicons are ignored (i.e. the method
+    name has been set to None in the Transform class) or when a transform
+    method accepts untransformed contexts.
 
     """
     ok = True
+    sentinel = object()
+    tf = "{}.{}".format(transform.__class__.__module__, transform.__class__.__name__)
     for lexicon in introspect.lexicons(language):
-        if not hasattr(transform, lexicon.name):
-            tf = "{}.{}".format(transform.__class__.__module__, transform.__class__.__name__)
+        meth = getattr(transform, lexicon.name, sentinel)
+        if meth is sentinel:
             print("Missing transform method in {tf} for lexicon: {name}".format(tf=tf, name=lexicon.fullname))
             ok = False
+        elif not meth:
+            print("Transform {tf} ignores output of lexicon: {name}".format(tf=tf, name=lexicon.fullname))
+        elif getattr(meth.__func__, "add_untransformed", False):
+            print("Method {tf}.{name} accepts untransformed child contexts".format(tf=tf, name=lexicon.name))
     return ok
 
 
