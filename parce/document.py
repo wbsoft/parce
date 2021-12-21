@@ -531,10 +531,20 @@ class Cursor(AbstractTextRange):
         self.end = self.pos
         return self
 
+    def selection(self):
+        """Return the two-tuple (pos, end) denoting the selected range.
+
+        The ``end`` value is never None, it is set to the length of the
+        document if the :attr:`end` attribute is None.
+
+        """
+        end = len(self.document()) if self.end is None else self.end
+        return self.pos, end
+
     def has_selection(self):
         """Return True if text is selected."""
-        end = len(self.document()) if self.end is None else self.end
-        return self.pos < end
+        pos, end = self.selection()
+        return pos < end
 
     def select_start_of_block(self):
         """Moves the selection pos to the beginning of the current line.
