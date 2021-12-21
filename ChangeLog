@@ -2,12 +2,16 @@ ChangeLog
 =========
 
 
-current: parce-0.28.0
+2021-12-21: parce-0.28.0
 
-- it is now possible to implement Transformer.missing(), which is then called
-  with a context no Transform could be found for.
+- Cursor.selection() was added
+- a new decorator is added to mark Transform methods so that they accept
+  untransformed contexts that would otherwise be silently ignored
 - Worker: when an exception occurs during a tree build or transformation, the
-  state is set to idle, preventing hangs wating for a condition.
+  state is set to idle, preventing hangs waiting for a condition.
+- basic LilyPond indentation was added (not yet complete)
+- an Ini transform was added
+- documentation improvements
 
 
 2021-12-09: parce-0.27.0
