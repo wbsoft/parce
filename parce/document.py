@@ -535,7 +535,7 @@ class Cursor(AbstractTextRange):
         """Return the two-tuple (pos, end) denoting the selected range.
 
         The ``end`` value is never None, it is set to the length of the
-        document if the :attr:`end` attribute is None.
+        document if the :attr:`~.document.AbstractTextRange.end` attribute is None.
 
         """
         end = len(self.document()) if self.end is None else self.end
