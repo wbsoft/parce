@@ -190,9 +190,6 @@ for node traversal:
    .. automethod:: Context.tokens
       :noindex:
 
-   .. automethod:: Context.tokens_bw
-      :noindex:
-
 Often, when dealing with the tree structure, you want to know whether we have
 a Token or a Context. Instead of calling::
 
