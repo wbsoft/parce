@@ -117,10 +117,60 @@ class AbstractDocument(mutablestring.AbstractMutableString):
         return len(self) if pos == -1 else pos
 
     def find_block(self, position):
-        """Return a Block representing the text line (block) at position."""
+        """Return a :class:`Block` representing the text line (block) at
+        position.
+
+        A position larger than the document's length just returns the last
+        block. (A document has always at least one block).
+
+        """
         pos = self.find_start_of_block(position)
         end = self.find_end_of_block(pos)
         return Block(self, pos, end)
+
+    def find_block_by_number(self, number):
+        """Return the :class:`Block` for text line ``number``.
+
+        The first block has number 0. Returns None when the document has less
+        blocks than the specified number.
+
+        Avoid this method and :meth:`block_count` where you can, they are
+        potentially expensive for large documents. Prefer :meth:`find_block`
+        and :meth:`Block.next_block` or :meth:`Block.previous_block` for
+        iteration.
+
+        """
+        text = self.text()
+        sep = self.block_separator
+        pos = 0
+        if number:
+            l = len(sep)
+            for _ in range(number):
+                pos = text.find(sep, pos)
+                if pos == -1:
+                    return
+                pos += l
+        end = text.find(sep, pos)
+        if end == -1:
+            end = len(text)
+        block = Block(self, pos, end)
+        block._block_number = number
+        return block
+
+    def block_count(self):
+        """Return the number of blocks (lines) in this document.
+
+        This counts the number of occurrences of :attr:`block_separator` in the
+        full text, incremented with 1. A document has always at least one
+        block.
+
+        Avoid this method and :meth:`find_block_by_number` where you can, they
+        are potentially expensive for large documents. Prefer
+        :meth:`find_block` and :meth:`Block.next_block` or
+        :meth:`Block.previous_block` for iteration.
+
+        """
+        return self.text().count(self.block_separator) + 1
 
     def blocks(self, start=0, end=None):
         """Yield Blocks, starting at position start, ending at end.
@@ -630,7 +680,12 @@ class Block(AbstractTextRange):
     ``<=``, ``>`` and ``>=`` operators.
 
     """
-    __slots__ = ()
+    __slots__ = ('_block_number',)
+
+    def __init__(self, document, pos, end):
+        super().__init__(document, pos, end)
+        if pos == 0:
+            self._block_number = 0
 
     def __len__(self):
         return self.end - self.pos
@@ -643,19 +698,43 @@ class Block(AbstractTextRange):
         """True if this is the last block."""
         return self.end >= len(self.document())
 
+    @property
+    def block_number(self):
+        """The number of this block in the document.
+
+        The first block has number 0.
+
+        """
+        try:
+            n = self._block_number
+        except AttributeError:
+            d = self.document()
+            n = self._block_number = d[:self.pos].count(d.block_separator)
+        return n
+
     def next_block(self):
         """The next block if available."""
         if not self.is_last():
             pos = self.end + len(self.document().block_separator)
             end = self.document().find_end_of_block(pos)
-            return type(self)(self.document(), pos, end)
+            block = type(self)(self.document(), pos, end)
+            try:
+                block._block_number = self._block_number + 1
+            except AttributeError:
+                pass
+            return block
 
     def previous_block(self):
         """The previous block if available."""
         if self.pos > 0:
             end = self.pos - len(self.document().block_separator)
             pos = self.document().find_start_of_block(end)
-            return type(self)(self.document(), pos, end)
+            block = type(self)(self.document(), pos, end)
+            try:
+                block._block_number = self._block_number - 1
+            except AttributeError:
+                pass
+            return block
 
     def tokens(self):
         """Convenience method returning a tuple with all Tokens that are in

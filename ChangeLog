@@ -4,6 +4,8 @@ ChangeLog
 
 current: parce-0.29.0
 
+- added AbstractDocument.find_block_by_number, block_count and
+  Block.block_number
 - added tree.Range, together with Token.range() and Context.range()
 - removed Context.tokens_range, context_trails, context_slices and slices
 - removed Context.tokens_bw and util.tokens_bw, added reverse flag to tokens()
