@@ -953,6 +953,25 @@ class Range:
         self.start_trail = start_trail or []    #: The specified start trail (empty list by default)
         self.end_trail = end_trail or []        #: The specified end trail (empty list by default)
 
+    def __repr__(self):
+        return "<{} {} [{}:{}]>".format(type(self).__name__, self.ancestor.lexicon, self.pos, self.end)
+
+    @property
+    def pos(self):
+        """The position of the first token in our range."""
+        n = self.ancestor
+        for i in self.start_trail:
+            n = n[i]
+        return n.pos
+
+    @property
+    def end(self):
+        """The end position of the last token in our range."""
+        n = self.ancestor
+        for i in self.end_trail:
+            n = n[i]
+        return n.end
+
     @classmethod
     def from_tree(cls, tree, start=0, end=None):
         """Create a Range.
