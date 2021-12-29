@@ -104,6 +104,23 @@ def test_main():
             d[0:3] = "ABCD"
             d[1:2] = "bc"
 
+    # block interface
+    d = Document(None, "abcd\nefgh\nijkl\nmnop\nqrst\nuvwx\nyz\n")
+    assert d.block_count() == 8
+    assert d.find_block(4).block_number == 0
+    assert d.find_block(5).block_number == 1
+    assert d.find_block(9).block_number == 1
+    assert d.find_block(10).block_number == 2
+    assert d.find_block(15).block_number == 3
+    b = d.find_block_by_number(5)
+    assert b.text() == "uvwx"
+    b = d.find_block_by_number(6)
+    assert b.text() == "yz"
+    b = d.find_block_by_number(7)
+    assert b.text() == ""
+    b = d.find_block_by_number(8)
+    assert b is None
+
 
 if __name__ == "__main__":
     test_main()
