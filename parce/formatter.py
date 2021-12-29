@@ -164,6 +164,10 @@ class AbstractFormatter:
         skipped.
 
         """
+        r = tree.range(start, end)
+        if not r:
+            return
+
         format_caches = self.format_caches()   # caches for all added themes
         cache = format_caches.get              # quick access
         fc = default_fcache = cache(None)      # the default FormatCache
@@ -178,7 +182,7 @@ class AbstractFormatter:
         elif len(format_caches) == 1:
             # language will never be switched, no need to follow language
             def tokens():
-                return tree.tokens_range(start, end)
+                return r.tokens()
         else:
             # language can potentially switch, follow it
             def tokens():
@@ -196,7 +200,7 @@ class AbstractFormatter:
                             if format_context:
                                 format_context.switch(fc)
 
-                for context, slice_ in tree.context_slices(start, end):
+                for context, slice_ in r.slices():
                     check_lang(context.lexicon.language)
                     n = context[slice_]
                     stack = []
