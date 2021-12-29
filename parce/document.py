@@ -407,31 +407,41 @@ class AbstractTextRange:
 
     def __eq__(self, other):
         """Return ``self.pos == other.pos and self.end == other.end``."""
-        return other.document() is self.document() \
+        return type(self) is type(other) \
+            and other.document() is self.document() \
             and other.pos == self.pos \
             and other.end == self.end
 
     def __ne__(self, other):
         """Return ``self.pos != other.pos or self.end != other.end``."""
-        return other.document() is not self.document() \
+        return type(self) is not  type(other) \
+            or other.document() is not self.document() \
             or other.pos != self.pos \
             or other.end != self.end
 
     def __gt__(self, other):
         """Return ``self.pos > other.pos``."""
-        return self.pos > other.pos
+        if isinstance(other, AbstractTextRange):
+            return self.pos > other.pos
+        return NotImplemented
 
     def __lt__(self, other):
         """Return ``self.pos < other.pos``."""
-        return self.pos < other.pos
+        if isinstance(other, AbstractTextRange):
+            return self.pos < other.pos
+        return NotImplemented
 
     def __ge__(self, other):
         """Return ``self.pos >= other.pos``."""
-        return self.pos >= other.pos
+        if isinstance(other, AbstractTextRange):
+            return self.pos >= other.pos
+        return NotImplemented
 
     def __le__(self, other):
         """Return ``self.pos <= other.pos``."""
-        return self.pos <= other.pos
+        if isinstance(other, AbstractTextRange):
+            return self.pos <= other.pos
+        return NotImplemented
 
     def token(self):
         """Convenience method returning the :class:`~parce.tree.Token` at our pos.
