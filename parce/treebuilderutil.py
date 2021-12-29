@@ -29,7 +29,7 @@ import itertools
 
 from . import util
 from .lexer import Event, Lexer
-from .tree import Context
+from .tree import Context, Range
 from .target import TargetFactory
 
 
@@ -198,6 +198,7 @@ def events_with_tokens(start_token, last_token):
     """
     context, start_trail, end_trail = common_ancestor_with_trail(start_token, last_token)
     if context:
+        r = Range(context, start_trail, end_trail)
 
         target = TargetFactory()
         get, push, pop = target.get, target.push, target.pop
@@ -243,7 +244,7 @@ def events_with_tokens(start_token, last_token):
             lexicons = [p.lexicon for p in start_token.ancestors()]
             push(*lexicons[-2::-1])  # reversed, not root
 
-        for context, slice_ in context.slices(start_trail, end_trail, target):
+        for context, slice_ in r.slices(target):
             yield from events(context[slice_])
 
 

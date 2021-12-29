@@ -462,7 +462,9 @@ class AbstractTextRange:
         method.
 
         """
-        return self.document().get_root(True).tokens_range(self.pos, self.end)
+        r = self.document().get_root(True).range(self.pos, self.end)
+        if r:
+            yield from r.tokens()
 
 
 class Cursor(AbstractTextRange):

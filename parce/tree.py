@@ -470,8 +470,7 @@ class Token(Node):
         """Yield all tokens starting with us and upto and including the other."""
         context, start_trail, end_trail = self.common_ancestor_with_trail(other)
         if context:
-            for context, slice_ in context.slices(start_trail, end_trail):
-                yield from util.tokens(context[slice_])
+            yield from Range(context, start_trail, end_trail).tokens()
 
     def common_ancestor_with_trail(self, other):
         """Return a three-tuple(context, trail_self, trail_other).
@@ -949,52 +948,55 @@ class Context(list, Node):
             if node.is_token:
                 return node
 
-    def tokens_range(self, start=0, end=None):
-        """Yield all tokens (that completely fill this text range if specified).
+    def range(self, start=0, end=None):
+        """Return a class:`Range`.
 
-        The first and last tokens may overlap with the start and end positions.
-
-        """
-        for context, slice_ in self.context_slices(start, end):
-            yield from util.tokens(context[slice_])
-
-    def context_slices(self, start=0, end=None):
-        """Yield (context, slice) tuples to yield tokens from.
-
-        Yield the tokens using the context[slice] notation. The first and
-        last tokens that would be yielded from the iterables may overlap with
-        the start and end positions.
+        Returns None if this context is empty.
 
         """
-        context, start_trail, end_trail = self.context_trails(start, end)
-        if context:
-            yield from context.slices(start_trail, end_trail)
+        return Range.from_tree(self, start, end)
 
-    def context_trails(self, start=0, end=None):
-        """Return a three-tuple(context, start_trail, end_trail).
 
-        This can be used to denote a range of the tree structure in slices. The
-        returned context is the common ancestor of the tokens found at start
-        and end (or the current node if start or end fall outside the range of
-        the node). The trails are (possibly empty) lists of indices pointing to
-        the start and end token, if any.
+class Range:
+    """A Range denotes a range of a tree structure.
+
+    A range is defined by an ancestor context and possibly empty lists pointing
+    to the start and end token, if specified. If both trails are not specified,
+    the range encompasses the full context.
+
+    """
+    def __init__(self, ancestor, start_trail=None, end_trail=None):
+        self.ancestor = ancestor
+        self.start_trail = start_trail or []
+        self.end_trail = end_trail or []
+
+    @classmethod
+    def from_tree(cls, tree, start=0, end=None):
+        """Create a Range.
+
+        The ancestor is the common ancestor of the tokens found at start and
+        end (or the tree itself if start or end fall outside the range of the
+        node). If start is 0 and end is None, the range encompasses the full
+        tree.
+
+        Returns None if the tree is empty.
 
         """
-        if not self:
-            return None, None, None  # empty
-        context = self
-        if end is not None and end < self.end:
+        if not tree:
+            return # empty
+        context = tree
+        if end is not None and end < tree.end:
             if end <= start:
-                return None, None, None
-            end_trail = self.find_token_left_with_trail(end)[1]
+                return
+            end_trail = tree.find_token_left_with_trail(end)[1]
             if not end_trail:
-                return None, None, None
+                return
         else:
             end_trail = []
         if start > 0:
-            start_trail = self.find_token_with_trail(start)[1]
+            start_trail = tree.find_token_with_trail(start)[1]
             if not start_trail:
-                return None, None, None
+                return
             if end_trail:
                 # find the youngest common ancestor
                 for n, (i, j) in enumerate(zip(start_trail, end_trail)):
@@ -1006,25 +1008,24 @@ class Context(list, Node):
                     del end_trail[:n]
         else:
             start_trail = []
-        return context, start_trail, end_trail
+        return cls(context, start_trail, end_trail)
 
-    def slices(self, start_trail, end_trail, target_factory=None):
-        """Yield from the current context (context, slice) tuples.
+    def slices(self, target_factory=None):
+        """Yield (context, slice) tuples.
 
-        ``start_trail`` and ``end_trail`` both are lists of indices that
-        point to descendant tokens of this context. The yielded slices
-        include these tokens.
+        The yielded slices include the tokens at the end of start and end
+        trail.
 
         If you specify a ``target_factory``, it should be a TargetFactory
         object, and it will be updated along with the yielded slices.
 
         """
-        if start_trail:
-            start = start_trail[0]
-            if len(start_trail) > 1:
+        if self.start_trail:
+            start = self.start_trail[0]
+            if len(self.start_trail) > 1:
                 ancestors = []
-                n = self[start]
-                for i in start_trail[1:]:
+                n = self.ancestor[start]
+                for i in self.start_trail[1:]:
                     ancestors.append((n, i))
                     n = n[i]
                 yield ancestors[-1][0], slice(i, None) # include start token
@@ -1035,21 +1036,31 @@ class Context(list, Node):
                 start += 1
         else:
             start = 0
-        if end_trail:
-            end = end_trail[0]
-            if len(end_trail) == 1:
-                yield self, slice(start, end + 1)    # include end token
+        if self.end_trail:
+            end = self.end_trail[0]
+            if len(self.end_trail) == 1:
+                yield self.ancestor, slice(start, end + 1)    # include end token
             else:
-                yield self, slice(start, end)
-                n = self[end]
-                for end in end_trail[1:-1]:
+                yield self.ancestor, slice(start, end)
+                n = self.ancestor[end]
+                for end in self.end_trail[1:-1]:
                     target_factory and target_factory.push(n.lexicon)
                     yield n, slice(end)
                     n = n[end]
                 target_factory and target_factory.push(n.lexicon)
-                yield n, slice(end_trail[-1] + 1)   # include end token
+                yield n, slice(self.end_trail[-1] + 1)   # include end token
         else:
-            yield self, slice(start, None)
+            yield self.ancestor, slice(start, None)
+
+    def tokens(self):
+        """Yield all tokens in this range.
+
+        The first and last tokens may overlap with the start and end positions.
+
+        """
+        for context, slice_ in self.slices():
+            yield from util.tokens(context[slice_])
+
 
 
 def make_tokens(lexemes, parent=None):
