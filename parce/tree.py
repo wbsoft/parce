@@ -468,9 +468,9 @@ class Token(Node):
 
     def forward_until_including(self, other):
         """Yield all tokens starting with us and upto and including the other."""
-        context, start_trail, end_trail = self.common_ancestor_with_trail(other)
-        if context:
-            yield from Range(context, start_trail, end_trail).tokens()
+        r = self.range(other)
+        if r:
+            yield from r.tokens()
 
     def common_ancestor_with_trail(self, other):
         """Return a three-tuple(context, trail_self, trail_other).
@@ -500,6 +500,16 @@ class Token(Node):
                 return n, s_indices[s_i::-1], o_indices[::-1]
         return None, None, None
 
+    def range(self, other):
+        """Return a :class:`Range` from this token upto and including the other.
+
+        Returns None if the other :class:`Token` does not belong to the same
+        tree.
+
+        """
+        context, start_trail, end_trail = self.common_ancestor_with_trail(other)
+        if context:
+            return Range(context, start_trail, end_trail)
 
 
 class GroupToken(Token):
@@ -966,9 +976,9 @@ class Range:
 
     """
     def __init__(self, ancestor, start_trail=None, end_trail=None):
-        self.ancestor = ancestor
-        self.start_trail = start_trail or []
-        self.end_trail = end_trail or []
+        self.ancestor = ancestor                #: The specified ancestor
+        self.start_trail = start_trail or []    #: The specified start trail (empty list by default)
+        self.end_trail = end_trail or []        #: The specified end trail (empty list by default)
 
     @classmethod
     def from_tree(cls, tree, start=0, end=None):
@@ -1016,8 +1026,9 @@ class Range:
         The yielded slices include the tokens at the end of start and end
         trail.
 
-        If you specify a ``target_factory``, it should be a TargetFactory
-        object, and it will be updated along with the yielded slices.
+        If you specify a ``target_factory``, it should be a
+        :class:`~.target.TargetFactory` object, and it will be updated along
+        with the yielded slices.
 
         """
         if self.start_trail:
