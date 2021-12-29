@@ -313,7 +313,7 @@ def backward(node):
     """
     for node, index in ancestors_with_index(node):
         if index:
-            yield from util.tokens_bw(node[index-1::-1])
+            yield from util.tokens(node[:index], True)
 
 
 def common_ancestor_with_trail(node, other):

@@ -296,7 +296,7 @@ class Node:
         """
         for parent, index in self.ancestors_with_index(upto):
             if index:
-                yield from util.tokens_bw(parent[index-1::-1])
+                yield from util.tokens(parent[:index], True)
 
     @property
     def query(self):
@@ -320,19 +320,6 @@ class Node:
 
 class Token(Node):
     """A Token instance represents a lexed piece of text.
-
-    A token has the following attributes:
-
-    `parent`:
-        the Context node to which the token was added
-    `pos`:
-        the position of the token in the original text
-    `end`:
-        the end position of the token in the original text
-    `text`:
-        the text of the token
-    `action`:
-        the action specified by the lexicon rule that created the token
 
     When a pattern rule in a lexicon matches the text, a Token is created. When
     that rule would create more than one Token from a single regular expression
@@ -393,14 +380,20 @@ class Token(Node):
 
     __slots__ = "_parent", "pos", "text", "action"
 
-    is_token = True
-    group = None
+    is_token = True     #: Always True for Token
 
     def __init__(self, parent, pos, text, action):
-        self.parent = parent
-        self.pos = pos
-        self.text = text
-        self.action = action
+        self.parent = parent    #: The Context node to which the token was added
+        self.pos = pos          #: The position in the original text
+        self.text = text        #: The text of this token
+        self.action = action    #: The action specified by the lexicon rule that created the token
+
+    @property
+    def end(self):
+        """The end position of this token in the original text."""
+        return self.pos + len(self.text)
+
+    group = None        #: Always None for Token, an integer for :class:`GroupToken`
 
     def copy(self, parent=None):
         """Return a copy of the Token, but with the specified parent."""
@@ -451,10 +444,6 @@ class Token(Node):
 
     def __len__(self):
         return len(self.text)
-
-    @property
-    def end(self):
-        return self.pos + len(self.text)
 
     def forward_including(self, upto=None):
         """Yield all tokens in forward direction, including self."""
@@ -532,7 +521,7 @@ class GroupToken(Token):
     __slots__ = "group",
 
     def __init__(self, group, parent, pos, text, action):
-        self.group = group
+        self.group = group  #: The index of this token in a group (negated for the last token in a group)
         super().__init__(parent, pos, text, action)
 
     def copy(self, parent=None):
@@ -621,7 +610,7 @@ class Context(list, Node):
     """
     __slots__ = "lexicon", "_parent"
 
-    is_context = True
+    is_context = True   #: Always True for Context
 
     def __new__(cls, lexicon, parent):
         return list.__new__(cls)
@@ -731,47 +720,26 @@ class Context(list, Node):
                 else:
                     return height + 1
 
-    def tokens(self):
-        """Yield all Tokens, descending into nested Contexts."""
-        stack = []
-        i = 0
-        n = self
-        while True:
-            for i in range(i, len(n)):
-                m = n[i]
-                if m.is_token:
-                    yield m
-                else:
-                    stack.append(i)
-                    i = 0
-                    n = m
-                    break
-            else:
-                if stack:
-                    n = n.parent
-                    i = stack.pop() + 1
-                else:
-                    break
+    def tokens(self, reverse=False):
+        """Yield all Tokens, descending into nested Contexts.
 
-    def tokens_bw(self):
-        """Yield all Tokens, descending into nested Contexts, in backward direction."""
+        If ``reverse`` is set to True, yield all tokens in backward direction.
+
+        """
+        children = reversed if reverse else iter
         stack = []
-        n = self
-        i = len(n)
+        gen = children(self)
         while True:
-            for i in range(i - 1, -1, -1):
-                m = n[i]
-                if m.is_token:
-                    yield m
+            for n in gen:
+                if n.is_token:
+                    yield n
                 else:
-                    stack.append(i)
-                    n = m
-                    i = len(n)
+                    stack.append(gen)
+                    gen = children(n)
                     break
             else:
                 if stack:
-                    n = n.parent
-                    i = stack.pop()
+                    gen = stack.pop()
                 else:
                     break
 
@@ -959,7 +927,12 @@ class Context(list, Node):
                 return node
 
     def range(self, start=0, end=None):
-        """Return a class:`Range`.
+        """Return a :class:`Range`.
+
+        The ancestor of the range is the common ancestor of the tokens found at
+        start and end (or the context itself if start or end fall outside this
+        context). If start is 0 and end is None, the range encompasses the full
+        context.
 
         Returns None if this context is empty.
 
@@ -986,7 +959,7 @@ class Range:
 
         The ancestor is the common ancestor of the tokens found at start and
         end (or the tree itself if start or end fall outside the range of the
-        node). If start is 0 and end is None, the range encompasses the full
+        tree). If start is 0 and end is None, the range encompasses the full
         tree.
 
         Returns None if the tree is empty.

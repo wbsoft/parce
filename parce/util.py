@@ -717,25 +717,19 @@ def unroll(obj):
         yield obj
 
 
-def tokens(nodes):
-    """Helper to yield tokens from the iterable of nodes."""
-    for n in nodes:
-        if n.is_token:
-            yield n
-        else:
-            yield from n.tokens()
+def tokens(nodes, reverse=False):
+    """Helper to yield tokens from the iterable of nodes.
 
-
-def tokens_bw(nodes):
-    """Helper to yield tokens from the iterable in backward direction.
-
-    Make sure nodes is already in backward direction.
+    If ``reverse`` is set to True, yields the tokens of the nodes in backward
+    direction.
 
     """
+    if reverse:
+        nodes = reversed(nodes)
     for n in nodes:
         if n.is_token:
             yield n
         else:
-            yield from n.tokens_bw()
+            yield from n.tokens(reverse)
 
 
