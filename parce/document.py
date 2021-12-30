@@ -132,7 +132,8 @@ class AbstractDocument(mutablestring.AbstractMutableString):
         """Return the :class:`Block` for text line ``number``.
 
         The first block has number 0. Returns None when the document has less
-        blocks than the specified number.
+        blocks than the specified number. Negative numbers count backwards from
+        the end.
 
         Avoid this method and :meth:`block_count` where you can, they are
         potentially expensive for large documents. Prefer :meth:`find_block`
@@ -142,19 +143,27 @@ class AbstractDocument(mutablestring.AbstractMutableString):
         """
         text = self.text()
         sep = self.block_separator
-        pos = 0
-        if number:
-            l = len(sep)
-            for _ in range(number):
-                pos = text.find(sep, pos)
-                if pos == -1:
+        l = len(sep)
+        if number >= 0:
+            end = -l
+            for n in range(number + 1):
+                if end == len(text):
                     return
-                pos += l
-        end = text.find(sep, pos)
-        if end == -1:
-            end = len(text)
-        block = Block(self, pos, end)
-        block._block_number = number
+                pos = end + l
+                end = text.find(sep, pos)
+                if end == -1:
+                    end = len(text)
+            block = Block(self, pos, end)
+            block._block_number = n
+        else:
+            pos = len(text) + l
+            for n in range(number, 0):
+                if pos == 0:
+                    return
+                end = pos - l
+                pos = text.rfind(sep, 0, end)
+                pos = 0 if pos == -1 else pos + l
+            block = Block(self, pos, end)
         return block
 
     def block_count(self):
@@ -183,7 +192,7 @@ class AbstractDocument(mutablestring.AbstractMutableString):
             while block:
                 yield block
                 block = block.next_block()
-        else:
+        elif block:
             while True:
                 yield block
                 block = block.next_block()

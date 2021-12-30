@@ -120,6 +120,11 @@ def test_main():
     assert b.text() == ""
     b = d.find_block_by_number(8)
     assert b is None
+    # negative indices are also allowed
+    assert d.find_block_by_number(-1).block_number == d.block_count() - 1
+    assert d.find_block_by_number(-d.block_count()).block_number == 0
+    assert d.find_block_by_number(-(d.block_count()+1)) is None
+
 
 
 if __name__ == "__main__":
