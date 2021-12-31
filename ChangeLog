@@ -2,7 +2,7 @@ ChangeLog
 =========
 
 
-current: parce-0.29.0
+2021-12-31: parce-0.29.0
 
 - added AbstractDocument.find_block_by_number, block_count and
   Block.block_number
