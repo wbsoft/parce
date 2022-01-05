@@ -58,6 +58,8 @@ class AbstractDocument(mutablestring.AbstractMutableString):
     :class:`Block`.
 
     """
+    url = None      #: can be set to the url this document is loaded from
+    encoding = None #: can be set to the encoding used to read/write this document
 
     block_separator = '\n'  #: separator to use for block boundaries (newline)
 
