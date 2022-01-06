@@ -29,6 +29,7 @@ import bisect
 import codecs
 import contextlib
 import functools
+import os.path
 import threading
 import types
 import weakref
@@ -552,7 +553,7 @@ def cached_func(func):
     return wrapper
 
 
-def caching_dict(func, unpack=False):
+def caching_dict(func, unpack=False, cache_none=True):
     """Create a dict with a thread-safe factory function for missing keys.
 
     When a key is not present, the factory function is called. The difference
@@ -561,27 +562,73 @@ def caching_dict(func, unpack=False):
     key arguments unpacked. Built-in locking makes sure another thread cannot
     call the factory function at the same time.
 
+    If ``cache_none`` is set to False and the function returns None, that
+    result is not cached, meaning that the function is run again on the next
+    request.
+
     """
     lock = threading.Lock()
 
-    class cache(dict):
-        if unpack:
-            def __getitem__(self, key):
-                with lock:
-                    try:
-                        return super().__getitem__(key)
-                    except KeyError:
-                        value = self[key] = func(*key)
-                        return value
+    if unpack:
+        if cache_none:
+            def result(self, key):
+                value = self[key] = func(*key)
+                return value
         else:
-            def __getitem__(self, key):
-                with lock:
-                    try:
-                        return super().__getitem__(key)
-                    except KeyError:
-                        value = self[key] = func(key)
-                        return value
+            def result(self, key):
+                value = func(*key)
+                if value is not None:
+                    self[key] = value
+                return value
+    elif cache_none:
+        def result(self, key):
+            value = self[key] = func(key)
+            return value
+    else:
+        def result(self, key):
+            value = func(key)
+            if value is not None:
+                self[key] = value
+            return value
+
+    class cache(dict):
+        def __getitem__(self, key):
+            with lock:
+                try:
+                    return super().__getitem__(key)
+                except KeyError:
+                    return result(self, key)
     return cache()
+
+
+def file_cache(func):
+    """Return a dict that caches the factory function results.
+
+    The function should accept one argument which is assumed to be a filename.
+    The result value is cached, but not returned anymore when the mtime of the
+    file has changed; in that case the function is called again. If the mtime
+    of the file can't be determined the function result is not cached.
+
+    """
+    lock = threading.Lock()
+
+    class filecache(dict):
+        def __getitem__(self, key):
+            with lock:
+                try:
+                    mtime, value = super().__getitem__(key)
+                except KeyError:
+                    mtime = -1
+                try:
+                    new_mtime = os.path.getmtime(key)
+                except OSError:
+                    new_mtime = -2
+                if mtime != new_mtime:
+                    value = func(key)
+                    if new_mtime >= 0:
+                        self[key] = new_mtime, value
+                return value
+    return filecache()
 
 
 class Symbol:
