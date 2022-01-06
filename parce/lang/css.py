@@ -829,13 +829,21 @@ class CssTransform(Transform):
 #: for other at-rules that end with a rule with properties, the properties
 #: dict is in ``block``; when there is no block, ``block`` is None.
 Atrule = collections.namedtuple("Atrule", "keyword contents block")
+Atrule.keyword.__doc__  = "The identifier directly after the ``@``."
+Atrule.contents.__doc__ = "The tokens between de keyword and the block."
+Atrule.block.__doc__    = "The block between ``{`` ... ``}``."
 
 #: A normal rule
 Rule = collections.namedtuple("Rule", "prelude properties")
+Rule.prelude.__doc__    = "The list of selector lists, see :meth:`Css.prelude`."
+Rule.properties.__doc__ = "The dictionary of Css properties."
 
 #: A named tuple holding the (r, g, b, a) value of a color.
 Color = collections.namedtuple("Color", "r g b a")
-
+Color.r.__doc__ = "The red value, integer in the range 0..255."
+Color.g.__doc__ = "The green value, integer in the range 0..255."
+Color.b.__doc__ = "The blue value, integer in the range 0..255."
+Color.a.__doc__ = "The opacity, float in the range 0..1."
 
 class Value:
     """Any value that can occur in a CSS property declaration.

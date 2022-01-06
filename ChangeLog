@@ -2,6 +2,13 @@ ChangeLog
 =========
 
 
+current: parce-0.30.0
+
+- added util.file_cache()
+- added cache_none parameter to util.caching_dict()
+- added the Document.url and encoding properties
+
+
 2021-12-31: parce-0.29.0
 
 - added AbstractDocument.find_block_by_number, block_count and

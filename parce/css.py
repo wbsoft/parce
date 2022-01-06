@@ -76,8 +76,12 @@ from . import util
 from .lang.css import Css, Atrule, Rule, Value
 from .transform import transform_text
 
-
+#: A conditional at-rule
 Condition = collections.namedtuple("Condition", "keyword node style")
+Condition.keyword.__doc__ = "The keyword after the ``@``."
+Condition.node.__doc__ = ("The contents after the keyword and before the block,"
+    " or the query after the filename of an ``@import`` rule.")
+Condition.style.__doc__ = "The :class:`Style` representing the rules in the block."
 
 
 def style_query(func):
