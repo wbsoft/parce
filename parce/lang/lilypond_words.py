@@ -950,6 +950,7 @@ grobs = (
 
 
 # alterations
+from fractions import Fraction
 DOUBLE_FLAT     = -1
 THREE_Q_FLAT    = -0.75
 FLAT            = -0.5
@@ -959,6 +960,10 @@ SEMI_SHARP      =  0.25
 SHARP           =  0.5
 THREE_Q_SHARP   =  0.75
 DOUBLE_SHARP    =  1
+FIVE_HALF_FLAT  = -2.5
+SEVEN_HALF_FLAT =  Fraction(-7, 2)
+FIVE_HALF_SHARP =  2.5
+SEVEN_HALF_SHARP=  Fraction(7, 2)
 
 pitch_names = {
     "nederlands": {
@@ -1035,6 +1040,95 @@ pitch_names = {
         "bis": (-1, 6, SHARP),
         "bisih": (-1, 6, THREE_Q_SHARP),
         "bisis": (-1, 6, DOUBLE_SHARP),
+    },
+    "arabic": {
+        "c": (-1, 0, NATURAL),
+        "d": (-1, 1, NATURAL),
+        "e": (-1, 2, NATURAL),
+        "f": (-1, 3, NATURAL),
+        "g": (-1, 4, NATURAL),
+        "a": (-1, 5, NATURAL),
+        "b": (-1, 6, NATURAL),
+
+        "cd": (-1, 0, SHARP),
+        "dd": (-1, 1, SHARP),
+        "ed": (-1, 2, SHARP),
+        "fd": (-1, 3, SHARP),
+        "gd": (-1, 4, SHARP),
+        "ad": (-1, 5, SHARP),
+        "bd": (-1, 6, SHARP),
+
+        "cb": (-1, 0, FLAT),
+        "db": (-1, 1, FLAT),
+        "eb": (-1, 2, FLAT),
+        "fb": (-1, 3, FLAT),
+        "gb": (-1, 4, FLAT),
+        "ab": (-1, 5, FLAT),
+        "bb": (-1, 6, FLAT),
+
+        "cdd": (-1, 0, SEMI_SHARP),
+        "ddd": (-1, 1, SEMI_SHARP),
+        "edd": (-1, 2, SEMI_SHARP),
+        "fdd": (-1, 3, SEMI_SHARP),
+        "gdd": (-1, 4, SEMI_SHARP),
+        "add": (-1, 5, SEMI_SHARP),
+        "bdd": (-1, 6, SEMI_SHARP),
+
+        "cdb": (-1, 0, SEMI_FLAT),
+        "ddb": (-1, 1, SEMI_FLAT),
+        "edb": (-1, 2, SEMI_FLAT),
+        "fdb": (-1, 3, SEMI_FLAT),
+        "gdb": (-1, 4, SEMI_FLAT),
+        "adb": (-1, 5, SEMI_FLAT),
+        "bdb": (-1, 6, SEMI_FLAT),
+
+        "ctqb": (-1, 0, THREE_Q_FLAT),
+        "dtqb": (-1, 1, THREE_Q_FLAT),
+        "etqb": (-1, 2, THREE_Q_FLAT),
+        "ftqb": (-1, 3, THREE_Q_FLAT),
+        "gtqb": (-1, 4, THREE_Q_FLAT),
+        "atqb": (-1, 5, THREE_Q_FLAT),
+        "btqb": (-1, 6, THREE_Q_FLAT),
+
+        "ctqd": (-1, 0, THREE_Q_SHARP),
+        "dtqd": (-1, 1, THREE_Q_SHARP),
+        "etqd": (-1, 2, THREE_Q_SHARP),
+        "ftqd": (-1, 3, THREE_Q_SHARP),
+        "gtqd": (-1, 4, THREE_Q_SHARP),
+        "atqd": (-1, 5, THREE_Q_SHARP),
+        "btqd": (-1, 6, THREE_Q_SHARP),
+
+        "cfhb": (-1, 0, FIVE_HALF_FLAT),
+        "dfhb": (-1, 1, FIVE_HALF_FLAT),
+        "efhb": (-1, 2, FIVE_HALF_FLAT),
+        "ffhb": (-1, 3, FIVE_HALF_FLAT),
+        "gfhb": (-1, 4, FIVE_HALF_FLAT),
+        "afhb": (-1, 5, FIVE_HALF_FLAT),
+        "bfhb": (-1, 6, FIVE_HALF_FLAT),
+
+        "cfhd": (-1, 0, FIVE_HALF_SHARP),
+        "dfhd": (-1, 1, FIVE_HALF_SHARP),
+        "efhd": (-1, 2, FIVE_HALF_SHARP),
+        "ffhd": (-1, 3, FIVE_HALF_SHARP),
+        "gfhd": (-1, 4, FIVE_HALF_SHARP),
+        "afhd": (-1, 5, FIVE_HALF_SHARP),
+        "bfhd": (-1, 6, FIVE_HALF_SHARP),
+
+        "cshb": (-1, 0, SEVEN_HALF_FLAT),
+        "dshb": (-1, 1, SEVEN_HALF_FLAT),
+        "eshb": (-1, 2, SEVEN_HALF_FLAT),
+        "fshb": (-1, 3, SEVEN_HALF_FLAT),
+        "gshb": (-1, 4, SEVEN_HALF_FLAT),
+        "ashb": (-1, 5, SEVEN_HALF_FLAT),
+        "bshb": (-1, 6, SEVEN_HALF_FLAT),
+
+        "cshd": (-1, 0, SEVEN_HALF_SHARP),
+        "dshd": (-1, 1, SEVEN_HALF_SHARP),
+        "eshd": (-1, 2, SEVEN_HALF_SHARP),
+        "fshd": (-1, 3, SEVEN_HALF_SHARP),
+        "gshd": (-1, 4, SEVEN_HALF_SHARP),
+        "ashd": (-1, 5, SEVEN_HALF_SHARP),
+        "bshd": (-1, 6, SEVEN_HALF_SHARP),
     },
     "catalan": {
         "dobb": (-1, 0, DOUBLE_FLAT),
@@ -1818,7 +1912,8 @@ all_pitch_names = frozenset(name for d in pitch_names.values() for name in d)
 
 # some synonyms
 pitch_names["español"] = pitch_names["espanol"]
-pitch_names["francais"] = pitch_names["français"]
+pitch_names["português"] = pitch_names["portugues"]
+pitch_names["català"] = pitch_names["catalan"]
 
 
 drum_pitch_longnames = {
