@@ -59,5 +59,5 @@ url = "https://parce.info/"
 license = "GPL"
 
 #: copyright year
-copyright_year = "2019-2021"
+copyright_year = "2019-2022"
 

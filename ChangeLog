@@ -2,7 +2,7 @@ ChangeLog
 =========
 
 
-current: parce-0.30.0
+2022-01-23: parce-0.30.0
 
 - added arabic and bagpipe pitch names to LilyPond words list
 - added the default octave to all pitch names in the LilyPond words list
