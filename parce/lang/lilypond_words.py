@@ -1905,6 +1905,25 @@ pitch_names = {
         "sik": (-1, 6, SHARP),
         "sikk": (-1, 6, DOUBLE_SHARP),
     },
+    "bagpipe": {
+        "G": (0, 4, NATURAL),
+        "a": (0, 5, NATURAL),
+        "b": (0, 6, NATURAL),
+        "c": (1, 0, SHARP),
+        "c-flat": (1, 0, FLAT),
+        "cflat": (1, 0, FLAT),
+        "d": (1, 1, NATURAL),
+        "e": (1, 2, NATURAL),
+        "f": (1, 3, SHARP),
+        "f-flat": (1, 3, FLAT),
+        "fflat": (1, 3, FLAT),
+        "g": (1, 4, NATURAL),
+        "g-flat": (1, 4, FLAT),
+        "gflat": (1, 4, FLAT),
+        "A": (1, 5, NATURAL),
+        "B": (1, 6, NATURAL),
+        "C": (2, 0, SHARP),
+    },
 }
 
 # a set with all the pitch names for fast membership testing
