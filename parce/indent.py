@@ -370,12 +370,9 @@ class Indenter(AbstractIndenter):
         are also tried.
 
         """
-        for lang in language.mro():
-            module = sys.modules[lang.__module__]
-            name = self.indent_name_template.format(lang.__name__)
-            indent = getattr(module, name, None)
-            if isinstance(indent, type) and issubclass(indent, Indent):
-                return indent()
+        indent = parce.util.language_sister_class(language, self.indent_name_template, Indent, True)
+        if indent:
+            return indent()
 
 
 class Indent:

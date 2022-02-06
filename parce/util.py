@@ -30,6 +30,7 @@ import codecs
 import contextlib
 import functools
 import os.path
+import sys
 import threading
 import types
 import weakref
@@ -779,4 +780,22 @@ def tokens(nodes, reverse=False):
         else:
             yield from n.tokens(reverse)
 
+
+def language_sister_class(language, template, base, try_parents=False):
+    """Find a ``language`` sister class in the same module, with a name that
+    matches the ``template``, and which is a subclass of ``base``.
+
+    If ``try_parents`` is True, the parent classes of the language class are
+    checked if a sister class is not found.
+
+    Returns None if no sister class is defined.
+
+    """
+    langs = language.mro()[:-2] if try_parents else [language]
+    for l in langs:
+        module = sys.modules[l.__module__]
+        name = template.format(l.__name__)
+        cls = getattr(module, name, None)
+        if isinstance(cls, type) and issubclass(cls, base):
+            return cls
 

@@ -34,8 +34,7 @@ import sys
 import threading
 import weakref
 
-import parce.lexer
-import parce.util
+from . import util
 
 
 class Item(collections.namedtuple("Item", "name obj")):
@@ -177,7 +176,7 @@ class Transform:
     """
 
 
-class Transformer(parce.util.Observable):
+class Transformer(util.Observable):
     """Evaluate a tree.
 
     For every context, the transformer calls the corresponding method of the
@@ -212,7 +211,7 @@ class Transformer(parce.util.Observable):
 
     def __init__(self):
         super().__init__()
-        self._transforms = parce.util.caching_dict(self.find_transform)
+        self._transforms = util.caching_dict(self.find_transform)
         self._cache = weakref.WeakKeyDictionary()
         self._interrupt = weakref.WeakKeyDictionary()
 
@@ -227,7 +226,7 @@ class Transformer(parce.util.Observable):
             return  # a root lexicon can be None, but then there are no children
 
         from parce.tree import Context, make_tokens  # local lookup is faster
-        from parce.lexer import Event
+        from parce.lexer import Event, Lexer
         from parce.target import Target
 
         def make_target(pop, push):
@@ -275,7 +274,7 @@ class Transformer(parce.util.Observable):
         curlang = root_lexicon.language
         transform = self.get_transform(curlang)
 
-        events = parce.lexer.Lexer([root_lexicon]).events(text, pos)
+        events = Lexer([root_lexicon]).events(text, pos)
         root_meth = getattr(transform, root_lexicon.name, None)
         if root_meth:
             add_untransformed = _allow_untransformed(root_meth)
@@ -486,10 +485,8 @@ class Transformer(parce.util.Observable):
         added for the language.
 
         """
-        module = sys.modules[language.__module__]
-        tfname = self.transform_name_template.format(language.__name__)
-        tf = getattr(module, tfname, None)
-        if isinstance(tf, type) and issubclass(tf, Transform):
+        tf = util.language_sister_class(language, self.transform_name_template, Transform)
+        if tf:
             return tf()
 
 
