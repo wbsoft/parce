@@ -25,12 +25,12 @@ import sys
 
 sys.path.insert(0, ".")
 
-from parce.registry import registry, root_lexicon
+from parce.registry import registry
 from parce.validate import validate_language
 
 def test_main():
     for lexicon_name in registry:
-        lang = root_lexicon(lexicon_name).language
+        lang = registry.lexicon(lexicon_name).language
         assert validate_language(lang) is True
 
 

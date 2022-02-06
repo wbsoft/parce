@@ -25,7 +25,7 @@ import sys
 sys.path.insert(0, '.')
 
 import parce.transform
-from parce.registry import registry, root_lexicon
+from parce.registry import registry
 from parce.validate import validate_transform
 
 
@@ -60,7 +60,7 @@ def test_main():
     # find and validate all bundled transforms
     t = parce.transform.Transformer()
     for name in registry:
-        lang = root_lexicon(name).language
+        lang = registry.lexicon(name).language
         tf = t.find_transform(lang)
         if tf:
             print("Validating {transform} with {language}".format(transform=tf, language=lang))

@@ -50,7 +50,7 @@ def get_languages(name):
      """Yield the Language subclasses defined in the module parce.lang.``name``."""
      for fullname in parce.registry.registry:
          if fullname.split('.')[-3] == name:
-             yield parce.registry.root_lexicon(fullname).language
+             yield parce.registry.registry.lexicon(fullname).language
 
 
 STUB = r"""
@@ -242,7 +242,7 @@ def make_stub(module):
         registered.append(REGISTRY_STUB_HEADER)
         langs.sort(key=lambda l: l.__name__)
         for l in langs:
-            rootname = parce.registry.find(l.__name__)
+            rootname = parce.registry.registry.qualname(l.__name__)
             if rootname:
                 r = parce.registry.registry[rootname]
                 name = r.name

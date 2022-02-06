@@ -250,16 +250,8 @@ def find(name=None, *, filename=None, mimetype=None, contents=None):
     to add your own languages to a registry.
 
     """
-    from . import registry
-    if name:
-        lexicon_name = registry.find(name)
-    else:
-        for lexicon_name in registry.suggest(filename, mimetype, contents):
-            break
-        else:
-            return
-    if lexicon_name:
-        return registry.root_lexicon(lexicon_name)
+    from .registry import registry as r
+    return r.find(name, filename=filename, mimetype=mimetype, contents=contents)
 
 
 def root(root_lexicon, text):

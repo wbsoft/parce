@@ -27,11 +27,6 @@ The registry stores the fully qualified name for a root lexicon, for example
 ``"parce.lang.css.Css.root"``. This qualified name should have at least 2 dots,
 to separate module name, class name and the name of the root lexicon.
 
-Use :func:`find` to find a language definition by name, or :func:`suggest` to
-find a language definition for a particular file type. There is basic
-functionality to pick a language definition based on file name, mime type
-and/or the contents of the file.
-
 Using the :func:`register` function it is possible to register your own
 language definitions at runtime and make them available through parce.
 As a service, the bundled languages in ``parce.lang`` are automatically
@@ -51,7 +46,7 @@ import operator
 import re
 
 
-Item = collections.namedtuple("Item", (
+Entry = collections.namedtuple("Entry", (
     "name",
     "desc",
     "aliases",
@@ -63,6 +58,22 @@ Item = collections.namedtuple("Item", (
 Used to store entries in the Registry dict, using the qualified name of the
 root lexicon as the key.
 """
+Entry.name.__doc__ = "A human-readable name for the file type."
+Entry.desc.__doc__ = "A short description."
+Entry.aliases.__doc__ = "A list of other names this lexicon can be found under."
+Entry.filenames.__doc__ = \
+"""A list of tuples (pattern, weight). A pattern is a plain filename or a
+filename with globbing characters, e.g. ``"Makefile"`` or ``"*.c"``, and the
+weight is a floating point value indicating the probability that the root
+lexicon should be chosen for this filename (0..1 range)."""
+Entry.mimetypes.__doc__ = \
+"""A list of tuples (mimetype, weight). A mimetype is a string like
+``"text/css"``, the weight is a floating point value indicating the probability
+that the root lexicon should be chosen for this filename (0..1 range)."""
+Entry.guesses.__doc__ = \
+"""A list of tuples (regexp, weight). The first 5000 characters of the contents
+are matched against the regular expression, and when it matches, the weight is
+added to the already computed weight for this root lexicon."""
 
 
 class Registry(dict):
@@ -70,10 +81,27 @@ class Registry(dict):
 
     The ``Registry`` is based on the Python dictionary class, and maps fully
     qualified lexicon names (such as ``"parce.lang.css.Css.root"``) to
-    :class:`Item` tuples.
+    :class:`Entry` tuples.
+
+    You can specify another Registry as fallback on construction, or set the
+    :attr:`fallback` attribute later. The :meth:`find` method uses this
+    fallback, if set.
 
     """
-    def register(self, lexicon_name, *,
+
+    fallback = None #: Another :class:`Registry` the :meth:`find` method can use.
+
+    def __init__(self, fallback=None):
+        super().__init__()
+        self.fallback = fallback
+
+    def copy(self):
+        """Return a copy of this Registry. Any fallback is reused, not copied."""
+        copy = type(self)(self.fallback)
+        copy.update(self)
+        return copy
+
+    def add(self, lexicon_name, *,
         name,
         desc,
         aliases = (),
@@ -111,12 +139,11 @@ class Registry(dict):
             matches, the weight is added to the already computed weight for this
             root lexicon.
 
-        This method simply creates an :class:`Item` tuple with all the arguments
+        This method simply creates an :class:`Entry` tuple with all the arguments
         and stores it using the lexicon name as key.
 
         """
-        item = Item(name, desc, aliases, filenames, mimetypes, guesses)
-        self[lexicon_name] = item
+        self[lexicon_name] = Entry(name, desc, aliases, filenames, mimetypes, guesses)
 
     def suggest(self, filename=None, mimetype=None, contents=None):
         """Return a list of registered language definitions, sorted on relevance.
@@ -160,7 +187,7 @@ class Registry(dict):
                     weights[name] += weight
         return sorted(weights, key=weights.get, reverse=True)
 
-    def find(self, name):
+    def qualname(self, name):
         """Find a fully qualified lexicon name for the specified name.
 
         First, tries to find the exact match on the ``name`` attribute, then
@@ -186,38 +213,69 @@ class Registry(dict):
         for lexicon_name in itertools.chain(aliases, nocases, classes):
             return lexicon_name
 
+    def lexicon(self, name):
+        """Import the module and return the actual lexicon.
+
+        Eg, for the fully qualified ``name`` ``"parce.lang.css.Css.root"``,
+        imports the ``parce.lang.css`` module and returns the ``Css.root``
+        lexicon.
+
+        """
+        module, cls, root = name.rsplit(".", 2)
+        mod = importlib.import_module(module)
+        return getattr(getattr(mod, cls), root)
+
+    def find(self, name=None, filename=None, mimetype=None, contents=None):
+        """Find a root lexicon, either by language name, or by filename,
+        mimetype and/or contents.
+
+        If you specify a name, tries to find the language with that name using
+        :meth:`qualname`, ignoring the other arguments.
+
+        If you don't specify a name, but instead one or more of the other
+        (keyword) arguments, tries to find the language based on filename,
+        mimetype or contents, using :meth:`suggest`.
+
+        If a language is found, returns the root lexicon. If no language could
+        be found, the fallback registry is consulted, if set. Ultimately, None
+        is returned (which can also be used as root lexicon, resulting in an
+        empty token tree).
+
+        Examples::
+
+            >>> from parce.registry import registry as r
+            >>> r.find("xml")
+            Xml.root
+            >>> r.find(contents='{"key": 123;}')
+            Json.root
+            >>> r.find(filename="style.css")
+            Css.root
+
+        """
+        if name:
+            lexicon_name = self.qualname(name)
+        else:
+            for lexicon_name in self.suggest(filename, mimetype, contents):
+                break
+            else:
+                return
+        if lexicon_name:
+            return self.lexicon(lexicon_name)
+        elif self.fallback:
+            return self.fallback.find(name, filename, mimetype, contents)
+
 
 # the global Registry is in the ``registry`` module variable
 registry = Registry()
 
 
 def register(lexicon_name, **kwargs):
-    """:meth:`~Registry.register` a lexicon in the global registry."""
-    registry.register(lexicon_name, **kwargs)
+    """Register a lexicon in the global registry.
 
-
-def suggest(filename=None, mimetype=None, contents=None):
-    """:meth:`~Registry.suggest` zero or more lexicons from the global registry."""
-    return registry.suggest(filename, mimetype, contents)
-
-
-def find(name):
-    """:meth:`~Registry.find` a lexicon by name from the global registry."""
-    return registry.find(name)
-
-
-def root_lexicon(lexicon_name):
-    """Import the module and return the root lexicon.
-
-    Eg, for the ``lexicon_name`` ``"parce.lang.css.Css.root"`` imports the
-    ``parce.lang.css`` module and returns the ``Css.root`` lexicon.
+    For all the arguments, see :meth:`Registry.add`.
 
     """
-    module, cls, root = lexicon_name.rsplit(".", 2)
-    mod = importlib.import_module(module)
-    return getattr(getattr(mod, cls), root)
-
-
+    registry.add(lexicon_name, **kwargs)
 
 
 ## register the bundled languages
