@@ -199,47 +199,48 @@ class Registry(dict):
         nocases = []
         classes = []
         name_lowered = name.lower()
-        for lexicon_name, item in self.items():
-            if name == item.name:
-                return lexicon_name
-            if name in item.aliases:
-                aliases.append(lexicon_name)
-            if name_lowered == item.name.lower() or any(
-                    alias.lower() == name_lowered for alias in item.aliases):
-                nocases.append(lexicon_name)
-            cls = lexicon_name.rsplit(".", 2)[1]
+        for qualname, entry in self.items():
+            if name == entry.name:
+                return qualname
+            if name in entry.aliases:
+                aliases.append(qualname)
+            if name_lowered == entry.name.lower() or any(
+                    alias.lower() == name_lowered for alias in entry.aliases):
+                nocases.append(qualname)
+            cls = qualname.rsplit(".", 2)[1]
             if name_lowered == cls.lower():
-                classes.append(lexicon_name)
-        for lexicon_name in itertools.chain(aliases, nocases, classes):
-            return lexicon_name
+                classes.append(qualname)
+        for qualname in itertools.chain(aliases, nocases, classes):
+            return qualname
 
-    def lexicon(self, name):
+    @staticmethod
+    def lexicon(qualname):
         """Import the module and return the actual lexicon.
 
-        Eg, for the fully qualified ``name`` ``"parce.lang.css.Css.root"``,
+        Eg, for the fully qualified ``qualname`` ``"parce.lang.css.Css.root"``,
         imports the ``parce.lang.css`` module and returns the ``Css.root``
         lexicon.
 
         """
-        module, cls, root = name.rsplit(".", 2)
+        module, cls, root = qualname.rsplit(".", 2)
         mod = importlib.import_module(module)
         return getattr(getattr(mod, cls), root)
 
     def find(self, name=None, filename=None, mimetype=None, contents=None):
-        """Find a root lexicon, either by language name, or by filename,
-        mimetype and/or contents.
+        """Convenience method to find a root lexicon, either by language name,
+        or by filename, mimetype and/or contents.
 
-        If you specify a name, tries to find the language with that name using
-        :meth:`qualname`, ignoring the other arguments.
+        If you specify a name, tries to find the language with that name (using
+        :meth:`qualname`), ignoring the other arguments.
 
         If you don't specify a name, but instead one or more of the other
-        (keyword) arguments, tries to find the language based on filename,
-        mimetype or contents, using :meth:`suggest`.
+        arguments, tries to find the language based on filename, mimetype or
+        contents (using :meth:`suggest`).
 
-        If a language is found, returns the root lexicon. If no language could
-        be found, the fallback registry is consulted, if set. Ultimately, None
-        is returned (which can also be used as root lexicon, resulting in an
-        empty token tree).
+        If a language is found, returns the root lexicon (using
+        :meth:`lexicon`). If no language could be found, the fallback registry
+        is consulted, if set. Ultimately, None is returned (which can also be
+        used as root lexicon, resulting in an empty token tree).
 
         Examples::
 

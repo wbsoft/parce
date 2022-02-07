@@ -715,7 +715,7 @@ def merge_adjacent_actions_with_language(tokens):
 
 
 def get_bom_encoding(data):
-    """Get the BOM (Byte Order Mark) of data, if any.
+    """Get the BOM (Byte Order Mark) of bytes ``data``, if any.
 
     A two-tuple is returned (encoding, data). If the data starts with a BOM
     mark, its encoding is determined and the BOM mark is stripped off.
@@ -788,7 +788,15 @@ def language_sister_class(language, template, base, try_parents=False):
     If ``try_parents`` is True, the parent classes of the language class are
     checked if a sister class is not found.
 
-    Returns None if no sister class is defined.
+    The template string should contain ``{}``, which is replaced with the
+    language's class name. Returns None if no sister class is defined.
+    Example::
+
+        >>> from parce.util import language_sister_class
+        >>> from parce.lang.css import Css
+        >>> from parce.transform import Transform
+        >>> language_sister_class(Css, "{}Transform", Transform)
+        <class 'parce.lang.css.CssTransform'>
 
     """
     langs = language.mro()[:-2] if try_parents else [language]
