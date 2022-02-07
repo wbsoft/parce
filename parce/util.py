@@ -759,8 +759,21 @@ def unroll(obj):
 
     """
     if type(obj) in (tuple, list):
-        for i in obj:
-            yield from unroll(i)
+        stack = []
+        gen = iter(obj)
+        while True:
+            for obj in gen:
+                if type(obj) in (tuple, list):
+                    stack.append(gen)
+                    gen = iter(obj)
+                    break
+                else:
+                    yield obj
+            else:
+                if stack:
+                    gen = stack.pop()
+                else:
+                    break
     else:
         yield obj
 
