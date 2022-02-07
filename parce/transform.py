@@ -30,8 +30,6 @@ See also the documentation: :doc:`transforming`.
 """
 
 import collections
-import sys
-import threading
 import weakref
 
 from . import util

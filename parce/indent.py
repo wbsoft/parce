@@ -82,9 +82,6 @@ The following events can be yielded (simply module constants):
 
 """
 
-import collections
-import sys
-
 import parce.util
 
 # events w/o args
