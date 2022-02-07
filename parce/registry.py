@@ -254,16 +254,18 @@ class Registry(dict):
 
         """
         if name:
-            lexicon_name = self.qualname(name)
+            def lexicons(reg):
+                qualname = reg.qualname(name)
+                if qualname:
+                    yield reg.lexicon(qualname)
         else:
-            for lexicon_name in self.suggest(filename, mimetype, contents):
-                break
-            else:
-                return
-        if lexicon_name:
-            return self.lexicon(lexicon_name)
-        elif self.fallback:
-            return self.fallback.find(name, filename, mimetype, contents)
+            def lexicons(reg):
+                for qualname in reg.suggest(filename, mimetype, contents):
+                    yield reg.lexicon(qualname)
+        while self:
+            for lexicon in lexicons(self):
+                return lexicon
+            self = self.fallback
 
 
 # the global Registry is in the ``registry`` module variable
