@@ -19,7 +19,26 @@
 
 
 """
-I/O logic for Documents
+I/O handling for Documents.
+
+This module defines :class:`DocumentIOMixin` to mix in with the other
+parce Document base classes, adding save and load methods.
+
+These methods are not mandatory at all; you can choose to implement your own
+save and load logic.
+
+When a Document is loaded or saved, the filename is stored in the Document's
+:attr:`~.document.AbstractDocument.url` attribute, and if you specify an
+encoding, it is also stored in the  Document's
+:attr:`~.document.AbstractDocument.encoding` attribute.
+
+Besides that, this module enables intelligent encoding determination and
+handling, where the language of a Document can point to an :class:`IO` subclass
+which implements encoding determination based on the document's language.
+
+An :class:`IO` "sister-class" of a :class:`~parce.language.Language` can define
+a default encoding and provide a method to consult the document's contents to
+see if an encoding is defined there, and use that for I/O operations.
 
 """
 
@@ -39,9 +58,8 @@ DecodeResult.text.__doc__ = "The decoded text."
 DecodeResult.encoding.__doc__ = "The encoding that was specified or determined, or None."
 
 
-
-DEFAULT_ENCODING = "utf-8"
-TEMP_TEXT_MAXSIZE = 5000
+DEFAULT_ENCODING = "utf-8"      #: The general default encoding, if a Language does not define another
+TEMP_TEXT_MAXSIZE = 5000        #: The max size of a text snippet that is searched for an encoding
 
 
 class DocumentIOMixin:
@@ -57,14 +75,14 @@ class DocumentIOMixin:
     @classmethod
     def load(cls,
         url,
-        root_lexicon=False,
-        encoding=None,
-        errors=None,
-        newline=None,
-        registry=None,
-        worker=None,
-        transformer=None,
-        mimetype=None,
+        root_lexicon = False,
+        encoding = None,
+        errors = None,
+        newline = None,
+        registry = None,
+        mimetype = None,
+        worker = None,
+        transformer = None,
     ):
         """Load text from ``url`` and return a Document.
 
@@ -77,13 +95,15 @@ class DocumentIOMixin:
         The ``url`` is the filename. If the ``root_lexicon`` is None, no
         parsing will be done on the document. If False, guessing will be done
         using the specified ``registry`` or the default parce
-        :data:`~parce.registry.registry`. If ``root_lexicon`` is a string name,
-        the name will be looked up in the registry. Otherwise, it is assumed to
-        be a :class:`~parce.lexicon.Lexicon`.
+        :data:`~parce.registry.registry` (in which case ``url`` and
+        ``mimetype`` both can help in determining the language to use). If
+        ``root_lexicon`` is a string name, the name will be looked up in the
+        registry. Otherwise, it is assumed to be a
+        :class:`~parce.lexicon.Lexicon`.
 
         The ``encoding`` is "utf-8" by default. The ``errors`` and ``newline``
-        argument will be passed to the underlying TextIOWrapper reading the
-        file contents.
+        arguments will be passed to the underlying :class:`io.TextIOWrapper`
+        reading the file contents.
 
         The ``worker`` is a :class:`~.work.Worker` or None. By default, a
         :class:`~.work.BackgroundWorker` is used.
@@ -94,20 +114,20 @@ class DocumentIOMixin:
 
         """
         data = open(url, "rb").read()
-        return cls.load_from_data(data, url, root_lexicon, encoding, errors, newline, registry, worker, transformer, mimetype)
+        return cls.load_from_data(data, url, root_lexicon, encoding, errors, newline, registry, mimetype, worker, transformer)
 
     @classmethod
     def load_from_data(cls,
         data,
-        url=None,
-        root_lexicon=False,
-        encoding=None,
-        errors=None,
-        newline=None,
-        registry=None,
-        worker=None,
-        transformer=None,
-        mimetype=None,
+        url = None,
+        root_lexicon = False,
+        encoding = None,
+        errors = None,
+        newline = None,
+        registry = None,
+        mimetype = None,
+        worker = None,
+        transformer = None,
     ):
         """Load text from binary ``data`` and return a Document.
 
@@ -117,7 +137,7 @@ class DocumentIOMixin:
         r = cls.decode_data(data, url, root_lexicon, encoding, errors, newline, registry, mimetype)
         doc = cls.create_from_data(r.root_lexicon, r.text, url, r.encoding, worker, transformer)
         doc.url = url
-        doc.encoding = encoding
+        doc.encoding = r.encoding
         return doc
 
     @staticmethod
@@ -125,14 +145,13 @@ class DocumentIOMixin:
         """Decode text from the binary data, using all the other arguments (see
         :meth:`load`).
 
-        Returns a named tuple DecodeResult(root_lexicon, text, encoding).
+        Returns a named tuple :class:`DecodeResult`.
 
-        This method tries to determine the encoding and the root lexicon if
-        desired. If the root lexicon is determined, a custom :class:`IO` can be
-        instantiated (if the lexicon's language has one) to determine the
-        encoding of the text in that specific language.
-
-
+        This method is called by :meth:`load_from_data` and tries to
+        determine the encoding and the root lexicon if desired. If the root
+        lexicon is determined, a custom :class:`IO` can be instantiated (if the
+        lexicon's language has one) to determine the encoding of the text in
+        that specific language.
 
         """
         # check and guess the encoding if needed
@@ -174,17 +193,18 @@ class DocumentIOMixin:
 
     @classmethod
     def create_from_data(cls, root_lexicon, text, url, encoding, worker, transformer):
-        """Implement to instantiate a document from data."""
+        """Implement to actually instantiate a document from data."""
         raise NotImplementedError
 
     def save(self, url=None, encoding=None, newline=None):
         """Save the document to a local file.
 
-        If you specify the ``url`` or ``encoding``, the corresponding
+        If you specify the ``url`` or ``encoding``, the corresponding Document
         attributes are set as well. If encoding is not specified and also not
-        set in the corresponding attribute, an encoding to use is searched for
+        set in the corresponding attribute, the encoding to use is searched for
         in the document's text; if that is not found, the language's
-        :class:`IO` handler can define the default encoding to use.
+        :class:`IO` handler can define the default encoding to use; the
+        ultimate default is "utf-8".
 
         """
         text = self.text()
@@ -205,13 +225,24 @@ class DocumentIOMixin:
 
 
 class IO:
-    """Functional base class for language-specific IO handling."""
+    """Functional base class for language-specific I/O handling.
+
+    You may create a "sister-class" in the same module as a Language, with "IO"
+    appended to the class name, to have your IO-subclass automatically found.
+
+    So, if your language has the name "MyLang", a class "MyLangIO" in the same
+    module that inherits this class, will be used for encoding handling.
+
+    """
     def default_encoding(self):
         """Return the default encoding to use."""
         return DEFAULT_ENCODING
 
     def _find_existing_encoding(self, text):
-        """Call :meth:`find_encoding` but only return an encoding if it actually exists."""
+        """Call :meth:`find_encoding` but only return an encoding if it
+        actually exists.
+
+        """
         encoding = self.find_encoding(text[:TEMP_TEXT_MAXSIZE])
         try:
             codecs.lookup(encoding)
@@ -222,8 +253,8 @@ class IO:
     def find_encoding(self, text):
         """Return an encoding stored inside the piece of ``text``.
 
-        The default implementation recognizes some encoding="xxx" and (en)coding: xxxx
-        variants. Returns None if no encoding is found.
+        The default implementation recognizes some encoding="xxx" and
+        (en)coding: xxxx variants. Returns None if no encoding is found.
 
         """
         m = re.search(r'\b(?:en)coding[\t ]*?(?::[ \t]*?|=[\t ]*?")([\w_-]+)', text)

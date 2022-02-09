@@ -35,6 +35,10 @@ registered in the global registry.
 The global registry is in the :attr:`registry` module variable.
 You can also create and populate your own :class:`Registry`.
 
+.. py:data:: registry
+
+   The global default parce :class:`Registry`.
+
 """
 
 
