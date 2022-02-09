@@ -58,8 +58,9 @@ class AbstractDocument(mutablestring.AbstractMutableString):
     :class:`Block`.
 
     """
-    url = None      #: can be set to the url this document is loaded from
-    encoding = None #: can be set to the encoding used to read/write this document
+    url = None       #: can be set to the url this document is loaded from
+    encoding = None  #: can be set to the encoding used to read/write this document
+    modified = False #: Whether this document is modified
 
     block_separator = '\n'  #: separator to use for block boundaries (newline)
 
@@ -98,6 +99,7 @@ class AbstractDocument(mutablestring.AbstractMutableString):
         """Apply the changes to the text, reimplemented here to also update the Cursor positions."""
         self._update_cursors(changes)
         self._revision += 1
+        self.modified = True
 
     def revision(self):
         """Return the revision number.
@@ -315,18 +317,20 @@ class Document(AbstractDocument, mutablestring.MutableString, util.Observable):
         self._undo_stack = []
         self._redo_stack = []
 
+    @property
     def modified(self):
-        """Return whether the text was modified."""
+        """Read or set whether the text is modified, happens automatically normally."""
         return self._modified
 
-    def set_modified(self, modified):
-        """Sets whether the text is modified, happens automatically normally."""
-        changed = modified != self._modified
-        self._modified = modified
-        if not modified and not (self._in_undo or self._in_redo):
-            self._set_all_undo_redo_modified()
-        if changed:
-            self.emit("modification_changed", modified)
+    @modified.setter
+    def modified(self, modified):
+        if not (self._in_undo or self._in_redo):
+            changed = modified != self._modified
+            self._modified = modified
+            if not modified and not (self._in_undo or self._in_redo):
+                self._set_all_undo_redo_modified()
+            if changed:
+                self.emit("modification_changed", modified)
 
     def _update_text(self, changes):
         """Apply the changes to the text."""
@@ -335,8 +339,6 @@ class Document(AbstractDocument, mutablestring.MutableString, util.Observable):
                 self._store_undo(self._reverse_changes(changes))
             AbstractDocument._update_text(self, changes)
             mutablestring.MutableString._update_text(self, changes)
-        if not (self._in_undo or self._in_redo):
-            self.set_modified(True) # othw this is handled by undo/redo
 
     def _reverse_changes(self, changes):
         """Return the changes that would be needed to undo the given list of changes."""
@@ -351,7 +353,7 @@ class Document(AbstractDocument, mutablestring.MutableString, util.Observable):
 
     def _store_undo(self, changes):
         """Store changes needed to reconstruct the previous state."""
-        state = [changes, self.modified()]
+        state = [changes, self.modified]
         if self._in_undo:
             self._redo_stack.append(state)
         else:
@@ -359,16 +361,20 @@ class Document(AbstractDocument, mutablestring.MutableString, util.Observable):
             if not self._in_redo:
                 self._redo_stack.clear()
 
-    def _apply_undo_redo(self, stack):
-        """Apply changes from the specified stack (undo or redo)."""
+    def _apply_undo_redo(self, switch, stack):
+        """Apply changes from the specified stack (undo or redo).
+
+        If the return value is not None, it is the new modified state.
+
+        """
         if self._edit_context > 0:
             raise RuntimeError("can't undo or redo while in edit context")
         if stack:
             changes, modified = stack.pop()
-            with self:
+            with switch, self:
                 for start, end, text in changes:
                     self[start:end] = text
-            self.set_modified(modified)
+            self.modified = modified
 
     @contextlib.contextmanager
     def _check_undo_state(self):
@@ -396,13 +402,11 @@ class Document(AbstractDocument, mutablestring.MutableString, util.Observable):
 
     def undo(self):
         """Undo the last modification."""
-        with self._in_undo:
-            self._apply_undo_redo(self._undo_stack)
+        self._apply_undo_redo(self._in_undo, self._undo_stack)
 
     def redo(self):
         """Redo the last undone modification."""
-        with self._in_redo:
-            self._apply_undo_redo(self._redo_stack)
+        self._apply_undo_redo(self._in_redo, self._redo_stack)
 
     def clear_undo_redo(self):
         """Clear the undo/redo stack."""

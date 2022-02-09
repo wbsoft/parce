@@ -7,6 +7,8 @@ current: parce-0.31.0
 - small API changes in registry module. Removed some global functions, old
   generic find() is now a method of Registry, and a fallback registry can be
   specified.
+- Document.modified is now a property; set_modified() has gone; the property
+  is in AbstractDocument now.
 
 
 2022-01-23: parce-0.30.0
