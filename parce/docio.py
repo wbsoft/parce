@@ -205,7 +205,7 @@ class DocumentIOMixin:
 
 
 class IO:
-    """Functional base class for Language-specific IO handling."""
+    """Functional base class for language-specific IO handling."""
     def default_encoding(self):
         """Return the default encoding to use."""
         return DEFAULT_ENCODING
