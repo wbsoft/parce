@@ -26,7 +26,7 @@ __all__ = ('Dtd', 'Xml')
 
 import re
 
-from parce import Language, lexicon, skip, default_action
+from parce import Language, lexicon, skip, default_action, docio, root
 from parce.action import (
     Bracket, Comment, Data, Delimiter, Escape, Invalid, Keyword, Name,
     Operator, String, Text, Whitespace)
@@ -215,3 +215,15 @@ class Dtd(_XmlBase):
         yield operators, Operator
         yield _T_, nametype
         yield from cls.common_defs()
+
+
+class XmlIO(docio.IO):
+    """I/O handling for XML."""
+    def get_encoding(self, text):
+        """Find encoding in XML processing instruction."""
+        tree = root(Xml.root, text)
+        for enc in tree.query.children(Xml.processing_instruction) \
+            .children.action(Name.Attribute)('encoding') \
+            .right_siblings(Xml.dqstring)[0]:
+            return enc.text
+

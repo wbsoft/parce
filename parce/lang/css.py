@@ -28,7 +28,7 @@ highlighting formats in css files.
 
 """
 
-__all__ = ('Css', 'CssTransform', 'CssIndent', 'Rule', 'Atrule', 'Color', 'Value')
+__all__ = ('Css', 'CssTransform', 'CssIndent', 'CssIO', 'Rule', 'Atrule', 'Color', 'Value')
 
 import collections
 import re
@@ -40,6 +40,7 @@ from parce.action import (
 from parce.rule import TEXT, bygroup, ifmember, ifeq, anyof
 from parce.transform import Transform
 from parce.indent import Indent, INDENT, DEDENT
+from parce import docio
 
 
 RE_CSS_ESCAPE = r"\\(?:[0-9A-Fa-f]{1,6} ?|.)"
@@ -908,3 +909,18 @@ class CssIndent(Indent):
                     yield INDENT
                 elif t == "}":
                     yield DEDENT
+
+
+class CssIO(docio.IO):
+    """I/O handling for Css."""
+    def default_encoding(self):
+        """Return "utf-8" by default."""
+        return "utf-8"
+
+    def get_encoding(self, text):
+        """Find encoding in Css."""
+        m = re.search(r'@charset\s*"([\w_-]+)"', text)
+        if m:
+            return m.group(1)
+
+

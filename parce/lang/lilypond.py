@@ -665,7 +665,7 @@ class LilyPondIndent(Indent):
 
 class LilyPondIO(docio.IO):
     """IO handling."""
-    def get_encoding(self, text):
-        """Find encoding in document, otherwise default to "utf-8"."""
-        return super().get_encoding(text) or "utf-8"
+    def default_encoding(self):
+        """Return "utf-8" by default."""
+        return "utf-8"
 

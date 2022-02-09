@@ -28,11 +28,11 @@ __all__ = ('Html', 'XHtml')
 
 import re
 
-from parce import Language, lexicon, default_target
+from parce import Language, lexicon, default_target, root
 from parce.action import Delimiter, Name, Operator, String
 from parce.rule import ARG, MATCH, bygroup, dselect, using, words
 
-from parce.lang.xml import Xml
+from parce.lang.xml import Xml, XmlIO
 from parce.lang.css import Css
 from parce.lang.javascript import JavaScript
 
@@ -96,4 +96,32 @@ class Html(XHtml):
                 None: cls.attrs("noclose"), # no ">" or "/>": go to attrs/noclose
             })                          # by default ("/>"): stay in context
         yield from super().root
+
+
+class XHtmlIO(XmlIO):
+    """I/O handling for (X)Html."""
+    def get_encoding(self, text):
+        """Find the encoding in HTML meta tag; if not, fall back to XML processing instruction."""
+        tree = root(XHtml.root, text)
+        for attrs in tree.query.all.action(Name.Tag)('meta').right(XHtml.attrs):
+            http_equiv = False
+            enc = None
+            for attr in attrs.query.children.action(Name.Attribute):
+                a = attr.text.lower()
+                v = ""
+                for value in attr.query.right_siblings(XHtml.dqstring)[0]:
+                    v = value.text
+                    break
+                if a == "charset" and v:
+                    return v
+                elif a == "http-equiv" and v.lower().strip() == "content-type":
+                    http_equiv = True
+                elif a == "content":
+                    m = re.search(r'\bcharset\s*?=\s*?([\w_-]+)', v, re.IGNORECASE)
+                    if m:
+                        enc = m.group(1)
+            if http_equiv and enc:
+                return enc
+        return super().get_encoding(text)
+
 
