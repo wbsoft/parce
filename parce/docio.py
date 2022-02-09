@@ -75,7 +75,7 @@ class DocumentIOMixin:
     @classmethod
     def load(cls,
         url,
-        root_lexicon = False,
+        root_lexicon = True,
         encoding = None,
         errors = None,
         newline = None,
@@ -93,7 +93,7 @@ class DocumentIOMixin:
         local file system.
 
         The ``url`` is the filename. If the ``root_lexicon`` is None, no
-        parsing will be done on the document. If False, guessing will be done
+        parsing will be done on the document. If True, guessing will be done
         using the specified ``registry`` or the default parce
         :data:`~parce.registry.registry` (in which case ``url`` and
         ``mimetype`` both can help in determining the language to use). If
@@ -120,7 +120,7 @@ class DocumentIOMixin:
     def load_from_data(cls,
         data,
         url = None,
-        root_lexicon = False,
+        root_lexicon = True,
         encoding = None,
         errors = None,
         newline = None,
@@ -167,9 +167,7 @@ class DocumentIOMixin:
         # determine root lexicon (is ultimately a Lexicon or None)
         if isinstance(root_lexicon, str):
             root_lexicon = registry.find(root_lexicon)
-        elif root_lexicon is False:
-            root_lexicon is None
-        else:
+        elif root_lexicon is True:
             # guess the language: use registry and url
             root_lexicon = registry.find(filename=os.path.basename(url), mimetype=mimetype, contents=temp_text)
 
@@ -244,11 +242,12 @@ class IO:
 
         """
         encoding = self.find_encoding(text[:TEMP_TEXT_MAXSIZE])
-        try:
-            codecs.lookup(encoding)
-        except LookupError:
-            return
-        return encoding
+        if encoding:
+            try:
+                codecs.lookup(encoding)
+            except LookupError:
+                return
+            return encoding
 
     def find_encoding(self, text):
         """Return an encoding stored inside the piece of ``text``.
