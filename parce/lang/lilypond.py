@@ -34,6 +34,7 @@ from parce.rule import (
     MATCH, TEXT, arg, bygroup, call, dselect, findmember, ifarg, ifeq, ifgroup,
     ifmember, select, using, words)
 from parce.indent import Indent, ALIGN, INDENT, DEDENT, NO_DEDENT
+from parce import docio
 
 from . import lilypond_words
 
@@ -660,4 +661,11 @@ class LilyPondIndent(Indent):
                     yield NO_DEDENT
             else:
                 yield NO_DEDENT
+
+
+class LilyPondIO(docio.IO):
+    """IO handling."""
+    def get_encoding(self, text):
+        """Find encoding in document, otherwise default to "utf-8"."""
+        return super().get_encoding(text) or "utf-8"
 

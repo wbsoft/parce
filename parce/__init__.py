@@ -73,7 +73,7 @@ __all__ = (
     'skip',
 )
 
-from . import document, lexer, rule, ruleitem, treebuilder, work, util
+from . import docio, document, lexer, rule, ruleitem, treebuilder, work, util
 from .language import Language
 from .document import Cursor
 from .pkginfo import version, version_string
@@ -115,7 +115,7 @@ def lexicon(rules_func=None, **kwargs):
     return lexicon
 
 
-class Document(work.WorkerDocumentMixin, document.Document):
+class Document(docio.DocumentIOMixin, work.WorkerDocumentMixin, document.Document):
     """A Document that automatically keeps its contents tokenized.
 
     A Document holds an editable text string and keeps the tokenized tree and
@@ -218,6 +218,11 @@ class Document(work.WorkerDocumentMixin, document.Document):
 
     def _slot_transform_finished(self):
         self.emit("transform_finished")
+
+    @classmethod
+    def create_from_data(cls, root_lexicon, text, url, encoding, worker, transformer):
+        """Instantiate a document from data."""
+        return cls(root_lexicon, text, worker, transformer)
 
 
 def find(name=None, *, filename=None, mimetype=None, contents=None):

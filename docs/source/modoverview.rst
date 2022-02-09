@@ -27,6 +27,7 @@ Below is the full module list:
    parce.rst
    action.rst
    css.rst
+   docio.rst
    document.rst
    formatter.rst
    indent.rst
