@@ -47,6 +47,7 @@ import collections
 import io
 import os
 import re
+from urllib.parse import urlparse
 
 from . import util, work
 
@@ -60,6 +61,25 @@ DecodeResult.encoding.__doc__ = "The encoding that was specified or determined, 
 
 DEFAULT_ENCODING = "utf-8"      #: The general default encoding, if a Language does not define another
 TEMP_TEXT_MAXSIZE = 5000        #: The maximum size of a text snippet that is searched for an encoding
+
+
+def localfile(url):
+    """Return the local filename the ``url`` points to.
+
+    If the url has a ``file:`` scheme, the path is returned. If the url has no
+    scheme and no netloc, the full url is returned so that it is used as a
+    local file.
+
+    Raises a ValueError if the URL does not point to a local file.
+
+    """
+    u = urlparse(url)
+    if not u.netloc:
+        if u.scheme == "file":
+            return u.path
+        if not u.scheme:
+            return url
+    raise ValueError("only local files are supported")
 
 
 def decode_data(
@@ -145,6 +165,7 @@ def decode_data(
     text = io.TextIOWrapper(io.BytesIO(data), actual_read_enc, errors, newline).read()
     return DecodeResult(root_lexicon, text, encoding)
 
+
 class DocumentIOMixin:
     """Mixin class, adding load and save methods to Document.
 
@@ -196,7 +217,7 @@ class DocumentIOMixin:
         ``True``, in which case a default Transformer is installed.
 
         """
-        data = open(url, "rb").read()
+        data = open(localfile(url), "rb").read()
         return cls.load_from_data(data, url, root_lexicon, encoding, errors, newline, registry, mimetype, worker, transformer)
 
     @classmethod
@@ -226,7 +247,7 @@ class DocumentIOMixin:
     decode_data = staticmethod(decode_data)
     """Decode text from the binary (bytes or bytearray) data.
 
-    The default implementation uses :func:`decode_data`.
+    The default implementation uses the :func:`decode_data` function.
 
     """
 
@@ -258,7 +279,7 @@ class DocumentIOMixin:
             encoding = _validate_encoding(io_handler.find_encoding(text) or io_handler.default_encoding()) or DEFAULT_ENCODING
         else:
             encoding = self.encoding
-        with open(self.url, "w", encoding=encoding, newline=newline) as f:
+        with open(localfile(self.url), "w", encoding=encoding, newline=newline) as f:
             f.write(self.text())
         self.modified = False
 
