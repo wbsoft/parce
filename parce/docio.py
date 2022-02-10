@@ -130,11 +130,11 @@ def decode_data(
     # find a possible encoding specified in the document
     io_cls = root_lexicon and util.language_sister_class(root_lexicon.language, "{}IO", IO, True) or IO
     io_handler = io_cls()
-    doc_enc = io_handler._find_existing_encoding(temp_text)
+    doc_enc = _validate_encoding(io_handler.find_encoding(temp_text))
 
     # If the doc had a BOM (byte order mark), respect that encoding; otherwise
     # use the encoding in the document, the specified encoding, or the default encoding (utf-8).
-    actual_read_enc = read_enc or doc_enc or encoding or io_handler.default_encoding()
+    actual_read_enc = read_enc or doc_enc or encoding or _validate_encoding(io_handler.default_encoding()) or DEFAULT_ENCODING
 
     # If no encoding was specified, remember the encoding set in the document
     # or determined via the BOM.
@@ -255,7 +255,7 @@ class DocumentIOMixin:
             lexicon = self.root_lexicon()
             io_cls = lexicon and util.language_sister_class(lexicon.language, "{}IO", IO, True) or IO
             io_handler = io_cls()
-            encoding = io_handler._find_existing_encoding(text) or io_handler.default_encoding()
+            encoding = _validate_encoding(io_handler.find_encoding(text) or io_handler.default_encoding()) or DEFAULT_ENCODING
         else:
             encoding = self.encoding
         with open(self.url, "w", encoding=encoding, newline=newline) as f:
@@ -275,20 +275,6 @@ class IO:
     """
     def default_encoding(self):
         """Return the default encoding to use."""
-        return DEFAULT_ENCODING
-
-    def _find_existing_encoding(self, text):
-        """Call :meth:`find_encoding` but only return an encoding if it
-        actually exists.
-
-        """
-        encoding = self.find_encoding(text[:TEMP_TEXT_MAXSIZE])
-        if encoding:
-            try:
-                codecs.lookup(encoding)
-            except LookupError:
-                return
-            return encoding
 
     def find_encoding(self, text):
         """Return an encoding stored inside the piece of ``text``.
@@ -301,4 +287,17 @@ class IO:
         if m:
             return m.group(1)
 
+
+def _validate_encoding(encoding):
+    """Check if the ``encoding`` is actually usable.
+
+    Returns None if the encoding is not usable, otherwise the encoding itself.
+
+    """
+    if encoding:
+        try:
+            codecs.lookup(encoding)
+            return encoding
+        except LookupError:
+            pass
 

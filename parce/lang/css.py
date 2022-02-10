@@ -917,7 +917,7 @@ class CssIO(docio.IO):
         """Return "utf-8" by default."""
         return "utf-8"
 
-    def get_encoding(self, text):
+    def find_encoding(self, text):
         """Find encoding in Css."""
         m = re.search(r'@charset\s*"([\w_-]+)"', text)
         if m:

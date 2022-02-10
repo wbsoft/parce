@@ -219,7 +219,7 @@ class Dtd(_XmlBase):
 
 class XmlIO(docio.IO):
     """I/O handling for XML."""
-    def get_encoding(self, text):
+    def find_encoding(self, text):
         """Find encoding in XML processing instruction."""
         tree = root(Xml.root, text)
         for enc in tree.query.children(Xml.processing_instruction) \

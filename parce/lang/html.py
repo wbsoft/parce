@@ -100,7 +100,7 @@ class Html(XHtml):
 
 class XHtmlIO(XmlIO):
     """I/O handling for (X)Html."""
-    def get_encoding(self, text):
+    def find_encoding(self, text):
         """Find the encoding in HTML meta tag; if not, fall back to XML processing instruction."""
         tree = root(XHtml.root, text)
         for attrs in tree.query.all.action(Name.Tag)('meta').right(XHtml.attrs):
