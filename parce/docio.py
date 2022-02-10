@@ -59,8 +59,91 @@ DecodeResult.encoding.__doc__ = "The encoding that was specified or determined, 
 
 
 DEFAULT_ENCODING = "utf-8"      #: The general default encoding, if a Language does not define another
-TEMP_TEXT_MAXSIZE = 5000        #: The max size of a text snippet that is searched for an encoding
+TEMP_TEXT_MAXSIZE = 5000        #: The maximum size of a text snippet that is searched for an encoding
 
+
+def decode_data(
+        data,
+        root_lexicon = None,
+        encoding = None,
+        errors = None,
+        newline = None,
+        registry = None,
+        url = None,
+        mimetype = None
+    ):
+    """Decode text from the binary (bytes or bytearray) ``data``.
+
+    Returns a named tuple :class:`DecodeResult` (``root_lexicon``,
+    ``text``, ``encoding``).
+
+    If the data starts with a *byte-order mark* (BOM), the encoding that is
+    specified by that BOM is used to read the rest of the data. Otherwise, the
+    data is first interpreted as ``latin1`` and examined. If no encoding can be
+    determined by looking at the text, the specified ``encoding`` is used, or
+    UTF-8 by default.
+
+    The ``root_lexicon`` determines how the data is further interpreted: If
+    None, no parsing is done at all. If True, the specified ``registry`` or the
+    default parce :data:`~parce.registry.registry` is used to guess the
+    language (in this case ``url`` and ``mimetype`` both help in determining
+    the language to use). If ``root_lexicon`` is a string name, it is looked up
+    in the registry. Otherwise it is assumed to be a :class:`~.lexicon.Lexicon`.
+
+    When the root lexicon's Language (or one of its superclasses) has an
+    :class:`IO` "sister-class" (i.e. in the same module with the same name with
+    "IO" appended), that IO class's :meth:`~IO.get_encoding` method is called
+    to determine the encoding of the text, which may be mentioned in the text
+    in a way specific to that language. If that method returns None,
+    :meth:`~IO.default_encoding` is called, which also by default returns
+    "utf-8".
+
+    E.g. for XML, the ``encoding`` attribute of the first processing
+    instruction is consulted, for Html the value of a ``<meta>`` tag with
+    ``charset`` or ``http-equiv`` attributes, etc.
+
+    The ``errors`` and ``newline`` arguments will be passed to the underlying
+    :class:`io.TextIOWrapper` reading the file contents.
+
+    If no ``encoding`` was specified, the returned ``encoding`` is the encoding
+    that was finally used to read the text; otherwise it is the specified
+    encoding.
+
+    """
+    # check and guess the encoding if needed
+    read_enc, data = util.get_bom_encoding(data)
+
+    # make a temporary piece of text to determine language and encoding
+    temp_enc = "latin1" if read_enc is None else read_enc
+    temp_text = data[:TEMP_TEXT_MAXSIZE].decode(temp_enc, 'ignore')
+
+    if registry is None:
+        from parce.registry import registry
+
+    # determine root lexicon (is ultimately a Lexicon or None)
+    if isinstance(root_lexicon, str):
+        root_lexicon = registry.find(root_lexicon)
+    elif root_lexicon is True:
+        # guess the language: use registry and url
+        root_lexicon = registry.find(filename=os.path.basename(url), mimetype=mimetype, contents=temp_text)
+
+    # find a possible encoding specified in the document
+    io_cls = root_lexicon and util.language_sister_class(root_lexicon.language, "{}IO", IO, True) or IO
+    io_handler = io_cls()
+    doc_enc = io_handler._find_existing_encoding(temp_text)
+
+    # If the doc had a BOM (byte order mark), respect that encoding; otherwise
+    # use the encoding in the document, the specified encoding, or the default encoding (utf-8).
+    actual_read_enc = read_enc or doc_enc or encoding or io_handler.default_encoding()
+
+    # If no encoding was specified, remember the encoding set in the document
+    # or determined via the BOM.
+    if encoding is None:
+        encoding = doc_enc or read_enc
+
+    # now let Python decode the text
+    text = io.TextIOWrapper(io.BytesIO(data), actual_read_enc, errors, newline).read()
+    return DecodeResult(root_lexicon, text, encoding)
 
 class DocumentIOMixin:
     """Mixin class, adding load and save methods to Document.
@@ -134,60 +217,18 @@ class DocumentIOMixin:
         For all the other arguments, see :meth:`load`.
 
         """
-        r = cls.decode_data(data, url, root_lexicon, encoding, errors, newline, registry, mimetype)
+        r = cls.decode_data(data, root_lexicon, encoding, errors, newline, registry, url, mimetype)
         doc = cls.create_from_data(r.root_lexicon, r.text, url, r.encoding, worker, transformer)
         doc.url = url
         doc.encoding = r.encoding
         return doc
 
-    @staticmethod
-    def decode_data(data, url, root_lexicon, encoding, errors, newline, registry, mimetype):
-        """Decode text from the binary data, using all the other arguments (see
-        :meth:`load`).
+    decode_data = staticmethod(decode_data)
+    """Decode text from the binary (bytes or bytearray) data.
 
-        Returns a named tuple :class:`DecodeResult`.
+    The default implementation uses :func:`decode_data`.
 
-        This method is called by :meth:`load_from_data` and tries to
-        determine the encoding and the root lexicon if desired. If the root
-        lexicon is determined, a custom :class:`IO` can be instantiated (if the
-        lexicon's language has one) to determine the encoding of the text in
-        that specific language.
-
-        """
-        # check and guess the encoding if needed
-        read_enc, data = util.get_bom_encoding(data)
-
-        # make a temporary piece of text to determine language and encoding
-        temp_enc = "latin1" if read_enc is None else read_enc
-        temp_text = data[:TEMP_TEXT_MAXSIZE].decode(temp_enc, 'ignore')
-
-        if registry is None:
-            from parce.registry import registry
-
-        # determine root lexicon (is ultimately a Lexicon or None)
-        if isinstance(root_lexicon, str):
-            root_lexicon = registry.find(root_lexicon)
-        elif root_lexicon is True:
-            # guess the language: use registry and url
-            root_lexicon = registry.find(filename=os.path.basename(url), mimetype=mimetype, contents=temp_text)
-
-        # find a possible encoding specified in the document
-        io_cls = root_lexicon and util.language_sister_class(root_lexicon.language, "{}IO", IO, True) or IO
-        io_handler = io_cls()
-        doc_enc = io_handler._find_existing_encoding(temp_text)
-
-        # If the doc had a BOM (byte order mark), respect that encoding; otherwise
-        # use the encoding in the document, the specified encoding, or the default encoding (utf-8).
-        actual_read_enc = read_enc or doc_enc or encoding or io_handler.default_encoding()
-
-        # If no encoding was specified, remember the encoding set in the document
-        # or determined via the BOM.
-        if encoding is None:
-            encoding = doc_enc or read_enc
-
-        # now let Python decode the text
-        text = io.TextIOWrapper(io.BytesIO(data), actual_read_enc, errors, newline).read()
-        return DecodeResult(root_lexicon, text, encoding)
+    """
 
     @classmethod
     def create_from_data(cls, root_lexicon, text, url, encoding, worker, transformer):
