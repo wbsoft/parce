@@ -71,6 +71,10 @@ __all__ = (
     'default_target',
     'lexicon',
     'skip',
+
+    # other
+    'DocumentInterface',
+
 )
 
 from . import docio, document, lexer, rule, ruleitem, treebuilder, work, util
@@ -115,7 +119,20 @@ def lexicon(rules_func=None, **kwargs):
     return lexicon
 
 
-class Document(docio.DocumentIOMixin, work.WorkerDocumentMixin, document.Document):
+class DocumentInterface(docio.DocumentIOMixin, work.WorkerDocumentMixin, document.AbstractDocument):
+    """This abstract class defines the full interface of a *parce* Document.
+
+    Inherit this to implement a parce document type that proxies e.g. a text
+    document in a GUI editor. Also use this class to check if an object is a
+    parce Document.
+
+    """
+    def __init__(self, root_lexicon=None, text="", url=None, encoding=None, worker=None, transformer=None):
+        super(work.WorkerDocumentMixin, self).__init__(text, url, encoding)
+        work.WorkerDocumentMixin.__init__(self, root_lexicon, text, worker, transformer)
+
+
+class Document(DocumentInterface, document.Document):
     """A Document that automatically keeps its contents tokenized.
 
     A Document holds an editable text string and keeps the tokenized tree and
@@ -201,8 +218,7 @@ class Document(docio.DocumentIOMixin, work.WorkerDocumentMixin, document.Documen
 
     """
     def __init__(self, root_lexicon=None, text="", url=None, encoding=None, worker=None, transformer=None):
-        document.Document.__init__(self, text, url, encoding)
-        work.WorkerDocumentMixin.__init__(self, root_lexicon, text, worker, transformer)
+        DocumentInterface.__init__(self, root_lexicon, text, url, encoding, worker, transformer)
         self.worker().connect("tree_finished", self._slot_tree_finished)
         self.worker().connect("transform_finished", self._slot_transform_finished)
 

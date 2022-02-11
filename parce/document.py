@@ -68,8 +68,10 @@ class AbstractDocument(mutablestring.AbstractMutableString):
         mutablestring.AbstractMutableString.__init__(self)
         self._cursors = weakref.WeakSet()
         self._revision = 0
-        self.url = url
-        self.encoding = encoding
+        if url:
+            self.url = url
+        if encoding:
+            self.encoding = encoding
 
     def _parse_key(self, key):
         """Get start and end values from key. Called by __[gs]etitem__."""

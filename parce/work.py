@@ -361,14 +361,14 @@ class WorkerDocumentMixin:
         if worker is None:
             from .treebuilder import TreeBuilder
             worker = BackgroundWorker(TreeBuilder(root_lexicon), transformer)
-        else:
+        elif root_lexicon:
             root = worker.builder().root
             root.clear()
             root.lexicon = root_lexicon
             if transformer:
                 worker.set_transformer(transformer)
         self._worker = worker
-        if text:
+        if text and root_lexicon:
             worker.update(text)
 
     def worker(self):
