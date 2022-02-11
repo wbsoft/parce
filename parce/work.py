@@ -353,9 +353,23 @@ class WorkerDocumentMixin:
     Also the transformed result, if a transformer is set, is updated.
 
     """
-    def __init__(self, worker):
+    def __init__(self, root_lexicon=None, text="", worker=None, transformer=None):
         """Initialize with a :class:`Worker` instance, which is doing the work."""
+        if transformer is True:
+            from .transform import Transformer
+            transformer = Transformer()
+        if worker is None:
+            from .treebuilder import TreeBuilder
+            worker = BackgroundWorker(TreeBuilder(root_lexicon), transformer)
+        else:
+            root = worker.builder().root
+            root.clear()
+            root.lexicon = root_lexicon
+            if transformer:
+                worker.set_transformer(transformer)
         self._worker = worker
+        if text:
+            worker.update(text)
 
     def worker(self):
         """Return the Worker we were instantiated with."""

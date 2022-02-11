@@ -64,10 +64,12 @@ class AbstractDocument(mutablestring.AbstractMutableString):
 
     block_separator = '\n'  #: separator to use for block boundaries (newline)
 
-    def __init__(self):
+    def __init__(self, text="", url=None, encoding=None):
         mutablestring.AbstractMutableString.__init__(self)
         self._cursors = weakref.WeakSet()
         self._revision = 0
+        self.url = url
+        self.encoding = encoding
 
     def _parse_key(self, key):
         """Get start and end values from key. Called by __[gs]etitem__."""
@@ -309,8 +311,8 @@ class Document(AbstractDocument, mutablestring.MutableString, util.Observable):
 
     undo_redo_enabled = True
 
-    def __init__(self, text=""):
-        AbstractDocument.__init__(self)
+    def __init__(self, text="", url=None, encoding=None):
+        AbstractDocument.__init__(self, text, url, encoding)
         mutablestring.MutableString.__init__(self, text)
         util.Observable.__init__(self)
         self._modified = False

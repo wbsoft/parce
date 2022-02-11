@@ -61,7 +61,7 @@ class AbstractMutableString:
       character
 
     """
-    def __init__(self):
+    def __init__(self, text=""):
         self._edit_context = 0
         self._changes = collections.defaultdict(list)
 
@@ -220,7 +220,7 @@ class AbstractMutableString:
 
 class MutableString(AbstractMutableString):
     """A Mutable string, storing the string contents in an internal attribute."""
-    def __init__(self, text):
+    def __init__(self, text=""):
         super().__init__()
         self._text = text
 

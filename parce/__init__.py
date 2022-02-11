@@ -128,6 +128,14 @@ class Document(docio.DocumentIOMixin, work.WorkerDocumentMixin, document.Documen
     ``text``:
         The initial text (default the empty string)
 
+    ``url``:
+        The url or file name to be stored in the
+        :attr:`~.document.AbstractDocument.url` attribute.
+
+    ``encoding``:
+        The encoding to be stored in the
+        :attr:`~.document.AbstractDocument.encoding` attribute.
+
     ``worker``:
         Use the specified :class:`~.work.Worker`. By default, a
         :class:`~.work.BackgroundWorker` is used
@@ -192,24 +200,11 @@ class Document(docio.DocumentIOMixin, work.WorkerDocumentMixin, document.Documen
         {'key': [1, 2, 3, 4, 5, 6, 7, 8, 9]}
 
     """
-    def __init__(self, root_lexicon=None, text="", worker=None, transformer=None):
-        document.Document.__init__(self, text)
-        if transformer is True:
-            from . import transform
-            transformer = transform.Transformer()
-        if worker is None:
-            worker = work.BackgroundWorker(treebuilder.TreeBuilder(root_lexicon), transformer)
-        else:
-            root = worker.builder().root
-            root.clear()
-            root.lexicon = root_lexicon
-            if transformer:
-                worker.set_transformer(transformer)
-        work.WorkerDocumentMixin.__init__(self, worker)
-        if text:
-            worker.update(text)
-        worker.connect("tree_finished", self._slot_tree_finished)
-        worker.connect("transform_finished", self._slot_transform_finished)
+    def __init__(self, root_lexicon=None, text="", url=None, encoding=None, worker=None, transformer=None):
+        document.Document.__init__(self, text, url, encoding)
+        work.WorkerDocumentMixin.__init__(self, root_lexicon, text, worker, transformer)
+        self.worker().connect("tree_finished", self._slot_tree_finished)
+        self.worker().connect("transform_finished", self._slot_transform_finished)
 
     def _slot_tree_finished(self):
         b = self.builder()
@@ -218,11 +213,6 @@ class Document(docio.DocumentIOMixin, work.WorkerDocumentMixin, document.Documen
 
     def _slot_transform_finished(self):
         self.emit("transform_finished")
-
-    @classmethod
-    def create_from_data(cls, root_lexicon, text, url, encoding, worker, transformer):
-        """Instantiate a document from data."""
-        return cls(root_lexicon, text, worker, transformer)
 
 
 def find(name=None, *, filename=None, mimetype=None, contents=None):

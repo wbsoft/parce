@@ -17,6 +17,11 @@ You can also give root lexicon and text on instantiation::
 
     >>> d = parce.Document(Xml.root, r'<xml attr="value">')
 
+Or :meth:`~parce.docio.DocumentIOMixin.load` a document from the filesystem::
+
+    >>> d = parce.Document.load("file.xml")
+
+This method can autodetect the language.
 To get the tree::
 
     >>> tree = d.get_root(True)
