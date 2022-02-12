@@ -233,17 +233,19 @@ a document is even simpler::
 More goodies
 ------------
 
-The :class:`parce.Document` class is in fact built from three base classes:
+The :class:`parce.Document` class is in fact built from four base classes:
 :class:`~parce.mutablestring.AbstractMutableString`/:class:`~parce.mutablestring.MutableString`
 from the :mod:`~parce.mutablestring` module,
 :class:`~parce.document.AbstractDocument`/:class:`~parce.document.Document`
-from the :mod:`~parce.document` module and
+from the :mod:`~parce.document` module,
+:class:`~parce.docio.DocumentIOMixin` from the
+:mod:`~parce.docio` module and
 :class:`~parce.work.WorkerDocumentMixin` from the
 :mod:`~parce.work` module.
 
-Using those base classes, it is not difficult to design a class that wraps an
-object representing a text document in a GUI editor. You need only to provide
-two methods in your wrapper:
+Using :class:`parce.DocumentInterface` (which bundles all those base classes),
+it is not difficult to design a class that wraps an object representing a text
+document in a GUI editor. You need only to provide two methods in your wrapper:
 :meth:`~parce.mutablestring.AbstractMutableString.text` to get all text, and
 :meth:`~parce.mutablestring.AbstractMutableString._update_text` to change the
 text programmatically. When the text is changed,
@@ -252,8 +254,8 @@ text programmatically. When the text is changed,
 :class:`~parce.work.WorkerDocumentMixin` is implemented to inform the
 TreeBuilder about a part of text that needs to be retokenized. Also your
 wrapper class should call
-:meth:`~parce.mutablestring.AbstractMutableString.text_changed` whenever
-the user has typed in the editor.
+:meth:`~parce.mutablestring.AbstractMutableString.text_changed` whenever the
+user has typed in the editor.
 
 Because a Document *is* basically a mutable string, we added some more nice
 methods to perform certain actions like search, replace, and substitution using

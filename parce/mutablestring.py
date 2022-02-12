@@ -83,10 +83,6 @@ class AbstractMutableString:
         """Return the text contents."""
         return self.text()
 
-    def __format__(self, formatstr):
-        """Format our text."""
-        return format(self.text(), formatstr)
-
     def __len__(self):
         """Return the length of the text."""
         return len(self.text())
