@@ -2,7 +2,7 @@ ChangeLog
 =========
 
 
-current: parce-0.31.0
+2022-02-12: parce-0.31.0
 
 - small API changes in registry module. Removed some global functions, old
   generic find() is now a method of Registry, and a fallback registry can be
