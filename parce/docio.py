@@ -286,7 +286,8 @@ def decode_data(
         root_lexicon = registry.find(root_lexicon)
     elif root_lexicon is True:
         # guess the language: use registry and url
-        root_lexicon = registry.find(filename=os.path.basename(url), mimetype=mimetype, contents=temp_text)
+        filename = os.path.basename(url) if url else None
+        root_lexicon = registry.find(None, filename=filename, mimetype=mimetype, contents=temp_text)
 
     # find a possible encoding specified in the document
     h = IO.get(root_lexicon)
