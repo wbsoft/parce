@@ -364,7 +364,7 @@ argument of the derived lexicon. An example, taken from the tests directory::
     class MyLang(Language):
         @lexicon
         def root(cls):
-            yield r"@([a-z]+)@", Name, derive(cls.here, MATCH(1))
+            yield r"@([a-z]+)@", Name, derive(cls.here, MATCH[1])
             yield r"\w+", Text
 
         @lexicon
