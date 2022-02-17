@@ -30,7 +30,7 @@ import re
 
 from parce import Language, lexicon, default_target, root
 from parce.action import Delimiter, Name, Operator, String
-from parce.rule import ARG, MATCH, bygroup, dselect, using, words
+from parce.rule import ARG, MATCH, TEXT, bygroup, dselect, using, words
 
 from parce.lang.xml import Xml, XmlIO
 from parce.lang.css import Css
@@ -48,7 +48,7 @@ class XHtml(Xml):
     """XHtml, is also valid Xml."""
     @lexicon(re_flags=re.IGNORECASE)
     def root(cls):
-        yield r'(<)(style|script)\b(>|/\s*>)?', bygroup(Delimiter, Name.Tag, Delimiter), \
+        yield r'(<)(style|script)\b(>|/\s*>)?', bygroup(Delimiter, cls.tag_action(), Delimiter), \
             dselect(MATCH[2], {
                 "style": dselect(MATCH[3], {'>': cls.css_style_tag, None: cls.attrs("css")}),
                 "script": dselect(MATCH[3], {'>': cls.script_tag, None: cls.attrs("js")}),
@@ -69,13 +69,13 @@ class XHtml(Xml):
     @lexicon
     def script_tag(cls):
         """Stuff between <script> and </script>."""
-        yield r'(<\s*/)\s*(script)\s*(>)', bygroup(Delimiter, Name.Tag, Delimiter), -1
+        yield r'(<\s*/)\s*(script)\s*(>)', bygroup(Delimiter, cls.tag_action(), Delimiter), -1
         yield from JavaScript.root
 
     @lexicon
     def css_style_tag(cls):
         """Stuff between <style> and </style>."""
-        yield r'(<\s*/)\s*(style)\s*(>)', bygroup(Delimiter, Name.Tag, Delimiter), -1
+        yield r'(<\s*/)\s*(style)\s*(>)', bygroup(Delimiter, cls.tag_action(), Delimiter), -1
         yield from Css.root
 
     @lexicon
@@ -89,10 +89,11 @@ class Html(XHtml):
     """Html, allows certain tags (void elements) not to be closed."""
     @lexicon(re_flags=re.IGNORECASE)
     def root(cls):
+        tag_action = cls.tag_action()
         yield words(HTML_VOID_ELEMENTS, prefix=r'(<\s*?/)\s*((?:\w+:)?', suffix=r')\s*(>)'), \
-            bygroup(Delimiter, Name.Tag, Delimiter) # don't leave no-closing tags
+            bygroup(Delimiter, tag_action, Delimiter) # don't leave no-closing tags
         yield words(HTML_VOID_ELEMENTS, prefix=r'(<)\s*(', suffix=r')(?:\s*((?:/\s*)?>))?'), \
-            bygroup(Delimiter, Name.Tag, Delimiter), dselect(MATCH[3], {
+            bygroup(Delimiter, tag_action, Delimiter), dselect(MATCH[3], {
                 None: cls.attrs("noclose"), # no ">" or "/>": go to attrs/noclose
             })                          # by default ("/>"): stay in context
         yield from super().root
@@ -102,8 +103,11 @@ class XHtmlIO(XmlIO):
     """I/O handling for (X)Html."""
     def find_encoding(self, text):
         """Find the encoding in HTML meta tag; if not, fall back to XML processing instruction."""
+        import parce.ruleitem
+
         tree = root(XHtml.root, text)
-        for attrs in tree.query.all.action(Name.Tag)('meta').right(XHtml.attrs):
+        tag_action = parce.ruleitem.evaluate(XHtml.tag_action(), {'text': 'meta'})
+        for attrs in tree.query.all.action(tag_action)('meta').right(XHtml.attrs):
             http_equiv = False
             enc = None
             for attr in attrs.query.children.action(Name.Attribute):

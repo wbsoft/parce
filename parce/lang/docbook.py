@@ -28,24 +28,16 @@ import re
 
 from parce import Language, lexicon
 from parce.lang.xml import Xml, RE_XML_NAME
-from parce.rule import MATCH, bygroup, dselect, ifmember
+from parce.rule import TEXT, ifmember
 from parce.action import Delimiter, Keyword, Name
 
 
 class DocBook(Xml):
     """DocBook is also valid Xml."""
-
-    @lexicon(re_flags=re.IGNORECASE)
-    def root(cls):
-        tag = ifmember(MATCH[2], DOCBOOK_ELEMENTS, Keyword, Name.Tag)
-        # copied and modified from Xml to use Keyword for known DB tags
-        yield fr'(<\s*?/)\s*({RE_XML_NAME})\s*(>)', bygroup(Delimiter, tag, Delimiter), -1
-        yield fr'(<)\s*({RE_XML_NAME})(?:\s*((?:/\s*)?>))?', \
-            bygroup(Delimiter, tag, Delimiter), dselect(MATCH[3], {
-                None: cls.attrs,        # no ">" or "/>": go to attrs
-                ">": cls.tag,           # a ">": go to tag
-            })                          # by default ("/>"): stay in context
-        yield from super().root
+    @classmethod
+    def tag_action(cls):
+        """Reimplemented to return Keyword for known DocBook tag names."""
+        return ifmember(TEXT, DOCBOOK_ELEMENTS, Keyword, super().tag_action())
 
 
 DOCBOOK_ELEMENTS = (

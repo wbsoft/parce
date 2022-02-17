@@ -92,9 +92,10 @@ class Xml(_XmlBase):
             bygroup(Delimiter, Keyword, Name.Tag.Definition), cls.doctype
         yield fr'(<\?)({_N_})?', bygroup(Bracket.Preprocessed.Start, Name.Tag.Preprocessed), \
             cls.processing_instruction
-        yield fr'(<\s*?/)\s*({_N_})\s*(>)', bygroup(Delimiter, Name.Tag, Delimiter), -1
+        tag_action = cls.tag_action()
+        yield fr'(<\s*?/)\s*({_N_})\s*(>)', bygroup(Delimiter, tag_action, Delimiter), -1
         yield fr'(<)\s*({_N_})(?:\s*((?:/\s*)?>))?', \
-            bygroup(Delimiter, Name.Tag, Delimiter), dselect(MATCH[3], {
+            bygroup(Delimiter, tag_action, Delimiter), dselect(MATCH[3], {
                 None: cls.attrs,        # no ">" or "/>": go to attrs
                 ">": cls.tag,           # a ">": go to tag
             })                          # by default ("/>"): stay in context
@@ -140,6 +141,16 @@ class Xml(_XmlBase):
         yield r'>', Delimiter, -1, cls.tag
         yield r'\s+', skip
         yield default_action, Invalid
+
+    @classmethod
+    def tag_action(cls):
+        """Return the action for a tag name.
+
+        The default implementation returns the Name.Tag standard action, but
+        alternate implementations may use the TEXT placeholder.
+
+        """
+        return Name.Tag
 
 
 class Dtd(_XmlBase):
