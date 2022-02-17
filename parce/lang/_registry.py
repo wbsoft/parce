@@ -243,3 +243,12 @@ register("parce.lang.xml.Xml.root",
     guesses = [(r'^\s*<\?xml ', 1)],
 )
 
+register("parce.lang.xslt.Xslt.root",
+    name = "XSLT",
+    desc = "Extensible Stylesheet Language Transformations",
+    aliases = ['xslt', 'xsl'],
+    filenames = [("*.xsl", 1), ("*.xslt", 1), ("*.xpl", .5)],
+    mimetypes = [("application/xsl+xml", 1), ("application/xslt+xml", 1), ("text/xsl", 1), ("text/xslt", 1)],
+    guesses = [(r'^\s*<\?xml ', .1), (r'<xsl:stylesheet\b', 1)],
+)
+
