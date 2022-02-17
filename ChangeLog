@@ -2,6 +2,15 @@ ChangeLog
 =========
 
 
+current: parce-0.32.0
+
+- added XSLT language definition
+- Xml now has tag_action() classmethod to return the action to use for a tag
+  name, this makes it easier to inherit Xml and add other actions to certain
+  tag names, like DocBook and XSLT do.
+- documentation improvements
+
+
 2022-02-12: parce-0.31.0
 
 - small API changes in registry module. Removed some global functions, old
