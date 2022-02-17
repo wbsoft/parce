@@ -106,12 +106,13 @@ class Registry(dict):
         return copy
 
     def add(self, lexicon_name, *,
-        name,
-        desc,
+        name = None,
+        desc = None,
         aliases = (),
         filenames = (),
         mimetypes = (),
         guesses = (),
+        inherit = None,
     ):
         """Register or update a Language's root lexicon for a particular filename
         (patterns), particular mime types or based on contents of the file.
@@ -122,9 +123,10 @@ class Registry(dict):
             The fully qualified name of a root lexicon, e.g.
             ``"parce.lang.css.Css.root"``. Must contain at least two dots.
         ``name``
-            A human-readable name for the file type
+            A human-readable name for the file type (required unless
+            ``inherit`` is set)
         ``desc``
-            A short description
+            A short description (required unless ``inherit`` is set)
         ``aliases``
             An optional list of other names this lexicon can be found under.
         ``filenames``
@@ -142,11 +144,30 @@ class Registry(dict):
             contents are matched against the regular expression, and when it
             matches, the weight is added to the already computed weight for this
             root lexicon.
+        ``inherit``
+            If not None, it should be the fully qualified name of an existing
+            lexicon. The corresponding entry is then removed and merged with
+            the current entry. Using a non-existing entry raises a
+            :class:`KeyError`.
 
         This method simply creates an :class:`Entry` tuple with all the arguments
         and stores it using the lexicon name as key.
 
         """
+        if inherit:
+            template = self.pop(inherit)
+            if not name:
+                name = template.name
+            if not desc:
+                desc = template.desc
+            aliases = list(itertools.chain(template.aliases, aliases))
+            filenames = list(itertools.chain(template.filenames, filenames))
+            mimetypes = list(itertools.chain(template.mimetypes, mimetypes))
+            guesses = list(itertools.chain(template.guesses, guesses))
+        if not name:
+            raise ValueError("register: name is required")
+        if not desc:
+            raise ValueError("register: desc is required")
         self[lexicon_name] = Entry(name, desc, aliases, filenames, mimetypes, guesses)
 
     def suggest(self, filename=None, mimetype=None, contents=None):
@@ -286,5 +307,4 @@ def register(lexicon_name, **kwargs):
 
 
 ## register the bundled languages
-
 import parce.lang._registry
