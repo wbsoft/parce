@@ -53,6 +53,8 @@ import re
 Entry = collections.namedtuple("Entry", (
     "name",
     "desc",
+    "section",
+    "author",
     "aliases",
     "filenames",
     "mimetypes",
@@ -64,6 +66,10 @@ root lexicon as the key.
 """
 Entry.name.__doc__ = "A human-readable name for the file type."
 Entry.desc.__doc__ = "A short description."
+Entry.section.__doc__ = \
+"""The section, e.g. for grouped display in a menu. (If the section is empty,
+the entry needs not to be shown in a menu.)"""
+Entry.author.__doc__ = "The author."
 Entry.aliases.__doc__ = "A list of other names this lexicon can be found under."
 Entry.filenames.__doc__ = \
 """A list of tuples (pattern, weight). A pattern is a plain filename or a
@@ -108,6 +114,8 @@ class Registry(dict):
     def add(self, lexicon_name, *,
         name = None,
         desc = None,
+        section = "",
+        author = "",
         aliases = (),
         filenames = (),
         mimetypes = (),
@@ -160,6 +168,12 @@ class Registry(dict):
                 name = template.name
             if not desc:
                 desc = template.desc
+            if not section:
+                section = template.section
+            if not author:
+                author = template.author
+            elif template.author and template.author != author:
+                author = template.author + " + " + author
             aliases = list(itertools.chain(template.aliases, aliases))
             filenames = list(itertools.chain(template.filenames, filenames))
             mimetypes = list(itertools.chain(template.mimetypes, mimetypes))
@@ -168,7 +182,7 @@ class Registry(dict):
             raise ValueError("register: name is required")
         if not desc:
             raise ValueError("register: desc is required")
-        self[lexicon_name] = Entry(name, desc, aliases, filenames, mimetypes, guesses)
+        self[lexicon_name] = Entry(name, desc, section, author, aliases, filenames, mimetypes, guesses)
 
     def suggest(self, filename=None, mimetype=None, contents=None):
         """Return a list of registered language definitions, sorted on relevance.
@@ -291,6 +305,13 @@ class Registry(dict):
             for lexicon in lexicons(self):
                 return lexicon
             self = self.fallback
+
+    def by_section(self):
+        """Return a dictionary mapping section name to a dict with all entries in that section."""
+        d = collections.defaultdict(dict)
+        for qualname, entry in self.items():
+            d[entry.section][qualname] = entry
+        return dict(d)  # return a normal dict
 
 
 # the global Registry is in the ``registry`` module variable
