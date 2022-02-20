@@ -403,7 +403,11 @@ class WorkerDocumentMixin:
         Triggers an update of the tokenized tree.
 
         """
-        self._worker.update(self.text(), root_lexicon)
+        w = self._worker
+        with w._condition:
+            idle = w._tree_state == IDLE
+        if not idle or root_lexicon is not w._builder.root.lexicon:
+            self._worker.update(self.text(), root_lexicon)
 
     def get_root(self, wait=False, callback=None):
         """Get the root element of the completed tree.
