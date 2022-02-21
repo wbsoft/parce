@@ -89,6 +89,10 @@ class Node:
         """Set the parent to None."""
         self._parent = lambda: None
 
+    def copy(self, parent=None):
+        """Return a copy of the Node, but with the specified parent."""
+        raise NotImplementedError
+
     def dump(self, file=None, style=None, depth=0):
         """Display a graphical representation of the node and its contents.
 
@@ -154,10 +158,6 @@ class Node:
         for root in self.ancestors():
             pass
         return root
-
-    def is_root(self):
-        """Return True if this Node has no parent node."""
-        return self.parent is None
 
     def is_last(self):
         """Return True if this Node is the last child of its parent.
@@ -278,7 +278,7 @@ class Node:
             return t
 
     def forward(self, upto=None):
-        """Yield all Tokens in forward direction.
+        """Yield all Tokens in forward direction, starting at the right sibling.
 
         Descends into child Contexts, and ascends into parent Contexts.
         If upto is given, does not ascend above that context.
@@ -288,7 +288,7 @@ class Node:
             yield from util.tokens(parent[index+1:])
 
     def backward(self, upto=None):
-        """Yield all Tokens in backward direction.
+        """Yield all Tokens in backward direction, starting at the left sibling.
 
         Descends into child Contexts, and ascends into parent Contexts.
         If upto is given, does not ascend above that context.
@@ -695,6 +695,10 @@ class Context(list, Node):
             return node.end
         except IndexError:
             return 0
+
+    def is_root(self):
+        """Return True if this Context has no parent node."""
+        return self.parent is None
 
     def height(self):
         """Return the height of the tree (the longest distance to a descendant)."""

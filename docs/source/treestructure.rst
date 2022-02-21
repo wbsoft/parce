@@ -1,6 +1,8 @@
 Accessing the Tree Structure
 ============================
 
+.. currentmodule:: parce.tree
+
 When you have parsed text, the result is a tree structure of Tokens,
 contained by Contexts, which may be nested in other Contexts.
 
@@ -88,107 +90,137 @@ Traversing the tree structure
 Both Token and Context have a ``parent`` atribute that points to its parent
 Context. Only for the root context, ``parent`` is ``None``.
 
-:py:class:`Token <parce.tree.Token>` and :py:class:`Context
-<parce.tree.Context>` both inherit from :py:class:`Node <parce.tree.Node>`,
+:class:`Token` and :py:class:`Context` both inherit :class:`Node`,
 which defines a lot of useful methods to traverse the tree structure.
 
 
 Members shared by Token and Context
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-These are the attributes Token and Context both provide:
+These are the most important attributes Token and Context both provide:
 
-:attr:`parent`
-    The parent Context, the root context has ``parent`` ``None``.
-:attr:`pos`, :attr:`end`
-    The starting resp. ending position of this node in the source text.
-:attr:`is_token`
+:attr:`Node.parent`
+    The parent Context; the root context has ``parent`` ``None``
+    (uses a weak reference, if you don't keep a reference to the parent,
+    it gets garbage collected)
+:attr:`Node.pos`, :attr:`Node.end`
+    The starting resp. ending position of this node in the source text (for
+    Token a direct attribute, for Context the ``pos`` of the first descendant
+    Token)
+:attr:`Node.is_token`
     False for Context, True for Token
-:attr:`is_context`
+:attr:`Node.is_context`
     True for Context, False for Token
 
-These are the methods Token and Context both provide:
+These are the most important methods Token and Context both provide:
 
-.. currentmodule:: parce.tree
-
-.. autoclass:: Node
+.. automethod:: Node.parent_index
    :noindex:
-   :members:
+
+.. automethod:: Node.root
+   :noindex:
+
+.. automethod:: Node.is_first
+   :noindex:
+
+.. automethod:: Node.is_last
+   :noindex:
+
+.. automethod:: Node.ancestors
+   :noindex:
+
+.. automethod:: Node.is_ancestor_of
+   :noindex:
+
+.. automethod:: Node.left_sibling
+   :noindex:
+
+.. automethod:: Node.left_siblings
+   :noindex:
+
+.. automethod:: Node.right_sibling
+   :noindex:
+
+.. automethod:: Node.right_siblings
+   :noindex:
+
+.. automethod:: Node.next_token
+   :noindex:
+
+.. automethod:: Node.previous_token
+   :noindex:
+
+.. automethod:: Node.backward
+   :noindex:
+
+.. automethod:: Node.forward
+   :noindex:
+
+.. autoproperty:: Node.query
+   :noindex:
+
+.. automethod:: Node.copy
+   :noindex:
 
 
 Members of Token
 ^^^^^^^^^^^^^^^^
 
-Token has the following additional methods and attributes for node traversal:
+The most important :class:`Token` methods and attributes:
 
-.. py:class:: Token
+.. autoattribute:: Token.text
    :noindex:
 
-   .. py:attribute:: action
-      :noindex:
+.. autoattribute:: Token.action
+   :noindex:
 
-      The action the Token was instantiated with
+.. automethod:: Token.forward_including
+   :noindex:
 
-   .. py:attribute:: group
-      :noindex:
+.. automethod:: Token.forward_until_including
+   :noindex:
 
-      The group the token belongs to. Normally None, but in some cases this
-      attribute is a tuple of Tokens that form a group together. See below.
+.. automethod:: Token.backward_including
+   :noindex:
 
-   .. automethod:: Token.equals
-      :noindex:
-
-   .. automethod:: Token.state_matches
-      :noindex:
-
-   .. automethod:: Token.forward_including
-      :noindex:
-
-   .. automethod:: Token.forward_until_including
-      :noindex:
-
-   .. automethod:: Token.backward_including
-      :noindex:
-
-   .. automethod:: Token.common_ancestor_with_trail
-      :noindex:
+.. automethod:: Token.range
+   :noindex:
 
 
 Members of Context
 ^^^^^^^^^^^^^^^^^^
 
-Context builds on the Python ``list()`` builtin, so it has all the methods
-``list()`` provides. And it has the following addtional methods and attributes
-for node traversal:
+:class:`Context` builds on the Python :class:`list` builtin, so it has all the
+methods ``list()`` provides. Some of the addtional methods and attributes it
+provides are:
 
-.. py:class:: Context
+
+.. autoattribute:: Context.lexicon
    :noindex:
 
-   .. py:attribute:: lexicon
-      :noindex:
+.. automethod:: Context.tokens
+   :noindex:
 
-      The lexicon that created this Context
+.. automethod:: Context.first_token
+   :noindex:
 
-   .. automethod:: Context.first_token
-      :noindex:
+.. automethod:: Context.last_token
+   :noindex:
 
-   .. automethod:: Context.last_token
-      :noindex:
+.. automethod:: Context.find_token
+   :noindex:
 
-   .. automethod:: Context.find_token
-      :noindex:
+.. automethod:: Context.find_token_left
+   :noindex:
 
-   .. automethod:: Context.find_token_left
-      :noindex:
+.. automethod:: Context.find_token_after
+   :noindex:
 
-   .. automethod:: Context.find_token_after
-      :noindex:
+.. automethod:: Context.find_token_before
+   :noindex:
 
-   .. automethod:: Context.find_token_before
-      :noindex:
-
-   .. automethod:: Context.tokens
-      :noindex:
+.. automethod:: Context.range
+   :noindex:
 
 Often, when dealing with the tree structure, you want to know whether we have
 a Token or a Context. Instead of calling::
@@ -209,8 +241,9 @@ Grouped Tokens
 When a dynamic action is used in a rule, and it generates more than one Token
 from the same regular expression match, these Tokens form a group, each having
 their index in the group in the ``group`` attribute. That attribute is
-read-only and ``None`` for normal Tokens. Grouped tokens are always adjacent
-and in the same Context.
+read-only and ``None`` for normal Tokens. :class:`GroupToken` instances are
+always adjacent and in the same Context, and the last index is negative, to
+indicate it is the last.
 
 Normally you don't have to do much with this information, but *parce* needs
 to know this, because if you edit a text, *parce* can't start reparsing
@@ -222,9 +255,7 @@ group::
 
     if token.group:
         # group is not None or 0
-        for token in token.left_siblings():
-            if not token.group:
-                break
+        token = token.get_group_start()
 
 
 Querying the tree structure
