@@ -341,8 +341,8 @@ arguments. Currently two arguments are supported:
 See for more information :doc:`lexicon`.
 
 
-Lexicon arguments, derived Lexicon
-----------------------------------
+The Lexicon argument
+--------------------
 
 Although the lexicon function itself never uses any more arguments than
 the first ``cls`` argument, it is possible to call an existing Lexicon with
@@ -437,8 +437,8 @@ Of course it is also possible to target a lexicon with an argument directly::
             yield from cls.root
 
 
-Maintaining state
------------------
+Maintaining state using a derived Lexicon
+-----------------------------------------
 
 Although *parce* is essentially state-free (it can start its reparsing
 anywhere, and all information is there), we can maintain state in the hashable
@@ -447,7 +447,7 @@ lexicon argument, e.g. by using a tuple or a frozen set.
 The following example stores a set of "known" words (they have been "defined"
 in this purely fictional language by prefixing them with a ``@``) which then
 are recognized and get the action ``Name.Constant``. And defining them again
-will be recoqnized as invalid!
+will be recognized as invalid!
 
 Let's store the list of known words in a tuple. After importing necessary
 stuff, we write two helper functions: one to create a new ``words`` tuple with
@@ -467,23 +467,22 @@ the added word, and the other to test for the presence of a word in the tuple::
         known = lambda text, words: text in words if words else False
         return select(call(known, text, ARG), no_value, yes_value)
 
-Initially, the lexicon argument is ``None``, so then we do not add or test
-membership if the ``words`` value itself evaluates to False. No we write the
-language definition::
+Initially, the lexicon argument is ``None``, so we do not add or test
+membership if the ``words`` value itself evaluates to False. Now let's write
+the language definition::
 
     class MyLang(Language):
         @lexicon
         def root(cls):
-            yield r"@(\w+)", ifknown(MATCH[1],
-                Name.Definition.Invalid,
+            yield r"@(\w+)", ifknown(MATCH[1], Name.Definition.Invalid,
                 (Name.Definition, -1, derive(cls.root, call(add, ARG, MATCH[1]))))
             yield r"\w+", ifknown(TEXT, Name.Constant, Name.Variable)
 
 There are two rules: to find a ``@``-prefixed word, or a normal word. If a
 ``@``-prefixed word is encountered for the first time, it is added to the
 lexicon's argument; the current lexicon is popped and derived with the new
-argument (the root lexicon is never popped off). If it's already known, it gets
-the ``Invalid`` action mixed in, which can be seen at the end.
+argument (the outermost lexicon is never popped off). If it's already known, it
+gets the ``Invalid`` action mixed in.
 
 If a normal word is encountered, it gets the ``Name.Constant`` action if known,
 else ``Name.Variable``.
