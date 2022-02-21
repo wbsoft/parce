@@ -26,22 +26,29 @@ sys.path.insert(0, '.')
 
 from parce import Language, lexicon, root
 from parce.action import Name, Text
-from parce.rule import arg, derive, MATCH
+from parce.rule import arg, derive, ARG, MATCH, TEXT, call, select
 
 
-class MyLang(Language):
-    @lexicon
-    def root(cls):
-        yield r"@([a-z]+)@", Name, derive(cls.here, MATCH[1])
-        yield r"\w+", Text
-
-    @lexicon
-    def here(cls):
-        yield arg(prefix=r"\b", suffix=r"\b"), Name, -1
-        yield r"\w+", Text
 
 
-def test_main():
+def test_heredoc():
+
+    from parce import Language, lexicon, root
+    from parce.action import Name, Text
+    from parce.rule import arg, derive, ARG, MATCH
+
+    class MyLang(Language):
+        @lexicon
+        def root(cls):
+            yield r"@([a-z]+)@", Name, derive(cls.here, MATCH[1])
+            yield r"\w+", Text
+
+        @lexicon
+        def here(cls):
+            yield arg(prefix=r"\b", suffix=r"\b"), Name, -1
+            yield r"\w+", Text
+
+
     text = r""" text @mark@ bla bla mark bla bla """
 
     tree = root(MyLang.root, text)
@@ -53,6 +60,41 @@ def test_main():
     assert validate_language(MyLang)
 
 
+def test_list():
+
+    from parce import Language, lexicon, root
+    from parce.action import Name
+    from parce.rule import call, derive, select, ARG, MATCH, TEXT
+
+    def add(words, text):
+        """Return a new tuple with text added."""
+        new = (text,)
+        return words + new if words else new
+
+    def ifknown(text, yes_value, no_value):
+        """Return a dynamic rule item returning ``yes_value`` for known ``text``, otherwise ``no_value``."""
+        known = lambda text, words: text in words if words else False
+        return select(call(known, text, ARG), no_value, yes_value)
+
+    class MyLang(Language):
+        @lexicon
+        def root(cls):
+            yield r"@(\w+)", ifknown(MATCH[1],
+                Name.Definition.Invalid,
+                (Name.Definition, -1, derive(cls.root, call(add, ARG, MATCH[1]))))
+            yield r"\w+", ifknown(TEXT, Name.Constant, Name.Variable)
+
+    text = "bls lhrt sdf @wer gfdh wer iuj @sdf uhj sdf bls @bls bls @sdf @bls"
+    tree = root(MyLang.root, text)
+    tree.dump()
+
+    from parce.validate import validate_language
+    assert validate_language(MyLang)
+
+
 if __name__ == "__main__":
-    test_main()
+    test_heredoc()
+    test_list()
+
+
 

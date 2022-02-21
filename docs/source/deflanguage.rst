@@ -357,7 +357,7 @@ It is then possible to access the argument using the :obj:`~parce.rule.ARG`
 variable. This way it is possible to change anything in a rule based on the
 argument of the derived lexicon. An example, taken from the tests directory::
 
-    from parce import Language, lexicon
+    from parce import Language, lexicon, root
     from parce.action import Name, Text
     from parce.rule import arg, derive, MATCH
 
@@ -435,6 +435,91 @@ Of course it is also possible to target a lexicon with an argument directly::
         def nested(cls):
             yield arg(), Delimiter, -1
             yield from cls.root
+
+
+Maintaining state
+-----------------
+
+Although *parce* is essentially state-free (it can start its reparsing
+anywhere, and all information is there), we can maintain state in the hashable
+lexicon argument, e.g. by using a tuple or a frozen set.
+
+The following example stores a set of "known" words (they have been "defined"
+in this purely fictional language by prefixing them with a ``@``) which then
+are recognized and get the action ``Name.Constant``. And defining them again
+will be recoqnized as invalid!
+
+Let's store the list of known words in a tuple. After importing necessary
+stuff, we write two helper functions: one to create a new ``words`` tuple with
+the added word, and the other to test for the presence of a word in the tuple::
+
+    from parce import Language, lexicon, root
+    from parce.action import Name
+    from parce.rule import call, derive, select, ARG, MATCH, TEXT
+
+    def add(words, text):
+        """Return a new tuple with text added."""
+        new = (text,)
+        return words + new if words else new
+
+    def ifknown(text, yes_value, no_value):
+        """Return a dynamic rule item returning ``yes_value`` for known ``text``, otherwise ``no_value``."""
+        known = lambda text, words: text in words if words else False
+        return select(call(known, text, ARG), no_value, yes_value)
+
+Initially, the lexicon argument is ``None``, so then we do not add or test
+membership if the ``words`` value itself evaluates to False. No we write the
+language definition::
+
+    class MyLang(Language):
+        @lexicon
+        def root(cls):
+            yield r"@(\w+)", ifknown(MATCH[1],
+                Name.Definition.Invalid,
+                (Name.Definition, -1, derive(cls.root, call(add, ARG, MATCH[1]))))
+            yield r"\w+", ifknown(TEXT, Name.Constant, Name.Variable)
+
+There are two rules: to find a ``@``-prefixed word, or a normal word. If a
+``@``-prefixed word is encountered for the first time, it is added to the
+lexicon's argument; the current lexicon is popped and derived with the new
+argument (the root lexicon is never popped off). If it's already known, it gets
+the ``Invalid`` action mixed in, which can be seen at the end.
+
+If a normal word is encountered, it gets the ``Name.Constant`` action if known,
+else ``Name.Variable``.
+
+Let's test!
+
+::
+
+    >>> text = "bls lhrt sdf @wer gfdh wer iuj @sdf uhj sdf bls @bls bls @sdf @bls"
+    >>> tree = root(MyLang.root, text)
+    >>> tree.dump()
+    <Context MyLang.root at 0-66 (7 children)>
+     ├╴<Token 'bls' at 0:3 (Name.Variable)>
+     ├╴<Token 'lhrt' at 4:8 (Name.Variable)>
+     ├╴<Token 'sdf' at 9:12 (Name.Variable)>
+     ├╴<Token '@wer' at 13:17 (Name.Definition)>
+     ├╴<Context MyLang.root* at 18-35 (4 children)>
+     │  ├╴<Token 'gfdh' at 18:22 (Name.Variable)>
+     │  ├╴<Token 'wer' at 23:26 (Name.Constant)>
+     │  ├╴<Token 'iuj' at 27:30 (Name.Variable)>
+     │  ╰╴<Token '@sdf' at 31:35 (Name.Definition)>
+     ├╴<Context MyLang.root* at 36-52 (4 children)>
+     │  ├╴<Token 'uhj' at 36:39 (Name.Variable)>
+     │  ├╴<Token 'sdf' at 40:43 (Name.Constant)>
+     │  ├╴<Token 'bls' at 44:47 (Name.Variable)>
+     │  ╰╴<Token '@bls' at 48:52 (Name.Definition)>
+     ╰╴<Context MyLang.root* at 53-66 (3 children)>
+        ├╴<Token 'bls' at 53:56 (Name.Constant)>
+        ├╴<Token '@sdf' at 57:61 (Name.Definition.Invalid)>
+        ╰╴<Token '@bls' at 62:66 (Name.Definition.Invalid)>
+
+We can find the list of words that's known at any moment in the lexicon's
+argument::
+
+    >>> tree[6].lexicon.arg
+    ('wer', 'sdf', 'bls')
 
 
 Validating a Language
