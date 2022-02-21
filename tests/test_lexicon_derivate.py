@@ -24,12 +24,6 @@ Test the derived Lexicon(arg) stuff
 import sys
 sys.path.insert(0, '.')
 
-from parce import Language, lexicon, root
-from parce.action import Name, Text
-from parce.rule import arg, derive, ARG, MATCH, TEXT, call, select
-
-
-
 
 def test_heredoc():
 

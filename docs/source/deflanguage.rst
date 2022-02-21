@@ -349,9 +349,9 @@ the first ``cls`` argument, it is possible to call an existing Lexicon with
 an argument, which then must be a simple hashable item like an integer, string
 or standard action. In most use cases it will be a string value.
 
-Calling a Lexicon with such an argument creates a derived Lexicon, which behaves
-just as the normal Lexicon, but which has the specified argument in the ``arg``
-attribute. The derived Lexicon is cached as well.
+Calling a Lexicon with such an argument creates a *derived Lexicon*, which
+behaves just as the normal Lexicon, but which has the specified argument in the
+``arg`` attribute. The derived Lexicon is cached as well.
 
 It is then possible to access the argument using the :obj:`~parce.rule.ARG`
 variable. This way it is possible to change anything in a rule based on the
