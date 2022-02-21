@@ -356,7 +356,7 @@ def format_all_examples():
             # tokentree box
             buf = io.StringIO()
             doc.get_root(True).dump(buf)
-            html = '<pre style="padding: 2px; height: 300px; overflow: auto; background: ivory;" class="tokentree_{0}">{1}</pre>\n'.format(
+            html = '<pre style="padding: 2px; height: 300px; overflow: auto; background: #fcfefc; font-family: monospace;" class="tokentree_{0}">{1}</pre>\n'.format(
                 lang_class, escape(buf.getvalue()))
             tokentrees_html.append(html)
 
