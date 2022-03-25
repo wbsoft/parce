@@ -21,9 +21,22 @@
 """
 This module defines StandardAction.
 
-A StandardAction is a singleton object. Acessing an attribute (without
-underscore) creates that attribute as a new instance, with the current instance
-as _parent.
+A StandardAction is a singleton object. Instantiate a StandardAction with a
+string name. The same name actually returns the same object::
+
+    >>> from parce.standardaction import StandardAction
+    >>> StandardAction('test') is StandardAction('test')
+    True
+
+A StandardAction stores its name in the ``_name`` attribute. Accessing any
+attribute (*without underscore*) creates that attribute as a new instance, with
+the current instance in the ``_parent`` attribute::
+
+    >>> Name = StandardAction('Name')
+    >>> Name.Function is Name.Function
+    True
+    >>> Name.Function._parent
+    Name
 
 This way a new action type can be created that shares its parent with other
 types, a concept borrowed from pygments. An example::

@@ -70,8 +70,8 @@ contexts that didn't change.
 Because this realtime, incrementally tokenizing and transforming is such a
 generic process, I decided to make *parce* a separate, generic Python package.
 
-TODO
-^^^^
+To do
+^^^^^
 
 * create highlighted output formatters for other formats than HTML, like LaTeX,
   etc.
