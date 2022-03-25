@@ -182,8 +182,8 @@ found in the cache.
    attribute of the Tokens that move is adjusted by the tree builder, so they
    still point to the right position after an update of the tree.
 
-When the tree builder is about to inject the modified tree part in the
-Document's tree, it emits the ``"replace"`` event. The transformer reacts by
+When the tree builder is about to insert the modified tree part in the
+original tree, it emits the ``"replace"`` event. The transformer reacts by
 interrupting any current job that might be busy computing the transformed
 result. Finally, when the tree builder emits ``"finished"`` the transformer
 rebuilds our transformed result, using as much as possible the previously
