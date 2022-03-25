@@ -39,7 +39,10 @@ import collections
 import itertools
 
 
+#: Used by the :mod:`.lexer` to describe lexicon changes.
 Target = collections.namedtuple("Target", "pop push")
+Target.pop.__doc__ = "A negative integer or 0, describing how many lexicons to leave."
+Target.push.__doc__ = "A list of zero or more Lexicons to enter."
 
 
 class TargetFactory:
@@ -67,8 +70,9 @@ class TargetFactory:
                 self._push[:] = target.push
 
     def get(self):
-        """Get the current target, may be None if no pop and push.
+        """Return the current :class:`Target`.
 
+        Returns None if there is nothing to pop and push.
         After this the current target is reset.
 
         """
@@ -78,11 +82,11 @@ class TargetFactory:
             return t
 
     def push(self, *lexicons):
-        """Enter one or more lexicons."""
+        """Enter one or more lexicon(s)."""
         self._push.extend(lexicons)
 
     def pop(self, pop=-1):
-        """Pop off one (or more) lexicon."""
+        """Pop off one (or more) lexicon(s)."""
         if pop:
             if -pop <= len(self._push):
                 del self._push[pop:]

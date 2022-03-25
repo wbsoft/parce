@@ -22,7 +22,7 @@ We define a simple language to get started::
 
     import re
 
-    from parce import *
+    from parce import Language, lexicon, default_action
     import parce.action as a    # use the standard actions
 
     class Nonsense(Language):
@@ -78,6 +78,7 @@ To parse text, we need to give *parce* the lexicon to start with. This is
 called the *root lexicon*. To parse the text and get the results, we
 call the ``root()`` function of *parce*::
 
+    >>> from parce import root
     >>> tree = root(Nonsense.root, text)
 
 The root lexicon in this case is ``Nonsense.root``, although the name of the
@@ -154,6 +155,7 @@ process. Events are simply named tuples consisting of a ``target`` and
 ``lexemes`` tuples. It is what *parce* internally uses to build the tree
 structure::
 
+    >>> from parce import events
     >>> for e in events(Nonsense.root, text):
     ...     print(e)
     ...

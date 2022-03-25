@@ -56,8 +56,8 @@ DecodeResult.text.__doc__ = "The decoded text."
 DecodeResult.encoding.__doc__ = "The encoding that was specified or determined, or None."
 
 
-DEFAULT_ENCODING = "utf-8"      #: The general default encoding, if a Language does not define another
-TEMP_TEXT_MAXSIZE = 5000        #: The maximum size of a text snippet that is searched for an encoding
+DEFAULT_ENCODING = "utf-8"      #: The general default encoding, if a Language does not define another.
+TEMP_TEXT_MAXSIZE = 5000        #: The maximum size of a text snippet that is searched for an encoding.
 
 
 class DocumentIOMixin:
@@ -211,7 +211,8 @@ def localfile(url):
     ``file:`` scheme, the path is returned. If the url has no ``scheme`` and no
     ``netloc``, the full url is returned so that it is used as a local file.
 
-    Raises a ValueError if the URL does not point to a local file.
+    Currently raises a ValueError if the URL has a ``netloc`` or a ``scheme``
+    other than ``file:``.
 
     """
     u = urlparse(url, allow_fragments=False)

@@ -21,15 +21,15 @@
 r"""
 The Lexer is responsible for parsing text using Lexicons.
 
-The lexer generates Event objects, which contain a target (or None) and one or
+The lexer generates Event tuples, which contain a target (or None) and one or
 more lexemes. The `target`, if not None, specifies a state change (i.e. leave
-the current lexicon(s) or descend into specified lexicons. (See the
+the current lexicon(s) and/or descend into specified lexicons. (See the
 :mod:`~parce.target` module.)
 
 The `lexemes` is a tuple of one or more lexeme tuples. A lexeme is a ``(pos,
 text, action)`` tuple. Note that an Event always contains at least one lexeme
 tuple, and that a lexeme's text is always non-empty. (A rule's pattern might
-match the empty string, but no lexeme is generated in that case, although the
+match the empty string, but no event is generated in that case, although the
 target is followed.)
 
 The Lexer is capable of handling circular default targets: if a target is
@@ -95,6 +95,8 @@ from .util import unroll
 
 
 Event = collections.namedtuple("Event", "target lexemes")
+Event.target.__doc__ = "A :class:`~.target.Target` or None."
+Event.lexemes.__doc__ = "One or more ``(pos, text, action)`` tuples."
 
 
 class Lexer:
