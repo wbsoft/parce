@@ -46,7 +46,6 @@ def test_heredoc():
     text = r""" text @mark@ bla bla mark bla bla """
 
     tree = root(MyLang.root, text)
-    tree.dump()
     assert tree.query.all("mark").pick().is_last()
     assert tree.query.all(MyLang.here).pick()
 
@@ -80,7 +79,10 @@ def test_list():
 
     text = "bls lhrt sdf @wer gfdh wer iuj @sdf uhj sdf bls @bls bls @sdf @bls"
     tree = root(MyLang.root, text)
-    tree.dump()
+    assert tree[6].lexicon.arg == ('wer', 'sdf', 'bls')
+    for t in tree.tokens(True):
+        assert t.action is Name.Definition.Invalid
+        break
 
     from parce.validate import validate_language
     assert validate_language(MyLang)
