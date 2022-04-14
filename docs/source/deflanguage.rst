@@ -524,9 +524,8 @@ argument::
 Validating a Language
 ---------------------
 
-If you are writing you own language definition, the `validate` module
-provides a tool to check whether the definition should work correctly.
-By calling::
+The `validate` module provides a tool to check whether a language definition
+should work correctly. By calling::
 
     from parce.validate import validate_language
     validate_language(MyLang)
@@ -537,7 +536,7 @@ performed:
 * A lexicon may only have one special rule, i.e. ``default_action`` or
   ``default_target``, not both or more than one of them
 
-* The regular expression pattern should be valid and compilable
+* The regular expression patterns should be valid and compilable
 
 * Targets should be valid, either integers or lexicons
 
