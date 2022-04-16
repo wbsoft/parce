@@ -806,10 +806,10 @@ def language_sister_class(language, template, base, try_parents=False):
     Example::
 
         >>> from parce.util import language_sister_class
-        >>> from parce.lang.css import Css
+        >>> from parce.lang.json import Json
         >>> from parce.transform import Transform
-        >>> language_sister_class(Css, "{}Transform", Transform)
-        <class 'parce.lang.css.CssTransform'>
+        >>> language_sister_class(Json, "{}Transform", Transform)
+        <class 'parce.lang.json.JsonTransform'>
 
     """
     langs = language.mro()[:-2] if try_parents else [language]

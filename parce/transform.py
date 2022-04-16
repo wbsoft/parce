@@ -473,8 +473,8 @@ class Transformer(util.Observable):
 
         This is done by looking for a Transform subclass in the language's
         module, with the same name as the language with "Transform" appended.
-        So for a language class named "Css", this method tries to find a
-        Transform in the same module with the name "CssTransform".
+        So for a language class named "Json", this method tries to find a
+        Transform in the same module with the name "JsonTransform".
 
         This naming scheme can be modified by setting the
         :attr:`transform_name_template` attribute.

@@ -166,7 +166,7 @@ def attrescape(text):
 
 
 def inline_css(textformat):
-    """Convert a textformat to an inline CSS string.
+    """Convert a :class:`~.theme.TextFormat` to an inline CSS string.
 
     The resulting string can be used in a Html ``style`` attribute.
 
