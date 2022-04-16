@@ -342,9 +342,6 @@ def words(words, prefix="", suffix=""):
         >>> words(CONSTANTS, r'\b', r'\b')
         '\\b(?:null|(?:fals|tru)e)\\b'
 
-    Note: the specified ``words`` must be a set, list or tuple, not a
-    generator.
-
     """
     expr = regex.words2regexp(words)
     if prefix or suffix:

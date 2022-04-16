@@ -23,6 +23,7 @@ Utility module with functions to construct or manipulate regular expressions.
 """
 
 
+import operator
 import re
 import unicodedata
 
@@ -79,22 +80,25 @@ def common_suffix(words):
     """Return (words, suffix), where suffix is the common suffix.
 
     If there is no common suffix, words is returned unchanged, and suffix is an
-    empty string. If there is a common suffix, that is chopped of the returned
+    empty string. If there is a common suffix, that is chopped off the returned
     words. Example::
 
         >>> parce.regex.common_suffix(['opa', 'oma', 'mama', 'papa'])
         (['op', 'om', 'mam', 'pap'], 'a')
 
     """
+    # make sure words is not a generator, othw we maybe can't iterate it twice
+    if not isinstance(words, (list, tuple, set, frozenset)):
+        words = tuple(words)
     suffix = []
     for s in map(set, zip(*map(reversed, words))):
         if len(s) != 1:
             break
-        suffix.append(s.pop())
+        suffix.extend(s)
     suffix = ''.join(reversed(suffix))
     if suffix:
-        i = -len(suffix)
-        words = [word[:i] for word in words]
+        chop = operator.itemgetter(slice(-len(suffix)))
+        words = tuple(map(chop, words))
     return words, suffix
 
 

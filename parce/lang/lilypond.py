@@ -55,8 +55,8 @@ RE_LILYPOND_PITCHWORD = r"(?<![^\W\d])[a-zé]+(?:[_-][a-zé]+)*(?![^\W\d_])"
 
 # all durations
 RE_LILYPOND_DURATION = (
-    words(set(filter(lambda w: w.startswith('\\'), lilypond_words.durations)), suffix = RE_LILYPOND_ID_RIGHT_BOUND) +
-    "|" + words(set(filter(lambda w: not w.startswith('\\'), lilypond_words.durations)), suffix = r'(?!\d)'))
+    words(filter(lambda w: w.startswith('\\'), lilypond_words.durations), suffix = RE_LILYPOND_ID_RIGHT_BOUND) +
+    "|" + words(filter(lambda w: not w.startswith('\\'), lilypond_words.durations), suffix = r'(?!\d)'))
 
 # Standard actions defined/used here:
 Rest = Text.Music.Rest
