@@ -964,6 +964,12 @@ FIVE_HALF_FLAT  = -2.5
 SEVEN_HALF_FLAT =  Fraction(-7, 2)
 FIVE_HALF_SHARP =  2.5
 SEVEN_HALF_SHARP=  Fraction(7, 2)
+KORON           =  Fraction(-3, 10)
+SORI            =  Fraction(1, 5)
+VLAT            =  Fraction(-1, 10)
+FVLAT           =  Fraction(-3, 5)
+SVLAT           =  Fraction(2, 5)
+
 
 pitch_names = {
     "nederlands": {
@@ -1701,6 +1707,91 @@ pitch_names = {
         "hiss": (-1, 6, SHARP),
         "hisis": (-1, 6, DOUBLE_SHARP),
         "hississ": (-1, 6, DOUBLE_SHARP),
+    },
+    "persian": {
+        "cff": (-1, 0, DOUBLE_FLAT),
+        "cf": (-1, 0, FLAT),
+        "cv": (-1, 0, VLAT),
+        "cfv": (-1, 0, FVLAT),
+        "ck": (-1, 0, KORON),
+        "c": (-1, 0, NATURAL),
+        "co": (-1, 0, SORI),
+        "cs": (-1, 0, SHARP),
+        "csv": (-1, 0, SVLAT),
+        "css": (-1, 0, DOUBLE_SHARP),
+        "cx": (-1, 0, DOUBLE_SHARP),
+
+        "dff": (-1, 1, DOUBLE_FLAT),
+        "df": (-1, 1, FLAT),
+        "dv": (-1, 1, VLAT),
+        "dfv": (-1, 1, FVLAT),
+        "dk": (-1, 1, KORON),
+        "d": (-1, 1, NATURAL),
+        "do": (-1, 1, SORI),
+        "ds": (-1, 1, SHARP),
+        "dsv": (-1, 1, SVLAT),
+        "dss": (-1, 1, DOUBLE_SHARP),
+        "dx": (-1, 1, DOUBLE_SHARP),
+
+        "eff": (-1, 2, DOUBLE_FLAT),
+        "ef": (-1, 2, FLAT),
+        "ev": (-1, 2, VLAT),
+        "efv": (-1, 2, FVLAT),
+        "ek": (-1, 2, KORON),
+        "e": (-1, 2, NATURAL),
+        "eo": (-1, 2, SORI),
+        "es": (-1, 2, SHARP),
+        "esv": (-1, 2, SVLAT),
+        "ess": (-1, 2, DOUBLE_SHARP),
+        "ex": (-1, 2, DOUBLE_SHARP),
+
+        "fff": (-1, 3, DOUBLE_FLAT),
+        "ff": (-1, 3, FLAT),
+        "fv": (-1, 3, VLAT),
+        "ffv": (-1, 3, FVLAT),
+        "fk": (-1, 3, KORON),
+        "f": (-1, 3, NATURAL),
+        "fo": (-1, 3, SORI),
+        "fs": (-1, 3, SHARP),
+        "fsv": (-1, 3, SVLAT),
+        "fss": (-1, 3, DOUBLE_SHARP),
+        "fx": (-1, 3, DOUBLE_SHARP),
+
+        "gff": (-1, 4, DOUBLE_FLAT),
+        "gf": (-1, 4, FLAT),
+        "gv": (-1, 4, VLAT),
+        "gfv": (-1, 4, FVLAT),
+        "gk": (-1, 4, KORON),
+        "g": (-1, 4, NATURAL),
+        "go": (-1, 4, SORI),
+        "gs": (-1, 4, SHARP),
+        "gsv": (-1, 4, SVLAT),
+        "gss": (-1, 4, DOUBLE_SHARP),
+        "gx": (-1, 4, DOUBLE_SHARP),
+
+        "aff": (-1, 5, DOUBLE_FLAT),
+        "af": (-1, 5, FLAT),
+        "av": (-1, 5, VLAT),
+        "afv": (-1, 5, FVLAT),
+        "ak": (-1, 5, KORON),
+        "a": (-1, 5, NATURAL),
+        "ao": (-1, 5, SORI),
+        "as": (-1, 5, SHARP),
+        "asv": (-1, 5, SVLAT),
+        "ass": (-1, 5, DOUBLE_SHARP),
+        "ax": (-1, 5, DOUBLE_SHARP),
+
+        "bff": (-1, 6, DOUBLE_FLAT),
+        "bf": (-1, 6, FLAT),
+        "bv": (-1, 6, VLAT),
+        "bfv": (-1, 6, FVLAT),
+        "bk": (-1, 6, KORON),
+        "b": (-1, 6, NATURAL),
+        "bo": (-1, 6, SORI),
+        "bs": (-1, 6, SHARP),
+        "bsv": (-1, 6, SVLAT),
+        "bss": (-1, 6, DOUBLE_SHARP),
+        "bx": (-1, 6, DOUBLE_SHARP),
     },
     "portugues": {
         "dobb": (-1, 0, DOUBLE_FLAT),
