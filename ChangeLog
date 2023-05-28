@@ -2,6 +2,13 @@ ChangeLog
 =========
 
 
+2023-05-28: parce-0.33.0
+
+- small fixes and updates to support Python 3.10 and newer
+- added Persian note names to LilyPond parser
+- documentation updates
+
+
 2022-03-14: parce-0.32.0
 
 - added XSLT language definition
