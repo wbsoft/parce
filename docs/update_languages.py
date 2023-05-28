@@ -190,7 +190,6 @@ Theme:
 <div id="all-tokentrees" style="margin: 10px 0 0;">
 @TOKENTREES@
 </div>
-</div> <!--all-examples-->
 
 <script type="text/javascript">
     initialize_themes();
