@@ -35,7 +35,12 @@ def filename(name):
     depending on where parce was installed.
 
     """
-    return __loader__.resource_path(name + '.css')
+    try:
+        resource_reader = __loader__.get_resource_reader()
+    except AttributeError:
+        resource_reader = __loader__
+
+    return resource_reader.resource_path(name + '.css')
 
 
 def get_all_themes():
@@ -45,8 +50,13 @@ def get_all_themes():
     Files that start with an underscore are skipped.
 
     """
+    try:
+        resource_reader = __loader__.get_resource_reader()
+    except AttributeError:
+        resource_reader = __loader__
+
     names = []
-    for filename in __loader__.contents():
+    for filename in resource_reader.contents():
         if fnmatch.fnmatch(filename, "*.css") and not filename.startswith('_'):
             names.append(filename[:-4])
     names.sort()

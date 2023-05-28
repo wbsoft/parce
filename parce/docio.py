@@ -254,7 +254,7 @@ def decode_data(
 
     When the root lexicon's Language (or one of its superclasses) has an
     :class:`IO` "sister-class" (i.e. in the same module with the same name with
-    "IO" appended), that IO class's :meth:`~IO.get_encoding` method is called
+    "IO" appended), that IO class's :meth:`~IO.find_encoding` method is called
     to determine the encoding of the text, which may be mentioned in the text
     in a way specific to that language. If that method returns None,
     :meth:`~IO.default_encoding` is called, which also by default returns

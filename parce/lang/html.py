@@ -126,6 +126,6 @@ class XHtmlIO(XmlIO):
                         enc = m.group(1)
             if http_equiv and enc:
                 return enc
-        return super().get_encoding(text)
+        return super().find_encoding(text)
 
 

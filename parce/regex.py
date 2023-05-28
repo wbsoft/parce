@@ -29,7 +29,7 @@ import unicodedata
 
 
 def words2regexp(words):
-    """Convert the specified word list to an optimized regular expression.
+    """Convert the ``words`` iterable to an optimized regular expression.
 
     Example::
 
