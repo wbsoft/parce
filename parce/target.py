@@ -42,7 +42,7 @@ import itertools
 #: Used by the :mod:`.lexer` to describe lexicon changes.
 Target = collections.namedtuple("Target", "pop push")
 Target.pop.__doc__ = "A negative integer or 0, describing how many lexicons to leave."
-Target.push.__doc__ = "A list of zero or more Lexicons to enter."
+Target.push.__doc__ = "A tuple of zero or more Lexicons to enter."
 
 
 class TargetFactory:
