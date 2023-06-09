@@ -48,13 +48,13 @@ Example::
     >>> for e in parce.lexer.Lexer([parce.lang.css.Css.root]).events("h1 { color: red; }"):
     ...     print(e)
     ...
-    Event(target=Target(pop=0, push=[Css.prelude, Css.selector, Css.element_selector]), lexemes=((0, 'h1', Name.Tag),))
-    Event(target=Target(pop=-2, push=[]), lexemes=((3, '{', Delimiter),))
-    Event(target=Target(pop=-1, push=[Css.rule, Css.declaration, Css.property]), lexemes=((5, 'color', Name.Property),))
-    Event(target=Target(pop=-1, push=[]), lexemes=((10, ':', Delimiter),))
-    Event(target=Target(pop=0, push=[Css.identifier]), lexemes=((12, 'red', Literal.Color),))
-    Event(target=Target(pop=-1, push=[]), lexemes=((15, ';', Delimiter),))
-    Event(target=Target(pop=-1, push=[]), lexemes=((17, '}', Delimiter),))
+    Event(target=Target(pop=0, push=(Css.prelude, Css.selector, Css.element_selector)), lexemes=((0, 'h1', Name.Tag),))
+    Event(target=Target(pop=-2, push=()), lexemes=((3, '{', Delimiter.Bracket),))
+    Event(target=Target(pop=-1, push=(Css.rule, Css.declaration, Css.property)), lexemes=((5, 'color', Name.Property.Definition),))
+    Event(target=Target(pop=-1, push=()), lexemes=((10, ':', Delimiter),))
+    Event(target=Target(pop=0, push=(Css.identifier,)), lexemes=((12, 'red', Literal.Color),))
+    Event(target=Target(pop=-1, push=()), lexemes=((15, ';', Delimiter),))
+    Event(target=Target(pop=-1, push=()), lexemes=((17, '}', Delimiter.Bracket),))
 
 There is a convenience function in the *parce* module namespace that calls
 Lexer for you::

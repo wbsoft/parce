@@ -27,7 +27,7 @@ A Target generalizes this in two values/attributes: ``pop`` and ``push``.
 ``pop`` is zero or a negative integer, determining how many lexicons to
 pop off the current state/context.
 
-``push`` is a list of zero or more lexicons, determining which lexicons to
+``push`` is a tuple of zero or more lexicons, determining which lexicons to
 add to the current state.
 
 You can sort of "add" targets using a TargetFactory, which can create single
@@ -77,8 +77,9 @@ class TargetFactory:
 
         """
         if self._pop or self._push:
-            t = Target(self._pop, self._push)
-            self.__init__()
+            t = Target(self._pop, tuple(self._push))
+            self._pop = 0
+            self._push.clear()
             return t
 
     def push(self, *lexicons):
