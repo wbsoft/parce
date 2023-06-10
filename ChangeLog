@@ -2,6 +2,13 @@ ChangeLog
 =========
 
 
+current: parce-0.34.0
+
+- transform.Items was renamed to ItemList
+- transform.ItemList api is simplified; items() and tokens() use no arguments;
+  slicing does not create a new ItemList object but just a Python list.
+
+
 2023-05-28: parce-0.33.0
 
 - small fixes and updates to support Python 3.10 and newer
