@@ -271,10 +271,9 @@ class Observable:
         >>> o.emit('test', 1)   # in a method of your Observable subclass
         slot called: 1
 
-    Is is also possible to use :meth:`emit` in a :python:ref:`with <with>`
-    context. In that case the return values of the connected functions are
-    collected and if they are a context manager, they are entered as well. An
-    example::
+    Is is also possible to use :meth:`emit` in a :ref:`with <with>` context. In
+    that case the return values of the connected functions are collected and if
+    they are a context manager, they are entered as well. An example::
 
         >>> import contextlib
         >>>

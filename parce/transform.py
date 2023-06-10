@@ -193,7 +193,7 @@ class Transformer(util.Observable):
 
     ``"finished"``:
         always emitted when transformation has quit, also when it was
-        inrerrupted due to tree modification while transforming was busy;
+        interrupted due to tree modification while transforming was busy;
         with the tree as argument
 
     """

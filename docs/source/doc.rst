@@ -105,9 +105,9 @@ Instead of ``insert()``, we could also have written ``d[39:39]='/'``.
 Performing multiple edits in once
 ---------------------------------
 
-When you want to perform multiple edits in one go, start a :python:ref:`with
-<with>` context and apply all desired changes. The document does not change
-during these edits, so all ranges remain valid during the process.
+When you want to perform multiple edits in one go, start a :ref:`with <with>`
+context and apply all desired changes. The document does not change during
+these edits, so all ranges remain valid during the process.
 
 Only when the ``with`` block is exited, the changes are applied and the tree
 of tokens is updated::
