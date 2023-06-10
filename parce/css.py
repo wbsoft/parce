@@ -870,9 +870,6 @@ class CssTransform(Transform):
         whitespace in between.
 
         """
-        # skip the { that starts the rule which is normally there
-        if items.peek(-1, a.Bracket):
-            items = items[:-1]
         prelude = []
         result = []
         for i in items:
@@ -934,9 +931,9 @@ class CssTransform(Transform):
     def inline(self, items):
         """Return a dictionary of the property values."""
         d = {}
-        for i in items.items("declaration"):
-            if i.obj:
-                prop, values = i.obj
+        for name, obj in items.items():
+            if obj and name == "declaration":
+                prop, values = obj
                 d[prop] = values
         return d
 

@@ -123,8 +123,9 @@ class JsonTransform(Transform):
         return dict(items.grouped_objects("key", "value"))
 
     def key(self, items):
-        for i in items.items("string"):
-            return i.obj
+        for name, obj in items.items():
+            if name == "string":
+                return obj
 
     def value(self, items):
         for value in self.values(items):

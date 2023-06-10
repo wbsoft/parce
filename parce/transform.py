@@ -22,7 +22,7 @@ Transform c.q. evaluate a tree or a stream of events.
 
 This module provides the Transformer that does the work, the Transform base
 class for all your transforming classes, the Item that wraps the output of
-sub-contexts, the Items list type to ease iterating over the contents of a
+sub-contexts, the ItemList type to ease iterating over the contents of a
 context, and some toplevel convenience functions.
 
 See also the documentation: :doc:`transforming`.
@@ -38,16 +38,22 @@ from . import util
 class Item(collections.namedtuple("Item", "name obj")):
     """A named tuple(name, obj) wrapping the return value of a Transform method.
 
-    The `name` attribute is the name of the Lexicon and transform method that
-    created the object `obj`. To make it easier to distinguish an Item from a
-    Token, Item has as class attribute `is_token` set to False.
+    .. py:property:: name
+
+       (``Item[0]``) The name of the lexicon/transform method that was called.
+
+    .. py:property:: obj
+
+       (``Item[1]``) The return value of the transform method.
 
     """
     __slots__ = ()
+
+    #: Class attribute to make it easier to distinguish tokens and Item instances.
     is_token = False
 
 
-class Items(list):
+class ItemList(list):
     """A list of Item and Token instances.
 
     The Transformer populates this list with all the Tokens from a Context,
@@ -58,67 +64,43 @@ class Items(list):
     being a Python list, this class also has some methods that filter out items
     or tokens, etc.
 
-    Slicing from Items returns a new Items instance, so you can slice and
-    the methods still work.
+    Slicing from ItemList returns a vanilla list.
 
     """
     __slots__ = ('_arg',)
 
     def __init__(self, arg, iterable=()):
-        """Items is initialized with the lexicon's argument."""
+        """ItemList is initialized with the lexicon's argument."""
         self._arg = arg
         super().__init__(iterable)
-
-    def __getitem__(self, n):
-        """Reimplemented to return an Items instance when slicing."""
-        result = super().__getitem__(n)
-        if isinstance(n, slice):
-            return type(self)(self.arg, result)
-        return result
 
     @property
     def arg(self):
         """The lexicon's argument (if any)."""
         return self._arg
 
-    def tokens(self, *texts):
+    def tokens(self):
         """Yield only the tokens, ignoring Item objects that represent
         sub-contexts.
 
-        If one or more texts are given, only yield tokens with one of the
-        texts.
-
         """
-        if texts:
-            for i in self:
-                if i.is_token and i.text in texts:
-                    yield i
-        else:
-            for i in self:
-                if i.is_token:
-                    yield i
+        for i in self:
+            if i.is_token:
+                yield i
 
-    def items(self, *names):
-        """Yield only the sub-Items, ignoring any Token instances.
-
-        If one or more names are given, only yield items that have one of the
-        names.
+    def items(self):
+        """Yield only the Items, ignoring any Token instances.
 
         Because you know only Item instances and not Tokens will be yielded,
         you can unpack name and object in one go::
 
-            for name, obj in items.items():
+            for name, obj in itemlist.items():
                 ...
 
         """
-        if names:
-            for i in self:
-                if not i.is_token and i.name in names:
-                    yield i
-        else:
-            for i in self:
-                if not i.is_token:
-                    yield i
+        for i in self:
+            if not i.is_token:
+                yield i
 
     def grouped_objects(self, *names):
         """Yield objects in groups, specified by the names.
@@ -135,12 +117,13 @@ class Items(list):
 
         result = [None] * len(names)
         lastindex = -1
-        for name, obj in self.items(*names):
-            if index[name] <= lastindex:
-                yield result
-                result = [None] * len(names)
-            lastindex = index[name]
-            result[lastindex] = obj
+        for name, obj in self.items():
+            if name in names:
+                if index[name] <= lastindex:
+                    yield result
+                    result = [None] * len(names)
+                lastindex = index[name]
+                result[lastindex] = obj
         if lastindex > -1:
             yield result
 
@@ -152,18 +135,17 @@ class Items(list):
         their name. Negative indices are allowed.
 
         .. versionadded:: 0.27.0
+
         """
         if index < 0:
             index += len(self)
             if index < 0:
                 return False
-        if index + len(values) > len(self):
+        end = index + len(values)
+        if end > len(self):
             return False
-        for i, v in enumerate(values, index):
-            t = self[i]
-            if (t.action if t.is_token else t.name) != v:
-                return False
-        return True
+        compare = tuple(i.action if i.is_token else i.name for i in self[index:end])
+        return compare == values
 
 
 class Transform:
@@ -276,7 +258,7 @@ class Transformer(util.Observable):
         root_meth = getattr(transform, root_lexicon.name, None)
         if root_meth:
             add_untransformed = _allow_untransformed(root_meth)
-            items = Items(root_lexicon.arg)
+            items = ItemList(root_lexicon.arg)
             stack = []
             lexicon = root_lexicon
 
@@ -294,7 +276,7 @@ class Transformer(util.Observable):
                         if meth:
                             stack.append((lexicon, items, meth, l.name, add_untransformed))
                             add_untransformed = _allow_untransformed(meth)
-                            items = Items(l.arg)
+                            items = ItemList(l.arg)
                             lexicon = l
                         else:
                             if add_untransformed:
@@ -328,7 +310,7 @@ class Transformer(util.Observable):
         if root_meth:
             add_untransformed = _allow_untransformed(root_meth)
             stack = []
-            node, items, i = tree, Items(tree.lexicon.arg), 0
+            node, items, i = tree, ItemList(tree.lexicon.arg), 0
             while not self._interrupt[tree]:
                 for i in range(i, len(node)):
                     n = node[i]
@@ -347,7 +329,7 @@ class Transformer(util.Observable):
                                 items.append(Item(name, self._cache[n]))
                             except KeyError:
                                 stack.append((items, i + 1, meth, add_untransformed))
-                                node, items, i = n, Items(n.lexicon.arg), 0
+                                node, items, i = n, ItemList(n.lexicon.arg), 0
                                 add_untransformed = _allow_untransformed(meth)
                                 break
                         elif add_untransformed:
